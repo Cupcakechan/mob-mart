@@ -4,14 +4,18 @@
 session before doing any work. Update it as decisions change. Kept self-contained so a fresh
 Claude or ChatGPT can parse it cold.*
 
-**Status:** **M1–M3 complete and pushed.** The core loop, `localStorage` save, full FIFO queue +
-reputation, the comedy voice pass, and all three upgrades (Extra Shelf / Faster Counter / Better
-Signage) — with a serve-cooldown lever and reputation-tier gating — are live and playable. Bob is
-animated (idle loop + serving one-shot); the diorama sprites and a **WIP `shop_bg.png` backdrop** are
-wired. A 13-case headless smoke test + `node --check` pass clean on every module.
-**Next action:** **M4 — first mimic worker (auto-serve).** Activate the Workers tab so Bob auto-serves
-the front of the line on an interval (respecting the serve cooldown). See §6 and §12 "Next up".
-**Last updated:** M3 complete — all upgrades + reputation-gating shipped; `shop_bg.png` added.
+**Status:** **M1–M3 complete and pushed.** **M4 (first mimic worker — Bob auto-serve) is built and
+logic-tested (46-assertion headless smoke test + `node --check` clean); browser-confirm + commit are
+the only steps left before it's "pushed."** The core loop, `localStorage` save, full FIFO queue +
+reputation, the comedy voice pass, all three upgrades (Extra Shelf / Faster Counter / Better Signage)
+with rep-tier gating, and now **Bob auto-serving the front of the line on a hire-to-activate interval**
+are live and playable. Bob is animated (idle loop + serving one-shot); the diorama sprites and a **WIP
+`shop_bg.png` backdrop** are wired.
+**Next action:** **Confirm M4 in the browser + commit, then M5 — offline earnings.** `lastSeen` is
+already persisted; on load, timestamp delta → capped estimate → "While you were away" modal. Offline's
+per-second rate now has a real automation source (Bob) to multiply. See §6 and §12 "Next up".
+**Last updated:** M4 built (auto-serve worker: hire-with-gold model, shared serve cooldown, Workers tab
+activated) — headless-tested; awaiting browser confirmation + commit.
 
 ---
 
@@ -46,67 +50,51 @@ skin, the *Crush Crush* lesson). The wrapper is the moat, not the mechanics. **N
   diorama; **DOM/HTML/CSS** renders the text/number/list-heavy panels (top bar, Current Customer,
   Workers, Upgrades, Battle Results, bottom nav). *Why:* the game's identity is the animated
   diorama (canvas's strength) but the moment-to-moment play and tuning is panels of text and
-  numbers (DOM's strength), and idle games live on UI clarity. Building the battle log / upgrade
-  lists on canvas would be the slowest, least-maintainable path for the surfaces that change most.
+  numbers (DOM's strength), and idle games live on UI clarity.
 - **Fixed internal stage 1280×720** inside a **scale-to-fit** wrapper that scales the canvas and
-  the DOM overlay *together*, so the two layers can't drift. *Why:* one coordinate model, matches
-  the asset-scale plan, and drops cleanly into Kongregate's iframe (comfortably under ~1100×700
-  once letterboxed).
-- **View / perspective — PixelLab "low top-down" (~20°), front-facing.** *Why:* the shallow angle
-  keeps the cute mob faces readable while grounding everyone on a floor plane for diorama depth;
-  it matches the mockup and the mimic prototype (both front-on, not profile). Characters use a
-  **single facing** (forward, toward the counter) — no rotation sets. Walk/shuffle is a
-  forward-facing sideways hop as the queue advances. **Author the whole scene at the same low
-  top-down** (characters, props, backdrop) — mismatched perspective is the classic "off" tell.
+  the DOM overlay *together*, so the two layers can't drift.
+- **View / perspective — PixelLab "low top-down" (~20°), front-facing, single facing.** Author the
+  whole scene (characters, props, backdrop) at the same low top-down.
 - **Kongregate is the PRIMARY (and possibly only) publish target.** itch.io is undecided (see §13).
-  Regardless, we keep the **isolated no-op Kongregate bridge** discipline from the start: the
-  Kongregate API is wrapped in one module (`src/kongregate.js`) that no-ops when the API isn't
-  present, so local/itch builds stay dependency-free and the bridge can't break other builds.
-  This also means we need the no-op path just to run locally.
+  The Kongregate API is wrapped in one module (`src/kongregate.js`) that no-ops when the API isn't
+  present, so local/itch builds stay dependency-free.
 - **Save:** `localStorage`, namespaced + versioned key **`mobmart.save.v1`**, every field
-  default-filled on load (old saves stay forward-compatible), load wrapped in try/catch →
-  fresh save on parse failure.
-- **Folder layout uses `src/` + root `style.css` + `assets/`** (not the generic `js/` + `css/`).
-  *Why:* this matches the Kongregate packaging script's expected paths, so dual-publish packaging
-  is frictionless later; Kongregate is primary.
-- **Internal slug `mobmart`** for the save namespace and asset/folder naming, **decoupled from the
-  display name** "Mob Mart" — a future rename never touches internal IDs.
+  default-filled on load, load wrapped in try/catch → fresh save on parse failure.
+- **Folder layout uses `src/` + root `style.css` + `assets/`** (matches the Kongregate packaging
+  script's expected paths).
+- **Internal slug `mobmart`** for the save namespace and asset/folder naming, decoupled from the
+  display name "Mob Mart".
 
 ---
 
 ## 3. Core loop & state flow
 
 **Screen state machine:** `Boot/Load → (minimal Title) → Shop`. The bottom-nav items
-(Shop / Workers / Upgrades / Bestiary) are **tabs/panels inside the Shop state**, not separate
-game states. Overlays: `OfflineEarnings` modal on return, `Settings`.
+(Shop / Workers / Upgrades / Bestiary) are **tabs/panels inside the Shop state**. Overlays:
+`OfflineEarnings` modal on return, `Settings`.
 
 **Update loop:** a fixed-timestep accumulator driven by `requestAnimationFrame` with delta time
-— deliberately **not** `setInterval`-per-generator (that throttles in background tabs, batches
-increments, and drifts). One master `update(dt)` advances the spawn timer, patience countdowns,
-worker auto-serve timers, and animation state; then `render()` draws the canvas and syncs only the
-DOM that changed. **Offline is the same math** applied once over the elapsed real-time delta on
-load, capped.
+— deliberately **not** `setInterval`-per-generator. One master `update(dt)` advances the spawn
+timer, patience countdowns, worker auto-serve timers, and animation state; then `render()` draws
+the canvas and syncs only the DOM that changed. **Offline is the same math** applied once over the
+elapsed real-time delta on load, capped.
 
 **Transaction flow (the loop):**
 
 ```
 spawn timer fires -> pick monster type (weighted) -> roll wanted item + budget + patience
       -> enqueue -> advance to counter (Current Customer)
-      -> [player clicks SERVE  OR  worker auto-serves on its interval]
+      -> [player clicks SERVE  OR  a hired serve-worker auto-serves on its interval]
             -> in stock?  AND  budget >= item price?
                |-- YES -> decrement stock, add gold, mark served, monster walks to portal
-               |          -> resolve combat (monster mod + item effect + difficulty + rng -> tier)
-               |          -> append funny log line; +perSale reputation for the sale (Option A)
+               |          -> resolve combat -> tier ; append funny log line; +perSale rep
                |          -> monster exits; next customer advances
                '-- NO  -> lost sale (out of stock / can't afford)
-                          -> patience keeps ticking; hits 0 -> monster leaves unhappy
-                             (minor rep ding, always recoverable — never a hard fail)
-      -> spend gold: restock items | buy upgrades | hire/level a mimic worker
+                          -> patience keeps ticking; hits 0 -> monster leaves unhappy (minor rep ding)
+      -> spend gold: restock items | buy upgrades | hire a mimic worker
       -> repeat
 on quit   -> store lastSeenTimestamp + state
-on return -> elapsed = now - lastSeen (capped) -> estimate sales
-             = avg sale rate x available stock x worker throughput x shop level
-             -> award gold/rep -> show "While you were away" modal
+on return -> elapsed = now - lastSeen (capped) -> estimate sales -> award gold/rep -> modal
 ```
 
 ---
@@ -114,238 +102,180 @@ on return -> elapsed = now - lastSeen (capped) -> estimate sales
 ## 4. Data model
 
 Everything content-facing is a **data-driven registry**, not a subclass, so a new
-monster/item/upgrade auto-flows through spawns, menus, and icons with no extra wiring. Asset
-filenames match the `id` (lowercase; hosts are case-sensitive). Every optional field is read with
-a fallback (`?? default`) so a missing field never `NaN`s or crashes an existing entry.
+monster/item/upgrade/worker auto-flows through spawns, menus, and icons with no extra wiring. Asset
+filenames match the `id` (lowercase). Every optional field is read with a fallback (`?? default`).
 
-**Monster registry** (`src/data/monsters.js`) — one entry per customer type:
-`id` (stable) · `displayName` · `spriteId` · `budgetRange` [min,max] gold · `patience` (seconds in
-queue) · `wantWeights` (weighting over item categories/ids they tend to want) · `combatMod`
-(modifier into the resolver) · `baseRep` (optional).
+**Monster registry** (`src/data/monsters.js`): `id` · `displayName` · `spriteId` · `budgetRange`
+[min,max] · `patience` · `wantWeights` · `combatMod` · `baseRep` (optional).
 
-**Customer instance** (runtime, spawned from a monster type):
-`monsterId` · `wantedItemId` (rolled from `wantWeights`) · `budget` (rolled from `budgetRange`) ·
-`patienceRemaining` · `state` (queued / atCounter / served / leaving).
-Held in `state.queue`, a **capped FIFO array** (`queue.maxLength`): `queue[0]` is the front (the
-"current customer" the Serve / Send Away buttons act on). A spawn timer back-fills the tail on a
-cadence; every mob's patience drains wherever it stands, and any that runs out leaves (−rep).
+**Customer instance** (runtime): `monsterId` · `wantedItemId` · `budget` · `patienceRemaining` ·
+`state`. Held in `state.queue`, a capped FIFO array; `queue[0]` is the front the Serve / Send Away
+buttons — and the auto-serve worker — act on.
 
-**Item registry** (`src/data/items.js`):
-`id` · `displayName` · `iconId` · `category` (weapon / armor / consumable, used for want-matching) ·
-`basePrice` (what the monster pays) · `restockCost` · `stock` (runtime, seeded) · `maxStock`
-(bounded by shelf upgrades — a bounding constant) · `combatEffect` (modifier into the resolver) ·
-`monsterCompatibility` (optional; start absent, guarded).
+**Item registry** (`src/data/items.js`): `id` · `displayName` · `iconId` · `category` · `basePrice` ·
+`restockCost` · `stock` (runtime) · `maxStock` · `combatEffect` · `monsterCompatibility` (optional).
 
-**Upgrade registry** (`src/data/upgrades.js`):
-`id` · `displayName` · `description` · `baseCost` + `costGrowth` (cost(level) = round(baseCost·growth^level)) ·
-`maxLevel` · `requiredTier` (rep-tier index needed to unlock) · level held in `state.upgrades[id]`
-(runtime) · `effect` — a **typed, per-level** effect the systems read:
-`{type:'maxStock', perLevel:1}`, `{type:'serveSpeed', perLevel:0.3}`, `{type:'repMult', perLevel:0.5}`
-(future: `{type:'offlineCap', …}`). Systems query `sumEffect(state, type)` (Σ perLevel·level across
-matching upgrades) rather than hard-coding each upgrade, so new upgrades slot in for free. Consumers:
-`effectiveMaxStock`, `effectiveServeCooldown = base/(1+serveSpeed)`,
-`effectiveRepPerSale = round(perSale·(1+repMult))`. `isUpgradeUnlocked` gates on `requiredTier`.
+**Upgrade registry** (`src/data/upgrades.js`): `id` · `displayName` · `description` · `baseCost` +
+`costGrowth` · `maxLevel` · `requiredTier` · level in `state.upgrades[id]` · `effect` — a typed,
+per-level effect: `{type:'maxStock',perLevel:1}`, `{type:'serveSpeed',perLevel:0.3}`,
+`{type:'repMult',perLevel:0.5}`. Systems query `sumEffect(state,type)`. Consumers: `effectiveMaxStock`,
+`effectiveServeCooldown = base/(1+serveSpeed)`, `effectiveRepPerSale = round(perSale·(1+repMult))`,
+and now `effectiveWorkerInterval = baseInterval/(1+serveSpeed)`. `isUpgradeUnlocked` gates on
+`requiredTier`.
 
-**Worker registry** (`src/data/workers.js`) — first entry is the mimic merchant "Bob":
-`id` (`mimic_merchant`) · `displayName` ("Bob") · `spriteId` · `role` (serve / restock — start with
-serve) · `baseInterval` (seconds per auto-action) · `hireCost` · `level` + `upgradeCost` (optional;
-the mockup's "Lv 2, +25% Sell Price" fits here later).
+**Worker registry** (`src/data/workers.js`) — **IMPLEMENTED (M4)**; first entry is "Bob":
+`id` (`mimic_merchant`) · `displayName` ("Bob") · `spriteId` · `role` (**`serve`** for Bob;
+**`restock`** reserved for a later worker — the auto-serve loop skips non-serve roles) · `baseInterval`
+(seconds per auto-serve attempt, before serveSpeed) · `hireCost`. Per-worker tunables live in the
+registry next to the data (same convention as items `basePrice` / upgrades `baseCost`). Level /
+`upgradeCost` are NOT present yet — worker leveling is a later pass. Runtime state is
+`state.workers[id] = { owned, timer }`: `owned` persists, `timer` (seconds to next auto-serve attempt)
+is transient. Accessors: `isWorkerOwned`, `workerHireCost` (workers.js); `canHireWorker`, `hireWorker`,
+`effectiveWorkerInterval`, `updateWorkers` (game.js).
 
-**Combat resolver** (`src/combat.js`) — the off-screen result:
-`resultScore = itemEffect + monster.combatMod − encounterDifficulty + rng(−spread..+spread)`,
-mapped to a `resultTier` enum: `excellent` (rare) · `success` · `partial` · `failure` ·
-`funnyFailure`. `resolveCombat` returns `{ tier, score }` only — the flavour text is chosen by
-**`src/messages.js`** (`logLine(monsterId, tier, {name, item})`), which pools the generic lines with
-any per-monster lines for that tier from the **results registry** (`src/data/results.js`) and fills
-`{name}`/`{item}`, with **graceful fallback** so a new monster/unknown tier still yields a line, never
-a crash. `logLine` also powers the `leave` and `dismiss` log entries. Gold comes from the **sale**
-(monster pays `basePrice` at purchase); reputation comes from the **sale** too (`reputation.perSale`),
-and the tier only picks
-the **flavor line** (a small gold tip on `excellent` is a possible later add — kept off reputation).
+**Auto-serve behavior (M4):** each owned serve-worker ticks its `timer` down in `update(dt)`; on
+expiry it attempts **one** sale through the *exact* manual path (`serveCurrent`), so payout, rep,
+log line, and the **shared serve cooldown** all match a manual serve. A success re-arms the timer to a
+full `effectiveWorkerInterval`; a blocked attempt (no customer / cooling down / out of stock / can't
+afford) leaves the timer ready (0) to retry next frame — the worker fires as soon as conditions allow,
+without ever re-running the sale. The **serve cooldown is the anti-spam / pacing guard**; the interval
+is the steady cadence. Because the interval divides by the same `serveSpeed` sum, **Faster Counter
+speeds automation too** (compounding — see §5 for the switch). A successful auto-serve sets the
+transient `state.workerServed` flag; `main.js` reads it to fire Bob's existing serve one-shot
+(`playBobServe`). The manual click still fires that animation directly in `onServe`, so the two paths
+don't double-trigger.
 
-**Save schema** (`src/save.js`, `mobmart.save.v1`):
-Currently persists `{version, gold, reputation, items:{id:{stock}}, upgrades:{id:level}, lastSeen}`.
-Queue, spawn timer, **serve cooldown**, and log are **ephemeral** (regenerated on load, not saved).
-Every field is default-filled + guarded on load (gold/rep floored at 0, stock clamped to the effective
-max, upgrade levels clamped to `maxLevel`, unknown ids ignored); load wrapped in try/catch → fresh save
-on failure. `lastSeen` drives M5 offline earnings. **Future, same pattern:** `workers:{id:{owned,level}}`
-(M4) and a reserved `scrap` field (§7).
+**Combat resolver** (`src/combat.js`): `score = itemEffect + monster.combatMod − encounterDifficulty
++ rng(−spread..+spread)` → tier enum. `resolveCombat` returns `{tier,score}`; flavour text is chosen
+by `src/messages.js` (`logLine`), pooling generic + per-monster lines with graceful fallback. Gold and
+reputation come from the **sale**; the tier only picks the flavour line.
+
+**Save schema** (`src/save.js`, `mobmart.save.v1`): persists `{version, gold, reputation,
+items:{id:{stock}}, upgrades:{id:level}, workers:{id:{owned}}, lastSeen}`. Queue, spawn timer, serve
+cooldown, **worker auto-serve timers**, transient flags (`uiDirty`, `workerServed`), and log are
+**ephemeral**. Every field default-filled + guarded on load (gold/rep floored at 0, stock clamped,
+upgrade levels clamped, worker `owned` coerced to a strict boolean, unknown ids ignored); a **pre-M4
+save with no `workers` key loads with every worker unowned**. On resume, an owned worker's `timer`
+starts at a full `baseInterval` so he doesn't fire the instant the shop opens. **SAVE_VERSION stays 1**
+— `workers` is an additive field handled by default-fill, exactly like `upgrades` in M3 (no bump).
+`lastSeen` drives M5. Future, same pattern: worker `level` and a reserved `scrap` field (§7).
 
 ---
 
 ## 5. Content & suggested starting values
 
-All numbers below are **suggested starting values** and live as named constants in
-`src/config.js` — balancing is a one-value change. Prices/stock mirror the mockup.
+All numbers below are **suggested starting values** and live as named constants in `src/config.js`
+(global levers) or the matching data registry (per-entry numbers) — balancing is a one-value change.
 
-**Starter customers (3):**
+**Starter customers (3):** `slime` (Slimey, combatMod −2, budget 10–20) · `bat` (Batty, −1, 12–22) ·
+`skeleton` (Skele, +1, 12–24). Roster (not MVP): `goblin` (Gobbo), `rat`.
 
-| id | display | combatMod | budgetRange | notes |
-|---|---|---|---|---|
-| `slime` | Slimey | −2 (squishy) | 10–20 | dim but sweet blob |
-| `bat` | Batty | −1 (fragile flyer) | 12–22 | nervous, flighty |
-| `skeleton` | Skele | +1 (already dead, hard to discourage) | 12–24 | brittle, rattly |
+**Starter items (3):** `club` (weapon, 12/6, stock 3/5, +6) · `metal_helmet` (armor, 18/9, 2/5, +5) ·
+`hp_flask` (consumable, 15/8, 4/5, +4).
 
-Roster (not MVP): `goblin` (Gobbo), `rat` — first content additions after the loop is fun.
+**First worker (M4, live):** `mimic_merchant` — display "Bob", `role: 'serve'`, **`baseInterval` 6s**,
+**`hireCost` 50 gold**. Both tunables live in `src/data/workers.js`. Hire model is **Option B — hire
+with gold** (no rep gate; upgrades already carry rep gating). Effective interval =
+`baseInterval / (1 + serveSpeed)`, so Faster Counter shortens it (6s → ~4.6s at L1 → 2.4s at L5).
+**serveSpeed compounding switch:** currently Faster Counter shortens *both* the counter cooldown and
+Bob's interval. To make it affect only one, change what `effectiveWorkerInterval` /
+`effectiveServeCooldown` divide by — they're the two consumers of the `serveSpeed` sum. **Feel note:**
+a worker whose timer is ready in an empty shop serves the next arrival almost instantly (readiness
+"pounces"); if that reads as too eager, gate the timer countdown on a servable customer being present.
 
-**Starter items (3):**
+**Suggested upgrades (M3):** `extra_shelf`, `faster_counter`, `better_signage`, `backroom_storage`
+(offlineCap +2h), `hire_goblin` → "hire mimic worker" (unlock/discount a second worker).
 
-| id | display | category | basePrice | restockCost | startStock | maxStock | combatEffect |
-|---|---|---|---|---|---|---|---|
-| `club` | Club | weapon | 12 | 6 | 3 | 5 | +6 (offense) |
-| `metal_helmet` | Metal Helmet | armor | 18 | 9 | 2 | 5 | +5 (survivability) |
-| `hp_flask` | HP Flask | consumable | 15 | 8 | 4 | 5 | +4 (sustain) |
+**Combat tuning (M1 start):** `encounterDifficulty` 10, `rng spread` ±6; tiers ≥8 excellent / 2..7
+success / −1..1 partial / −6..−2 failure / ≤−7 funnyFailure. Tier drives the log line only, never rep.
 
-**First worker:** `mimic_merchant` — display "Bob", role serve, `baseInterval` ~6s, `hireCost` ~50.
+**Reputation model (Option A — service):** sale grants `perSale` (+2); a timeout costs `leavePenalty`
+(−1); Send Away and the battle outcome are rep-neutral. Floors at 0.
 
-**Suggested upgrades (M3):** `extra_shelf` (+1 maxStock), `faster_counter` (serve speed ×0.85),
-`better_signage` (repGain ×1.1), `backroom_storage` (offlineCap +2h), `hire_goblin` → becomes
-**"hire mimic worker"** (unlock/discount a second worker).
+**Reputation tiers:** Neutral 0 · Friendly 20 · Trusted 50 · Beloved 100. Rep is a tier-unlock gate
+(M3). Later: high rep triggers special "visits" (no schema change).
 
-**Combat tuning (M1 start):** `encounterDifficulty` 10, `rng spread` ±6, tier thresholds:
-score ≥ 8 → excellent; 2..7 → success; −1..1 → partial; −6..−2 → failure; ≤ −7 → funnyFailure.
-The tier picks the funny log line only — the fight is tuned so the mobs usually lose, so it must
-NOT drive rep.
+**Economy start:** gold ~40, reputation 0.
 
-**Reputation model (Option A — service, not carnage):** a completed **sale** grants
-`reputation.perSale` (+2); a customer **leaving unserved** (patience timeout) costs
-`reputation.leavePenalty` (−1); a manual **Send Away** and the battle outcome are rep-neutral.
-Reputation floors at 0. This rates the player on running the shop (which they control), not on a
-fight they don't — and keeps the "they always lose" joke intact.
-
-**Reputation tiers (labels, tunable):** Neutral 0 · Friendly 20 · Trusted 50 · Beloved 100.
-Display-only in M2 (value + tier on the HUD). For MVP, reputation becomes a **tier-unlock gate** in
-M3 (thresholds unlock item/monster/upgrade tiers).
-**Later:** high rep triggers special "visits" (rare customer events) — no schema change needed;
-a "visit" is just a special customer instance gated behind a rep threshold.
-
-**Economy start:** starting gold ~40 (enough to restock once or twice; the mockup's 126 is
-mid-game). Starting reputation 0.
-
-**Battle-log voice:** the full voice spec + the shipped line batch (7 outcome tiers, generic +
-per-character for Slimey/Batty/Skele) live in **`COMEDY_BIBLE.md`** (repo root, reference) and the
-live copy in **`src/data/results.js`**. Tone: cozy, dry, a little pathetic — we laugh WITH the mobs,
-never at them; strictly PG; lines ~50–70 chars, hard cap ~80. A few sample beats:
-- "{name} fought valiantly for almost four whole seconds."
-- "Batty was defeated by the doorway before the hero arrived."
-- "Skele got tapped once and became a tidy little pile."
+**Battle-log voice:** full spec + shipped batch in `COMEDY_BIBLE.md` (reference) and the live copy in
+`src/data/results.js`. Cozy, dry, PG; lines ~50–70 chars, hard cap ~80.
 
 ---
 
 ## 6. Milestone plan
 
-Each milestone is a **single-purpose, individually tested, individually committed** pass. Sprites
-swap in continuously — every mechanic is built on placeholder rects first, then dressed once it
-plays right (the ID+filename convention + graceful fallback means art never touches game logic).
+Each milestone is a **single-purpose, individually tested, individually committed** pass.
 
-- **M1 — "The loop breathes."** One customer at a time, manual serve, funny battle result, gold in.
-  *In:* fixed stage + scale-to-fit shell; canvas diorama with **placeholder rects** (counter block,
-  portal block, one customer slot); DOM panels (top bar = **Gold only**, Current Customer card,
-  three item cards, **Serve** button, Battle Results log); registries for the 3 items, 3 monsters,
-  results templates; spawn one customer at a time (no full queue yet); manual serve → stock/afford
-  check → pay → combat resolve → log line → next customer; a lenient patience timeout that clears a
-  stuck customer (never a hard fail); a **Send Away** button to wave off a customer you can't/won't
-  serve; restock buttons; the `config.js` constants. *Out (M1):* save,
-  worker, offline, upgrades. (Reputation is tracked internally and shown as **per-line crowns** in
-  the log for payoff; the cumulative Reputation HUD stat + rep-gated unlocks arrive in M2.)
-  **Success test:** load page → a mob appears wanting an item → click Serve → gold rises → a funny
-  line lands → next mob appears; restock when stock hits 0.
-- **M2 — Persistence + full queue + reputation. DONE.** `localStorage` (versioned, default-filled,
-  guarded), the capped FIFO queue with per-mob patience, and the reputation HUD (service-based rep +
-  tier labels). Built as three separate passes; all committed.
-- **M3 — Upgrades + spend economy.** Extra Shelf / Faster Counter / Better Signage as data-driven
-  upgrades feeding a real gold sink. Built in three passes — **ALL DONE**: (1) layout; (2) Faster
-  Counter (serve cooldown via `serveSpeed`) + Better Signage (rep/sale via `repMult`); (3) rep-tier
-  gating — upgrades lock behind `requiredTier` (Extra Shelf: Neutral; Faster Counter: Friendly;
-  Better Signage: Trusted), locked cards dimmed showing "Reach &lt;Tier&gt;". **M3 complete.**
-- **M4 — First mimic worker (auto-serve).** Bob auto-serves on an interval — the automation/idle
-  proof; the shop earns without clicking.
-- **M5 — Offline earnings.** Timestamp delta → capped estimate → "While you were away" modal.
-- **M6 — Kongregate no-op bridge stub + one `loaded` stat.** Purely additive; can't break
-  local/itch. This is the "architecture that supports Kongregate stats later" line, done as its own
-  isolated pass.
+- **M1 — "The loop breathes." DONE.** One customer at a time, manual serve, funny battle result, gold
+  in; shell + diorama placeholders + DOM panels + Send Away + restock + config.
+- **M2 — Persistence + full queue + reputation. DONE.** `localStorage` (versioned/guarded), capped
+  FIFO queue + per-mob patience, reputation HUD (service-based). Three passes; committed.
+- **M3 — Upgrades + spend economy. DONE.** Extra Shelf / Faster Counter / Better Signage, data-driven,
+  rep-tier gated. Three passes; committed.
+- **M4 — First mimic worker (auto-serve). BUILT — browser-confirm + commit pending.** Bob auto-serves
+  the front customer on a hire-to-activate interval, reusing `serveCurrent` (payout / rep / log /
+  cooldown unchanged) and the shared serve cooldown (so Faster Counter speeds automation too).
+  **Model B — hire with gold** (`hireCost` 50; no rep gate). New `src/data/workers.js` (Bob =
+  `mimic_merchant`, role `serve`, `baseInterval` 6s). Workers tab activated; single Bob card
+  (Hire → Active). No worker leveling, no restock automation, no second worker.
+- **M5 — Offline earnings.** Timestamp delta → capped estimate → "While you were away" modal. Bob now
+  provides a real per-second automation rate to multiply. `src/offline.js`.
+- **M6 — Kongregate no-op bridge stub + one `loaded` stat.** Purely additive; can't break local/itch.
 
 ---
 
 ## 7. Scope guardrails — explicitly OUT of the MVP
 
-Deferred (each is a scope-trap magnet; several appear in the mockup):
-- **Scrap (third resource)** — mockup shows ⚙ +1/m; a second economy before the first loop is fun
-  doubles balancing. Data slot reserved only.
-- **"Today's Goal" daily-quest hook** — nice retention later; not loop-critical.
-- **Bestiary panel** — nav tab can exist as a stub; content is post-MVP.
-- **Worker leveling** (the mockup's "Lv 2, +25%") — hire first, level later.
-- **Special "visits"** (high-rep rare customers) — later; no schema change when added.
-- **Prestige / reset** — the loop must be fun for one run first. Don't fight a future prestige in
-  the schema, but don't build it.
+- **Scrap (third resource)** — defer; reserve a data slot.
+- **Punishing fail economy** — no rent/debt/hard-fail; a bad visit costs a sale + minor rep.
+- **"Today's Goal" daily-quest hook** — later.
+- **Bestiary panel** — nav stub only; content post-MVP.
+- **Worker leveling** ("Lv 2, +25%") — hire first, level later. (M4 hires; no leveling.)
+- **Second / restock worker** — the `restock` role is reserved in the registry and the auto-serve loop
+  skips non-serve roles, but no restock worker exists yet. A restocker also needs a visual-home
+  decision (DOM-only avatar vs a canvas backroom/shelf prop vs standing beside Bob).
+- **Special "visits"** — later; no schema change when added.
+- **Prestige / reset** — loop must be fun for one run first.
 - **Free furniture placement, multiple rooms, large monster roster, complex crafting, real-time
-  combat, PvP, multiplayer, external accounts** — all out (per the brief).
+  combat, PvP, multiplayer, external accounts** — all out.
 
 ---
 
 ## 8. Risks & scope traps (watch-list)
 
 1. **Scrap creeping into MVP** → defer; reserve a data slot.
-2. **Punishing fail economy (the Recettear trap)** — good shop games reward attention without
-   punishing exploration → no rent/debt/hard-fail; a bad visit costs a sale + minor rep, always
-   recoverable.
-3. **Auto-resolution with no feedback (the Shop Titans trap)** — the funny log IS the payoff →
-   make it land in M1 before anything else.
-4. **Canvas-UI overreach** → hybrid (Option C); panels stay in DOM.
-5. **`setInterval`-per-generator timing** → single delta-time accumulator; offline = same math.
-6. **Save/offline exploit + corruption** → cap offline; clamp negative/absurd deltas; version +
-   default-fill; try/catch load → fresh save. *Deployment caveat:* strict-privacy browsers can block
-   third-party `localStorage` inside the Kongregate iframe; the try/catch degrades to a non-persistent
-   session there rather than crashing. If it bites, fall back to Kongregate's storage API / itch.
+2. **Punishing fail economy (Recettear trap)** → no hard-fail; always recoverable.
+3. **Auto-resolution with no feedback (Shop Titans trap)** → the funny log IS the payoff.
+4. **Canvas-UI overreach** → hybrid; panels stay in DOM.
+5. **`setInterval`-per-generator timing** → single delta-time accumulator (M4 worker timers ride this
+   same `update(dt)` loop — no `setInterval`).
+6. **Save/offline exploit + corruption** → cap offline; clamp deltas; version + default-fill; try/catch
+   → fresh save. Strict-privacy browsers may block iframe `localStorage`; try/catch degrades gracefully.
 7. **Premature prestige** → out of MVP.
-8. **Content-as-subclasses** → registries + typed effects.
-9. **Over-designing the want/compatibility matrix** → category match + light weights; guard
-   optional fields.
-10. **Kongregate bolted in mid-code** → isolated no-op bridge as its own pass; local/itch stay
-    dependency-free. Submission needs an **English description + in-game English option** and a
-    **public AI-use disclosure** (AI-assisted); re-verify live submission rules at submission time.
+8. **Content-as-subclasses** → registries + typed effects (workers now follow the same pattern).
+9. **Over-designing want/compatibility** → category match + light weights; guard optional fields.
+10. **Kongregate bolted in mid-code** → isolated no-op bridge as its own pass; AI-use disclosure at
+    submission.
 
 ---
 
 ## 9. Asset specs (Daniel authors all assets)
 
-Stage **1280×720**; everything **PNG-32 (RGBA)**; filenames **lowercase, matching the data `id`**.
-**Perspective: PixelLab low top-down (~20°), front-facing, single facing.** Author characters,
-props, and backdrop at the same angle. Placeholders-first: M1 ships on flat rects at these exact
-slot sizes; PNGs drop into the same slots later (missing image → placeholder, never a crash).
+Stage **1280×720**; PNG-32 (RGBA); filenames lowercase matching the data `id`. Perspective: PixelLab
+low top-down (~20°), front-facing, single facing. Placeholders-first; missing image → placeholder.
 
-| Asset | PixelLab tool | Target size | Animations (suggested frames) | Filenames |
-|---|---|---|---|---|
-| Slime / Bat / Skeleton (customers) | `create_character`, forward-facing | 128×128 | idle 2–4 · shuffle 4–6 (forward-facing sideways hop) · react/buy 3–4 (one-shot) | `slime_idle.png`, `slime_shuffle.png`, `slime_react.png` (same for `bat_`, `skeleton_`) |
-| Bob (mimic merchant / worker) | `create_character`, facing customers | 128×128 (or 160×160) | idle 2–4 · serve/restock 4–6 | `mimic_merchant_idle.png`, `mimic_merchant_serve.png` |
-| Club / Metal Helmet / HP Flask | `create_map_object` | 64×64 | static | `club.png`, `metal_helmet.png`, `hp_flask.png` |
-| "To Battle" portal/door | object + short glow loop | ~256×384 | glow/open 4–8 (loop) | `portal_glow.png` (strip) |
-| Shop environment (walls, shelves, torches, clutter) | backdrop **or** modular props | 1280×720 backdrop, or 128–256 props | optional torch flicker 2–4 | `shop_bg.png` or per-prop |
-| UI icons (gold, reputation crown, scrap-reserved) | small object | 32×32 | static | `icon_gold.png`, `icon_rep.png`, `icon_scrap.png` |
-| Panel / button chrome | mostly CSS (DOM panels) | — | — | few image assets needed; CSS-styled |
+**Art integration status:** Bob's scale is locked (`BOB.height` 240px in `scene.js`, feet anchored to
+`COUNTER.baseY`). Bob is animated — idle loop + serving one-shot, each a 6-frame horizontal strip
+(`bob_idle.png` / `bob_serve.png`), auto-sliced; serving fires on a successful Serve (manual OR auto —
+**M4 reuses `playBobServe` via the `workerServed` flag**), then returns to idle. Missing sheet → static
+`mimic_merchant.png` → placeholder. **M4 added NO new art** — the auto-serve worker reuses the existing
+shopkeeper sprite/animation.
 
-Notes: author Bob as a full character; the counter prop occludes his lower body. Sheet layout:
-one horizontal strip per animation at slot width (e.g. `slime_shuffle.png` = 6×128 = 768×128) so
-canvas slicing is `frameIndex × 128`; static prop = `<id>.png`, animation = `<id>_<anim>.png`. The
-Aseprite fitting pass sets exact size and aligns every customer's baseline to the same floor line.
-Item icons are the one exception to the perspective rule — they live mostly in DOM item cards, so a
-clean front/slightly-angled icon is fine.
-
-**Art integration status (done):** Bob's scale is locked (`BOB.height` = 240px in `scene.js`, feet
-anchored to `COUNTER.baseY` so the desk + Bob move together, plus a `lift` offset that raises him so
-his arms/hands clear the counter). Bob is **animated** — idle loop + serving one-shot, each a
-**6-frame horizontal strip** (`bob_idle.png` / `bob_serve.png`), auto-sliced by frame count; serving
-fires on a successful Serve, then returns to idle. fps is per-animation in `BOB_ANIMS` (idle 6, serve
-12). A missing sheet falls back to the static `mimic_merchant.png`, then a placeholder.
-
-**All diorama sprites are wired with graceful fallback** (drop a PNG → it appears; absent → a
-placeholder shows). Ids under `assets/sprites/`: `shop_bg` (full 1280×720 backdrop, **WIP — first pass
-in**), `mimic_merchant` / `bob_idle` / `bob_serve` (Bob), `slime` / `bat` / `skeleton` (customers),
-`counter` (desk), `portal`. Each element has a tunable size/position block at the top of `scene.js`
-(`QUEUE`, `BOB`, `COUNTER`, `PORTAL`, plus `FLOOR_Y` = the wall/floor line at y=446). Suggested
-authoring sizes: **backdrop 1280×720** (wall 0→446, floor 446→720); **counter/desk ~480px wide**
-(`COUNTER.width`; 2× ≈ 960px for crisp edges); mobs ~128×128 drawn at the 88px `QUEUE.size`; portal to
-the ~141×245 `PORTAL` box.
+All diorama sprites are wired with graceful fallback under `assets/sprites/`: `shop_bg` (1280×720,
+**WIP**), `mimic_merchant` / `bob_idle` / `bob_serve`, `slime` / `bat` / `skeleton`, `counter`,
+`portal`. Tunable size/position blocks at the top of `scene.js` (`QUEUE`, `BOB`, `COUNTER`, `PORTAL`,
+`FLOOR_Y` = y=446). Authoring sizes: backdrop 1280×720 (wall 0→446, floor 446→720); counter ~480px
+wide; mobs ~128×128 drawn at 88px; portal to the ~141×245 box.
 
 ---
 
@@ -354,71 +284,58 @@ the ~141×245 `PORTAL` box.
 ```
 mob-mart/
 ├── index.html              <- entry: canvas + DOM panel containers, scale-to-fit wrapper
-├── style.css               <- all DOM/panel styling + layout + scaling
-├── PROJECT_HANDOFF.md      <- this doc (tracked in git; NOT shipped in the build)
+├── style.css               <- all DOM/panel styling (M4: + .workers-panel / .worker-card block)
+├── PROJECT_HANDOFF.md      <- this doc (tracked; NOT shipped)
 ├── COMEDY_BIBLE.md         <- voice spec + line batch reference (tracked; NOT shipped)
 ├── .gitignore
 ├── src/
-│   ├── main.js             <- entry point + game loop (rAF, fixed-timestep accumulator)   [M1]
-│   ├── config.js           <- ALL tunable constants (one place to balance)                [M1]
-│   ├── state.js            <- screen state machine + the shared game-state object          [M1]
-│   ├── game.js             <- core loop: spawn -> serve -> transaction -> tick             [M1]
-│   ├── combat.js           <- off-screen combat resolver -> { tier, score }               [M1]
-│   ├── messages.js         <- logLine(): picks + fills a log line from the registry     [voice]
-│   ├── utils.js            <- seeded rng, clamp, number formatting                         [M1]
-│   ├── save.js             <- localStorage load/save (versioned, default-fill, try/catch)  [M2]
-│   ├── offline.js          <- timestamp-delta offline earnings (capped)                    [M5]
-│   ├── kongregate.js       <- isolated no-op bridge stub                                   [M6]
+│   ├── main.js             <- entry point + game loop            [M1] (M4: hire wiring + worker anim flag)
+│   ├── config.js           <- ALL global tunable constants        [M1]
+│   ├── state.js            <- state machine + game-state object   [M1] (M4: workers sub-state + workerServed)
+│   ├── game.js             <- core loop: spawn/serve/tick         [M1] (M4: hire + effectiveWorkerInterval + updateWorkers)
+│   ├── combat.js           <- off-screen combat resolver          [M1]
+│   ├── messages.js         <- logLine(): picks + fills a line     [voice]
+│   ├── utils.js            <- rng, clamp, number formatting       [M1]
+│   ├── save.js             <- localStorage load/save              [M2] (M4: workers:{id:{owned}} persist + guard)
+│   ├── offline.js          <- timestamp-delta offline earnings    [M5 — not yet created]
+│   ├── kongregate.js       <- isolated no-op bridge stub          [M6 — not yet created]
 │   ├── data/
-│   │   ├── monsters.js     <- customer registry (Slime, Bat, Skeleton; Goblin/Rat later)   [M1]
-│   │   ├── items.js        <- item registry (Club, Metal Helmet, HP Flask)                 [M1]
-│   │   ├── results.js      <- full tiered log-line batch, generic + per-character       [voice]
-│   │   ├── upgrades.js     <- upgrade registry + typed-effect accessors + rep gate       [M3]
-│   │   └── workers.js      <- worker registry (mimic_merchant "Bob")                       [M4]
+│   │   ├── monsters.js     <- customer registry                   [M1]
+│   │   ├── items.js        <- item registry                       [M1]
+│   │   ├── results.js      <- tiered log-line batch               [voice]
+│   │   ├── upgrades.js     <- upgrade registry + typed effects     [M3]
+│   │   └── workers.js      <- worker registry (Bob)               [M4 — created this pass]
 │   ├── render/
-│   │   ├── scene.js        <- diorama; sprites + Bob strip animation + backdrop        [M1+art]
-│   │   └── sprites.js      <- image loader (Image + onload/onerror) + fallback            [M1]
+│   │   ├── scene.js        <- diorama; sprites + Bob strip anim    [M1+art]
+│   │   └── sprites.js      <- image loader + fallback             [M1]
 │   └── ui/
-│       ├── hud.js          <- top resource bar                                             [M1]
-│       ├── panels.js       <- DOM panels (customer, workers, upgrades, log)                [M1]
-│       └── nav.js          <- bottom nav; swaps the center panel (Workers/Bestiary stubs) [M3]
-└── assets/
-    ├── sprites/            <- character + prop PNGs (filenames match data ids)
-    ├── ui/                 <- UI icons (icon_gold.png, icon_rep.png, ...)
-    └── audio/             <- sfx (later)
+│       ├── hud.js          <- top resource bar                    [M1]
+│       ├── panels.js       <- DOM panels                          [M1] (M4: Workers panel + Bob card)
+│       └── nav.js          <- bottom nav                          [M3] (M4: Workers tab activated)
+└── assets/  (sprites/ · ui/ · audio/)
 ```
 
-**[Mn]** tags show which milestone first creates each file — we don't create empty stubs early.
-
-**Conventions:** one responsibility per file, small focused functions, comment the *why*. All
-tunable numbers are named constants in `config.js`. Keep visual parameters separate from
-logic parameters. Data-driven by ID; new content auto-flows through systems. Graceful fallback
-everywhere (missing asset → placeholder/silence, never a crash). Namespace + version persistence
-keys; default missing save fields on load. Keep secrets/server-only logic off the client (n/a for
-now — fully local).
+**Conventions:** one responsibility per file, small focused functions, comment the *why*. Global
+tunables in `config.js`; per-entry numbers in the matching registry. Visual params separate from logic
+params. Data-driven by ID; new content auto-flows. Graceful fallback everywhere. Namespace + version
+persistence keys; default missing save fields on load. No secrets on the client.
 
 ---
 
 ## 11. Git & deploy
 
-- **Git from day one.** Small commits after each tested milestone; specific, feature-named
-  messages. Daniel owns commit/ship timing — Claude proposes commands, never commits.
-- **`.gitignore`** excludes build/packaging output (`builds/`), dependencies/caches
-  (`node_modules/`), editor/IDE files (`.vscode/`, `.idea/`), and OS cruft (`.DS_Store`,
-  `Thumbs.db`). `PROJECT_HANDOFF.md` is **tracked** but **not shipped** (the packaging step stages
-  only `src/`, `style.css`, `assets/`).
-- **Ship folder** = the folder holding `index.html` + `src/` + `style.css` + `assets/`. No build
-  step; the source files are the deliverable. Never commit build output.
-- **Publish (primary): Kongregate** — manual upload via the Developer Portal (two slots: Game Files
-  = the entry `index.html` alone; Other Files = a root-level zip of `style.css` + `src/` + `assets/`
-  with `index.html` excluded and forward-slash entries). Bridge/loader added at M6 (loading-strategy
-  C: an `index.kongregate.html` = base index + one API `<script>` line).
-- **itch.io: undecided** (see §13). If added, it's a `butler` push of the same ship folder; the
-  isolated bridge keeps that build dependency-free.
-- **Recover before diagnosing:** if a bad build goes live, restore the last good build first
-  (re-upload / re-push), then debug.
-- **Pre-flight before any "Released" flip:** clean load, no console errors, links + a mobile check
-  pass, DEBUG/log flags off, `node --check` on changed JS.
+- **Git from day one.** Small commits after each tested milestone; specific, feature-named messages.
+  Daniel owns commit/ship timing — Claude proposes commands, never commits. Inline git blocks omit the
+  `cd` (Daniel runs git from the repo directory already). Repo: `github.com/Cupcakechan/mob-mart`.
+- **`.gitignore`** excludes `builds/`, `node_modules/`, `.vscode/` / `.idea/`, OS cruft.
+  `PROJECT_HANDOFF.md` + `COMEDY_BIBLE.md` are tracked but NOT shipped. Scratch tests (e.g.
+  `test_m4.mjs`) are dev-only — not shipped.
+- **Ship folder** = the folder holding `index.html` + `src/` + `style.css` + `assets/`. No build step.
+- **Publish (primary): Kongregate** — manual upload via the Developer Portal. Bridge/loader at M6.
+- **itch.io: undecided** (§13). If added, a `butler` push of the same ship folder.
+- **Recover before diagnosing:** restore the last good build first, then debug.
+- **Pre-flight before "Released":** clean load, no console errors, links + mobile check, DEBUG/log
+  flags off, `node --check` on changed JS.
 
 ---
 
@@ -426,81 +343,70 @@ now — fully local).
 
 ### Current state (read first)
 
-The game is **playable end-to-end**: open the shop → mobs queue up (capped FIFO, each with patience)
-→ Serve the front one (brief "Serving…" cooldown, then they leave to battle) → a funny result lands
-in the log → gold + reputation come in → restock and buy upgrades. All three upgrades are live with
-real levers — **Extra Shelf** (+max stock), **Faster Counter** (shorter serve cooldown), **Better
-Signage** (more rep/sale) — each **gated behind a reputation tier** and bought from the Upgrades tab.
-Progress **auto-saves** (`mobmart.save.v1`) and survives reload; a Reset button clears it. Bob is
-animated (idle + serving) in an animated/backdrop-ready diorama with a WIP `shop_bg.png` in. `node
---check` is clean on every module; a 13-case headless smoke test (`test_m1.mjs`, scratch — not
-shipped) passes.
+Playable end-to-end: open the shop → mobs queue (capped FIFO, patience) → Serve the front one (brief
+"Serving…" cooldown, then they leave to battle) → a funny result lands → gold + rep come in → restock,
+buy upgrades. **All three upgrades live + rep-gated.** **M4 (auto-serve): hire Bob from the Workers tab
+for 50 gold; once hired he auto-serves the front of the line ~every 6s, using the same serve path
+(payout / rep / log / cooldown / animation), sped up by Faster Counter.** Progress auto-saves
+(`mobmart.save.v1`), survives reload; Reset clears it. Bob is animated (idle + serving) in an
+animated/backdrop-ready diorama with a WIP `shop_bg.png`. `node --check` clean on every module; a
+46-assertion headless smoke test (`test_m4.mjs`, scratch — not shipped) passes. **M4 is built and
+logic-tested but NOT yet browser-confirmed or committed** — that's the immediate next step.
 
 ### Next up
 
-- **M4 (immediate) — first mimic worker (auto-serve).** Activate the **Workers tab** (today a disabled
-  nav stub). Bob auto-serves the front customer on an interval, **reusing the serve cooldown** (so
-  Faster Counter speeds automation too) and the existing `serveCurrent` path (payouts, rep, and the
-  comedy log all flow unchanged). New `src/data/workers.js` registry (Bob = `mimic_merchant`), data-
-  driven like items/upgrades. **Decide first (options → pick):** (a) hire model — is Bob's auto-serve
-  granted, or purchased with gold/rep? (b) base interval + whether it's fixed for v1 (worker leveling
-  is post-MVP per §7); (c) how the Workers tab presents Bob (hire card vs simple on/off). This is the
-  idle/automation proof — the shop earns without clicking.
-- **M5 — offline earnings.** `lastSeen` is already persisted. On load: timestamp delta → **capped**
-  estimate of what Bob would have earned → "While you were away" modal. `src/offline.js`.
-- **M6 — Kongregate no-op bridge stub.** Purely additive `src/kongregate.js` + an
-  `index.kongregate.html` (base index + one API `<script>`); can't break local/itch. One `loaded` stat.
+- **Confirm M4 in the browser + commit.** Hire Bob, watch auto-serve fire and Bob's serve anim play on
+  the auto path, confirm cooldown pacing + Faster Counter speed-up, confirm a pre-M4 save still loads
+  and manual serve still works, no console errors. Then commit.
+- **M5 — offline earnings.** `lastSeen` already persisted. On load: timestamp delta → **capped**
+  estimate of what Bob would have earned → "While you were away" modal. `src/offline.js`. (The M4
+  worker interval gives a concrete per-second rate for the estimate.)
+- **M6 — Kongregate no-op bridge stub.** Purely additive `src/kongregate.js` + `index.kongregate.html`;
+  one `loaded` stat.
 - **Outstanding (non-blocking):**
-  - **Backdrop + props (art, in progress):** `shop_bg.png` is a WIP first pass — iterate on it, then
-    optionally split wall shelves / torches / crates into modular props (each a wired sprite id with a
-    tunable block). Floor line fixed at y=446 — flag Claude if it moves and it'll retune grounding.
-  - **itch.io dual-publish decision** (§13) — decides whether the `butler` deploy path gets added.
-  - **Bestiary tab** — still a disabled nav stub (M5-era content).
+  - **Backdrop + props (art, in progress):** iterate `shop_bg.png`, then optionally split wall shelves
+    / torches / crates into modular props. Floor line fixed at y=446.
+  - **itch.io dual-publish decision** (§13).
+  - **Bestiary tab** — still a disabled nav stub.
+  - **Offline-foundation reframe (parked idea):** whether M5 pays a small base "unattended drip" even
+    with no worker (a design change to the earning model) or stays worker-only. Discussed, not decided.
+  - **Content options (parked):** add a customer (Gobbo) and/or activate the Bestiary — offered as
+    alternatives when M4 was briefly parked; revisit after M5 if desired.
 
 ### Build history (chronological)
 
-- **Done:** research; MVP scoped; UI architecture locked (Hybrid / Option C); view locked (low
-  top-down); premise finalized (mimic merchant, Bob replaces Grez); starter trio (Slime / Bat /
-  Skeleton); design doc + `.gitignore`; GitHub repo created (`Cupcakechan/mob-mart`); **M1 vertical
-  slice built** (`index.html`, `style.css`, the M1 `src/` modules) and **logic-tested** (`node
-  --check` clean on all modules + an 8-case headless smoke test of the loop).
-- **Done since:** M1 tested and pushed, plus a **Send Away** dismiss and a static-sprite path (Bob's
-  scale locked with a front-facing 160×160 sprite at 240px on-screen). **M2 is being built as three
-  separate passes** (one system each): **(1) Reputation HUD — done** (value + tier label on the top
-  bar, tiers in `config.js`, display-only; rep is **service-based** — +2 per sale, −1 on a timeout,
-  battle outcome rep-neutral); **(2) full customer queue — done** (capped FIFO line, back-fill on a
-  cadence, per-mob patience, work the front); **(3) localStorage save — done** (versioned key
-  `mobmart.save.v1`, autosave on change, default-filled + guarded load, Reset button; `lastSeen`
-  stored for M5). **M2 complete.**
-- **Voice pass (done, pre-M3):** researched the comic voice of Adventure Time / Regular Show /
-  Gumball / Gravity Falls, wrote `COMEDY_BIBLE.md` (voice spec + ~150 PG lines across 7 outcome
-  tiers, generic + per-character), shipped the batch into `src/data/results.js`, and refactored line
-  selection into `src/messages.js` (`logLine`) so combat, leave, and dismiss all pull varied lines.
-- **M3 pass 1 (done):** bottom nav (Shop / Upgrades / Workers· / Bestiary·, last two disabled stubs)
-  swapping the center panel; a data-driven Upgrades view; **Extra Shelf** wired end-to-end (+1 max
-  stock/item, cost `60·1.8^level`, maxLevel 5) via `effectiveMaxStock` + `buyUpgrade`; upgrade levels
-  persisted. New modules: `src/data/upgrades.js`, `src/ui/nav.js`.
-- **M3 pass 2 (done):** Faster Counter + Better Signage wired. Faster Counter uses **Option 1 — serve
-  pacing**: a completed sale starts a counter cooldown (`CONFIG.serve.cooldownSec`, base 0.5s) during
-  which Serve is disabled ("Serving…"); `effectiveServeCooldown = base / (1 + serveSpeed)` shortens it
-  per level (asymptotic, never 0). Better Signage: `effectiveRepPerSale = round(perSale * (1 + repMult))`,
-  applied on the sale + shown in the log crown. Upgrade cards are now compact rows (3 fit the left slot).
-  Serve cooldown lines up with Bob's 6-frame/12fps serving animation and sets up M4 auto-serve pacing.
-- **Background hook (done):** `scene.js` draws `assets/sprites/shop_bg.png` (full 1280×720, wall+floor)
-  behind everything, falling back to flat colors with the floor line at `FLOOR_Y` (H*0.62 = 446). Daniel
-  is painting a static backdrop to this spec (wall 0→446, floor 446→720), then layering props.
-- **M3 pass 3 (done) — M3 COMPLETE:** upgrades gate behind reputation tiers. `isUpgradeUnlocked(state,id)`
-  = `reputationTier(rep).index >= requiredTier`; `canBuyUpgrade` enforces it (so `buyUpgrade` is guarded).
-  Assignments: Extra Shelf → Neutral (0), Faster Counter → Friendly (1, rep 20), Better Signage →
-  Trusted (2, rep 50). Locked cards stay visible, dimmed, button reads "Reach &lt;Tier&gt;"; they flip
-  buyable automatically when rep crosses the threshold (renderPanels runs on the serve that moves rep).
-  All three upgrades now live and gated. Nothing new persisted (unlock is derived from rep).
+- **M1** vertical slice built + logic-tested (node --check + headless smoke test); pushed. Plus a Send
+  Away dismiss and a static-sprite Bob path (scale locked, 240px on-screen).
+- **M2** (three passes, all done): reputation HUD (service-based, +2/−1); full capped FIFO queue +
+  per-mob patience; localStorage save (versioned, guarded, Reset, `lastSeen`). Pushed.
+- **Voice pass** (pre-M3): `COMEDY_BIBLE.md` + ~150 PG lines across 7 tiers into `src/data/results.js`;
+  line selection refactored into `src/messages.js`.
+- **M3 pass 1:** bottom nav + data-driven Upgrades view; Extra Shelf wired (`effectiveMaxStock`).
+- **M3 pass 2:** Faster Counter (serve cooldown via `serveSpeed`) + Better Signage (rep/sale via
+  `repMult`); compact upgrade rows.
+- **Background hook:** `scene.js` draws `shop_bg.png` with flat-color fallback at `FLOOR_Y` y=446.
+- **M3 pass 3 (M3 COMPLETE):** rep-tier gating — `isUpgradeUnlocked`; Extra Shelf → Neutral, Faster
+  Counter → Friendly, Better Signage → Trusted; locked cards dimmed "Reach &lt;Tier&gt;".
+- **M4 (BUILT — browser-confirm + commit pending):** first mimic worker / auto-serve. New
+  `src/data/workers.js` (Bob = `mimic_merchant`, role `serve`, `baseInterval` 6s, `hireCost` 50).
+  Hire-with-gold (Option B). `game.js` gained `canHireWorker` / `hireWorker` /
+  `effectiveWorkerInterval` / an `updateWorkers` tick appended to `update()`, all reusing the manual
+  `serveCurrent` path + shared serve cooldown (Faster Counter compounds onto the worker interval).
+  `state.js` gained the `workers` sub-state + transient `workerServed` flag; `save.js` persists
+  `workers:{id:{owned}}` with default-fill (pre-M4 saves load unowned; SAVE_VERSION unchanged);
+  `nav.js` activated the Workers tab; `panels.js` added the Workers panel + Bob card (Hire → Active,
+  shows rough interval); `main.js` wired `onHireWorker` and plays Bob's serve one-shot on the auto
+  path via `workerServed`; `style.css` gained a `.workers-panel` / `.worker-card` block. Verified:
+  `node --check` clean on all 7 changed files + a 46-assertion headless smoke test (`test_m4.mjs`).
 
 ---
 
 ## 13. Open questions / pending decisions
 
-- **itch.io dual-publish: yes or Kongregate-only?** Doesn't block M1 (the bridge discipline covers
-  both), but decides whether we add the `butler` deploy path later.
-- **Repo:** created at `github.com/Cupcakechan/mob-mart` (local folder `mob-mart`).
-- **Special "visits"** design (high-rep rare customers) — deferred; revisit after the base loop.
+- **itch.io dual-publish: yes or Kongregate-only?** Decides whether the `butler` deploy path is added.
+- **Repo:** `github.com/Cupcakechan/mob-mart` (local folder `mob-mart`).
+- **Offline earning model (M5):** worker-only, or a small base "unattended drip" too? (Design change —
+  decide at M5 start.)
+- **Restock worker visual home:** DOM-only avatar vs canvas backroom/shelf prop vs beside Bob (decide
+  when a second/restock worker is on the table).
+- **Special "visits"** design (high-rep rare customers) — deferred.

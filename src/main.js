@@ -1,7 +1,7 @@
 // main.js — entry point: wires DOM, scale-to-fit, input, save/load, nav, and the rAF game loop.
 import { CONFIG } from './config.js';
 import { clamp } from './utils.js';
-import { update, serveCurrent, dismissCurrent, restockItem, buyUpgrade } from './game.js';
+import { update, serveCurrent, dismissCurrent, restockItem, buyUpgrade, hireWorker } from './game.js';
 import { loadState, saveState, clearSave } from './save.js';
 import { drawScene, playBobServe } from './render/scene.js';
 import { loadSprite } from './render/sprites.js';
@@ -42,6 +42,7 @@ initPanels(document.getElementById('shop-ui'), {
   onDismiss:    () => dismissCurrent(state),
   onRestock:    (id) => restockItem(state, id),
   onBuyUpgrade: (id) => buyUpgrade(state, id),
+  onHireWorker: (id) => hireWorker(state, id),
 });
 initNav(document.getElementById('nav'));           // bottom nav swaps the center panel
 
@@ -70,6 +71,9 @@ function frame(now) {
   last = now;
 
   update(state, dt);
+  // A worker auto-served this tick -> play Bob's serve one-shot, same as a manual serve. (Manual
+  // serves fire the anim directly in onServe; this covers the auto path without duplicating it.)
+  if (state.workerServed) { playBobServe(); state.workerServed = false; }
   drawScene(ctx, state, now);
 
   if (state.uiDirty) {

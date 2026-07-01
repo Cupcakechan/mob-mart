@@ -3,6 +3,7 @@
 import { clamp } from './utils.js';
 import { ITEMS } from './data/items.js';
 import { UPGRADES } from './data/upgrades.js';
+import { WORKERS } from './data/workers.js';
 import { createInitialState } from './state.js';
 
 export const SAVE_VERSION = 1;
@@ -29,20 +30,34 @@ export function mergeSave(fresh, data) {
       fresh.upgrades[id] = clamp(Math.floor(numOr(saved, fresh.upgrades[id])), 0, maxLevel);
     }
   }
+  // Workers: only `owned` is persisted. Iterate CURRENT workers (unknown saved ids ignored); a save
+  // with no `workers` key (any pre-M4 save) simply leaves every worker unowned — old saves load fine.
+  // On resume, an owned worker's timer starts at a full base interval so he doesn't fire instantly.
+  if (data.workers && typeof data.workers === 'object') {
+    for (const id of Object.keys(fresh.workers)) {
+      const owned = data.workers[id]?.owned === true;            // only true when explicitly saved true
+      fresh.workers[id].owned = owned;
+      if (owned) fresh.workers[id].timer = WORKERS[id]?.baseInterval ?? 0;
+    }
+  }
   fresh.lastSeen = numOr(data.lastSeen, fresh.lastSeen);         // kept for M5 offline earnings
   return fresh;
 }
 
-// Pure: the persisted slice of state. Queue + log are ephemeral (regenerate) and are NOT saved.
+// Pure: the persisted slice of state. Queue + log + transient timers are ephemeral (regenerate) and
+// are NOT saved. Workers persist ownership only (the auto-serve timer regenerates on load).
 export function serializeSave(state) {
   const items = {};
   for (const id of Object.keys(state.items)) items[id] = { stock: state.items[id].stock };
+  const workers = {};
+  for (const id of Object.keys(state.workers)) workers[id] = { owned: state.workers[id].owned === true };
   return {
     version: SAVE_VERSION,
     gold: state.gold,
     reputation: state.reputation,
     items,
     upgrades: { ...state.upgrades },
+    workers,
     lastSeen: Date.now(),
   };
 }

@@ -3,6 +3,7 @@ import { CONFIG } from './config.js';
 import { MONSTERS, MONSTER_IDS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
 import { UPGRADES, upgradeLevel, upgradeCost, isMaxed, sumEffect } from './data/upgrades.js';
+import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost } from './data/workers.js';
 import { randInt, pick, weightedPick } from './utils.js';
 import { resolveCombat } from './combat.js';
 import { reputationTier } from './reputation.js';
@@ -125,6 +126,49 @@ export function buyUpgrade(state, id) {
   return true;
 }
 
+// --- Workers (auto-serve) ----------------------------------------------------
+
+// Bob's auto-serve interval, shortened by Faster Counter via the SAME serveSpeed effect that shortens
+// the counter cooldown — so counter upgrades speed automation too. Asymptotic; never reaches zero.
+export function effectiveWorkerInterval(state, id) {
+  const base = WORKERS[id]?.baseInterval ?? Infinity;
+  return base / (1 + sumEffect(state, 'serveSpeed'));
+}
+
+export function canHireWorker(state, id) {
+  if (!WORKERS[id]) return false;
+  if (isWorkerOwned(state, id)) return false;                  // already hired — no repeat purchase
+  return state.gold >= workerHireCost(id);
+}
+
+export function hireWorker(state, id) {
+  if (!canHireWorker(state, id)) return false;
+  state.gold -= workerHireCost(id);                            // pay the one-time hire cost
+  state.workers[id].owned = true;
+  state.workers[id].timer = effectiveWorkerInterval(state, id); // wait one interval before the first serve
+  state.uiDirty = true;
+  return true;
+}
+
+// Tick every owned serve-worker. On timer expiry, attempt ONE sale through the exact manual path
+// (serveCurrent) so payout/rep/log/cooldown all match. A success waits a full interval before the
+// next; a blocked attempt (no customer / cooling down / out of stock / can't afford) leaves the timer
+// ready so the worker fires as soon as conditions allow — without ever re-running the sale itself.
+function updateWorkers(state, dt) {
+  for (const id of WORKER_ORDER) {
+    const w = state.workers[id];
+    if (!w.owned || WORKERS[id].role !== 'serve') continue;    // future restock role is skipped here
+    w.timer -= dt;
+    if (w.timer > 0) continue;
+    if (serveCurrent(state)) {                                 // sold one -> pace the next by the interval
+      w.timer = effectiveWorkerInterval(state, id);
+      state.workerServed = true;                               // signal main.js to play Bob's serve anim
+    } else {
+      w.timer = 0;                                             // blocked -> stay ready, retry next frame
+    }
+  }
+}
+
 // --- Per-frame update --------------------------------------------------------
 
 export function update(state, dt) {
@@ -158,6 +202,8 @@ export function update(state, dt) {
       state.uiDirty = true;
     }
   }
+
+  updateWorkers(state, dt);   // auto-serve runs last, on the settled queue (spawns in, leavers out)
 }
 
 function pushLog(state, entry) {

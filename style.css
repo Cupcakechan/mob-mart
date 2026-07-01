@@ -193,3 +193,23 @@ body{
   position:absolute;top:-4px;right:2px;font-size:8px;font-weight:800;letter-spacing:.5px;
   color:var(--purple);background:var(--stone);border-radius:6px;padding:0 4px;
 }
+/* Workers panel — shares the center slot with Shelf/Upgrades (nav toggles visibility). */
+.workers-panel{left:40px;top:140px;width:430px;max-height:210px;overflow-y:auto;}
+.worker-cards{display:flex;flex-direction:column;gap:7px;}
+.worker-card{
+  display:flex;align-items:center;gap:8px;
+  background:var(--parchment);color:var(--ink);border:2px solid var(--wood-edge);
+  border-radius:8px;padding:5px 8px;
+}
+.wrk-info{flex:1 1 auto;min-width:0;}
+.wrk-name{font-weight:800;font-size:14px;line-height:1.15;}
+.wrk-desc{font-size:11px;font-weight:600;opacity:.72;line-height:1.15;}
+.wrk-buy{
+  flex:0 0 auto;background:var(--wood);color:#ffeecb;border:2px solid var(--wood-edge);
+  border-radius:7px;padding:6px 14px;font-weight:800;font-size:12px;cursor:pointer;
+}
+.wrk-buy:hover:not(:disabled){background:var(--wood-light);}
+.wrk-buy:disabled{opacity:.4;cursor:not-allowed;}
+/* Active (hired) worker — green accent so "on" reads at a glance. */
+.worker-card.owned{border-color:var(--good);}
+.worker-card.owned .wrk-buy:disabled{opacity:1;background:var(--good);color:#123;border-color:var(--good);}
