@@ -1,8 +1,7 @@
-// combat.js — off-screen combat resolver. Pure: monster + item -> a tier + a funny line.
-// The tier is purely for flavour text; it does NOT affect reputation or gold (see Option A).
+// combat.js — off-screen combat resolver. Pure: monster + item -> a result tier.
+// The tier drives which funny line the log picks (see messages.js); it has no effect on rep/gold.
 import { CONFIG } from './config.js';
-import { randInt, pick } from './utils.js';
-import { GENERIC_RESULTS, MONSTER_RESULTS } from './data/results.js';
+import { randInt } from './utils.js';
 
 export function scoreToTier(score) {
   const t = CONFIG.combat.thresholds;
@@ -18,16 +17,5 @@ export function resolveCombat(monster, item) {
   const itemEffect = item?.combatEffect ?? 0;         // guard: missing field never NaNs the score
   const monsterMod = monster?.combatMod ?? 0;
   const score = itemEffect + monsterMod - c.encounterDifficulty + randInt(-c.rngSpread, c.rngSpread);
-  const tier = scoreToTier(score);
-  return { tier, score, message: buildMessage(monster, item, tier) };
-}
-
-// Fallback chain: monster+tier flavor -> generic tier line -> last-ditch string. Never crashes.
-function buildMessage(monster, item, tier) {
-  const name = monster?.displayName ?? 'Someone';
-  const itemName = item?.displayName ?? 'something';
-  const perMonster = MONSTER_RESULTS[monster?.id]?.[tier];
-  const pool = (perMonster && perMonster.length) ? perMonster
-             : (GENERIC_RESULTS[tier] ?? ['{name} did a thing.']);
-  return pick(pool).replace(/\{name\}/g, name).replace(/\{item\}/g, itemName);
+  return { tier: scoreToTier(score), score };
 }

@@ -4,6 +4,7 @@ import { MONSTERS, MONSTER_IDS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
 import { randInt, pick, weightedPick } from './utils.js';
 import { resolveCombat } from './combat.js';
+import { logLine } from './messages.js';
 
 // --- Customer spawning -------------------------------------------------------
 
@@ -35,7 +36,7 @@ export function serveBlockReason(state) {
 }
 
 // Serve the front customer: take payment, grant service rep, resolve the (flavour-only) fight,
-// log it, and drop them from the line so everyone behind shifts forward.
+// log the funny result, and drop them from the line so everyone behind shifts forward.
 export function serveCurrent(state) {
   if (serveBlockReason(state) !== null) return false;
   const c = state.queue[0];
@@ -46,8 +47,9 @@ export function serveCurrent(state) {
   state.gold += item.basePrice;                                 // take payment (gold in)
   state.reputation += CONFIG.reputation.perSale;                // a good sale earns reputation
 
-  const result = resolveCombat(monster, item);                 // off-screen fight -> funny line only
-  pushLog(state, { text: result.message, repDelta: CONFIG.reputation.perSale, tier: result.tier, monsterId: monster.id });
+  const { tier } = resolveCombat(monster, item);               // off-screen fight -> outcome tier
+  const text = logLine(monster.id, tier, { name: monster.displayName, item: item.displayName });
+  pushLog(state, { text, repDelta: CONFIG.reputation.perSale, tier, monsterId: monster.id });
 
   state.queue.shift();                                          // front leaves; line shifts forward
   state.uiDirty = true;
@@ -60,7 +62,7 @@ export function dismissCurrent(state) {
   const c = state.queue[0];
   if (!c) return false;
   const name = MONSTERS[c.monsterId]?.displayName ?? 'Someone';
-  pushLog(state, { text: `${name} left without buying.`, repDelta: 0, tier: 'dismiss', monsterId: c.monsterId });
+  pushLog(state, { text: logLine(c.monsterId, 'dismiss', { name }), repDelta: 0, tier: 'dismiss', monsterId: c.monsterId });
   state.queue.shift();
   state.uiDirty = true;
   return true;
@@ -107,7 +109,7 @@ export function update(state, dt) {
       if (c.patienceRemaining > 0) { stillWaiting.push(c); continue; }
       const name = MONSTERS[c.monsterId]?.displayName ?? 'Someone';
       state.reputation = Math.max(0, state.reputation - CONFIG.reputation.leavePenalty);
-      pushLog(state, { text: `${name} got tired of waiting and left.`, repDelta: -CONFIG.reputation.leavePenalty, tier: 'leave', monsterId: c.monsterId });
+      pushLog(state, { text: logLine(c.monsterId, 'leave', { name }), repDelta: -CONFIG.reputation.leavePenalty, tier: 'leave', monsterId: c.monsterId });
     }
     if (stillWaiting.length !== state.queue.length) {
       state.queue = stillWaiting;                              // drop the leavers; line closes the gap

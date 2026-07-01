@@ -15,11 +15,13 @@ const CUST_COLOR = { slime:'#57c96b', bat:'#8a6bd6', skeleton:'#d9d2c2' };
 const colorFor = (id) => CUST_COLOR[id] ?? '#cccccc';   // fallback colour for unknown types
 
 // --- Queue layout. Front mob (index 0) sits nearest the counter; the line recedes left. ---
+// The line lives in the clear left strip so the front mob isn't hidden behind the centered Shelf
+// panel (a DOM overlay whose left edge is ~x425). Front right edge (~404) clears it.
 const QUEUE = {
-  frontX: W * 0.33,    // left-edge x of the front mob
-  stepX:  W * 0.105,   // horizontal gap between mobs
-  y:      H * 0.52,    // top y of the mobs (they stand on the floor)
-  size:   96,
+  frontX: W * 0.247,   // ~316 left-edge of the front mob
+  stepX:  W * 0.081,   // ~104 gap between mobs
+  y:      H * 0.528,   // ~380 top; feet land ~468 — on the floor, clear of the Current Customer panel
+  size:   88,
 };
 
 // --- Bob (shopkeeper) draw box. Tweak `height` to check his on-screen scale. ---

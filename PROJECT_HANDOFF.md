@@ -146,11 +146,13 @@ the mockup's "Lv 2, +25% Sell Price" fits here later).
 **Combat resolver** (`src/combat.js`) — the off-screen result:
 `resultScore = itemEffect + monster.combatMod − encounterDifficulty + rng(−spread..+spread)`,
 mapped to a `resultTier` enum: `excellent` (rare) · `success` · `partial` · `failure` ·
-`funnyFailure`. Each tier → a `messageTemplate` (the funny line only) pulled from the
-**results-message registry** (`src/data/results.js`) keyed by (monsterId?, itemId?, tier) with
-**graceful fallback** to a generic tier line — so a new monster/item degrades to a generic funny
-message, never a missing-string crash. Gold comes from the **sale** (monster pays `basePrice` at
-purchase); reputation comes from the **sale** too (`reputation.perSale`), and the tier only picks
+`funnyFailure`. `resolveCombat` returns `{ tier, score }` only — the flavour text is chosen by
+**`src/messages.js`** (`logLine(monsterId, tier, {name, item})`), which pools the generic lines with
+any per-monster lines for that tier from the **results registry** (`src/data/results.js`) and fills
+`{name}`/`{item}`, with **graceful fallback** so a new monster/unknown tier still yields a line, never
+a crash. `logLine` also powers the `leave` and `dismiss` log entries. Gold comes from the **sale**
+(monster pays `basePrice` at purchase); reputation comes from the **sale** too (`reputation.perSale`),
+and the tier only picks
 the **flavor line** (a small gold tip on `excellent` is a possible later add — kept off reputation).
 
 **Save schema** (`src/save.js`, `mobmart.save.v1`):
@@ -210,11 +212,13 @@ a "visit" is just a special customer instance gated behind a rep threshold.
 **Economy start:** starting gold ~40 (enough to restock once or twice; the mockup's 126 is
 mid-game). Starting reputation 0.
 
-**Battle-log voice (writer reference — keep it short, cozy, a little pathetic):**
-- "Slimey survived! Dealt 1 damage. So brave."
-- "Batty bought a Metal Helmet. Survived the arrow. Not the wall."
-- "Skele faceplanted. Bonus: Embarrassment."
-- "Gobbo bought a Club. Bonked a Squire and immediately promoted himself." *(roster)*
+**Battle-log voice:** the full voice spec + the shipped line batch (7 outcome tiers, generic +
+per-character for Slimey/Batty/Skele) live in **`COMEDY_BIBLE.md`** (repo root, reference) and the
+live copy in **`src/data/results.js`**. Tone: cozy, dry, a little pathetic — we laugh WITH the mobs,
+never at them; strictly PG; lines ~50–70 chars, hard cap ~80. A few sample beats:
+- "{name} fought valiantly for almost four whole seconds."
+- "Batty was defeated by the doorway before the hero arrived."
+- "Skele got tapped once and became a tidy little pile."
 
 ---
 
@@ -236,8 +240,9 @@ plays right (the ID+filename convention + graceful fallback means art never touc
   the log for payoff; the cumulative Reputation HUD stat + rep-gated unlocks arrive in M2.)
   **Success test:** load page → a mob appears wanting an item → click Serve → gold rises → a funny
   line lands → next mob appears; restock when stock hits 0.
-- **M2 — Persistence + full queue + reputation.** `localStorage` (versioned), the multi-slot queue
-  with patience, reputation accumulating from combat outcomes + tier labels.
+- **M2 — Persistence + full queue + reputation. DONE.** `localStorage` (versioned, default-filled,
+  guarded), the capped FIFO queue with per-mob patience, and the reputation HUD (service-based rep +
+  tier labels). Built as three separate passes; all committed.
 - **M3 — Upgrades + spend economy.** Extra Shelf / Faster Counter / Better Signage as data-driven
   upgrades feeding a real gold sink.
 - **M4 — First mimic worker (auto-serve).** Bob auto-serves on an interval — the automation/idle
@@ -276,7 +281,9 @@ Deferred (each is a scope-trap magnet; several appear in the mockup):
 4. **Canvas-UI overreach** → hybrid (Option C); panels stay in DOM.
 5. **`setInterval`-per-generator timing** → single delta-time accumulator; offline = same math.
 6. **Save/offline exploit + corruption** → cap offline; clamp negative/absurd deltas; version +
-   default-fill; try/catch load → fresh save.
+   default-fill; try/catch load → fresh save. *Deployment caveat:* strict-privacy browsers can block
+   third-party `localStorage` inside the Kongregate iframe; the try/catch degrades to a non-persistent
+   session there rather than crashing. If it bites, fall back to Kongregate's storage API / itch.
 7. **Premature prestige** → out of MVP.
 8. **Content-as-subclasses** → registries + typed effects.
 9. **Over-designing the want/compatibility matrix** → category match + light weights; guard
@@ -325,13 +332,15 @@ mob-mart/
 ├── index.html              <- entry: canvas + DOM panel containers, scale-to-fit wrapper
 ├── style.css               <- all DOM/panel styling + layout + scaling
 ├── PROJECT_HANDOFF.md      <- this doc (tracked in git; NOT shipped in the build)
+├── COMEDY_BIBLE.md         <- voice spec + line batch reference (tracked; NOT shipped)
 ├── .gitignore
 ├── src/
 │   ├── main.js             <- entry point + game loop (rAF, fixed-timestep accumulator)   [M1]
 │   ├── config.js           <- ALL tunable constants (one place to balance)                [M1]
 │   ├── state.js            <- screen state machine + the shared game-state object          [M1]
 │   ├── game.js             <- core loop: spawn -> serve -> transaction -> tick             [M1]
-│   ├── combat.js           <- off-screen combat resolver -> result tier                    [M1]
+│   ├── combat.js           <- off-screen combat resolver -> { tier, score }               [M1]
+│   ├── messages.js         <- logLine(): picks + fills a log line from the registry     [voice]
 │   ├── utils.js            <- seeded rng, clamp, number formatting                         [M1]
 │   ├── save.js             <- localStorage load/save (versioned, default-fill, try/catch)  [M2]
 │   ├── offline.js          <- timestamp-delta offline earnings (capped)                    [M5]
@@ -339,7 +348,7 @@ mob-mart/
 │   ├── data/
 │   │   ├── monsters.js     <- customer registry (Slime, Bat, Skeleton; Goblin/Rat later)   [M1]
 │   │   ├── items.js        <- item registry (Club, Metal Helmet, HP Flask)                 [M1]
-│   │   ├── results.js      <- combat result-message templates (+ fallback)                 [M1]
+│   │   ├── results.js      <- full tiered log-line batch, generic + per-character       [voice]
 │   │   ├── upgrades.js     <- upgrade registry                                             [M3]
 │   │   └── workers.js      <- worker registry (mimic_merchant "Bob")                       [M4]
 │   ├── render/
@@ -401,9 +410,15 @@ now — fully local).
   separate passes** (one system each): **(1) Reputation HUD — done** (value + tier label on the top
   bar, tiers in `config.js`, display-only; rep is **service-based** — +2 per sale, −1 on a timeout,
   battle outcome rep-neutral); **(2) full customer queue — done** (capped FIFO line, back-fill on a
-  cadence, per-mob patience, work the front); (3) localStorage save (last, so the state shape is settled before the schema is written).
-- **Next:** M2 pass 3 — localStorage save (versioned, default-filled, try/catch). Now that the
-  queue and reputation exist, the persisted state shape is settled, so the schema is written once.
+  cadence, per-mob patience, work the front); **(3) localStorage save — done** (versioned key
+  `mobmart.save.v1`, autosave on change, default-filled + guarded load, Reset button; `lastSeen`
+  stored for M5). **M2 complete.**
+- **Voice pass (done, pre-M3):** researched the comic voice of Adventure Time / Regular Show /
+  Gumball / Gravity Falls, wrote `COMEDY_BIBLE.md` (voice spec + ~150 PG lines across 7 outcome
+  tiers, generic + per-character), shipped the batch into `src/data/results.js`, and refactored line
+  selection into `src/messages.js` (`logLine`) so combat, leave, and dismiss all pull varied lines.
+- **Next:** M3 — upgrades + a real gold sink (Extra Shelf / Faster Counter / Better Signage as
+  data-driven upgrades), and rep tiers begin gating content.
 
 ---
 

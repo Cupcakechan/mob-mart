@@ -1,40 +1,190 @@
-// results.js — battle-log message templates. {name} = monster, {item} = item they bought.
-// Fallback chain in combat.js: monster+tier flavor -> generic tier line -> last-ditch string.
+// results.js — battle/shop log line templates (the Mob Mart "comedy bible", shipped).
+// {name} = the mob, {item} = what they bought (present for sale outcomes; absent for leave/dismiss).
+// Voice: cozy, dry, a little pathetic — we laugh WITH the lovable losers, never at them. PG only.
+// The message picker (messages.js) POOLS the generic lines with any per-monster lines for the tier,
+// so each mob draws from both. New monsters without specific lines fall back to generic cleanly.
 
-// Generic lines per tier (one picked at random).
 export const GENERIC_RESULTS = {
   excellent: [
-    '{name} came back a legend. With a {item} and a story.',
-    '{name} won so hard the Hero apologized.',
+    `{name} won. Nobody is more surprised than {name}.`,
+    `The hero fled. {name} is as confused as you are.`,
+    `{name} swung the {item} once. Once was enough.`,
+    `Victory! {name} has requested a moment to lie down.`,
+    `{name} defeated a hero and immediately apologized.`,
+    `Against all odds, math, and physics: {name} wins.`,
+    `{name} tripped, and the {item} did the rest. Legend.`,
+    `The hero rage-quit. {name} is the dungeon's problem now.`,
+    `{name} won and is already telling everyone. Everyone.`,
+    `{name} returns victorious, slightly crunchy, mostly fine.`,
   ],
   success: [
-    '{name} survived! Dealt 1 damage. So brave.',
-    '{name} took the {item} and lived. Mostly.',
+    `{name} survived! The {item} has some new dents.`,
+    `{name} lost gracefully but walked home unbruised.`,
+    `{name} tapped out early and got orange slices. Worth it.`,
+    `The hero got bored. {name} counts that as living.`,
+    `{name} came back with the {item} and a great story.`,
+    `No wins, no wounds. {name} calls that a Tuesday.`,
+    `{name} negotiated a truce over snacks. Everyone's fine.`,
+    `{name} lived! The {item} did about half the work.`,
   ],
   partial: [
-    '{name} lost, but made a friend.',
-    '{name} got a participation trophy.',
+    `{name} lost the fight but won a coupon. Net positive?`,
+    `{name} fainted, but the {item} looked amazing doing it.`,
+    `Defeated, {name} made a lifelong friend: the hero's dog.`,
+    `{name} lost, but found a shiny rock. Priorities intact.`,
+    `{name} went down swinging the {item}. Mostly at air.`,
+    `The hero won but felt bad about it. Small win, {name}.`,
+    `{name} lost, yet learned the hero's name. Progress!`,
+    `{name} dropped the {item} but kept his dignity. Some of it.`,
   ],
   failure: [
-    '{name} got smacked. Crit by the Hero. Ouch.',
-    '{name} and the {item} were last seen fleeing.',
+    `{name} charged bravely. The hero yawned. Over fast.`,
+    `{name} met a hero. The hero was better at this. Much better.`,
+    `The {item} did not save {name}. It rarely does.`,
+    `{name} was defeated in record time. A new record, sadly.`,
+    `{name} lost. The hero didn't even set down the sandwich.`,
+    `{name} gave it everything. Everything was not enough.`,
+    `{name} fought valiantly for almost four whole seconds.`,
+    `The hero won. {name} is home, wrapped in a blanket.`,
   ],
   funnyFailure: [
-    '{name} faceplanted. Bonus: Embarrassment.',
-    '{name} tripped before the fight even started.',
+    `{name} lost a staring contest with a very still statue.`,
+    `{name} was defeated by a door marked PULL. It said PUSH.`,
+    `{name} tripped on the {item} before finding the hero.`,
+    `{name} got lost, fought a broom for an hour, and lost.`,
+    `The hero was on lunch. {name} lost to the lunch.`,
+    `{name} used the {item} upside down. Bravely. Incorrectly.`,
+    `{name} challenged a scarecrow. The scarecrow won on vibes.`,
+    `{name} rolled a natural one at existing today.`,
+    `{name} was defeated by gravity. Just regular gravity.`,
+    `{name} forgot which end of the {item} to hold. Fatal.`,
+  ],
+  leave: [
+    `{name} waited, sighed a tiny sigh, and wandered off.`,
+    `{name} had somewhere to be. Probably. {name} left.`,
+    `Line too long. {name} took his coins elsewhere.`,
+    `{name} left. Something about "other dungeons." Rude.`,
+    `{name} checked a tiny watch he doesn't own, and left.`,
+    `{name} got bored and floated out the door. Bye, {name}.`,
+  ],
+  dismiss: [
+    `You waved {name} along. {name} took it surprisingly well.`,
+    `Not today, {name}. {name} shuffles out, undefeated.`,
+    `You gently shooed {name} out. {name} waves a tiny wave.`,
+    `{name} was politely declined and somehow thanked you.`,
+    `"Come back later," you said. {name} definitely will.`,
+    `You sent {name} off with no {item} and a kind word.`,
   ],
 };
 
-// Optional per-monster, per-tier flavor. Missing keys fall back to GENERIC_RESULTS above.
+// Per-monster flavor, pooled with the generic lines above for extra character.
 export const MONSTER_RESULTS = {
-  skeleton: {
-    failure: ['{name} got dismantled. Again.'],
-    funnyFailure: ['{name} fell apart. Literally.', '{name} faceplanted. Bonus: Embarrassment.'],
-  },
   slime: {
-    success: ['{name} bounced off the Hero. Rude.', '{name} survived! Dealt 1 damage. So brave.'],
+    excellent: [
+      `Slimey absorbed the hero's sword. And lunch. And confidence.`,
+      `Slimey won by being too squishy to lose. Science weeps.`,
+      `The hero slipped on Slimey and just... gave up. Win!`,
+      `Slimey jiggled menacingly. It somehow worked.`,
+    ],
+    success: [
+      `Slimey bounced off the hero and rolled safely home. Nice.`,
+      `Slimey survived, mistaken for a decorative puddle.`,
+      `The {item} slid right off Slimey. So did the hero.`,
+    ],
+    partial: [
+      `Slimey lost but absorbed a sandwich mid-fight. Tasty defeat.`,
+      `Slimey split in two. Now there are two losers! Aw.`,
+      `Slimey lost, but the puddle he left was very pretty.`,
+    ],
+    failure: [
+      `Slimey was defeated. He's still smiling. Doesn't know yet.`,
+      `The hero stepped over Slimey. That was the whole battle.`,
+      `Slimey took a {item} to a sword fight. It went how you'd think.`,
+    ],
+    funnyFailure: [
+      `Slimey tried to eat the {item} and lost to indigestion.`,
+      `Slimey got stuck to the floor and called it a nap.`,
+      `Slimey fought his own reflection. A draw, then a loss.`,
+    ],
+    leave: [
+      `Slimey forgot why he came in and slowly oozed away.`,
+      `Slimey got distracted by a shiny floor tile and left.`,
+    ],
+    dismiss: [
+      `You point at the door. Slimey oozes off, cheerful as ever.`,
+      `You wave Slimey off. He leaves a happy little trail. Aw.`,
+    ],
   },
   bat: {
-    failure: ['{name} flew into the wall. Twice.'],
+    excellent: [
+      `Batty panicked so hard the hero panicked harder. Victory!`,
+      `Batty flew in a circle. The hero got dizzy and left.`,
+      `Batty won and fainted from the stress of winning.`,
+      `The hero blinked. Batty was already champion, weeping.`,
+    ],
+    success: [
+      `Batty fled successfully, which for Batty is a triumph.`,
+      `Batty survived by hiding in a helmet. Not even his helmet.`,
+      `Batty made it home! He will not be discussing it.`,
+    ],
+    partial: [
+      `Batty lost, but flew home before dark. Silver lining!`,
+      `Batty fainted, woke up, apologized to a rock, went home.`,
+      `Batty lost the {item} but kept his emotional support pebble.`,
+    ],
+    failure: [
+      `Batty saw the hero, screamed, and lost on principle.`,
+      `Batty was defeated by the doorway before the hero arrived.`,
+      `Batty fainted at "En garde." The hero felt a little bad.`,
+    ],
+    funnyFailure: [
+      `Batty flew into the same window six times. The window won.`,
+      `Batty got startled by his own echo and surrendered to it.`,
+      `Batty hid in a chest and fought it from the inside.`,
+    ],
+    leave: [
+      `Batty got nervous about the wait and fluttered off.`,
+      `Batty left after imagining nine ways this could go wrong.`,
+    ],
+    dismiss: [
+      `You shoo Batty out before the panic sets in. He's grateful.`,
+      `One head-shake and Batty apologizes for existing, then leaves.`,
+    ],
+  },
+  skeleton: {
+    excellent: [
+      `Skele fell apart, reassembled wrong, and terrified the hero.`,
+      `Skele rattled ominously and, incredibly, that was enough.`,
+      `The hero left. Skele takes the win, and his femur, home.`,
+      `Skele won. He'll be finding his ribs for a week.`,
+    ],
+    success: [
+      `Skele took a hit, lost an arm, found a better arm. Even trade.`,
+      `Skele survived; three bones are now technically optional.`,
+      `Skele walked it off. Rattled the whole way, but walked.`,
+    ],
+    partial: [
+      `Skele lost a fight and a kneecap, but gained a funny walk.`,
+      `Skele scattered heroically. Found most of himself later.`,
+      `Skele lost, but his skull rolled somewhere with a nice view.`,
+    ],
+    failure: [
+      `Skele got tapped once and became a tidy little pile.`,
+      `Skele's {item} outlasted Skele by a comfortable margin.`,
+      `One poke and Skele was a jigsaw puzzle. Again.`,
+    ],
+    funnyFailure: [
+      `Skele sneezed and spent the whole fight finding his arm.`,
+      `Skele's knees popped. He got distracted. He lost. Classic.`,
+      `Skele tried to high-five the hero. Lost the hand and the fight.`,
+    ],
+    leave: [
+      `Skele tapped his foot till it fell off, then rattled away.`,
+      `Skele left. The waiting was murder on his joints.`,
+    ],
+    dismiss: [
+      `You wave Skele off. He rattles a goodbye. A rib falls.`,
+      `"Not now, Skele." He salutes, drops an arm, heads out.`,
+    ],
   },
 };
