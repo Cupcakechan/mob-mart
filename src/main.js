@@ -3,6 +3,7 @@ import { CONFIG } from './config.js';
 import { clamp } from './utils.js';
 import { update, serveCurrent, dismissCurrent, restockItem, buyUpgrade, hireWorker } from './game.js';
 import { loadState, saveState, clearSave } from './save.js';
+import { computeOffline, applyOffline, formatAway } from './offline.js';
 import { drawScene, playBobServe } from './render/scene.js';
 import { loadSprite } from './render/sprites.js';
 import { initHud, renderHud } from './ui/hud.js';
@@ -15,6 +16,25 @@ const ctx = canvas.getContext('2d');
 ctx.imageSmoothingEnabled = false;                 // crisp pixels once sprites replace the rects
 
 const state = loadState();                         // resume from a saved shop, or a fresh one
+
+// M5 — offline earnings, once at boot, BEFORE any autosave can refresh lastSeen. Compute what Bob
+// sold while away (capped, stock-consuming), bank it, and save IMMEDIATELY: the save writes a fresh
+// lastSeen, so a reload can't collect the same window twice. Modal only shows when there's actually
+// something to report (quick reloads and worker-less/empty-shelf returns stay silent).
+const offline = computeOffline(state, Date.now());
+if (offline.sales > 0 && offline.awaySec >= CONFIG.offline.minAwaySec) {
+  applyOffline(state, offline);
+  saveState(state);
+  const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  setText('offline-away',  formatAway(offline.cappedSec));   // show the time Bob WORKED (the capped span)
+  setText('offline-sales', offline.sales);
+  setText('offline-gold',  offline.gold);
+  setText('offline-rep',   offline.rep);
+  document.getElementById('offline-modal')?.classList.remove('hidden');
+}
+document.getElementById('offline-collect-btn')?.addEventListener('click', () => {
+  document.getElementById('offline-modal')?.classList.add('hidden');
+});
 
 // Diorama sprites — each falls back to a placeholder if its PNG is absent, so art can drop in
 // piecemeal. Filenames match the ids the scene uses.

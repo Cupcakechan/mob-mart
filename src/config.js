@@ -46,5 +46,15 @@ export const CONFIG = {
     thresholds: { excellent: 8, success: 2, partial: -1, failure: -6 },
   },
 
+  offline: {
+    // M5 "While you were away": a hired serve-worker keeps selling (capped, stock-consuming).
+    capHours: 2,               // <-- THE BIG LEVER: max unattended hours that pay out. Kept stingy on
+                               //     purpose so a future backroom_storage upgrade (+hours/level) has
+                               //     room to feel good.
+    minAwaySec: 60,            // modal only shows after this much time away (quick reloads stay silent)
+    efficiency: 1.0,           // multiplier on offline sale count (the classic "offline earns at X%"
+                               // dial). 1.0 = full rate; lower it if offline ever outshines active play.
+  },
+
   log: { maxEntries: 30 },
 };

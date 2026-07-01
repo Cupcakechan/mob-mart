@@ -22,6 +22,20 @@
       <p class="title-tag">Gear up the little guys. Watch them lose. Get paid.</p>
       <button id="open-shop-btn" class="open-shop-btn">Open Shop</button>
     </div>
+
+    <!-- "While you were away" modal (M5) — shown over the title on return when Bob earned something -->
+    <div id="offline-modal" class="offline-overlay hidden">
+      <div class="offline-card">
+        <h2 class="offline-title">While you were away&hellip;</h2>
+        <p class="offline-body">Bob kept the shop open for <b id="offline-away">&mdash;</b> and sold
+          <b id="offline-sales">0</b> items.</p>
+        <div class="offline-gains">
+          <span class="offline-gain gold">&#9670; +<span id="offline-gold">0</span></span>
+          <span class="offline-gain rep">&#9819; +<span id="offline-rep">0</span></span>
+        </div>
+        <button id="offline-collect-btn" class="offline-collect-btn">Collect</button>
+      </div>
+    </div>
   </div>
 
   <script type="module" src="src/main.js"></script>

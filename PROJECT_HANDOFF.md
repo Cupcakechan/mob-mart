@@ -13,12 +13,16 @@ expanded, Bob voice, genre-trope lines, gags seeded), the **no-repeat line picke
 pass** (fixed a real save bug — reload used to clamp stock to the BASE cap, eating Extra-Shelf stock;
 fixed a wrong-registry spawn fallback; removed stray duplicate files). 61-assertion headless smoke
 test + `node --check` clean on every module.
-**Next action:** **M5 — offline earnings.** `lastSeen` is already persisted; on load, timestamp delta
-→ capped estimate → "While you were away" modal. Bob's interval gives the per-second rate to multiply.
-**Opening decision for M5:** worker-only earnings, or a small no-worker "unattended drip" (a design
-change to the earning model — see §13). See §6 and §12 "Next up".
-**Last updated:** audit-fixes pass (save clamp uses the effective cap; spawn fallback is an item id;
-strays removed; scratch tests gitignored) — M4 era fully closed; M5 next.
+**M5 (offline earnings) is BUILT — browser-confirm + commit pending:** on return, a hired Bob's
+capped, stock-consuming sales are banked and shown in a "While you were away" modal (Option 2 —
+gold + rep, worker-only, 2h cap; the no-worker "drip" was decided AGAINST: Bob is hireable within
+minutes, so it had no window).
+**Next action:** cleanup commit (stray files — see §12) → browser-confirm + commit M5 → then the
+**portal sprite micro-pass** (4-frame swirl strip + slight tunable glow), then **M6 — Kongregate
+no-op bridge**.
+**Last updated:** M5 built (`src/offline.js` + `CONFIG.offline` + modal); 78-assertion suite
+passes. NOTE: the audit's stray-file `git rm` never ran and a mis-placed `src/test_m4.mjs` is
+tracked — cleanup commit queued (§12).
 
 ---
 
@@ -238,8 +242,16 @@ Each milestone is a **single-purpose, individually tested, individually committe
   `mimic_merchant`, role `serve`, `baseInterval` 6s). Workers tab activated; single Bob card
   (Hire → Active). No worker leveling, no restock automation, no second worker. **Includes the broke
   auto-wave follow-up:** hired worker → unaffordable front customers rep-neutrally waved after 2s.
-- **M5 — Offline earnings.** Timestamp delta → capped estimate → "While you were away" modal. Bob now
-  provides a real per-second automation rate to multiply. `src/offline.js`.
+- **M5 — Offline earnings. BUILT — browser-confirm + commit pending.** `src/offline.js`:
+  `computeOffline(state, now)` (pure) → elapsed since `lastSeen`, clamped ≥ 0 (clock-skew guard) and
+  capped at `CONFIG.offline.capHours` (2h) → sales = min(floor(cappedSec / effectiveWorkerInterval)
+  × efficiency, total shelf stock), consumed round-robin at real basePrices; rep = sales ×
+  effectiveRepPerSale. **Stock-consuming is the exploit guard** (no minting gold off a token shelf);
+  deterministic (no RNG), so reload-spam recomputes identically. Worker-only (no worker → 0 → silent
+  boot); no offline timeouts or rep losses (player-forgiving). Banked once at boot and saved
+  IMMEDIATELY (fresh `lastSeen` → no double-collect); modal only when sales > 0 AND away ≥
+  `minAwaySec` (60s). Upgrades compose offline: Faster Counter → more sales, Extra Shelf → more
+  sellable stock, Better Signage → more rep.
 - **M6 — Kongregate no-op bridge stub + one `loaded` stat.** Purely additive; can't break local/itch.
 
 ---
@@ -380,11 +392,18 @@ not shipped) passes, including regressions for both audit fixes.
 
 ### Next up
 
-- **M5 — offline earnings (immediate).** `lastSeen` already persisted. On load: timestamp delta →
-  **capped** estimate of what Bob would have earned → "While you were away" modal. `src/offline.js`.
-  The M4 worker interval gives a concrete per-second rate. **Decide first (options → pick):**
-  (a) worker-only earnings vs a small no-worker "unattended drip" (a design change to the earning
-  model); (b) the offline cap value (a `backroom_storage` upgrade can extend it later per §5).
+- **Cleanup commit (immediate, BEFORE the M5 commit):** `git rm src/nav.js src/panels.js
+  src/workers.js src/test_m4.mjs` — the audit's stray deletion never ran, and a mis-placed test copy
+  is tracked inside `src/` (it would ship in the Kongregate zip; gitignore cannot untrack it).
+- **Confirm M5 in the browser + commit.** Hire Bob, stock the shelf, be away > 60s, reload → modal
+  shows time worked / items sold / +gold / +rep; Collect closes it; values landed in the HUD/shelf;
+  an immediate second reload pays NOTHING extra; no-worker and empty-shelf returns stay silent.
+- **Portal sprite micro-pass (queued by name).** Wire `portal_glow.png` as a 4-frame horizontal
+  swirl strip (auto-sliced like Bob's strips), looping, with a slight alpha-aware canvas glow exposed
+  as `glowBase`/`glowPulse` dials; graceful fallback to static `portal.png`, then the placeholder.
+- **`backroom_storage` upgrade (queued, post-portal candidate).** +capHours per level via the
+  existing `sumEffect` plumbing — one registry entry + one consumer in `offline.js` — once the 2h
+  cap has actually been felt in play.
 - **M6 — Kongregate no-op bridge stub.** Purely additive `src/kongregate.js` + `index.kongregate.html`;
   one `loaded` stat.
 - **Outstanding (non-blocking):**
@@ -447,6 +466,12 @@ not shipped) passes, including regressions for both audit fixes.
   `src/workers.js` — exact copies of the `ui/`/`data/` originals, unimported). **(4)** `.gitignore`
   now excludes `test_*.mjs`; `messages.js` trailing newline restored. Smoke test grown to
   **61 assertions** incl. regressions for (1) and (2).
+- **M5 (BUILT — browser-confirm + commit pending):** offline earnings, Option 2 (gold + rep,
+  worker-only, stock-consuming, 2h cap). New `src/offline.js` (`computeOffline` pure +
+  `applyOffline` + `formatAway`); `CONFIG.offline` (capHours 2 / minAwaySec 60 / efficiency 1.0);
+  boot hook in `main.js` (bank → save immediately → modal); modal markup in `index.html` +
+  appended styles in `style.css`. Suite grown to **78 assertions** (17 new: zero cases, stock-limit,
+  time-limit, cap equality, clock skew, upgrade composition offline, apply/no-op).
 
 ---
 
@@ -454,8 +479,8 @@ not shipped) passes, including regressions for both audit fixes.
 
 - **itch.io dual-publish: yes or Kongregate-only?** Decides whether the `butler` deploy path is added.
 - **Repo:** `github.com/Cupcakechan/mob-mart` (local folder `mob-mart`).
-- **Offline earning model (M5):** worker-only, or a small base "unattended drip" too? (Design change —
-  decide at M5 start.)
+- **Offline earning model — DECIDED (M5):** worker-only, no drip. Bob is hireable within minutes, so
+  a no-worker drip had a negligible window; revisit only if a rebalance moves `hireCost` far up.
 - **Restock worker visual home:** DOM-only avatar vs canvas backroom/shelf prop vs beside Bob (decide
   when a second/restock worker is on the table).
 - **Special "visits"** design (high-rep rare customers) — deferred.

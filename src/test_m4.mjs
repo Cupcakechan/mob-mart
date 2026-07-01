@@ -251,5 +251,91 @@ console.log('M4 auto-serve worker — smoke test\n');
   ok(allItemsValid, 'empty wantWeights falls back to a REAL item id (never an unservable want)');
 }
 
+// 13. M5 — offline earnings (pure compute + apply) --------------------------------------------
+{
+  const { computeOffline, applyOffline } = await import('./src/offline.js');
+  const { CONFIG } = await import('./src/config.js');
+  const HOUR = 3600 * 1000;
+  const now = Date.now();
+
+  // No worker -> zero result, regardless of time away.
+  {
+    const s = createInitialState();
+    s.lastSeen = now - HOUR;
+    const r = computeOffline(s, now);
+    ok(r.sales === 0 && r.gold === 0 && r.rep === 0, 'offline: no worker -> zero earnings');
+    ok(r.awaySec > 3599, 'offline: awaySec still reported (UI threshold uses it)');
+  }
+
+  // Worker + 1h away: STOCK-limited — default shelf (3+2+4=9) caps the payout, and stock is consumed.
+  {
+    const s = createInitialState();
+    s.workers.mimic_merchant.owned = true;
+    s.lastSeen = now - HOUR;                        // 600 possible sales at 6s... but only 9 in stock
+    const r = computeOffline(s, now);
+    ok(r.sales === 9, 'offline: stock-limits sales to the 9 on the shelf');
+    ok(r.gold === 3 * 12 + 2 * 18 + 4 * 15, 'offline: gold = real basePrices of consumed stock (132)');
+    ok(r.rep === 9 * 2, 'offline: rep = sales * perSale (18)');
+    const gold0 = s.gold;
+    ok(applyOffline(s, r) === true, 'applyOffline banks a non-zero result');
+    ok(s.gold === gold0 + 132 && s.reputation === 18, 'apply adds gold + rep');
+    ok(s.items.club.stock === 0 && s.items.metal_helmet.stock === 0 && s.items.hp_flask.stock === 0,
+       'apply consumes the actual shelf stock (exploit guard)');
+  }
+
+  // TIME-limited: 30s away at 6s interval -> exactly 5 sales, round-robin (club,helm,flask,club,helm).
+  {
+    const s = createInitialState();
+    s.workers.mimic_merchant.owned = true;
+    s.lastSeen = now - 30 * 1000;
+    const r = computeOffline(s, now);
+    ok(r.sales === 5, 'offline: time-limits sales (30s / 6s = 5)');
+    ok(r.gold === 12 + 18 + 15 + 12 + 18, 'offline: deterministic round-robin gold (75)');
+  }
+
+  // CAP: 10h away pays exactly the same as 2h away (capHours 2 binds; deterministic).
+  {
+    const mk = (ms) => { const s = createInitialState(); s.workers.mimic_merchant.owned = true;
+      s.upgrades.extra_shelf = 5; for (const id of Object.keys(s.items)) s.items[id].stock = 10;
+      s.lastSeen = now - ms; return s; };
+    const r10 = computeOffline(mk(10 * HOUR), now);
+    const r2  = computeOffline(mk(2 * HOUR), now);
+    ok(r10.cappedSec === CONFIG.offline.capHours * 3600, 'offline: 10h away capped to capHours');
+    ok(r10.sales === r2.sales && r10.gold === r2.gold, 'offline: beyond the cap pays nothing extra');
+  }
+
+  // Clock skew: lastSeen in the future -> zero, never negative.
+  {
+    const s = createInitialState();
+    s.workers.mimic_merchant.owned = true;
+    s.lastSeen = now + HOUR;
+    const r = computeOffline(s, now);
+    ok(r.awaySec === 0 && r.sales === 0, 'offline: future lastSeen (clock skew) -> zero, no negatives');
+  }
+
+  // Upgrades apply offline: Faster Counter L1 raises time-limited sales; Better Signage raises rep/sale.
+  {
+    const s = createInitialState();
+    s.workers.mimic_merchant.owned = true;
+    s.upgrades.faster_counter = 1;                  // interval 6 -> ~4.615s
+    s.upgrades.better_signage = 1;                  // rep/sale 2 -> 3
+    s.lastSeen = now - 30 * 1000;
+    const r = computeOffline(s, now);
+    ok(r.sales === 6, 'offline: Faster Counter L1 -> 6 sales in 30s (floor(30/4.615))');
+    ok(r.rep === 6 * 3, 'offline: Better Signage boosts offline rep/sale (18)');
+  }
+
+  // Empty shelf -> zero (and applyOffline no-ops on a zero result).
+  {
+    const s = createInitialState();
+    s.workers.mimic_merchant.owned = true;
+    for (const id of Object.keys(s.items)) s.items[id].stock = 0;
+    s.lastSeen = now - HOUR;
+    const r = computeOffline(s, now);
+    ok(r.sales === 0, 'offline: empty shelf -> nothing to sell');
+    ok(applyOffline(s, r) === false, 'applyOffline no-ops cleanly on a zero result');
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

@@ -213,3 +213,31 @@ body{
 /* Active (hired) worker — green accent so "on" reads at a glance. */
 .worker-card.owned{border-color:var(--good);}
 .worker-card.owned .wrk-buy:disabled{opacity:1;background:var(--good);color:#123;border-color:var(--good);}
+/* "While you were away" modal (M5) — sits ABOVE the title overlay (z 10) */
+.offline-overlay{
+  position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
+  background:rgba(10,7,16,.72);
+}
+.offline-overlay.hidden{display:none;}
+.offline-card{
+  background:var(--panel-bg);border:3px solid var(--gold-deep);border-radius:16px;
+  padding:26px 34px;text-align:center;box-shadow:0 10px 0 rgba(0,0,0,.45), 0 0 40px rgba(255,207,74,.15);
+  max-width:420px;
+}
+.offline-title{margin:0 0 10px;color:var(--gold);font-size:24px;font-weight:900;letter-spacing:1px;}
+.offline-body{margin:0 0 14px;color:#d8ccf0;font-size:15px;font-weight:600;line-height:1.4;}
+.offline-body b{color:#fff;}
+.offline-gains{display:flex;gap:14px;justify-content:center;margin-bottom:18px;}
+.offline-gain{
+  background:rgba(0,0,0,.28);border:2px solid var(--panel-edge);border-radius:10px;
+  padding:8px 16px;font-size:20px;font-weight:900;
+}
+.offline-gain.gold{color:var(--gold);}
+.offline-gain.rep{color:#b794f6;}
+.offline-collect-btn{
+  background:var(--gold);color:#4a3410;border:2px solid var(--gold-deep);border-radius:12px;
+  padding:12px 44px;font-weight:900;font-size:17px;text-transform:uppercase;letter-spacing:1.5px;
+  cursor:pointer;box-shadow:0 5px 0 var(--gold-deep);
+}
+.offline-collect-btn:hover{filter:brightness(1.06);}
+.offline-collect-btn:active{transform:translateY(2px);box-shadow:0 3px 0 var(--gold-deep);}
