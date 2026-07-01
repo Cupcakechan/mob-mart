@@ -5,6 +5,7 @@ import { ITEMS } from './data/items.js';
 import { UPGRADES, upgradeLevel, upgradeCost, isMaxed, sumEffect } from './data/upgrades.js';
 import { randInt, pick, weightedPick } from './utils.js';
 import { resolveCombat } from './combat.js';
+import { reputationTier } from './reputation.js';
 import { logLine } from './messages.js';
 
 // --- Customer spawning -------------------------------------------------------
@@ -102,8 +103,17 @@ export function restockItem(state, itemId) {
 
 // --- Upgrades ----------------------------------------------------------------
 
+// An upgrade unlocks once the player's reputation reaches its required tier (index into
+// CONFIG.reputation.tiers). Derived from live reputation — nothing to persist.
+export function isUpgradeUnlocked(state, id) {
+  const u = UPGRADES[id];
+  if (!u) return false;
+  return reputationTier(state.reputation).index >= (u.requiredTier ?? 0);
+}
+
 export function canBuyUpgrade(state, id) {
   if (!UPGRADES[id] || isMaxed(state, id)) return false;
+  if (!isUpgradeUnlocked(state, id)) return false;             // gated behind a reputation tier
   return state.gold >= upgradeCost(id, upgradeLevel(state, id));
 }
 

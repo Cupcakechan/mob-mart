@@ -244,9 +244,10 @@ plays right (the ID+filename convention + graceful fallback means art never touc
   guarded), the capped FIFO queue with per-mob patience, and the reputation HUD (service-based rep +
   tier labels). Built as three separate passes; all committed.
 - **M3 — Upgrades + spend economy.** Extra Shelf / Faster Counter / Better Signage as data-driven
-  upgrades feeding a real gold sink. Built in three passes: **(1) layout — DONE**; **(2) other
-  effects — DONE** (Faster Counter → serve cooldown via `serveSpeed`; Better Signage → rep/sale via
-  `repMult`); **(3) rep-tier gating — next** (lock upgrades behind `requiredTier`).
+  upgrades feeding a real gold sink. Built in three passes — **ALL DONE**: (1) layout; (2) Faster
+  Counter (serve cooldown via `serveSpeed`) + Better Signage (rep/sale via `repMult`); (3) rep-tier
+  gating — upgrades lock behind `requiredTier` (Extra Shelf: Neutral; Faster Counter: Friendly;
+  Better Signage: Trusted), locked cards dimmed showing "Reach &lt;Tier&gt;". **M3 complete.**
 - **M4 — First mimic worker (auto-serve).** Bob auto-serves on an interval — the automation/idle
   proof; the shop earns without clicking.
 - **M5 — Offline earnings.** Timestamp delta → capped estimate → "While you were away" modal.
@@ -439,7 +440,15 @@ now — fully local).
 - **Background hook (done):** `scene.js` draws `assets/sprites/shop_bg.png` (full 1280×720, wall+floor)
   behind everything, falling back to flat colors with the floor line at `FLOOR_Y` (H*0.62 = 446). Daniel
   is painting a static backdrop to this spec (wall 0→446, floor 446→720), then layering props.
-- **Next:** M3 pass 3 — gate upgrades behind reputation tiers (`requiredTier` already on each entry).
+- **M3 pass 3 (done) — M3 COMPLETE:** upgrades gate behind reputation tiers. `isUpgradeUnlocked(state,id)`
+  = `reputationTier(rep).index >= requiredTier`; `canBuyUpgrade` enforces it (so `buyUpgrade` is guarded).
+  Assignments: Extra Shelf → Neutral (0), Faster Counter → Friendly (1, rep 20), Better Signage →
+  Trusted (2, rep 50). Locked cards stay visible, dimmed, button reads "Reach &lt;Tier&gt;"; they flip
+  buyable automatically when rep crosses the threshold (renderPanels runs on the serve that moves rep).
+  All three upgrades now live and gated. Nothing new persisted (unlock is derived from rep).
+- **Next: M4 — first mimic worker (auto-serve).** Wire the Workers tab (currently a disabled nav stub):
+  Bob auto-serves the front customer on an interval, respecting the serve cooldown (Faster Counter feeds
+  it). The automation/idle proof — the shop earns without clicking.
 
 ---
 

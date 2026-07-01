@@ -1,9 +1,10 @@
 // panels.js — DOM panels: current customer (front), Shelf (restock), Upgrades view, battle log.
 // The Shelf and Upgrades panels share the center slot; the bottom nav toggles which is visible.
+import { CONFIG } from '../config.js';
 import { ITEMS, ITEM_ORDER } from '../data/items.js';
 import { MONSTERS } from '../data/monsters.js';
 import { UPGRADES, UPGRADE_ORDER, upgradeLevel, upgradeCost, isMaxed } from '../data/upgrades.js';
-import { serveBlockReason, canRestock, effectiveMaxStock, canBuyUpgrade } from '../game.js';
+import { serveBlockReason, canRestock, effectiveMaxStock, canBuyUpgrade, isUpgradeUnlocked } from '../game.js';
 
 let handlers = { onServe: () => {}, onDismiss: () => {}, onRestock: () => {}, onBuyUpgrade: () => {} };
 
@@ -114,19 +115,33 @@ export function renderPanels(state) {
     btn.disabled = !canRestock(state, btn.dataset.item);
   });
 
-  // --- Upgrades: level, next cost (or MAX), buyability ---
+  // --- Upgrades: locked state (rep tier), level, cost, buyability ---
   for (const id of UPGRADE_ORDER) {
     const u = UPGRADES[id];
     const lvl = upgradeLevel(state, id);
     const maxed = isMaxed(state, id);
+    const unlocked = isUpgradeUnlocked(state, id);
+
+    const card = document.querySelector(`.upgrade-card[data-upg="${id}"]`);
+    if (card) card.classList.toggle('locked', !unlocked);
+
     const lvlEl = document.getElementById(`upglvl-${id}`);
     if (lvlEl) lvlEl.textContent = maxed ? `Lv ${lvl} · Max` : `Lv ${lvl}`;
+
     const costEl = document.getElementById(`upgcost-${id}`);
-    if (costEl) costEl.innerHTML = maxed ? 'MAX' : `&#9670; ${upgradeCost(id, lvl)}`;
+    // Hide the cost while locked (the button carries the unlock requirement instead).
+    if (costEl) costEl.innerHTML = !unlocked ? '' : (maxed ? 'MAX' : `&#9670; ${upgradeCost(id, lvl)}`);
+
     const buyBtn = document.querySelector(`.upg-buy[data-upg="${id}"]`);
     if (buyBtn) {
-      buyBtn.disabled = !canBuyUpgrade(state, id);
-      buyBtn.textContent = maxed ? 'Maxed' : 'Buy';
+      if (!unlocked) {
+        buyBtn.disabled = true;
+        const tier = CONFIG.reputation.tiers[u.requiredTier]?.label ?? '???';
+        buyBtn.textContent = `Reach ${tier}`;
+      } else {
+        buyBtn.disabled = !canBuyUpgrade(state, id);
+        buyBtn.textContent = maxed ? 'Maxed' : 'Buy';
+      }
     }
   }
 

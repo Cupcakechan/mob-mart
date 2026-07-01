@@ -169,6 +169,11 @@ body{
 }
 .upg-buy:hover:not(:disabled){background:var(--wood-light);}
 .upg-buy:disabled{opacity:.4;cursor:not-allowed;}
+/* Locked upgrade (reputation-gated): dim the details, keep the "Reach <Tier>" pill readable */
+.upgrade-card.locked{background:#e6dcc6;}
+.upgrade-card.locked .upg-info,
+.upgrade-card.locked .upg-meta{opacity:.45;}
+.upgrade-card.locked .upg-buy:disabled{opacity:1;background:var(--stone);color:#d9ccae;border-color:var(--panel-edge);cursor:default;}
 
 /* Bottom nav — slim bar in the center gap between the corner panels */
 .nav{

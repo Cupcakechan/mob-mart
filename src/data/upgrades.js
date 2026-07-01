@@ -19,7 +19,7 @@ export const UPGRADES = {
     baseCost: 80,
     costGrowth: 1.8,
     maxLevel: 5,
-    requiredTier: 0,
+    requiredTier: 1,       // unlocks at Friendly (rep 20)
   },
   better_signage: {
     id: 'better_signage',
@@ -29,7 +29,7 @@ export const UPGRADES = {
     baseCost: 100,
     costGrowth: 1.8,
     maxLevel: 5,
-    requiredTier: 0,
+    requiredTier: 2,       // unlocks at Trusted (rep 50)
   },
 };
 
