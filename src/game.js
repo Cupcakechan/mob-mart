@@ -20,6 +20,7 @@ export function spawnCustomer() {
     wantedItemId,
     budget: randInt(minB, maxB),
     patienceRemaining: CONFIG.queue.defaultPatienceSec,
+    brokeWait: 0,               // seconds spent unaffordable at the front; drives the worker auto-wave
     state: 'queued',
   };
 }
@@ -169,6 +170,28 @@ function updateWorkers(state, dt) {
   }
 }
 
+// True if any hired worker can serve (currently just Bob). Gates the broke auto-wave below, so it only
+// runs once the shop is automated — manual play still manages unaffordable customers by hand.
+function anyServeWorkerOwned(state) {
+  for (const id of WORKER_ORDER) {
+    if (WORKERS[id].role === 'serve' && isWorkerOwned(state, id)) return true;
+  }
+  return false;
+}
+
+// With a serve-worker on staff, auto-wave a front customer who can't afford their item — the one
+// blocker the player can't clear by restocking. Reuses the rep-neutral dismiss (+ its "shooed" log
+// line) after CONFIG.queue.brokeGraceSec, so the line keeps flowing and affordable customers behind
+// them don't time out (−rep). Keys off the SAME reason the Serve button shows, so it fires on exactly
+// the "Can't afford it" state — never on out-of-stock (restock fixes that) or during a cooldown.
+function autoWaveBroke(state, dt) {
+  const c = state.queue[0];
+  if (!c) return;
+  if (serveBlockReason(state) !== 'cant-afford') return;
+  c.brokeWait = (c.brokeWait ?? 0) + dt;
+  if (c.brokeWait >= CONFIG.queue.brokeGraceSec) dismissCurrent(state);
+}
+
 // --- Per-frame update --------------------------------------------------------
 
 export function update(state, dt) {
@@ -203,6 +226,7 @@ export function update(state, dt) {
     }
   }
 
+  if (anyServeWorkerOwned(state)) autoWaveBroke(state, dt);  // clear broke blockers so the line keeps flowing
   updateWorkers(state, dt);   // auto-serve runs last, on the settled queue (spawns in, leavers out)
 }
 

@@ -32,6 +32,11 @@ export const CONFIG = {
     firstCustomerDelaySec: 0.4,// initial delay after opening the shop
     // Each mob waits this long (patience drains while in line, wherever they stand) then leaves.
     defaultPatienceSec: 20,
+    // With a serve-worker hired, a FRONT customer who can't afford their item is auto-waved (rep-
+    // neutral) after this grace — the one blocker the player can't clear by restocking. Long enough
+    // to read the "Can't afford it" state, short enough that they don't stall the line and make
+    // affordable customers behind them time out (−rep). Manual-only play is unaffected.
+    brokeGraceSec: 2,
   },
 
   combat: {
