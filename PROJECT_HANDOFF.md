@@ -397,12 +397,14 @@ not shipped) passes, including regressions for both audit fixes.
 - **Confirm M5 in the browser + commit.** Hire Bob, stock the shelf, be away > 60s, reload → modal
   shows time worked / items sold / +gold / +rep; Collect closes it; values landed in the HUD/shelf;
   an immediate second reload pays NOTHING extra; no-worker and empty-shelf returns stay silent.
-- **Portal sprite micro-pass — BUILT (commit pending).** `portal_glow.png` wired as a 4-frame
-  horizontal swirl strip (auto-sliced, loops forever), drawn ASPECT-PRESERVED (art is square 160x160;
-  strip = 640x160) with anchor dials `centerX`/`baseY`/`size` (default 160 = crisp 1x; 320 = 2x)
-  replacing the old stretch-to-box, plus a slight alpha-aware glow (`glowBase` 10 / `glowPulse` 8;
-  old placeholder was 20/20). Fallback chain: strip -> static `portal.png` -> square placeholder slab.
-  Authoring spec: 4 equal 160x160 frames left-to-right, PNG-32, `assets/sprites/portal_glow.png`.
+- **Battle DOOR (evolved from the portal pass — commit pending).** The art is now a wooden door;
+  `portal_glow.png` = 4 equal frames left-to-right, frame 0 CLOSED -> frame 3 OPEN. EVENT-DRIVEN,
+  not looping: the door sits closed and `playPortalOpen()` (fired in main.js on every SUCCESSFUL
+  serve, manual or auto — dismiss/leave never trigger it) plays a one-shot open -> hold
+  (`anim.holdMs` 350) -> close (~1.15s at fps 10); a serve mid-anim restarts it. Drawn
+  aspect-preserved with dials `centerX` / `baseY` (door-floor dial, H*0.68 estimate — bigger sinks
+  it) / `size` (320 = 2x of 160px art) + slight alpha-aware glow (`glowBase` 10 / `glowPulse` 8).
+  Fallback: strip -> static `portal.png` -> placeholder. Internal ids stay `portal`/`portal_glow`.
 - **`backroom_storage` upgrade (queued, post-portal candidate).** +capHours per level via the
   existing `sumEffect` plumbing — one registry entry + one consumer in `offline.js` — once the 2h
   cap has actually been felt in play.

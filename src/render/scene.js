@@ -64,21 +64,33 @@ export function playBobServe() {
   bobAnim.startMs = null;          // reset so it restarts from frame 0 on the next draw
 }
 
-// --- Portal ("To Battle" door). Authored as a SQUARE 160x160 frame; drawn aspect-preserved at
-// `size`, bottom resting on `baseY` (same anchor pattern as the counter/Bob — no more stretch-to-box).
-// Animated path: portal_glow.png, a 4-frame horizontal strip (4x160 = 640x160), auto-sliced and
-// looping forever. Fallback chain: strip -> static portal.png -> placeholder slab.
-// Glow is alpha-aware (canvas shadow hugs the swirl's transparent edges) and kept SLIGHT via the
-// two dials below.
+// --- Portal — now the battle DOOR (ids stay 'portal'/'portal_glow'; internal ids never rename).
+// Authored as 4 equal frames left-to-right: frame 0 = CLOSED ... frame 3 = fully OPEN. Drawn
+// aspect-preserved at `size`, bottom resting on `baseY` (same anchor pattern as the counter/Bob).
+// The door is EVENT-DRIVEN, not looping: it sits closed (frame 0) until a customer PAYS and leaves
+// (main.js calls playPortalOpen on every successful serve, manual or auto), then plays a one-shot
+// open -> brief hold ("they walk through") -> close, and settles closed again. Dismiss/leave do NOT
+// open it — only paying customers go to battle.
+// Fallback chain: strip -> static portal.png -> placeholder slab. Glow is alpha-aware and slight.
 const PORTAL = {
-  centerX: W * 0.855,          // ~1094 — matches the old placeholder box's horizontal center
-  baseY:   H * 0.64,           // ~461 — portal bottom, just below the floor line (grounded)
-  size:    160,                // ON-SCREEN HEIGHT IN PX. 160 = crisp 1x of the art; 320 = crisp 2x.
-  anim: { frames: 4, fps: 8 }, // swirl loop: 4 equal frames left-to-right; raise fps to spin faster
-  glowBase: 10,                // <-- GLOW DIALS: blur = glowBase + glowPulse * pulse(0..1).
-  glowPulse: 8,                //     Old placeholder glow was 20+20 — these read as "slight".
+  centerX: W * 0.855,          // ~1094 — horizontal center
+  baseY:   H * 0.68,           // ~490 — DOOR-FLOOR DIAL: bigger number = door sits LOWER. Estimate;
+                               //        nudge by eye (see also: trimming transparent rows under the
+                               //        door in the art makes this dial exact again).
+  size:    320,                // ON-SCREEN HEIGHT IN PX. 320 = crisp 2x of 160px art (160 = 1x).
+                               //        NOTE: set to your locally-tuned value if it differs.
+  anim: { frames: 4, fps: 10, holdMs: 350 },  // open 0.4s -> hold 0.35s -> close 0.4s (~1.15s total)
+  glowBase: 10,                // blur = glowBase + glowPulse * pulse(0..1) — the "slight" glow
+  glowPulse: 8,
   glow:'#8b5cf6', frame:'#3a2b1a',
 };
+const portalAnim = { startMs: null };   // null = door closed/idle; a timestamp = one-shot in progress
+
+// Open the battle door (call on a successful SERVE — the customer paid and is leaving to fight).
+// A serve mid-animation restarts it from frame 0, so rapid sales keep the door lively, never stuck.
+export function playPortalOpen() {
+  portalAnim.startMs = -1;               // sentinel: stamp with the real tMs on the next draw
+}
 
 export function drawScene(ctx, state, tMs) {
   ctx.clearRect(0, 0, W, H);
@@ -193,13 +205,29 @@ function drawPortal(ctx, tMs) {
   ctx.shadowBlur = PORTAL.glowBase + PORTAL.glowPulse * pulse;   // slight, breathing glow
 
   const h = PORTAL.size;
-  const strip = getSprite('portal_glow');                        // preferred: 4-frame swirl strip
+  const strip = getSprite('portal_glow');                        // preferred: 4-frame door strip
   if (strip) {
-    const frames = PORTAL.anim.frames;
-    const frame = Math.floor(tMs / (1000 / PORTAL.anim.fps)) % frames;  // endless loop, no state needed
+    const { frames, fps, holdMs } = PORTAL.anim;
+    let frame = 0;                                               // default: door closed
+    if (portalAnim.startMs === -1) portalAnim.startMs = tMs;     // stamp a freshly-triggered one-shot
+    if (portalAnim.startMs !== null) {
+      const t = tMs - portalAnim.startMs;
+      const frameMs = 1000 / fps;
+      const openDur = frames * frameMs;                          // 0 -> fully open
+      if (t < openDur) {
+        frame = Math.floor(t / frameMs);                         // opening: 0,1,2,3
+      } else if (t < openDur + holdMs) {
+        frame = frames - 1;                                      // held open: customer walks through
+      } else if (t < openDur * 2 + holdMs) {
+        frame = (frames - 1) - Math.floor((t - openDur - holdMs) / frameMs);  // closing: 3,2,1,0
+      } else {
+        portalAnim.startMs = null;                               // one-shot done -> settle closed
+      }
+      frame = Math.max(0, Math.min(frames - 1, frame));          // guard the boundaries
+    }
     const fw = strip.naturalWidth / frames;                      // auto-sliced frame width
     const fh = strip.naturalHeight;
-    const w = h * (fw / fh);                                     // preserve aspect (square art -> w = h)
+    const w = h * (fw / fh);                                     // preserve aspect
     ctx.drawImage(strip, frame * fw, 0, fw, fh, PORTAL.centerX - w / 2, PORTAL.baseY - h, w, h);
   } else {
     const single = getSprite('portal');                          // fallback: static single frame

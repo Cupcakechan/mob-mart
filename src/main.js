@@ -4,7 +4,7 @@ import { clamp } from './utils.js';
 import { update, serveCurrent, dismissCurrent, restockItem, buyUpgrade, hireWorker } from './game.js';
 import { loadState, saveState, clearSave } from './save.js';
 import { computeOffline, applyOffline, formatAway } from './offline.js';
-import { drawScene, playBobServe } from './render/scene.js';
+import { drawScene, playBobServe, playPortalOpen } from './render/scene.js';
 import { loadSprite } from './render/sprites.js';
 import { initHud, renderHud } from './ui/hud.js';
 import { initPanels, renderPanels } from './ui/panels.js';
@@ -59,7 +59,7 @@ resize();
 // UI wiring — panels/nav call back into game logic; game logic never touches the DOM.
 initHud(document.getElementById('hud'));
 initPanels(document.getElementById('shop-ui'), {
-  onServe:      () => { if (serveCurrent(state)) playBobServe(); },  // serve -> play the anim
+  onServe:      () => { if (serveCurrent(state)) { playBobServe(); playPortalOpen(); } },  // paid -> anims
   onDismiss:    () => dismissCurrent(state),
   onRestock:    (id) => restockItem(state, id),
   onBuyUpgrade: (id) => buyUpgrade(state, id),
@@ -94,7 +94,7 @@ function frame(now) {
   update(state, dt);
   // A worker auto-served this tick -> play Bob's serve one-shot, same as a manual serve. (Manual
   // serves fire the anim directly in onServe; this covers the auto path without duplicating it.)
-  if (state.workerServed) { playBobServe(); state.workerServed = false; }
+  if (state.workerServed) { playBobServe(); playPortalOpen(); state.workerServed = false; }
   drawScene(ctx, state, now);
 
   if (state.uiDirty) {
