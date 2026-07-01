@@ -17,15 +17,15 @@ export function spawnCustomer() {
     wantedItemId,
     budget: randInt(minB, maxB),
     patienceRemaining: CONFIG.queue.defaultPatienceSec,
-    state: 'atCounter',
+    state: 'queued',
   };
 }
 
-// --- Serving -----------------------------------------------------------------
+// --- Serving (always acts on the FRONT of the line, queue[0]) -----------------
 
-// Why serving is blocked, or null if servable. Used to guard the action AND label the button.
+// Why serving the front is blocked, or null if servable. Guards the action AND labels the button.
 export function serveBlockReason(state) {
-  const c = state.currentCustomer;
+  const c = state.queue[0];
   if (!c) return 'no-customer';
   const item = ITEMS[c.wantedItemId];
   if (!item) return 'no-item';                                  // unknown item id
@@ -34,11 +34,11 @@ export function serveBlockReason(state) {
   return null;
 }
 
-// Serve the current customer: take payment, grant service rep, resolve the (flavour-only) fight,
-// log it, and clear the counter. Rep comes from the SALE, not the battle outcome (Option A).
+// Serve the front customer: take payment, grant service rep, resolve the (flavour-only) fight,
+// log it, and drop them from the line so everyone behind shifts forward.
 export function serveCurrent(state) {
   if (serveBlockReason(state) !== null) return false;
-  const c = state.currentCustomer;
+  const c = state.queue[0];
   const monster = MONSTERS[c.monsterId];
   const item = ITEMS[c.wantedItemId];
 
@@ -49,21 +49,19 @@ export function serveCurrent(state) {
   const result = resolveCombat(monster, item);                 // off-screen fight -> funny line only
   pushLog(state, { text: result.message, repDelta: CONFIG.reputation.perSale, tier: result.tier, monsterId: monster.id });
 
-  state.currentCustomer = null;                                 // they leave to battle
-  state.nextCustomerTimer = CONFIG.queue.nextCustomerDelaySec;
+  state.queue.shift();                                          // front leaves; line shifts forward
   state.uiDirty = true;
   return true;
 }
 
-// Wave off the current customer with no sale — the escape hatch when you can't/won't serve them
-// (e.g. they can't afford what they want). No rep change; it's a neutral no-sale.
+// Wave off the front customer with no sale — the escape hatch when you can't/won't serve them.
+// No rep change; it's a neutral no-sale. The next mob steps up.
 export function dismissCurrent(state) {
-  const c = state.currentCustomer;
+  const c = state.queue[0];
   if (!c) return false;
   const name = MONSTERS[c.monsterId]?.displayName ?? 'Someone';
   pushLog(state, { text: `${name} left without buying.`, repDelta: 0, tier: 'dismiss', monsterId: c.monsterId });
-  state.currentCustomer = null;
-  state.nextCustomerTimer = CONFIG.queue.nextCustomerDelaySec;
+  state.queue.shift();
   state.uiDirty = true;
   return true;
 }
@@ -87,30 +85,34 @@ export function restockItem(state, itemId) {
 
 // --- Per-frame update --------------------------------------------------------
 
-// Advance timers. Called every frame with delta seconds. M1: one customer at a time.
+// Advance the line: back-fill on a cadence, and drain every waiting mob's patience.
 export function update(state, dt) {
   if (state.screen !== 'shop') return;
 
-  const c = state.currentCustomer;
-  if (!c) {
-    state.nextCustomerTimer -= dt;
-    if (state.nextCustomerTimer <= 0) {
-      state.currentCustomer = spawnCustomer();
+  // Back-fill the line on a steady cadence, up to the cap.
+  state.spawnTimer -= dt;
+  if (state.spawnTimer <= 0) {
+    if (state.queue.length < CONFIG.queue.maxLength) {
+      state.queue.push(spawnCustomer());
       state.uiDirty = true;
     }
-    return;
+    state.spawnTimer = CONFIG.queue.spawnIntervalSec;
   }
 
-  // Lenient patience is a safety net so the loop can't soft-lock; the player can also Send Away.
-  // Leaving unserved is the ONLY thing that lowers reputation (neglect), floored at 0.
-  c.patienceRemaining -= dt;
-  if (c.patienceRemaining <= 0) {
-    const name = MONSTERS[c.monsterId]?.displayName ?? 'Someone';
-    state.reputation = Math.max(0, state.reputation - CONFIG.reputation.leavePenalty);
-    pushLog(state, { text: `${name} got tired of waiting and left.`, repDelta: -CONFIG.reputation.leavePenalty, tier: 'leave', monsterId: c.monsterId });
-    state.currentCustomer = null;
-    state.nextCustomerTimer = CONFIG.queue.nextCustomerDelaySec;
-    state.uiDirty = true;
+  // Everyone in line loses patience independently; whoever runs out leaves (neglect -> -rep, at 0).
+  if (state.queue.length) {
+    for (const c of state.queue) c.patienceRemaining -= dt;
+    const stillWaiting = [];
+    for (const c of state.queue) {
+      if (c.patienceRemaining > 0) { stillWaiting.push(c); continue; }
+      const name = MONSTERS[c.monsterId]?.displayName ?? 'Someone';
+      state.reputation = Math.max(0, state.reputation - CONFIG.reputation.leavePenalty);
+      pushLog(state, { text: `${name} got tired of waiting and left.`, repDelta: -CONFIG.reputation.leavePenalty, tier: 'leave', monsterId: c.monsterId });
+    }
+    if (stillWaiting.length !== state.queue.length) {
+      state.queue = stillWaiting;                              // drop the leavers; line closes the gap
+      state.uiDirty = true;
+    }
   }
 }
 

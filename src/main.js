@@ -39,7 +39,7 @@ initPanels(document.getElementById('shop-ui'), {
 document.getElementById('open-shop-btn').addEventListener('click', () => {
   state.screen = 'shop';
   document.getElementById('title').classList.add('hidden');
-  state.nextCustomerTimer = CONFIG.queue.firstCustomerDelaySec;
+  state.spawnTimer = CONFIG.queue.firstCustomerDelaySec;
   state.uiDirty = true;
 });
 

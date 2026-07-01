@@ -10,10 +10,10 @@ export function createInitialState() {
   return {
     screen: 'title',            // 'title' | 'shop'
     gold: CONFIG.economy.startingGold,
-    reputation: CONFIG.economy.startingReputation, // tracked in M1; shown as a HUD stat from M2
+    reputation: CONFIG.economy.startingReputation, // shown on the HUD; service-based (see game.js)
     items,                      // { id: { stock } }
-    currentCustomer: null,      // customer instance or null
-    nextCustomerTimer: 0,       // seconds until the next customer spawns
+    queue: [],                  // customers in line; queue[0] is at the counter (the front)
+    spawnTimer: 0,              // seconds until the next mob joins the back of the line
     log: [],                    // [{ text, repDelta, tier, monsterId }]  newest first
     uiDirty: true,              // transient: request a DOM panel re-render (not persisted)
   };

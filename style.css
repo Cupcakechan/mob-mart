@@ -134,3 +134,6 @@ body{
   color:#e6ddf7;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:1px;
   background:rgba(139,92,246,.22);border:1px solid var(--panel-edge);border-radius:8px;padding:2px 8px;
 }
+
+/* Queue count under the current customer */
+.cust-wait{margin-top:6px;font-size:12px;font-weight:700;color:#a99fbb;text-transform:uppercase;letter-spacing:1px;}

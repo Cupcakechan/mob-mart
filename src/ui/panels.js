@@ -1,4 +1,4 @@
-// panels.js — DOM panels: current customer, shelf item cards (restock), serve/dismiss, battle log.
+// panels.js — DOM panels: current customer (front of line), shelf cards (restock), serve/dismiss, log.
 import { ITEMS, ITEM_ORDER } from '../data/items.js';
 import { MONSTERS } from '../data/monsters.js';
 import { serveBlockReason, canRestock } from '../game.js';
@@ -28,7 +28,6 @@ export function initPanels(root, h) {
   document.getElementById('serve-btn').addEventListener('click', () => handlers.onServe());
   document.getElementById('dismiss-btn').addEventListener('click', () => handlers.onDismiss());
 
-  // Item cards are static structure; only the stock number + button state change at runtime.
   document.getElementById('item-cards').innerHTML = ITEM_ORDER.map((id) => {
     const it = ITEMS[id];
     return `<div class="item-card" data-item="${id}">
@@ -54,15 +53,19 @@ export function renderPanels(state) {
   const body = document.getElementById('customer-body');
   const serveBtn = document.getElementById('serve-btn');
   const dismissBtn = document.getElementById('dismiss-btn');
-  const c = state.currentCustomer;
+  const c = state.queue[0];                 // the front of the line is the current customer
 
   if (c) {
     const m = MONSTERS[c.monsterId];
     const want = ITEMS[c.wantedItemId];
+    const waiting = state.queue.length - 1;
+    const waitLine = waiting > 0
+      ? `<div class="cust-wait">${waiting} more in line</div>` : '';
     body.innerHTML = `
       <div class="cust-name">${m?.displayName ?? '???'}</div>
       <div class="cust-line">Wants: <b>${want?.displayName ?? '???'}</b></div>
-      <div class="cust-line">Budget: &#9670; ${c.budget}</div>`;
+      <div class="cust-line">Budget: &#9670; ${c.budget}</div>
+      ${waitLine}`;
     const reason = serveBlockReason(state);
     serveBtn.disabled = reason !== null;
     serveBtn.textContent = reason ? (REASON_LABEL[reason] ?? 'Serve') : `Serve ${want?.displayName ?? ''}`;
@@ -85,7 +88,6 @@ export function renderPanels(state) {
   if (log) {
     log.innerHTML = state.log.map((e) => {
       const cls = e.repDelta > 0 ? 'good' : (e.repDelta < 0 ? 'bad' : 'meh');
-      // Only combat/leave entries carry a crown; a no-sale dismiss (0) shows just the text.
       const crown = e.repDelta !== 0
         ? `<span class="log-crown">${e.repDelta > 0 ? '+' : ''}${e.repDelta}&#9819;</span>`
         : '';

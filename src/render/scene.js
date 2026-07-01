@@ -1,5 +1,5 @@
-// scene.js — canvas diorama. M1 draws placeholder rects; sprites swap in via getSprite() with a
-// graceful fallback, so art can arrive piecemeal without touching game logic.
+// scene.js — canvas diorama. M1/M2 draw placeholder rects for mobs; Bob is a static sprite with a
+// graceful fallback. Sprites swap in piecemeal without touching game logic.
 import { CONFIG } from '../config.js';
 import { getSprite } from './sprites.js';
 
@@ -9,16 +9,24 @@ const COL = {
   wall:'#1d1526', floor:'#2a2033',
   counter:'#5b3a24', counterTop:'#7a5233',
   portalFrame:'#3a2b1a', portalGlow:'#8b5cf6',
-  shadow:'rgba(0,0,0,0.35)', face:'#00000088',
-  customer:{ slime:'#57c96b', bat:'#8a6bd6', skeleton:'#d9d2c2' },
+  shadow:'rgba(0,0,0,0.35)', face:'#00000088', marker:'#ffcf4a',
+};
+const CUST_COLOR = { slime:'#57c96b', bat:'#8a6bd6', skeleton:'#d9d2c2' };
+const colorFor = (id) => CUST_COLOR[id] ?? '#cccccc';   // fallback colour for unknown types
+
+// --- Queue layout. Front mob (index 0) sits nearest the counter; the line recedes left. ---
+const QUEUE = {
+  frontX: W * 0.33,    // left-edge x of the front mob
+  stepX:  W * 0.105,   // horizontal gap between mobs
+  y:      H * 0.52,    // top y of the mobs (they stand on the floor)
+  size:   96,
 };
 
 // --- Bob (shopkeeper) draw box. Tweak `height` to check his on-screen scale. ---
-// Drop assets/sprites/mimic_merchant.png to preview; until then a placeholder chest-box shows.
 const BOB = {
-  centerX: W * 0.57,   // horizontal centre, over the counter
-  feetY:   H * 0.585,  // where his feet rest (the counter occludes everything below this)
-  height:  240,        // ON-SCREEN HEIGHT IN PX — adjust this to size-check Bob
+  centerX: W * 0.57,
+  feetY:   H * 0.585,
+  height:  240,        // ON-SCREEN HEIGHT IN PX — adjust to size-check Bob
   placeholderColor:'#7a4a2a',
 };
 
@@ -29,7 +37,7 @@ export function drawScene(ctx, state, tMs) {
   ctx.fillStyle = COL.wall;  ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = COL.floor; ctx.fillRect(0, H * 0.62, W, H * 0.38);
 
-  // Bob is drawn BEFORE the counter so the counter front overlaps his lower body.
+  // Bob before the counter so the counter front overlaps his lower body
   drawBob(ctx);
 
   // Counter (center)
@@ -47,21 +55,41 @@ export function drawScene(ctx, state, tMs) {
   ctx.fillStyle = `rgba(139,92,246,${0.55 + 0.35 * pulse})`; ctx.fillRect(px, py, pw, ph);
   ctx.restore();
 
-  // Current customer (placeholder block, idle bob), on the left approach
-  const c = state.currentCustomer;
-  if (c) {
-    const bob = Math.sin(tMs / 300) * 4;
-    const size = 110;
-    const mx = W * 0.18, my = H * 0.50 + bob;
-    ctx.fillStyle = COL.shadow;
+  drawQueue(ctx, state, tMs);
+}
+
+// Draw the line back-to-front so the front mob sits on top of those behind it.
+function drawQueue(ctx, state, tMs) {
+  const q = state.queue;
+  for (let i = q.length - 1; i >= 0; i--) {
+    const x = QUEUE.frontX - i * QUEUE.stepX;
+    drawMob(ctx, x, QUEUE.y, QUEUE.size, colorFor(q[i].monsterId), tMs, i === 0);
+  }
+}
+
+function drawMob(ctx, x, y, size, color, tMs, isFront) {
+  const bob = Math.sin(tMs / 300 + x) * 4;   // +x so mobs don't bob in lockstep
+  const my = y + bob;
+  const groundY = y + size - 4;              // shadow stays on the ground while the mob hops
+
+  ctx.fillStyle = COL.shadow;
+  ctx.beginPath();
+  ctx.ellipse(x + size / 2, groundY, size * 0.42, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = color;
+  ctx.fillRect(x, my, size, size);
+  ctx.fillStyle = COL.face;
+  ctx.fillRect(x + size * 0.28, my + size * 0.35, size * 0.09, size * 0.09);
+  ctx.fillRect(x + size * 0.60, my + size * 0.35, size * 0.09, size * 0.09);
+
+  // Gold chevron above the front mob — the one Serve / Send Away acts on.
+  if (isFront) {
+    const cxm = x + size / 2, ty = my - 16;
+    ctx.fillStyle = COL.marker;
     ctx.beginPath();
-    ctx.ellipse(mx + size / 2, H * 0.62 + size - 12, size * 0.4, 12, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = COL.customer[c.monsterId] ?? '#cccccc';
-    ctx.fillRect(mx, my, size, size);
-    ctx.fillStyle = COL.face;
-    ctx.fillRect(mx + size * 0.28, my + size * 0.35, 10, 10);
-    ctx.fillRect(mx + size * 0.60, my + size * 0.35, 10, 10);
+    ctx.moveTo(cxm - 9, ty); ctx.lineTo(cxm + 9, ty); ctx.lineTo(cxm, ty + 11);
+    ctx.closePath(); ctx.fill();
   }
 }
 
@@ -76,7 +104,7 @@ function drawBob(ctx) {
     const w = h * 0.7;
     ctx.fillStyle = BOB.placeholderColor;
     ctx.fillRect(BOB.centerX - w / 2, BOB.feetY - h, w, h);
-    ctx.fillStyle = '#00000055';                            // a lid line so it reads as a chest
+    ctx.fillStyle = '#00000055';
     ctx.fillRect(BOB.centerX - w / 2, BOB.feetY - h * 0.45, w, 6);
   }
 }
