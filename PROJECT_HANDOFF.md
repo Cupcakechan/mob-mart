@@ -405,6 +405,14 @@ not shipped) passes, including regressions for both audit fixes.
   aspect-preserved with dials `centerX` / `baseY` (door-floor dial, H*0.68 estimate — bigger sinks
   it) / `size` (320 = 2x of 160px art) + slight alpha-aware glow (`glowBase` 10 / `glowPulse` 8).
   Fallback: strip -> static `portal.png` -> placeholder. Internal ids stay `portal`/`portal_glow`.
+- **Grounding pass (commit pending):** the "everything floats" fix. Door `baseY` = `FLOOR_Y` (sits
+  exactly on the wall/floor seam, y=446). Counter pulled off the back wall into the mid-ground
+  (`COUNTER.baseY` H*0.66 -> **H*0.74**, ~533 — lower on screen = closer to the viewer, so ~87px of
+  floor now shows BEHIND the desk; Bob follows via his anchor). Queue brought onto the same floor
+  plane (`QUEUE.y` H*0.528 -> **H*0.565**, feet ~495 — PROVISIONAL, raise toward H*0.545 if feet
+  hide behind the Current Customer panel). New `drawCounterShadow` contact ellipse (drawn before
+  Bob; dials `COUNTER.shadowRx` 0.55 / `shadowRy` 13, 0 disables) — the same grounding cue the
+  queue mobs always had.
 - **`backroom_storage` upgrade (queued, post-portal candidate).** +capHours per level via the
   existing `sumEffect` plumbing — one registry entry + one consumer in `offline.js` — once the 2h
   cap has actually been felt in play.
