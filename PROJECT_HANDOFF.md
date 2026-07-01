@@ -4,9 +4,14 @@
 session before doing any work. Update it as decisions change. Kept self-contained so a fresh
 Claude or ChatGPT can parse it cold.*
 
-**Status:** M1 (vertical slice) built and logic-tested; awaiting in-browser confirmation.
-**Next action:** test M1 in the browser (Live Server). On confirmation: git checkpoint, then M2.
-**Last updated:** M1 scaffold delivered.
+**Status:** **M1–M3 complete and pushed.** The core loop, `localStorage` save, full FIFO queue +
+reputation, the comedy voice pass, and all three upgrades (Extra Shelf / Faster Counter / Better
+Signage) — with a serve-cooldown lever and reputation-tier gating — are live and playable. Bob is
+animated (idle loop + serving one-shot); the diorama sprites and a **WIP `shop_bg.png` backdrop** are
+wired. A 13-case headless smoke test + `node --check` pass clean on every module.
+**Next action:** **M4 — first mimic worker (auto-serve).** Activate the Workers tab so Bob auto-serves
+the front of the line on an interval (respecting the serve cooldown). See §6 and §12 "Next up".
+**Last updated:** M3 complete — all upgrades + reputation-gating shipped; `shop_bg.png` added.
 
 ---
 
@@ -132,11 +137,14 @@ cadence; every mob's patience drains wherever it stands, and any that runs out l
 `monsterCompatibility` (optional; start absent, guarded).
 
 **Upgrade registry** (`src/data/upgrades.js`):
-`id` · `displayName` · `iconId` · `description` · `cost` (base + growth factor, centralized) ·
-`maxLevel` · `currentLevel` (runtime) · `effect` — a **typed** effect the systems read, e.g.
-`{type:'maxStock', delta:+1}`, `{type:'serveSpeed', mult:0.85}`, `{type:'repGain', mult:1.1}`,
-`{type:'offlineCap', deltaHours:+2}`. Systems query the **sum of active effects** rather than
-hard-coding each upgrade, so new upgrades slot in for free.
+`id` · `displayName` · `description` · `baseCost` + `costGrowth` (cost(level) = round(baseCost·growth^level)) ·
+`maxLevel` · `requiredTier` (rep-tier index needed to unlock) · level held in `state.upgrades[id]`
+(runtime) · `effect` — a **typed, per-level** effect the systems read:
+`{type:'maxStock', perLevel:1}`, `{type:'serveSpeed', perLevel:0.3}`, `{type:'repMult', perLevel:0.5}`
+(future: `{type:'offlineCap', …}`). Systems query `sumEffect(state, type)` (Σ perLevel·level across
+matching upgrades) rather than hard-coding each upgrade, so new upgrades slot in for free. Consumers:
+`effectiveMaxStock`, `effectiveServeCooldown = base/(1+serveSpeed)`,
+`effectiveRepPerSale = round(perSale·(1+repMult))`. `isUpgradeUnlocked` gates on `requiredTier`.
 
 **Worker registry** (`src/data/workers.js`) — first entry is the mimic merchant "Bob":
 `id` (`mimic_merchant`) · `displayName` ("Bob") · `spriteId` · `role` (serve / restock — start with
@@ -156,10 +164,12 @@ and the tier only picks
 the **flavor line** (a small gold tip on `excellent` is a possible later add — kept off reputation).
 
 **Save schema** (`src/save.js`, `mobmart.save.v1`):
-`{version, gold, reputation, items:{id:{stock,upgradeLevel}}, upgrades:{id:level},
-workers:{id:{owned,level}}, lastSeenTimestamp}`. Every field default-filled on load;
-load wrapped in try/catch → fresh save on failure. `lastSeenTimestamp` drives offline earnings.
-A `scrap` field is **reserved but unused** until we decide to add the third resource (§7).
+Currently persists `{version, gold, reputation, items:{id:{stock}}, upgrades:{id:level}, lastSeen}`.
+Queue, spawn timer, **serve cooldown**, and log are **ephemeral** (regenerated on load, not saved).
+Every field is default-filled + guarded on load (gold/rep floored at 0, stock clamped to the effective
+max, upgrade levels clamped to `maxLevel`, unknown ids ignored); load wrapped in try/catch → fresh save
+on failure. `lastSeen` drives M5 offline earnings. **Future, same pattern:** `workers:{id:{owned,level}}`
+(M4) and a reserved `scrap` field (§7).
 
 ---
 
@@ -321,17 +331,21 @@ Aseprite fitting pass sets exact size and aligns every customer's baseline to th
 Item icons are the one exception to the perspective rule — they live mostly in DOM item cards, so a
 clean front/slightly-angled icon is fine.
 
-**Scale-check (in progress):** Bob's on-screen size is being validated ahead of animation via a
-static placeholder. Its draw height is a single constant in `src/render/scene.js` (`BOB.height`,
-currently 240px); adjust it and drop `assets/sprites/mimic_merchant.png` to preview a static Bob in
-place. Full animated sheets follow once the scale is locked.
+**Art integration status (done):** Bob's scale is locked (`BOB.height` = 240px in `scene.js`, feet
+anchored to `COUNTER.baseY` so the desk + Bob move together, plus a `lift` offset that raises him so
+his arms/hands clear the counter). Bob is **animated** — idle loop + serving one-shot, each a
+**6-frame horizontal strip** (`bob_idle.png` / `bob_serve.png`), auto-sliced by frame count; serving
+fires on a successful Serve, then returns to idle. fps is per-animation in `BOB_ANIMS` (idle 6, serve
+12). A missing sheet falls back to the static `mimic_merchant.png`, then a placeholder.
 
 **All diorama sprites are wired with graceful fallback** (drop a PNG → it appears; absent → a
-placeholder shows). Filenames/ids: `mimic_merchant`, `slime`, `bat`, `skeleton`, `counter`,
-`portal` (all under `assets/sprites/`). Each has a tunable size/position block at the top of
-`scene.js` (`QUEUE`, `BOB`, `COUNTER`, `PORTAL`). Suggested authoring sizes: **counter/desk ~480px
-wide** on-screen (`COUNTER.width`; author 2× ≈ 960px for crisp edges), mobs ~128×128 drawn at the
-88px `QUEUE.size`, portal to the ~141×245 `PORTAL` box.
+placeholder shows). Ids under `assets/sprites/`: `shop_bg` (full 1280×720 backdrop, **WIP — first pass
+in**), `mimic_merchant` / `bob_idle` / `bob_serve` (Bob), `slime` / `bat` / `skeleton` (customers),
+`counter` (desk), `portal`. Each element has a tunable size/position block at the top of `scene.js`
+(`QUEUE`, `BOB`, `COUNTER`, `PORTAL`, plus `FLOOR_Y` = the wall/floor line at y=446). Suggested
+authoring sizes: **backdrop 1280×720** (wall 0→446, floor 446→720); **counter/desk ~480px wide**
+(`COUNTER.width`; 2× ≈ 960px for crisp edges); mobs ~128×128 drawn at the 88px `QUEUE.size`; portal to
+the ~141×245 `PORTAL` box.
 
 ---
 
@@ -359,15 +373,15 @@ mob-mart/
 │   │   ├── monsters.js     <- customer registry (Slime, Bat, Skeleton; Goblin/Rat later)   [M1]
 │   │   ├── items.js        <- item registry (Club, Metal Helmet, HP Flask)                 [M1]
 │   │   ├── results.js      <- full tiered log-line batch, generic + per-character       [voice]
-│   │   ├── upgrades.js     <- upgrade registry + typed-effect accessors               [M3 p1]
+│   │   ├── upgrades.js     <- upgrade registry + typed-effect accessors + rep gate       [M3]
 │   │   └── workers.js      <- worker registry (mimic_merchant "Bob")                       [M4]
 │   ├── render/
-│   │   ├── scene.js        <- canvas diorama (placeholder rects -> sprites)                [M1]
-│   │   └── sprites.js      <- static image loader + graceful fallback              [in: scale-check]
+│   │   ├── scene.js        <- diorama; sprites + Bob strip animation + backdrop        [M1+art]
+│   │   └── sprites.js      <- image loader (Image + onload/onerror) + fallback            [M1]
 │   └── ui/
 │       ├── hud.js          <- top resource bar                                             [M1]
 │       ├── panels.js       <- DOM panels (customer, workers, upgrades, log)                [M1]
-│       └── nav.js          <- bottom nav; swaps the center panel                      [M3 p1]
+│       └── nav.js          <- bottom nav; swaps the center panel (Workers/Bestiary stubs) [M3]
 └── assets/
     ├── sprites/            <- character + prop PNGs (filenames match data ids)
     ├── ui/                 <- UI icons (icon_gold.png, icon_rep.png, ...)
@@ -410,6 +424,41 @@ now — fully local).
 
 ## 12. Current state & next steps
 
+### Current state (read first)
+
+The game is **playable end-to-end**: open the shop → mobs queue up (capped FIFO, each with patience)
+→ Serve the front one (brief "Serving…" cooldown, then they leave to battle) → a funny result lands
+in the log → gold + reputation come in → restock and buy upgrades. All three upgrades are live with
+real levers — **Extra Shelf** (+max stock), **Faster Counter** (shorter serve cooldown), **Better
+Signage** (more rep/sale) — each **gated behind a reputation tier** and bought from the Upgrades tab.
+Progress **auto-saves** (`mobmart.save.v1`) and survives reload; a Reset button clears it. Bob is
+animated (idle + serving) in an animated/backdrop-ready diorama with a WIP `shop_bg.png` in. `node
+--check` is clean on every module; a 13-case headless smoke test (`test_m1.mjs`, scratch — not
+shipped) passes.
+
+### Next up
+
+- **M4 (immediate) — first mimic worker (auto-serve).** Activate the **Workers tab** (today a disabled
+  nav stub). Bob auto-serves the front customer on an interval, **reusing the serve cooldown** (so
+  Faster Counter speeds automation too) and the existing `serveCurrent` path (payouts, rep, and the
+  comedy log all flow unchanged). New `src/data/workers.js` registry (Bob = `mimic_merchant`), data-
+  driven like items/upgrades. **Decide first (options → pick):** (a) hire model — is Bob's auto-serve
+  granted, or purchased with gold/rep? (b) base interval + whether it's fixed for v1 (worker leveling
+  is post-MVP per §7); (c) how the Workers tab presents Bob (hire card vs simple on/off). This is the
+  idle/automation proof — the shop earns without clicking.
+- **M5 — offline earnings.** `lastSeen` is already persisted. On load: timestamp delta → **capped**
+  estimate of what Bob would have earned → "While you were away" modal. `src/offline.js`.
+- **M6 — Kongregate no-op bridge stub.** Purely additive `src/kongregate.js` + an
+  `index.kongregate.html` (base index + one API `<script>`); can't break local/itch. One `loaded` stat.
+- **Outstanding (non-blocking):**
+  - **Backdrop + props (art, in progress):** `shop_bg.png` is a WIP first pass — iterate on it, then
+    optionally split wall shelves / torches / crates into modular props (each a wired sprite id with a
+    tunable block). Floor line fixed at y=446 — flag Claude if it moves and it'll retune grounding.
+  - **itch.io dual-publish decision** (§13) — decides whether the `butler` deploy path gets added.
+  - **Bestiary tab** — still a disabled nav stub (M5-era content).
+
+### Build history (chronological)
+
 - **Done:** research; MVP scoped; UI architecture locked (Hybrid / Option C); view locked (low
   top-down); premise finalized (mimic merchant, Bob replaces Grez); starter trio (Slime / Bat /
   Skeleton); design doc + `.gitignore`; GitHub repo created (`Cupcakechan/mob-mart`); **M1 vertical
@@ -446,9 +495,6 @@ now — fully local).
   Trusted (2, rep 50). Locked cards stay visible, dimmed, button reads "Reach &lt;Tier&gt;"; they flip
   buyable automatically when rep crosses the threshold (renderPanels runs on the serve that moves rep).
   All three upgrades now live and gated. Nothing new persisted (unlock is derived from rep).
-- **Next: M4 — first mimic worker (auto-serve).** Wire the Workers tab (currently a disabled nav stub):
-  Bob auto-serves the front customer on an interval, respecting the serve cooldown (Faster Counter feeds
-  it). The automation/idle proof — the shop earns without clicking.
 
 ---
 
