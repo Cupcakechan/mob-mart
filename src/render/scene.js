@@ -35,12 +35,14 @@ const COUNTER = {
   color:'#5b3a24', topColor:'#7a5233',
 };
 
-// --- Bob (shopkeeper). Feet anchored 11px above the counter base so his hands stay on the desk
-// top whenever you re-tune COUNTER.baseY. Tweak `height` to size-check him. ---
+// --- Bob (shopkeeper). Feet sit ABOVE the counter base by the `lift` amount so his arms/hands
+// show over the counter — he "floats" behind it on purpose (a peeking look; his lower body stays
+// hidden behind the counter front, so nothing looks off). Still tied to COUNTER.baseY, so the desk
+// and Bob move together. ---
 const BOB = {
-  centerX: W * 0.57,          // ~730, centered over the counter
-  feetY:   COUNTER.baseY - 11, // follows the counter (keeps Bob grounded + hands on the desk)
-  height:  240,               // ON-SCREEN HEIGHT IN PX
+  centerX: W * 0.57,           // ~730, centered over the counter
+  feetY:   COUNTER.baseY - 50, // <-- BOB-HEIGHT DIAL: raise the 50 to show MORE arms/hands, lower for less
+  height:  240,                // ON-SCREEN HEIGHT IN PX
   placeholderColor:'#7a4a2a',
 };
 
