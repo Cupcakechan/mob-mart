@@ -48,13 +48,20 @@ export function initPanels(root, h) {
   root.querySelectorAll('.restock-btn').forEach((btn) =>
     btn.addEventListener('click', () => handlers.onRestock(btn.dataset.item)));
 
-  // Upgrade cards (data-driven; cost/level/button update at runtime).
+  // Upgrade cards (data-driven; cost/level/button update at runtime). Compact rows so the list fits
+  // the left slot above the queue.
   document.getElementById('upgrade-cards').innerHTML = UPGRADE_ORDER.map((id) => {
     const u = UPGRADES[id];
     return `<div class="upgrade-card" data-upg="${id}">
-        <div class="upg-head"><span class="upg-name">${u.displayName}</span><span class="upg-cost" id="upgcost-${id}"></span></div>
-        <div class="upg-desc">${u.description}</div>
-        <div class="upg-foot"><span class="upg-level" id="upglvl-${id}"></span><button class="upg-buy" data-upg="${id}">Buy</button></div>
+        <div class="upg-info">
+          <div class="upg-name">${u.displayName}</div>
+          <div class="upg-desc">${u.description}</div>
+        </div>
+        <div class="upg-meta">
+          <span class="upg-level" id="upglvl-${id}"></span>
+          <span class="upg-cost" id="upgcost-${id}"></span>
+        </div>
+        <button class="upg-buy" data-upg="${id}">Buy</button>
       </div>`;
   }).join('');
   root.querySelectorAll('.upg-buy').forEach((btn) =>
@@ -63,6 +70,7 @@ export function initPanels(root, h) {
 
 const REASON_LABEL = {
   'no-customer': 'No customer',
+  'cooling-down': 'Serving\u2026',
   'out-of-stock': 'Out of stock',
   'cant-afford': "Can't afford it",
   'no-item': '\u2014',

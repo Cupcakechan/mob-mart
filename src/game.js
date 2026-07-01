@@ -27,11 +27,23 @@ export function spawnCustomer() {
 export function serveBlockReason(state) {
   const c = state.queue[0];
   if (!c) return 'no-customer';
+  if (state.serveCooldown > 0) return 'cooling-down';           // counter busy after the last sale
   const item = ITEMS[c.wantedItemId];
   if (!item) return 'no-item';
   if ((state.items[c.wantedItemId]?.stock ?? 0) <= 0) return 'out-of-stock';
   if (c.budget < item.basePrice) return 'cant-afford';
   return null;
+}
+
+// Base serve cooldown shortened by Faster Counter. Asymptotic (divide by 1+speed) so it never
+// hits zero no matter how many levels stack.
+export function effectiveServeCooldown(state) {
+  return CONFIG.serve.cooldownSec / (1 + sumEffect(state, 'serveSpeed'));
+}
+
+// Reputation gained per sale, boosted by Better Signage. Rounded so the HUD stays whole-number.
+export function effectiveRepPerSale(state) {
+  return Math.round(CONFIG.reputation.perSale * (1 + sumEffect(state, 'repMult')));
 }
 
 export function serveCurrent(state) {
@@ -40,14 +52,16 @@ export function serveCurrent(state) {
   const monster = MONSTERS[c.monsterId];
   const item = ITEMS[c.wantedItemId];
 
+  const repGain = effectiveRepPerSale(state);                   // Better Signage may boost this
   state.items[c.wantedItemId].stock -= 1;                       // hand over the item
   state.gold += item.basePrice;                                 // take payment (gold in)
-  state.reputation += CONFIG.reputation.perSale;                // a good sale earns reputation
+  state.reputation += repGain;                                  // a good sale earns reputation
 
   const { tier } = resolveCombat(monster, item);               // off-screen fight -> outcome tier
   const text = logLine(monster.id, tier, { name: monster.displayName, item: item.displayName });
-  pushLog(state, { text, repDelta: CONFIG.reputation.perSale, tier, monsterId: monster.id });
+  pushLog(state, { text, repDelta: repGain, tier, monsterId: monster.id });
 
+  state.serveCooldown = effectiveServeCooldown(state);          // start the counter cooldown
   state.queue.shift();                                          // front leaves; line shifts forward
   state.uiDirty = true;
   return true;
@@ -105,6 +119,11 @@ export function buyUpgrade(state, id) {
 
 export function update(state, dt) {
   if (state.screen !== 'shop') return;
+
+  if (state.serveCooldown > 0) {                    // count down the post-sale counter cooldown
+    state.serveCooldown = Math.max(0, state.serveCooldown - dt);
+    if (state.serveCooldown === 0) state.uiDirty = true;  // re-enable the Serve button
+  }
 
   state.spawnTimer -= dt;
   if (state.spawnTimer <= 0) {

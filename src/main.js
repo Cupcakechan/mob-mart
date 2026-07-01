@@ -18,6 +18,7 @@ const state = loadState();                         // resume from a saved shop, 
 
 // Diorama sprites — each falls back to a placeholder if its PNG is absent, so art can drop in
 // piecemeal. Filenames match the ids the scene uses.
+loadSprite('shop_bg', 'assets/sprites/shop_bg.png');   // full 1280x720 backdrop (wall+floor)
 loadSprite('mimic_merchant', 'assets/sprites/mimic_merchant.png');
 loadSprite('slime',    'assets/sprites/slime.png');
 loadSprite('bat',      'assets/sprites/bat.png');

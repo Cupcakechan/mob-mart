@@ -11,10 +11,29 @@ export const UPGRADES = {
     maxLevel: 5,
     requiredTier: 0,       // rep-tier index needed to unlock (gating lands in M3 pass 3)
   },
-  // Faster Counter (serveSpeed) and Better Signage (repMult) arrive in M3 pass 2.
+  faster_counter: {
+    id: 'faster_counter',
+    displayName: 'Faster Counter',
+    description: 'Shorter serve cooldown',
+    effect: { type: 'serveSpeed', perLevel: 0.3 },   // effective cooldown = base / (1 + 0.3*level)
+    baseCost: 80,
+    costGrowth: 1.8,
+    maxLevel: 5,
+    requiredTier: 0,
+  },
+  better_signage: {
+    id: 'better_signage',
+    displayName: 'Better Signage',
+    description: 'More reputation per sale',
+    effect: { type: 'repMult', perLevel: 0.5 },      // rep/sale = round(perSale * (1 + 0.5*level))
+    baseCost: 100,
+    costGrowth: 1.8,
+    maxLevel: 5,
+    requiredTier: 0,
+  },
 };
 
-export const UPGRADE_ORDER = ['extra_shelf'];
+export const UPGRADE_ORDER = ['extra_shelf', 'faster_counter', 'better_signage'];
 
 export function upgradeLevel(state, id) {
   return state.upgrades?.[id] ?? 0;

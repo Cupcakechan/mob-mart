@@ -244,10 +244,9 @@ plays right (the ID+filename convention + graceful fallback means art never touc
   guarded), the capped FIFO queue with per-mob patience, and the reputation HUD (service-based rep +
   tier labels). Built as three separate passes; all committed.
 - **M3 — Upgrades + spend economy.** Extra Shelf / Faster Counter / Better Signage as data-driven
-  upgrades feeding a real gold sink. Built in three passes: **(1) layout — DONE** (bottom nav that
-  swaps the center panel Shop↔Upgrades, corner panels stay live; Upgrades view + Extra Shelf wired
-  end-to-end: buy → gold down → `effectiveMaxStock` up → restock higher; persisted); (2) the other
-  upgrade effects (serveSpeed, repMult); (3) rep-tier gating.
+  upgrades feeding a real gold sink. Built in three passes: **(1) layout — DONE**; **(2) other
+  effects — DONE** (Faster Counter → serve cooldown via `serveSpeed`; Better Signage → rep/sale via
+  `repMult`); **(3) rep-tier gating — next** (lock upgrades behind `requiredTier`).
 - **M4 — First mimic worker (auto-serve).** Bob auto-serves on an interval — the automation/idle
   proof; the shop earns without clicking.
 - **M5 — Offline earnings.** Timestamp delta → capped estimate → "While you were away" modal.
@@ -431,8 +430,16 @@ now — fully local).
   swapping the center panel; a data-driven Upgrades view; **Extra Shelf** wired end-to-end (+1 max
   stock/item, cost `60·1.8^level`, maxLevel 5) via `effectiveMaxStock` + `buyUpgrade`; upgrade levels
   persisted. New modules: `src/data/upgrades.js`, `src/ui/nav.js`.
-- **Next:** M3 pass 2 — wire the other upgrade effects (Faster Counter → serve speed, Better Signage
-  → rep multiplier), then pass 3 gates upgrades behind reputation tiers.
+- **M3 pass 2 (done):** Faster Counter + Better Signage wired. Faster Counter uses **Option 1 — serve
+  pacing**: a completed sale starts a counter cooldown (`CONFIG.serve.cooldownSec`, base 0.5s) during
+  which Serve is disabled ("Serving…"); `effectiveServeCooldown = base / (1 + serveSpeed)` shortens it
+  per level (asymptotic, never 0). Better Signage: `effectiveRepPerSale = round(perSale * (1 + repMult))`,
+  applied on the sale + shown in the log crown. Upgrade cards are now compact rows (3 fit the left slot).
+  Serve cooldown lines up with Bob's 6-frame/12fps serving animation and sets up M4 auto-serve pacing.
+- **Background hook (done):** `scene.js` draws `assets/sprites/shop_bg.png` (full 1280×720, wall+floor)
+  behind everything, falling back to flat colors with the floor line at `FLOOR_Y` (H*0.62 = 446). Daniel
+  is painting a static backdrop to this spec (wall 0→446, floor 446→720), then layering props.
+- **Next:** M3 pass 3 — gate upgrades behind reputation tiers (`requiredTier` already on each entry).
 
 ---
 

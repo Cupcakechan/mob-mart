@@ -5,6 +5,7 @@ import { CONFIG } from '../config.js';
 import { getSprite } from './sprites.js';
 
 const W = CONFIG.stage.width, H = CONFIG.stage.height;
+const FLOOR_Y = H * 0.62;   // wall/floor split (y=446) — matches the shop_bg.png authoring spec
 
 const COL = {
   wall:'#1d1526', floor:'#2a2033',
@@ -69,13 +70,24 @@ const PORTAL = { x: W * 0.80, y: H * 0.30, w: W * 0.11, h: H * 0.34, glow:'#8b5c
 export function drawScene(ctx, state, tMs) {
   ctx.clearRect(0, 0, W, H);
 
-  ctx.fillStyle = COL.wall;  ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = COL.floor; ctx.fillRect(0, H * 0.62, W, H * 0.38);
+  drawBackground(ctx);          // shop_bg.png if present, else flat wall + floor
 
   drawBob(ctx, tMs);            // before the counter, so the counter front overlaps his lower body
   drawCounter(ctx);
   drawPortal(ctx, tMs);
   drawQueue(ctx, state, tMs);
+}
+
+// Full-stage backdrop (wall + floor baked in). Falls back to flat colors with the floor line at
+// FLOOR_Y so the scene reads fine before art arrives.
+function drawBackground(ctx) {
+  const spr = getSprite('shop_bg');
+  if (spr) {
+    ctx.drawImage(spr, 0, 0, W, H);
+  } else {
+    ctx.fillStyle = COL.wall;  ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = COL.floor; ctx.fillRect(0, FLOOR_Y, W, H - FLOOR_Y);
+  }
 }
 
 function drawQueue(ctx, state, tMs) {

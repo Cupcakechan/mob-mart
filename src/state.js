@@ -19,6 +19,7 @@ export function createInitialState() {
     upgrades,                   // { id: level }
     queue: [],                  // customers in line; queue[0] is at the counter (the front)
     spawnTimer: 0,              // seconds until the next mob joins the back of the line
+    serveCooldown: 0,           // transient: seconds until Serve re-enables after a sale (Faster Counter)
     log: [],                    // [{ text, repDelta, tier, monsterId }]  newest first
     lastSeen: Date.now(),       // timestamp of last activity (persisted; used by M5 offline earnings)
     uiDirty: true,              // transient: request a DOM panel re-render (not persisted)

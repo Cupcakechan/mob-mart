@@ -19,6 +19,13 @@ export const CONFIG = {
     ],
   },
 
+  serve: {
+    // Base pause after a completed sale, during which Serve is disabled (Bob wrapping up).
+    // Faster Counter shortens it: effective = base / (1 + serveSpeed effect). ~0.5s ~= Bob's
+    // 6-frame serving animation at 12fps, so a fresh serve lines up with the animation.
+    cooldownSec: 0.5,
+  },
+
   queue: {
     maxLength: 4,              // most mobs that can wait in line at once
     spawnIntervalSec: 3,       // a new mob joins the back this often, if there's room

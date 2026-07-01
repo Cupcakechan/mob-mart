@@ -150,21 +150,22 @@ body{
 .hidden{display:none;}
 
 /* Upgrades panel shares the center slot with the Shelf */
-.upgrades-panel{left:40px;top:140px;width:430px;max-height:200px;overflow-y:auto;}
-.upgrade-cards{display:flex;flex-direction:column;gap:8px;}
+.upgrades-panel{left:40px;top:140px;width:430px;max-height:210px;overflow-y:auto;}
+.upgrade-cards{display:flex;flex-direction:column;gap:7px;}
 .upgrade-card{
+  display:flex;align-items:center;gap:8px;
   background:var(--parchment);color:var(--ink);border:2px solid var(--wood-edge);
-  border-radius:10px;padding:8px 10px;
+  border-radius:8px;padding:5px 8px;
 }
-.upg-head{display:flex;justify-content:space-between;align-items:baseline;}
-.upg-name{font-weight:800;font-size:15px;}
-.upg-cost{color:var(--gold-deep);font-weight:800;font-size:14px;white-space:nowrap;}
-.upg-desc{font-size:12px;font-weight:600;opacity:.8;margin:2px 0 6px;}
-.upg-foot{display:flex;justify-content:space-between;align-items:center;}
-.upg-level{font-size:12px;font-weight:700;opacity:.85;}
+.upg-info{flex:1 1 auto;min-width:0;}
+.upg-name{font-weight:800;font-size:14px;line-height:1.15;}
+.upg-desc{font-size:11px;font-weight:600;opacity:.72;line-height:1.15;}
+.upg-meta{display:flex;flex-direction:column;align-items:flex-end;flex:0 0 auto;}
+.upg-level{font-size:11px;font-weight:700;opacity:.85;}
+.upg-cost{color:var(--gold-deep);font-weight:800;font-size:13px;white-space:nowrap;}
 .upg-buy{
-  background:var(--wood);color:#ffeecb;border:2px solid var(--wood-edge);border-radius:8px;
-  padding:5px 16px;font-weight:800;font-size:13px;cursor:pointer;
+  flex:0 0 auto;background:var(--wood);color:#ffeecb;border:2px solid var(--wood-edge);
+  border-radius:7px;padding:6px 14px;font-weight:800;font-size:12px;cursor:pointer;
 }
 .upg-buy:hover:not(:disabled){background:var(--wood-light);}
 .upg-buy:disabled{opacity:.4;cursor:not-allowed;}
