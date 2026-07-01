@@ -1,0 +1,19 @@
+# --- Build / packaging output (the host serves the build; never commit it) ---
+builds/
+
+# --- Dependencies / caches (only if tooling is added later) ---
+node_modules/
+.cache/
+
+# --- Editor / IDE ---
+.vscode/
+.idea/
+*.swp
+
+# --- OS cruft ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Logs / temp ---
+*.log

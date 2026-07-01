@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mob Mart</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="stage">
+    <canvas id="scene" width="1280" height="720"></canvas>
+
+    <!-- DOM overlay: HUD + shop panels sit on top of the canvas diorama -->
+    <div id="hud" class="hud"></div>
+    <div id="shop-ui" class="shop-ui"></div>
+
+    <!-- Minimal title screen (dismissed on Open Shop) -->
+    <div id="title" class="title-overlay">
+      <h1 class="title-logo">MOB MART</h1>
+      <p class="title-tag">Gear up the little guys. Watch them lose. Get paid.</p>
+      <button id="open-shop-btn" class="open-shop-btn">Open Shop</button>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

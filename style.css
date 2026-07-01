@@ -1,0 +1,119 @@
+/* Mob Mart — placeholder chrome. Palette grounded in the dungeon-shop world:
+   torch gold + dungeon purple + wood + parchment. Real UI identity arrives with the art pass. */
+:root{
+  --stone:#241a30; --floor:#2a2033;
+  --wood:#5b3a24; --wood-light:#7a5233; --wood-edge:#8a6a44;
+  --gold:#ffcf4a; --gold-deep:#c99a2e;
+  --purple:#8b5cf6; --purple-deep:#5b21b6;
+  --parchment:#ece0c4; --ink:#3a2d1c;
+  --good:#6cd67a; --bad:#e06a6a; --meh:#c9bfa8;
+  --panel-bg:#2b2036; --panel-edge:#4a3a5e;
+  --font:'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;height:100%;}
+body{
+  background:radial-gradient(circle at 50% 30%, #241a30 0%, #0f0a16 80%);
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  font-family:var(--font);color:#f4eede;
+}
+
+/* Fixed 1280x720 stage; JS scales the whole thing (canvas + DOM together) to fit. */
+#stage{
+  position:relative;width:1280px;height:720px;flex:0 0 auto;
+  transform-origin:center center;overflow:hidden;border-radius:8px;
+  box-shadow:0 20px 60px rgba(0,0,0,.6);
+}
+#scene{position:absolute;inset:0;width:1280px;height:720px;image-rendering:pixelated;}
+
+/* HUD (top) */
+.hud{position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:5;}
+.hud-chip{
+  display:flex;align-items:center;gap:10px;background:var(--panel-bg);
+  border:2px solid var(--panel-edge);padding:8px 18px;border-radius:12px;
+  box-shadow:0 4px 0 rgba(0,0,0,.4);
+}
+.hud-icon{color:var(--gold);font-size:20px;}
+.hud-label{color:#c9bfa8;font-weight:700;text-transform:uppercase;letter-spacing:1px;font-size:13px;}
+.hud-value{color:var(--gold);font-weight:800;font-size:22px;min-width:40px;text-align:right;}
+
+/* Shop panels */
+.shop-ui{position:absolute;inset:0;z-index:4;}
+.panel{
+  position:absolute;background:var(--panel-bg);border:2px solid var(--panel-edge);
+  border-radius:14px;padding:12px 14px;box-shadow:0 6px 0 rgba(0,0,0,.4);
+}
+.panel-title{
+  margin:0 0 8px;color:var(--gold);font-size:14px;font-weight:800;
+  text-transform:uppercase;letter-spacing:1.5px;
+}
+
+/* Items (center, over the counter) */
+.items-panel{left:50%;transform:translateX(-50%);top:352px;width:430px;}
+.item-cards{display:flex;gap:10px;}
+.item-card{
+  flex:1;background:var(--parchment);color:var(--ink);border:2px solid var(--wood-edge);
+  border-radius:10px;padding:8px;text-align:center;
+}
+.item-name{font-weight:800;font-size:14px;}
+.item-price{color:var(--gold-deep);font-weight:800;margin:2px 0;}
+.item-stock{font-size:12px;font-weight:700;opacity:.85;margin-bottom:6px;}
+.restock-btn{
+  width:100%;background:var(--wood);color:#ffeecb;border:2px solid var(--wood-edge);
+  border-radius:8px;padding:5px;font-weight:800;font-size:12px;cursor:pointer;
+}
+.restock-btn:hover:not(:disabled){background:var(--wood-light);}
+.restock-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* Current customer (bottom-left) */
+.customer-panel{left:24px;bottom:28px;width:300px;}
+.customer-body{min-height:70px;}
+.cust-name{font-size:20px;font-weight:800;color:#fff;}
+.cust-line{font-size:14px;margin-top:4px;}
+.cust-line b{color:var(--gold);}
+.cust-empty{color:#a99fbb;font-style:italic;padding:8px 0;}
+.serve-btn{
+  margin-top:10px;width:100%;background:var(--gold);color:#4a3410;
+  border:2px solid var(--gold-deep);border-radius:10px;padding:10px;
+  font-weight:900;font-size:16px;text-transform:uppercase;letter-spacing:1px;cursor:pointer;
+  box-shadow:0 4px 0 var(--gold-deep);
+}
+.serve-btn:hover:not(:disabled){filter:brightness(1.06);}
+.serve-btn:active:not(:disabled){transform:translateY(2px);box-shadow:0 2px 0 var(--gold-deep);}
+.serve-btn:disabled{background:#5a5348;color:#2c281f;border-color:#3f3a32;box-shadow:0 4px 0 #2c281f;cursor:not-allowed;}
+
+/* Battle log (bottom-right) */
+.log-panel{right:24px;bottom:28px;width:380px;max-height:230px;display:flex;flex-direction:column;}
+.battle-log{list-style:none;margin:0;padding:0;overflow-y:auto;}
+.log-item{
+  display:flex;justify-content:space-between;gap:8px;align-items:center;
+  padding:6px 8px;border-radius:8px;margin-bottom:5px;background:rgba(0,0,0,.22);
+  font-size:13px;font-weight:600;
+}
+.log-item .log-text{flex:1;}
+.log-crown{font-weight:900;white-space:nowrap;}
+.log-item.good .log-crown{color:var(--good);}
+.log-item.bad .log-crown{color:var(--bad);}
+.log-item.meh .log-crown{color:var(--meh);}
+.log-item.good{border-left:3px solid var(--good);}
+.log-item.bad{border-left:3px solid var(--bad);}
+
+/* Title overlay */
+.title-overlay{
+  position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;
+  background:radial-gradient(circle at 50% 40%, rgba(20,14,28,.7), rgba(10,7,16,.94));
+}
+.title-overlay.hidden{display:none;}
+.title-logo{
+  margin:0;font-size:76px;font-weight:900;letter-spacing:4px;color:var(--gold);
+  text-shadow:0 4px 0 #7a3d12, 0 0 30px rgba(139,92,246,.5);
+}
+.title-tag{margin:0;color:#d8ccf0;font-size:18px;font-weight:600;}
+.open-shop-btn{
+  margin-top:10px;background:var(--purple);color:#fff;border:3px solid #c4b5fd;
+  border-radius:14px;padding:14px 40px;font-weight:900;font-size:20px;
+  text-transform:uppercase;letter-spacing:2px;cursor:pointer;box-shadow:0 6px 0 var(--purple-deep);
+}
+.open-shop-btn:hover{filter:brightness(1.08);}
+.open-shop-btn:active{transform:translateY(3px);box-shadow:0 3px 0 var(--purple-deep);}
