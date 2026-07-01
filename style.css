@@ -49,7 +49,7 @@ body{
 }
 
 /* Items (center, over the counter) */
-.items-panel{left:50%;transform:translateX(-50%);top:352px;width:430px;}
+.items-panel{left:40px;top:140px;width:430px;}
 .item-cards{display:flex;gap:10px;}
 .item-card{
   flex:1;background:var(--parchment);color:var(--ink);border:2px solid var(--wood-edge);
@@ -150,7 +150,7 @@ body{
 .hidden{display:none;}
 
 /* Upgrades panel shares the center slot with the Shelf */
-.upgrades-panel{left:50%;transform:translateX(-50%);top:352px;width:430px;max-height:270px;overflow-y:auto;}
+.upgrades-panel{left:40px;top:140px;width:430px;max-height:200px;overflow-y:auto;}
 .upgrade-cards{display:flex;flex-direction:column;gap:8px;}
 .upgrade-card{
   background:var(--parchment);color:var(--ink);border:2px solid var(--wood-edge);

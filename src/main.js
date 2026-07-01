@@ -16,7 +16,14 @@ ctx.imageSmoothingEnabled = false;                 // crisp pixels once sprites 
 
 const state = loadState();                         // resume from a saved shop, or a fresh one
 
+// Diorama sprites — each falls back to a placeholder if its PNG is absent, so art can drop in
+// piecemeal. Filenames match the ids the scene uses.
 loadSprite('mimic_merchant', 'assets/sprites/mimic_merchant.png');
+loadSprite('slime',    'assets/sprites/slime.png');
+loadSprite('bat',      'assets/sprites/bat.png');
+loadSprite('skeleton', 'assets/sprites/skeleton.png');
+loadSprite('counter',  'assets/sprites/counter.png');
+loadSprite('portal',   'assets/sprites/portal.png');
 
 function resize() {
   const s = Math.min(window.innerWidth / CONFIG.stage.width, window.innerHeight / CONFIG.stage.height);

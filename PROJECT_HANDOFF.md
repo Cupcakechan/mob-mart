@@ -326,6 +326,13 @@ static placeholder. Its draw height is a single constant in `src/render/scene.js
 currently 240px); adjust it and drop `assets/sprites/mimic_merchant.png` to preview a static Bob in
 place. Full animated sheets follow once the scale is locked.
 
+**All diorama sprites are wired with graceful fallback** (drop a PNG → it appears; absent → a
+placeholder shows). Filenames/ids: `mimic_merchant`, `slime`, `bat`, `skeleton`, `counter`,
+`portal` (all under `assets/sprites/`). Each has a tunable size/position block at the top of
+`scene.js` (`QUEUE`, `BOB`, `COUNTER`, `PORTAL`). Suggested authoring sizes: **counter/desk ~480px
+wide** on-screen (`COUNTER.width`; author 2× ≈ 960px for crisp edges), mobs ~128×128 drawn at the
+88px `QUEUE.size`, portal to the ~141×245 `PORTAL` box.
+
 ---
 
 ## 10. Project structure & conventions
