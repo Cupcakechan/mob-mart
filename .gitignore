@@ -17,3 +17,6 @@ desktop.ini
 
 # --- Logs / temp ---
 *.log
+
+# --- Scratch / dev-only test harnesses (run locally, never shipped or committed) ---
+test_*.mjs

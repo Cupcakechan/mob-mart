@@ -2,7 +2,7 @@
 // wrapped in try/catch so a disabled/full/private-mode store degrades to a fresh game, never a crash.
 import { clamp } from './utils.js';
 import { ITEMS } from './data/items.js';
-import { UPGRADES } from './data/upgrades.js';
+import { UPGRADES, sumEffect } from './data/upgrades.js';
 import { WORKERS } from './data/workers.js';
 import { createInitialState } from './state.js';
 
@@ -16,18 +16,23 @@ export function mergeSave(fresh, data) {
   if (!data || typeof data !== 'object') return fresh;
   fresh.gold = Math.max(0, numOr(data.gold, fresh.gold));
   fresh.reputation = Math.max(0, numOr(data.reputation, fresh.reputation));
-  if (data.items && typeof data.items === 'object') {
-    for (const id of Object.keys(fresh.items)) {                 // iterate CURRENT items, not saved
-      const maxStock = ITEMS[id]?.maxStock ?? Infinity;
-      const saved = data.items[id]?.stock;
-      fresh.items[id].stock = clamp(Math.floor(numOr(saved, fresh.items[id].stock)), 0, maxStock);
-    }
-  }
+  // Upgrades merge FIRST: the item-stock clamp below needs the restored Extra Shelf level to compute
+  // the effective cap. (Clamping to the BASE cap here used to eat any stock bought above it on every
+  // reload — silently refunding nothing.)
   if (data.upgrades && typeof data.upgrades === 'object') {
     for (const id of Object.keys(fresh.upgrades)) {              // iterate CURRENT upgrades
       const maxLevel = UPGRADES[id]?.maxLevel ?? 0;
       const saved = data.upgrades[id];
       fresh.upgrades[id] = clamp(Math.floor(numOr(saved, fresh.upgrades[id])), 0, maxLevel);
+    }
+  }
+  if (data.items && typeof data.items === 'object') {
+    for (const id of Object.keys(fresh.items)) {                 // iterate CURRENT items, not saved
+      // Effective cap = base + restored maxStock upgrade effects (mirrors game.js effectiveMaxStock;
+      // computed here directly to keep save.js free of a game.js dependency).
+      const maxStock = (ITEMS[id]?.maxStock ?? Infinity) + sumEffect(fresh, 'maxStock');
+      const saved = data.items[id]?.stock;
+      fresh.items[id].stock = clamp(Math.floor(numOr(saved, fresh.items[id].stock)), 0, maxStock);
     }
   }
   // Workers: only `owned` is persisted. Iterate CURRENT workers (unknown saved ids ignored); a save

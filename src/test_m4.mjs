@@ -150,15 +150,17 @@ console.log('M4 auto-serve worker — smoke test\n');
   ok(s.gold === 12, 'after restock the sale goes through');
 }
 
-// 8. Unaffordable customer does not break automation --------------------------
+// 8. Unaffordable customer -> the SERVE tick makes no sale (the auto-wave is covered in 10) --------
 {
   const s = shopState();
   s.gold = 50; hireWorker(s, 'mimic_merchant');
   s.gold = 0;
   s.queue = [customer('skeleton', 'club', 5)];    // budget 5 < club price 12
-  update(s, 6.0);
-  ok(s.queue.length === 1, 'unaffordable: customer not served, no crash');
-  ok(s.gold === 0, 'unaffordable: no gold gained');
+  const stock0 = s.items.club.stock;
+  update(s, 1.0);                                  // under both the 6s serve interval and the 2s wave grace
+  ok(s.queue.length === 1, 'unaffordable: still at front (no sale, not yet waved), no crash');
+  ok(s.gold === 0, 'unaffordable: no gold gained (serve tick made no sale)');
+  ok(s.items.club.stock === stock0, 'unaffordable: stock unchanged');
 }
 
 // 9. Manual serve still works (unchanged path) --------------------------------
@@ -171,6 +173,82 @@ console.log('M4 auto-serve worker — smoke test\n');
   ok(s.items.club.stock === stock0 - 1, 'manual serve decremented stock');
   ok(s.gold === 40 + 12, 'manual serve took payment on top of starting gold');
   ok(s.workerServed === false, 'manual serve does NOT set the worker anim flag (handled directly by main.js)');
+}
+
+// 10. Broke auto-wave — worker-gated, after the grace, rep-neutral, line keeps flowing ------------
+{
+  // No worker hired -> a broke front customer is NOT auto-waved (manual play is unchanged).
+  const s = shopState();
+  s.queue = [customer('skeleton', 'club', 5)];    // budget 5 < club price 12 -> broke
+  const rep0 = s.reputation;
+  update(s, 5.0);                                  // well past the 2s grace
+  ok(s.queue.length === 1, 'no worker: broke front is NOT auto-waved');
+  ok(s.reputation === rep0, 'no worker: reputation unchanged (no auto-wave path ran)');
+}
+{
+  // Worker hired -> broke front is waved after the grace; the affordable customer behind is served.
+  const s = shopState();
+  s.gold = 50; hireWorker(s, 'mimic_merchant');
+  s.gold = 0;
+  s.queue = [customer('skeleton', 'club', 5), customer('skeleton', 'club', 99)]; // broke, then affordable
+  const rep0 = s.reputation;
+
+  update(s, 1.0);                                  // under the 2s grace
+  ok(s.queue.length === 2, 'worker: broke front NOT waved before the grace elapses');
+
+  update(s, 1.5);                                  // 2.5s total -> past grace -> wave
+  ok(s.queue[0] && s.queue[0].budget === 99, 'worker: broke front auto-waved; affordable customer now at front');
+  ok(s.reputation === rep0, 'auto-wave is rep-neutral (no penalty)');
+  ok(s.log.some((e) => e.tier === 'dismiss'), 'auto-wave wrote a rep-neutral dismiss log line');
+
+  update(s, 6.0);                                  // worker serves the revealed affordable customer
+  ok(s.queue.length === 0, 'worker serves the affordable customer that was stuck behind the broke one');
+  ok(s.gold === 12, 'that sale went through (club 12)');
+}
+{
+  // Out-of-stock front is NOT auto-waved even with a worker — that pressure is intended (restock fixes).
+  const s = shopState();
+  s.gold = 50; hireWorker(s, 'mimic_merchant'); s.gold = 0;
+  s.items.club.stock = 0;
+  s.queue = [customer('skeleton', 'club', 99)];   // affordable, but out of stock
+  update(s, 5.0);
+  ok(s.queue.length === 1, 'out-of-stock front is NOT auto-waved (restock is the intended fix)');
+}
+
+// 11. REGRESSION (audit): reload must NOT eat stock bought above the BASE cap via Extra Shelf -----
+{
+  const s = createInitialState();
+  s.upgrades.extra_shelf = 2;                      // effective cap = 5 + 2 = 7
+  s.items.club.stock = 7;                          // restocked to the effective cap
+  const blob = JSON.parse(JSON.stringify(serializeSave(s)));
+  const restored = mergeSave(createInitialState(), blob);
+  ok(restored.items.club.stock === 7, 'reload preserves stock above the BASE cap (Extra Shelf L2, stock 7)');
+  ok(restored.upgrades.extra_shelf === 2, 'Extra Shelf level restored alongside');
+
+  // Absurd saved stock is still clamped — to the EFFECTIVE cap, not the base one.
+  const cheat = { upgrades: { extra_shelf: 2 }, items: { club: { stock: 999 } } };
+  const clamped = mergeSave(createInitialState(), cheat);
+  ok(clamped.items.club.stock === 7, 'absurd saved stock clamps to the effective cap (7), not base (5)');
+}
+
+// 12. REGRESSION (audit): spawn fallback for a broken wantWeights must be a real ITEM id ----------
+{
+  const { spawnCustomer } = await import('./src/game.js');
+  const { MONSTERS } = await import('./src/data/monsters.js');
+  const { ITEMS } = await import('./src/data/items.js');
+  const saved = MONSTERS.slime.wantWeights;
+  MONSTERS.slime.wantWeights = [];                 // simulate a registry entry with empty weights
+  let sawSlime = false, allItemsValid = true;
+  for (let i = 0; i < 60; i++) {                   // spawnCustomer picks a random monster; sample it
+    const c = spawnCustomer();
+    if (c.monsterId === 'slime') {
+      sawSlime = true;
+      if (!ITEMS[c.wantedItemId]) allItemsValid = false;
+    }
+  }
+  MONSTERS.slime.wantWeights = saved;              // restore the registry for any later cases
+  ok(sawSlime, 'sample produced at least one slime (probabilistic; 60 draws)');
+  ok(allItemsValid, 'empty wantWeights falls back to a REAL item id (never an unservable want)');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

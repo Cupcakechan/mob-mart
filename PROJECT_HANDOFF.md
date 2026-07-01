@@ -4,18 +4,21 @@
 session before doing any work. Update it as decisions change. Kept self-contained so a fresh
 Claude or ChatGPT can parse it cold.*
 
-**Status:** **M1–M3 complete and pushed.** **M4 (first mimic worker — Bob auto-serve) is built and
-logic-tested (46-assertion headless smoke test + `node --check` clean); browser-confirm + commit are
-the only steps left before it's "pushed."** The core loop, `localStorage` save, full FIFO queue +
-reputation, the comedy voice pass, all three upgrades (Extra Shelf / Faster Counter / Better Signage)
-with rep-tier gating, and now **Bob auto-serving the front of the line on a hire-to-activate interval**
-are live and playable. Bob is animated (idle loop + serving one-shot); the diorama sprites and a **WIP
-`shop_bg.png` backdrop** are wired.
-**Next action:** **Confirm M4 in the browser + commit, then M5 — offline earnings.** `lastSeen` is
-already persisted; on load, timestamp delta → capped estimate → "While you were away" modal. Offline's
-per-second rate now has a real automation source (Bob) to multiply. See §6 and §12 "Next up".
-**Last updated:** M4 built (auto-serve worker: hire-with-gold model, shared serve cooldown, Workers tab
-activated) — headless-tested; awaiting browser confirmation + commit.
+**Status:** **M1–M4 complete and pushed.** The core loop, `localStorage` save, full FIFO queue +
+reputation, all three rep-gated upgrades, and the M4 automation proof — **Bob hired for gold,
+auto-serving the front of the line on an interval through the manual serve path** — are live,
+browser-confirmed, and committed. M4 also shipped the **rep-neutral auto-wave** of unaffordable front
+customers (worker-gated, 2s grace). Post-M4 polish is in: **comedy v2** (148 lines: dismiss/leave
+expanded, Bob voice, genre-trope lines, gags seeded), the **no-repeat line picker**, and an **audit
+pass** (fixed a real save bug — reload used to clamp stock to the BASE cap, eating Extra-Shelf stock;
+fixed a wrong-registry spawn fallback; removed stray duplicate files). 61-assertion headless smoke
+test + `node --check` clean on every module.
+**Next action:** **M5 — offline earnings.** `lastSeen` is already persisted; on load, timestamp delta
+→ capped estimate → "While you were away" modal. Bob's interval gives the per-second rate to multiply.
+**Opening decision for M5:** worker-only earnings, or a small no-worker "unattended drip" (a design
+change to the earning model — see §13). See §6 and §12 "Next up".
+**Last updated:** audit-fixes pass (save clamp uses the effective cap; spawn fallback is an item id;
+strays removed; scratch tests gitignored) — M4 era fully closed; M5 next.
 
 ---
 
@@ -145,6 +148,18 @@ transient `state.workerServed` flag; `main.js` reads it to fire Bob's existing s
 (`playBobServe`). The manual click still fires that animation directly in `onServe`, so the two paths
 don't double-trigger.
 
+**Broke auto-wave (M4 follow-up):** with a serve-worker hired, a FRONT customer whose block reason is
+`cant-afford` is auto-waved via the rep-neutral `dismissCurrent` (+ its dismiss log line) after
+`CONFIG.queue.brokeGraceSec` (2s), so broke customers don't stall the line and cascade patience
+timeouts (−rep) onto the affordable customers behind them. Gated on `anyServeWorkerOwned` — manual-only
+play is unchanged. Keys off `serveBlockReason`, so it fires on exactly the "Can't afford it" state:
+**out-of-stock is deliberately NOT auto-waved** (restock is the intended fix), and cooldowns pause it.
+Customers carry a transient `brokeWait` accumulator (never persisted).
+
+**Line picker (post-M4 polish):** `logLine` in `src/messages.js` remembers the last template dealt per
+`monsterId|tier` pool and re-draws once on a match, so the log never shows the same line twice in a row
+within a pool. Module-level, ephemeral presentation memory — resets on reload, never saved.
+
 **Combat resolver** (`src/combat.js`): `score = itemEffect + monster.combatMod − encounterDifficulty
 + rng(−spread..+spread)` → tier enum. `resolveCombat` returns `{tier,score}`; flavour text is chosen
 by `src/messages.js` (`logLine`), pooling generic + per-monster lines with graceful fallback. Gold and
@@ -153,7 +168,9 @@ reputation come from the **sale**; the tier only picks the flavour line.
 **Save schema** (`src/save.js`, `mobmart.save.v1`): persists `{version, gold, reputation,
 items:{id:{stock}}, upgrades:{id:level}, workers:{id:{owned}}, lastSeen}`. Queue, spawn timer, serve
 cooldown, **worker auto-serve timers**, transient flags (`uiDirty`, `workerServed`), and log are
-**ephemeral**. Every field default-filled + guarded on load (gold/rep floored at 0, stock clamped,
+**ephemeral**. Every field default-filled + guarded on load (gold/rep floored at 0, **stock clamped to
+the EFFECTIVE cap — base `maxStock` + restored Extra-Shelf effect; upgrades are merged before items so
+the cap is known** (audit fix — the old base-cap clamp ate above-base stock on every reload),
 upgrade levels clamped, worker `owned` coerced to a strict boolean, unknown ids ignored); a **pre-M4
 save with no `workers` key loads with every worker unowned**. On resume, an owned worker's `timer`
 starts at a full `baseInterval` so he doesn't fire the instant the shop opens. **SAVE_VERSION stays 1**
@@ -182,6 +199,8 @@ Bob's interval. To make it affect only one, change what `effectiveWorkerInterval
 `effectiveServeCooldown` divide by — they're the two consumers of the `serveSpeed` sum. **Feel note:**
 a worker whose timer is ready in an empty shop serves the next arrival almost instantly (readiness
 "pounces"); if that reads as too eager, gate the timer countdown on a servable customer being present.
+**Auto-wave tunable:** `CONFIG.queue.brokeGraceSec` = 2 — seconds an unaffordable FRONT customer
+lingers before a hired worker waves them off (rep-neutral). Lower toward 0 for a snappier clear.
 
 **Suggested upgrades (M3):** `extra_shelf`, `faster_counter`, `better_signage`, `backroom_storage`
 (offlineCap +2h), `hire_goblin` → "hire mimic worker" (unlock/discount a second worker).
@@ -212,12 +231,13 @@ Each milestone is a **single-purpose, individually tested, individually committe
   FIFO queue + per-mob patience, reputation HUD (service-based). Three passes; committed.
 - **M3 — Upgrades + spend economy. DONE.** Extra Shelf / Faster Counter / Better Signage, data-driven,
   rep-tier gated. Three passes; committed.
-- **M4 — First mimic worker (auto-serve). BUILT — browser-confirm + commit pending.** Bob auto-serves
+- **M4 — First mimic worker (auto-serve). DONE.** Bob auto-serves
   the front customer on a hire-to-activate interval, reusing `serveCurrent` (payout / rep / log /
   cooldown unchanged) and the shared serve cooldown (so Faster Counter speeds automation too).
   **Model B — hire with gold** (`hireCost` 50; no rep gate). New `src/data/workers.js` (Bob =
   `mimic_merchant`, role `serve`, `baseInterval` 6s). Workers tab activated; single Bob card
-  (Hire → Active). No worker leveling, no restock automation, no second worker.
+  (Hire → Active). No worker leveling, no restock automation, no second worker. **Includes the broke
+  auto-wave follow-up:** hired worker → unaffordable front customers rep-neutrally waved after 2s.
 - **M5 — Offline earnings.** Timestamp delta → capped estimate → "While you were away" modal. Bob now
   provides a real per-second automation rate to multiply. `src/offline.js`.
 - **M6 — Kongregate no-op bridge stub + one `loaded` stat.** Purely additive; can't break local/itch.
@@ -345,33 +365,38 @@ persistence keys; default missing save fields on load. No secrets on the client.
 
 Playable end-to-end: open the shop → mobs queue (capped FIFO, patience) → Serve the front one (brief
 "Serving…" cooldown, then they leave to battle) → a funny result lands → gold + rep come in → restock,
-buy upgrades. **All three upgrades live + rep-gated.** **M4 (auto-serve): hire Bob from the Workers tab
-for 50 gold; once hired he auto-serves the front of the line ~every 6s, using the same serve path
-(payout / rep / log / cooldown / animation), sped up by Faster Counter.** Progress auto-saves
-(`mobmart.save.v1`), survives reload; Reset clears it. Bob is animated (idle + serving) in an
-animated/backdrop-ready diorama with a WIP `shop_bg.png`. `node --check` clean on every module; a
-46-assertion headless smoke test (`test_m4.mjs`, scratch — not shipped) passes. **M4 is built and
-logic-tested but NOT yet browser-confirmed or committed** — that's the immediate next step.
+buy upgrades. **All three upgrades live + rep-gated.** **M4 (auto-serve, committed): hire Bob from the
+Workers tab for 50 gold; once hired he auto-serves the front of the line ~every 6s, using the same
+serve path (payout / rep / log / cooldown / animation), sped up by Faster Counter — and rep-neutrally
+waves off unaffordable front customers after 2s so they can't stall the line.** Comedy v2 is shipped
+(148 lines; expanded dismiss/leave, Bob voice, genre tropes, seeded gags) with a **no-repeat picker**
+(never the same line twice in a row per monster/tier pool). An **audit pass** fixed two real issues:
+the save loader now clamps stock to the **effective** cap (upgrades merged before items — reloads no
+longer eat Extra-Shelf stock), and the spawn fallback for a broken `wantWeights` is a real item id.
+Progress auto-saves (`mobmart.save.v1`), survives reload; Reset clears it. Bob is animated (idle +
+serving) with a WIP `shop_bg.png`; mob/portal sprites are still placeholders (art WIP). `node --check`
+clean on every module; a **61-assertion** headless smoke test (`test_m4.mjs`, scratch — gitignored,
+not shipped) passes, including regressions for both audit fixes.
 
 ### Next up
 
-- **Confirm M4 in the browser + commit.** Hire Bob, watch auto-serve fire and Bob's serve anim play on
-  the auto path, confirm cooldown pacing + Faster Counter speed-up, confirm a pre-M4 save still loads
-  and manual serve still works, no console errors. Then commit.
-- **M5 — offline earnings.** `lastSeen` already persisted. On load: timestamp delta → **capped**
-  estimate of what Bob would have earned → "While you were away" modal. `src/offline.js`. (The M4
-  worker interval gives a concrete per-second rate for the estimate.)
+- **M5 — offline earnings (immediate).** `lastSeen` already persisted. On load: timestamp delta →
+  **capped** estimate of what Bob would have earned → "While you were away" modal. `src/offline.js`.
+  The M4 worker interval gives a concrete per-second rate. **Decide first (options → pick):**
+  (a) worker-only earnings vs a small no-worker "unattended drip" (a design change to the earning
+  model); (b) the offline cap value (a `backroom_storage` upgrade can extend it later per §5).
 - **M6 — Kongregate no-op bridge stub.** Purely additive `src/kongregate.js` + `index.kongregate.html`;
   one `loaded` stat.
 - **Outstanding (non-blocking):**
   - **Backdrop + props (art, in progress):** iterate `shop_bg.png`, then optionally split wall shelves
-    / torches / crates into modular props. Floor line fixed at y=446.
+    / torches / crates into modular props. Floor line fixed at y=446. Mob + portal sprites still
+    placeholder rects.
   - **itch.io dual-publish decision** (§13).
   - **Bestiary tab** — still a disabled nav stub.
-  - **Offline-foundation reframe (parked idea):** whether M5 pays a small base "unattended drip" even
-    with no worker (a design change to the earning model) or stays worker-only. Discussed, not decided.
-  - **Content options (parked):** add a customer (Gobbo) and/or activate the Bestiary — offered as
-    alternatives when M4 was briefly parked; revisit after M5 if desired.
+  - **Content options (parked):** add a customer (Gobbo) and/or activate the Bestiary — revisit after
+    M5 if desired.
+  - **Worker "pounce" feel (watch):** a ready worker serves a new arrival almost instantly; fine so
+    far — gate the countdown on a present customer if it ever reads as too eager.
 
 ### Build history (chronological)
 
@@ -387,7 +412,7 @@ logic-tested but NOT yet browser-confirmed or committed** — that's the immedia
 - **Background hook:** `scene.js` draws `shop_bg.png` with flat-color fallback at `FLOOR_Y` y=446.
 - **M3 pass 3 (M3 COMPLETE):** rep-tier gating — `isUpgradeUnlocked`; Extra Shelf → Neutral, Faster
   Counter → Friendly, Better Signage → Trusted; locked cards dimmed "Reach &lt;Tier&gt;".
-- **M4 (BUILT — browser-confirm + commit pending):** first mimic worker / auto-serve. New
+- **M4 (DONE, committed `6748ef5`):** first mimic worker / auto-serve. New
   `src/data/workers.js` (Bob = `mimic_merchant`, role `serve`, `baseInterval` 6s, `hireCost` 50).
   Hire-with-gold (Option B). `game.js` gained `canHireWorker` / `hireWorker` /
   `effectiveWorkerInterval` / an `updateWorkers` tick appended to `update()`, all reusing the manual
@@ -398,6 +423,30 @@ logic-tested but NOT yet browser-confirmed or committed** — that's the immedia
   shows rough interval); `main.js` wired `onHireWorker` and plays Bob's serve one-shot on the auto
   path via `workerServed`; `style.css` gained a `.workers-panel` / `.worker-card` block. Verified:
   `node --check` clean on all 7 changed files + a 46-assertion headless smoke test (`test_m4.mjs`).
+- **M4 follow-up — broke auto-wave (committed `a49e62c`):** with a serve-worker hired, an unaffordable
+  FRONT customer is rep-neutrally dismissed after `CONFIG.queue.brokeGraceSec` (2s), reusing
+  `dismissCurrent` + its log line; keyed off `serveBlockReason === 'cant-afford'`, so out-of-stock is
+  never waved. Fixes the "broke customer blocks the line → everyone behind times out (−rep)" cascade.
+  Customers gained a transient `brokeWait`; `game.js` gained `anyServeWorkerOwned` + `autoWaveBroke`.
+- **Comedy v2 (committed `6956d04`):** batch grown 111 → 148 lines, all originals preserved. Dismiss
+  6→14 generic (+Bob-voiced wave-offs; the hot tier since the auto-wave), leave 6→10, ~13 genre-trope
+  lines (rule: **tropes, never trademarks**), running gags seeded to payoff threshold (pebble ×3,
+  femur ×3, coupon ×2, gear-eating ×2). `COMEDY_BIBLE.md` gained the genre-parody section, Bob as a
+  documented fourth (shop-side-only) voice, and a gag status tracker. Files kept in verified sync.
+- **Picker micro-pass (committed `be48e7a`):** `logLine` remembers the last template per
+  `monsterId|tier` pool and re-draws once on a match — never the same line twice in a row per pool.
+  Property-tested: 105k draws, zero back-to-back repeats.
+- **Audit-fixes pass (this commit):** post-model-swap audit of the pushed repo found and fixed:
+  **(1) real save bug** — `mergeSave` clamped stock to the BASE `maxStock`, so reloading ate any stock
+  bought above it via Extra Shelf (repro: L2 + stock 7 → reload → 5, 12g of restocks lost). Fix:
+  upgrades merge before items; the clamp uses base + `sumEffect(fresh,'maxStock')`. **(2) latent
+  wrong-registry fallback** — `spawnCustomer`'s `wantedItemId` fell back to `MONSTER_IDS[0]` (a
+  monster id) → now `ITEM_ORDER[0]`; the old value would have made a customer with broken
+  `wantWeights` an unservable `'no-item'` front blocker the auto-wave can't clear. **(3)** deleted
+  three stray duplicate files committed by accident in M4 (`src/nav.js`, `src/panels.js`,
+  `src/workers.js` — exact copies of the `ui/`/`data/` originals, unimported). **(4)** `.gitignore`
+  now excludes `test_*.mjs`; `messages.js` trailing newline restored. Smoke test grown to
+  **61 assertions** incl. regressions for (1) and (2).
 
 ---
 

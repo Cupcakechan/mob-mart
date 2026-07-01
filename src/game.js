@@ -1,7 +1,7 @@
 // game.js — core loop logic. Operates on the state object; no DOM/canvas here (so it's testable).
 import { CONFIG } from './config.js';
 import { MONSTERS, MONSTER_IDS } from './data/monsters.js';
-import { ITEMS } from './data/items.js';
+import { ITEMS, ITEM_ORDER } from './data/items.js';
 import { UPGRADES, upgradeLevel, upgradeCost, isMaxed, sumEffect } from './data/upgrades.js';
 import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost } from './data/workers.js';
 import { randInt, pick, weightedPick } from './utils.js';
@@ -13,7 +13,9 @@ import { logLine } from './messages.js';
 
 export function spawnCustomer() {
   const monster = MONSTERS[pick(MONSTER_IDS)];
-  const wantedItemId = weightedPick(monster.wantWeights) ?? MONSTER_IDS[0];
+  // Fallback must be an ITEM id (guards a monster shipped with missing/empty wantWeights). A monster
+  // id here made the customer want a nonexistent item -> a permanent 'no-item' front blocker.
+  const wantedItemId = weightedPick(monster.wantWeights) ?? ITEM_ORDER[0];
   const [minB, maxB] = monster.budgetRange ?? [10, 20];
   return {
     monsterId: monster.id,
