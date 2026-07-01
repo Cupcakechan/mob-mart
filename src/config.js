@@ -7,14 +7,25 @@ export const CONFIG = {
     startingReputation: 0,
   },
 
+  reputation: {
+    // Ascending by `min`; the HUD shows the highest tier whose threshold reputation has reached.
+    // Display-only in M2 — M3 content will gate availability against these tiers.
+    tiers: [
+      { label: 'Neutral',  min: 0 },
+      { label: 'Friendly', min: 20 },
+      { label: 'Trusted',  min: 50 },
+      { label: 'Beloved',  min: 100 },
+    ],
+  },
+
   queue: {
     // M1: one customer at a time.
     nextCustomerDelaySec: 1.2, // gap after one leaves before the next walks up
     firstCustomerDelaySec: 0.4,// how soon the first customer arrives after opening the shop
-    // Patience is lenient in M1 — its only job here is to stop the loop soft-locking if a
-    // customer can't be served (out of stock / can't afford). They leave; never a hard fail.
+    // Patience is lenient — its only job in M1 is to stop the loop soft-locking if a customer
+    // can't be served (out of stock / can't afford). They leave; never a hard fail.
     defaultPatienceSec: 20,
-    leaveRepPenalty: 1,        // rep ding when a customer gives up waiting (tracked; shown in log)
+    leaveRepPenalty: 1,        // rep ding when a customer gives up waiting
   },
 
   combat: {

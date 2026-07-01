@@ -126,3 +126,11 @@ body{
 }
 .dismiss-btn:hover:not(:disabled){background:rgba(255,255,255,.06);color:#fff;}
 .dismiss-btn:disabled{opacity:.35;cursor:not-allowed;}
+
+/* HUD holds two chips (Gold + Rep) in a centered row */
+.hud{display:flex;gap:12px;}
+.hud-icon.rep{color:#b794f6;}
+.hud-tier{
+  color:#e6ddf7;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:1px;
+  background:rgba(139,92,246,.22);border:1px solid var(--panel-edge);border-radius:8px;padding:2px 8px;
+}

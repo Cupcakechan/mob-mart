@@ -385,9 +385,12 @@ now — fully local).
   Skeleton); design doc + `.gitignore`; GitHub repo created (`Cupcakechan/mob-mart`); **M1 vertical
   slice built** (`index.html`, `style.css`, the M1 `src/` modules) and **logic-tested** (`node
   --check` clean on all modules + an 8-case headless smoke test of the loop).
-- **Next:** M1 tested and pushed. Two small refinements added on top (a **Send Away** dismiss, and a
-  static-sprite path so **Bob's scale** can be checked before animation). On confirmation of those →
-  git checkpoint, then **M2** (localStorage save + full queue + reputation HUD stat/unlocks).
+- **Done since:** M1 tested and pushed, plus a **Send Away** dismiss and a static-sprite path (Bob's
+  scale locked with a front-facing 160×160 sprite at 240px on-screen). **M2 is being built as three
+  separate passes** (one system each): **(1) Reputation HUD — done** (value + tier label on the top
+  bar, tiers in `config.js`, display-only); (2) full customer queue; (3) localStorage save (last, so
+  the state shape is settled before the schema is written).
+- **Next:** M2 pass 2 — the full customer queue (multiple mobs waiting, per-customer patience).
 
 ---
 
