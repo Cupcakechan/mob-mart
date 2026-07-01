@@ -23,22 +23,25 @@ const QUEUE = {
   spriteScale: 1.0,    // drawn sprite height = size * this
 };
 
-// --- Bob (shopkeeper). Tweak `height` to size-check him. ----------------------
-const BOB = {
-  centerX: W * 0.57,   // ~730, centered over the counter
-  feetY:   H * 0.585,  // ~421
-  height:  240,        // ON-SCREEN HEIGHT IN PX
-  placeholderColor:'#7a4a2a',
-};
-
 // --- Counter / "desk" furniture. Author your desk ~`width` wide (2x for crisp). ---
 // Sprite is drawn at `width`, aspect preserved, its BOTTOM resting on `baseY`.
+// baseY is the SINGLE floor-contact dial: RAISE it (bigger number) to sink the desk lower, LOWER it
+// to lift the desk. Bob is anchored to this below, so tuning baseY keeps his hands on the counter.
 const COUNTER = {
-  centerX: W * 0.57,   // ~730 (under Bob)
-  baseY:   H * 0.60,   // ~432, where the desk's bottom sits
-  width:   480,        // ON-SCREEN WIDTH IN PX  <-- the "ideal desk size" dial
+  centerX: W * 0.57,   // ~730
+  baseY:   H * 0.66,   // ~475, desk's bottom sits here on the floor   <-- FLOOR-CONTACT DIAL
+  width:   480,        // ON-SCREEN WIDTH IN PX                         <-- desk-size dial
   phHeight: 118,       // placeholder rect height (until the sprite loads)
   color:'#5b3a24', topColor:'#7a5233',
+};
+
+// --- Bob (shopkeeper). Feet anchored 11px above the counter base so his hands stay on the desk
+// top whenever you re-tune COUNTER.baseY. Tweak `height` to size-check him. ---
+const BOB = {
+  centerX: W * 0.57,          // ~730, centered over the counter
+  feetY:   COUNTER.baseY - 11, // follows the counter (keeps Bob grounded + hands on the desk)
+  height:  240,               // ON-SCREEN HEIGHT IN PX
+  placeholderColor:'#7a4a2a',
 };
 
 // --- Portal ("To Battle" door). Sprite stretches to this box. -----------------
