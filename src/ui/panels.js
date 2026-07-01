@@ -1,9 +1,9 @@
-// panels.js — DOM panels: current customer, shelf item cards (restock), serve, battle log.
+// panels.js — DOM panels: current customer, shelf item cards (restock), serve/dismiss, battle log.
 import { ITEMS, ITEM_ORDER } from '../data/items.js';
 import { MONSTERS } from '../data/monsters.js';
 import { serveBlockReason, canRestock } from '../game.js';
 
-let handlers = { onServe: () => {}, onRestock: () => {} };
+let handlers = { onServe: () => {}, onDismiss: () => {}, onRestock: () => {} };
 
 export function initPanels(root, h) {
   handlers = h;
@@ -12,6 +12,7 @@ export function initPanels(root, h) {
       <h2 class="panel-title">Current Customer</h2>
       <div id="customer-body" class="customer-body"></div>
       <button id="serve-btn" class="serve-btn">Serve</button>
+      <button id="dismiss-btn" class="dismiss-btn">Send Away</button>
     </section>
 
     <section class="panel items-panel">
@@ -25,6 +26,7 @@ export function initPanels(root, h) {
     </section>`;
 
   document.getElementById('serve-btn').addEventListener('click', () => handlers.onServe());
+  document.getElementById('dismiss-btn').addEventListener('click', () => handlers.onDismiss());
 
   // Item cards are static structure; only the stock number + button state change at runtime.
   document.getElementById('item-cards').innerHTML = ITEM_ORDER.map((id) => {
@@ -51,6 +53,7 @@ const REASON_LABEL = {
 export function renderPanels(state) {
   const body = document.getElementById('customer-body');
   const serveBtn = document.getElementById('serve-btn');
+  const dismissBtn = document.getElementById('dismiss-btn');
   const c = state.currentCustomer;
 
   if (c) {
@@ -68,6 +71,7 @@ export function renderPanels(state) {
     serveBtn.disabled = true;
     serveBtn.textContent = 'Serve';
   }
+  dismissBtn.disabled = !c;
 
   for (const id of ITEM_ORDER) {
     const stockEl = document.getElementById(`stock-${id}`);
@@ -81,8 +85,11 @@ export function renderPanels(state) {
   if (log) {
     log.innerHTML = state.log.map((e) => {
       const cls = e.repDelta > 0 ? 'good' : (e.repDelta < 0 ? 'bad' : 'meh');
-      const crown = `${e.repDelta > 0 ? '+' : ''}${e.repDelta}`;
-      return `<li class="log-item ${cls}"><span class="log-text">${e.text}</span><span class="log-crown">${crown}&#9819;</span></li>`;
+      // Only combat/leave entries carry a crown; a no-sale dismiss (0) shows just the text.
+      const crown = e.repDelta !== 0
+        ? `<span class="log-crown">${e.repDelta > 0 ? '+' : ''}${e.repDelta}&#9819;</span>`
+        : '';
+      return `<li class="log-item ${cls}"><span class="log-text">${e.text}</span>${crown}</li>`;
     }).join('');
   }
 }

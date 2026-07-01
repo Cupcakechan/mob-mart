@@ -219,7 +219,8 @@ plays right (the ID+filename convention + graceful fallback means art never touc
   three item cards, **Serve** button, Battle Results log); registries for the 3 items, 3 monsters,
   results templates; spawn one customer at a time (no full queue yet); manual serve → stock/afford
   check → pay → combat resolve → log line → next customer; a lenient patience timeout that clears a
-  stuck customer (never a hard fail); restock buttons; the `config.js` constants. *Out (M1):* save,
+  stuck customer (never a hard fail); a **Send Away** button to wave off a customer you can't/won't
+  serve; restock buttons; the `config.js` constants. *Out (M1):* save,
   worker, offline, upgrades. (Reputation is tracked internally and shown as **per-line crowns** in
   the log for payoff; the cumulative Reputation HUD stat + rep-gated unlocks arrive in M2.)
   **Success test:** load page → a mob appears wanting an item → click Serve → gold rises → a funny
@@ -299,6 +300,11 @@ Aseprite fitting pass sets exact size and aligns every customer's baseline to th
 Item icons are the one exception to the perspective rule — they live mostly in DOM item cards, so a
 clean front/slightly-angled icon is fine.
 
+**Scale-check (in progress):** Bob's on-screen size is being validated ahead of animation via a
+static placeholder. Its draw height is a single constant in `src/render/scene.js` (`BOB.height`,
+currently 240px); adjust it and drop `assets/sprites/mimic_merchant.png` to preview a static Bob in
+place. Full animated sheets follow once the scale is locked.
+
 ---
 
 ## 10. Project structure & conventions
@@ -327,7 +333,7 @@ mob-mart/
 │   │   └── workers.js      <- worker registry (mimic_merchant "Bob")                       [M4]
 │   ├── render/
 │   │   ├── scene.js        <- canvas diorama (placeholder rects -> sprites)                [M1]
-│   │   └── sprites.js      <- asset load + graceful fallback                          [first art]
+│   │   └── sprites.js      <- static image loader + graceful fallback              [in: scale-check]
 │   └── ui/
 │       ├── hud.js          <- top resource bar                                             [M1]
 │       ├── panels.js       <- DOM panels (customer, workers, upgrades, log)                [M1]
@@ -379,8 +385,9 @@ now — fully local).
   Skeleton); design doc + `.gitignore`; GitHub repo created (`Cupcakechan/mob-mart`); **M1 vertical
   slice built** (`index.html`, `style.css`, the M1 `src/` modules) and **logic-tested** (`node
   --check` clean on all modules + an 8-case headless smoke test of the loop).
-- **Next:** Daniel tests M1 in the browser (Live Server). On confirmation → git checkpoint (first
-  commit + push), then **M2** (localStorage save + full queue + reputation HUD stat/unlocks).
+- **Next:** M1 tested and pushed. Two small refinements added on top (a **Send Away** dismiss, and a
+  static-sprite path so **Bob's scale** can be checked before animation). On confirmation of those →
+  git checkpoint, then **M2** (localStorage save + full queue + reputation HUD stat/unlocks).
 
 ---
 

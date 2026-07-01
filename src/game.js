@@ -54,6 +54,19 @@ export function serveCurrent(state) {
   return true;
 }
 
+// Wave off the current customer with no sale — the escape hatch when you can't/won't serve them
+// (e.g. they can't afford what they want). No rep penalty in M1; revisit when rep goes live in M2.
+export function dismissCurrent(state) {
+  const c = state.currentCustomer;
+  if (!c) return false;
+  const name = MONSTERS[c.monsterId]?.displayName ?? 'Someone';
+  pushLog(state, { text: `${name} left without buying.`, repDelta: 0, tier: 'dismiss', monsterId: c.monsterId });
+  state.currentCustomer = null;
+  state.nextCustomerTimer = CONFIG.queue.nextCustomerDelaySec;
+  state.uiDirty = true;
+  return true;
+}
+
 // --- Restocking --------------------------------------------------------------
 
 export function canRestock(state, itemId) {
@@ -87,7 +100,7 @@ export function update(state, dt) {
     return;
   }
 
-  // Lenient patience so the loop can't soft-lock when a customer can't be served.
+  // Lenient patience is a safety net so the loop can't soft-lock; the player can also Send Away.
   c.patienceRemaining -= dt;
   if (c.patienceRemaining <= 0) {
     const name = MONSTERS[c.monsterId]?.displayName ?? 'Someone';
