@@ -91,7 +91,7 @@ spawn timer fires -> pick monster type (weighted) -> roll wanted item + budget +
             -> in stock?  AND  budget >= item price?
                |-- YES -> decrement stock, add gold, mark served, monster walks to portal
                |          -> resolve combat (monster mod + item effect + difficulty + rng -> tier)
-               |          -> append funny log line, apply rep delta (crowns), (rare) excellent bonus
+               |          -> append funny log line; +perSale reputation for the sale (Option A)
                |          -> monster exits; next customer advances
                '-- NO  -> lost sale (out of stock / can't afford)
                           -> patience keeps ticking; hits 0 -> monster leaves unhappy
@@ -143,12 +143,12 @@ the mockup's "Lv 2, +25% Sell Price" fits here later).
 **Combat resolver** (`src/combat.js`) — the off-screen result:
 `resultScore = itemEffect + monster.combatMod − encounterDifficulty + rng(−spread..+spread)`,
 mapped to a `resultTier` enum: `excellent` (rare) · `success` · `partial` · `failure` ·
-`funnyFailure`. Each tier → a `repDelta` (crowns) and a `messageTemplate` pulled from the
+`funnyFailure`. Each tier → a `messageTemplate` (the funny line only) pulled from the
 **results-message registry** (`src/data/results.js`) keyed by (monsterId?, itemId?, tier) with
 **graceful fallback** to a generic tier line — so a new monster/item degrades to a generic funny
 message, never a missing-string crash. Gold comes from the **sale** (monster pays `basePrice` at
-purchase); the tier affects **reputation + the flavor line** (and, later, a small gold tip on
-`excellent`).
+purchase); reputation comes from the **sale** too (`reputation.perSale`), and the tier only picks
+the **flavor line** (a small gold tip on `excellent` is a possible later add — kept off reputation).
 
 **Save schema** (`src/save.js`, `mobmart.save.v1`):
 `{version, gold, reputation, items:{id:{stock,upgradeLevel}}, upgrades:{id:level},
@@ -189,10 +189,18 @@ Roster (not MVP): `goblin` (Gobbo), `rat` — first content additions after the 
 
 **Combat tuning (M1 start):** `encounterDifficulty` 10, `rng spread` ±6, tier thresholds:
 score ≥ 8 → excellent; 2..7 → success; −1..1 → partial; −6..−2 → failure; ≤ −7 → funnyFailure.
-Rep (crowns) per tier: excellent +5, success +2, partial +1, failure −1, funnyFailure −2.
+The tier picks the funny log line only — the fight is tuned so the mobs usually lose, so it must
+NOT drive rep.
 
-**Reputation tiers (example labels, tunable):** Neutral 0 · Friendly 20 · Trusted 50 · Beloved 100.
-For MVP, reputation is a **tier-unlock gate** (thresholds unlock item/monster/upgrade tiers).
+**Reputation model (Option A — service, not carnage):** a completed **sale** grants
+`reputation.perSale` (+2); a customer **leaving unserved** (patience timeout) costs
+`reputation.leavePenalty` (−1); a manual **Send Away** and the battle outcome are rep-neutral.
+Reputation floors at 0. This rates the player on running the shop (which they control), not on a
+fight they don't — and keeps the "they always lose" joke intact.
+
+**Reputation tiers (labels, tunable):** Neutral 0 · Friendly 20 · Trusted 50 · Beloved 100.
+Display-only in M2 (value + tier on the HUD). For MVP, reputation becomes a **tier-unlock gate** in
+M3 (thresholds unlock item/monster/upgrade tiers).
 **Later:** high rep triggers special "visits" (rare customer events) — no schema change needed;
 a "visit" is just a special customer instance gated behind a rep threshold.
 
@@ -388,8 +396,8 @@ now — fully local).
 - **Done since:** M1 tested and pushed, plus a **Send Away** dismiss and a static-sprite path (Bob's
   scale locked with a front-facing 160×160 sprite at 240px on-screen). **M2 is being built as three
   separate passes** (one system each): **(1) Reputation HUD — done** (value + tier label on the top
-  bar, tiers in `config.js`, display-only); (2) full customer queue; (3) localStorage save (last, so
-  the state shape is settled before the schema is written).
+  bar, tiers in `config.js`, display-only; rep is **service-based** — +2 per sale, −1 on a timeout,
+  battle outcome rep-neutral); (2) full customer queue; (3) localStorage save (last, so the state shape is settled before the schema is written).
 - **Next:** M2 pass 2 — the full customer queue (multiple mobs waiting, per-customer patience).
 
 ---

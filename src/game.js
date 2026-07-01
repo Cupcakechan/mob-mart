@@ -34,7 +34,8 @@ export function serveBlockReason(state) {
   return null;
 }
 
-// Serve the current customer: take payment, resolve combat off-screen, log it, clear the counter.
+// Serve the current customer: take payment, grant service rep, resolve the (flavour-only) fight,
+// log it, and clear the counter. Rep comes from the SALE, not the battle outcome (Option A).
 export function serveCurrent(state) {
   if (serveBlockReason(state) !== null) return false;
   const c = state.currentCustomer;
@@ -43,10 +44,10 @@ export function serveCurrent(state) {
 
   state.items[c.wantedItemId].stock -= 1;                       // hand over the item
   state.gold += item.basePrice;                                 // take payment (gold in)
+  state.reputation += CONFIG.reputation.perSale;                // a good sale earns reputation
 
-  const result = resolveCombat(monster, item);                 // the fight happens off-screen
-  state.reputation = Math.max(0, state.reputation + result.repDelta);
-  pushLog(state, { text: result.message, repDelta: result.repDelta, tier: result.tier, monsterId: monster.id });
+  const result = resolveCombat(monster, item);                 // off-screen fight -> funny line only
+  pushLog(state, { text: result.message, repDelta: CONFIG.reputation.perSale, tier: result.tier, monsterId: monster.id });
 
   state.currentCustomer = null;                                 // they leave to battle
   state.nextCustomerTimer = CONFIG.queue.nextCustomerDelaySec;
@@ -55,7 +56,7 @@ export function serveCurrent(state) {
 }
 
 // Wave off the current customer with no sale — the escape hatch when you can't/won't serve them
-// (e.g. they can't afford what they want). No rep penalty in M1; revisit when rep goes live in M2.
+// (e.g. they can't afford what they want). No rep change; it's a neutral no-sale.
 export function dismissCurrent(state) {
   const c = state.currentCustomer;
   if (!c) return false;
@@ -101,11 +102,12 @@ export function update(state, dt) {
   }
 
   // Lenient patience is a safety net so the loop can't soft-lock; the player can also Send Away.
+  // Leaving unserved is the ONLY thing that lowers reputation (neglect), floored at 0.
   c.patienceRemaining -= dt;
   if (c.patienceRemaining <= 0) {
     const name = MONSTERS[c.monsterId]?.displayName ?? 'Someone';
-    state.reputation = Math.max(0, state.reputation - CONFIG.queue.leaveRepPenalty);
-    pushLog(state, { text: `${name} got tired of waiting and left.`, repDelta: -CONFIG.queue.leaveRepPenalty, tier: 'leave', monsterId: c.monsterId });
+    state.reputation = Math.max(0, state.reputation - CONFIG.reputation.leavePenalty);
+    pushLog(state, { text: `${name} got tired of waiting and left.`, repDelta: -CONFIG.reputation.leavePenalty, tier: 'leave', monsterId: c.monsterId });
     state.currentCustomer = null;
     state.nextCustomerTimer = CONFIG.queue.nextCustomerDelaySec;
     state.uiDirty = true;

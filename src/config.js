@@ -8,6 +8,10 @@ export const CONFIG = {
   },
 
   reputation: {
+    // Option A: reputation rewards *service*, not the off-screen battle outcome (which the player
+    // doesn't control and is tuned to usually lose). Serving climbs rep; only neglect lowers it.
+    perSale: 2,                // rep gained per completed sale
+    leavePenalty: 1,           // rep lost when a customer leaves unserved (patience timeout)
     // Ascending by `min`; the HUD shows the highest tier whose threshold reputation has reached.
     // Display-only in M2 — M3 content will gate availability against these tiers.
     tiers: [
@@ -25,15 +29,14 @@ export const CONFIG = {
     // Patience is lenient — its only job in M1 is to stop the loop soft-locking if a customer
     // can't be served (out of stock / can't afford). They leave; never a hard fail.
     defaultPatienceSec: 20,
-    leaveRepPenalty: 1,        // rep ding when a customer gives up waiting
   },
 
   combat: {
     encounterDifficulty: 10,   // fixed in M1; scales with progress later
     rngSpread: 6,              // +/- range added to the score
     // score = itemEffect + monster.combatMod - encounterDifficulty + rng(-spread..+spread)
+    // Tier drives the funny log line only — it has no effect on reputation or gold.
     thresholds: { excellent: 8, success: 2, partial: -1, failure: -6 },
-    repByTier: { excellent: 5, success: 2, partial: 1, failure: -1, funnyFailure: -2 },
   },
 
   log: { maxEntries: 30 },
