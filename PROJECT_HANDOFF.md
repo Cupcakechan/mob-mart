@@ -17,9 +17,8 @@ test + `node --check` clean on every module.
 capped, stock-consuming sales are banked and shown in a "While you were away" modal (Option 2 —
 gold + rep, worker-only, 2h cap; the no-worker "drip" was decided AGAINST: Bob is hireable within
 minutes, so it had no window).
-**Next action:** cleanup commit (stray files — see §12) → browser-confirm + commit M5 → then the
-**portal sprite micro-pass** (4-frame swirl strip + slight tunable glow), then **M6 — Kongregate
-no-op bridge**.
+**Next action:** commit M5 (browser-confirmed) + the portal micro-pass (built; drop
+`portal_glow.png` to see it), then `backroom_storage` or **M6 — Kongregate no-op bridge**.
 **Last updated:** M5 built (`src/offline.js` + `CONFIG.offline` + modal); 78-assertion suite
 passes. NOTE: the audit's stray-file `git rm` never ran and a mis-placed `src/test_m4.mjs` is
 tracked — cleanup commit queued (§12).
@@ -398,9 +397,12 @@ not shipped) passes, including regressions for both audit fixes.
 - **Confirm M5 in the browser + commit.** Hire Bob, stock the shelf, be away > 60s, reload → modal
   shows time worked / items sold / +gold / +rep; Collect closes it; values landed in the HUD/shelf;
   an immediate second reload pays NOTHING extra; no-worker and empty-shelf returns stay silent.
-- **Portal sprite micro-pass (queued by name).** Wire `portal_glow.png` as a 4-frame horizontal
-  swirl strip (auto-sliced like Bob's strips), looping, with a slight alpha-aware canvas glow exposed
-  as `glowBase`/`glowPulse` dials; graceful fallback to static `portal.png`, then the placeholder.
+- **Portal sprite micro-pass — BUILT (commit pending).** `portal_glow.png` wired as a 4-frame
+  horizontal swirl strip (auto-sliced, loops forever), drawn ASPECT-PRESERVED (art is square 160x160;
+  strip = 640x160) with anchor dials `centerX`/`baseY`/`size` (default 160 = crisp 1x; 320 = 2x)
+  replacing the old stretch-to-box, plus a slight alpha-aware glow (`glowBase` 10 / `glowPulse` 8;
+  old placeholder was 20/20). Fallback chain: strip -> static `portal.png` -> square placeholder slab.
+  Authoring spec: 4 equal 160x160 frames left-to-right, PNG-32, `assets/sprites/portal_glow.png`.
 - **`backroom_storage` upgrade (queued, post-portal candidate).** +capHours per level via the
   existing `sumEffect` plumbing — one registry entry + one consumer in `offline.js` — once the 2h
   cap has actually been felt in play.

@@ -64,8 +64,21 @@ export function playBobServe() {
   bobAnim.startMs = null;          // reset so it restarts from frame 0 on the next draw
 }
 
-// --- Portal ("To Battle" door). Sprite stretches to this box. -----------------
-const PORTAL = { x: W * 0.80, y: H * 0.30, w: W * 0.11, h: H * 0.34, glow:'#8b5cf6', frame:'#3a2b1a' };
+// --- Portal ("To Battle" door). Authored as a SQUARE 160x160 frame; drawn aspect-preserved at
+// `size`, bottom resting on `baseY` (same anchor pattern as the counter/Bob — no more stretch-to-box).
+// Animated path: portal_glow.png, a 4-frame horizontal strip (4x160 = 640x160), auto-sliced and
+// looping forever. Fallback chain: strip -> static portal.png -> placeholder slab.
+// Glow is alpha-aware (canvas shadow hugs the swirl's transparent edges) and kept SLIGHT via the
+// two dials below.
+const PORTAL = {
+  centerX: W * 0.855,          // ~1094 — matches the old placeholder box's horizontal center
+  baseY:   H * 0.64,           // ~461 — portal bottom, just below the floor line (grounded)
+  size:    160,                // ON-SCREEN HEIGHT IN PX. 160 = crisp 1x of the art; 320 = crisp 2x.
+  anim: { frames: 4, fps: 8 }, // swirl loop: 4 equal frames left-to-right; raise fps to spin faster
+  glowBase: 10,                // <-- GLOW DIALS: blur = glowBase + glowPulse * pulse(0..1).
+  glowPulse: 8,                //     Old placeholder glow was 20+20 — these read as "slight".
+  glow:'#8b5cf6', frame:'#3a2b1a',
+};
 
 export function drawScene(ctx, state, tMs) {
   ctx.clearRect(0, 0, W, H);
@@ -175,15 +188,31 @@ function drawCounter(ctx) {
 
 function drawPortal(ctx, tMs) {
   const pulse = 0.5 + 0.5 * Math.sin(tMs / 500);
-  const spr = getSprite('portal');
   ctx.save();
   ctx.shadowColor = PORTAL.glow;
-  ctx.shadowBlur = 20 + 20 * pulse;
-  if (spr) {
-    ctx.drawImage(spr, PORTAL.x, PORTAL.y, PORTAL.w, PORTAL.h);
+  ctx.shadowBlur = PORTAL.glowBase + PORTAL.glowPulse * pulse;   // slight, breathing glow
+
+  const h = PORTAL.size;
+  const strip = getSprite('portal_glow');                        // preferred: 4-frame swirl strip
+  if (strip) {
+    const frames = PORTAL.anim.frames;
+    const frame = Math.floor(tMs / (1000 / PORTAL.anim.fps)) % frames;  // endless loop, no state needed
+    const fw = strip.naturalWidth / frames;                      // auto-sliced frame width
+    const fh = strip.naturalHeight;
+    const w = h * (fw / fh);                                     // preserve aspect (square art -> w = h)
+    ctx.drawImage(strip, frame * fw, 0, fw, fh, PORTAL.centerX - w / 2, PORTAL.baseY - h, w, h);
   } else {
-    ctx.fillStyle = PORTAL.frame; ctx.fillRect(PORTAL.x - 8, PORTAL.y - 8, PORTAL.w + 16, PORTAL.h + 16);
-    ctx.fillStyle = `rgba(139,92,246,${0.55 + 0.35 * pulse})`; ctx.fillRect(PORTAL.x, PORTAL.y, PORTAL.w, PORTAL.h);
+    const single = getSprite('portal');                          // fallback: static single frame
+    if (single) {
+      const w = h * (single.naturalWidth / single.naturalHeight);
+      ctx.drawImage(single, PORTAL.centerX - w / 2, PORTAL.baseY - h, w, h);
+    } else {                                                     // last resort: square placeholder slab
+      const w = h, x = PORTAL.centerX - w / 2, y = PORTAL.baseY - h;
+      ctx.fillStyle = PORTAL.frame;
+      ctx.fillRect(x - 8, y - 8, w + 16, h + 16);
+      ctx.fillStyle = `rgba(139,92,246,${0.55 + 0.35 * pulse})`;
+      ctx.fillRect(x, y, w, h);
+    }
   }
   ctx.restore();
 }
