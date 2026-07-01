@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<!-- KONGREGATE SHELL - a copy of index.html plus ONE script tag (the Kongregate API
+     loader) in <head>. Upload THIS as the entry page on Kongregate; keep using index.html locally
+     and on itch. IF YOU EDIT index.html, MIRROR THE EDIT HERE (they must stay identical otherwise). -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mob Mart</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Kongregate JavaScript API - defines window.kongregateAPI; src/kongregate.js no-ops without it -->
+  <script src="https://cdn1.kongregate.com/javascripts/kongregate_api.js"></script>
+</head>
+<body>
+  <div id="stage">
+    <canvas id="scene" width="1280" height="720"></canvas>
+
+    <!-- DOM overlay: HUD + shop panels sit on top of the canvas diorama -->
+    <div id="hud" class="hud"></div>
+    <button id="reset-btn" class="reset-btn" title="Reset all progress">Reset</button>
+    <div id="shop-ui" class="shop-ui"></div>
+    <div id="nav" class="nav"></div>
+
+    <!-- Minimal title screen (dismissed on Open Shop) -->
+    <div id="title" class="title-overlay">
+      <h1 class="title-logo">MOB MART</h1>
+      <p class="title-tag">Gear up the little guys. Watch them lose. Get paid.</p>
+      <button id="open-shop-btn" class="open-shop-btn">Open Shop</button>
+    </div>
+
+    <!-- "While you were away" modal (M5) — shown over the title on return when Bob earned something -->
+    <div id="offline-modal" class="offline-overlay hidden">
+      <div class="offline-card">
+        <h2 class="offline-title">While you were away&hellip;</h2>
+        <p class="offline-body">Bob kept the shop open for <b id="offline-away">&mdash;</b> and sold
+          <b id="offline-sales">0</b> items.</p>
+        <div class="offline-gains">
+          <span class="offline-gain gold">&#9670; +<span id="offline-gold">0</span></span>
+          <span class="offline-gain rep">&#9819; +<span id="offline-rep">0</span></span>
+        </div>
+        <button id="offline-collect-btn" class="offline-collect-btn">Collect</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

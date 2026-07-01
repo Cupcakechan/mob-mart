@@ -13,7 +13,10 @@ expanded, Bob voice, genre-trope lines, gags seeded), the **no-repeat line picke
 pass** (fixed a real save bug — reload used to clamp stock to the BASE cap, eating Extra-Shelf stock;
 fixed a wrong-registry spawn fallback; removed stray duplicate files). 61-assertion headless smoke
 test + `node --check` clean on every module.
-**M5 (offline earnings) is BUILT — browser-confirm + commit pending:** on return, a hired Bob's
+**M6 (Kongregate no-op bridge) is BUILT — browser-confirm + commit pending — which COMPLETES the
+M1–M6 MVP roadmap.** All milestones done: the game is structurally shippable to its primary target;
+everything from here is content/polish/tuning on a publishable base.
+**M5 (offline earnings) is DONE (committed):** on return, a hired Bob's
 capped, stock-consuming sales are banked and shown in a "While you were away" modal (Option 2 —
 gold + rep, worker-only, 2h cap; the no-worker "drip" was decided AGAINST: Bob is hireable within
 minutes, so it had no window).
@@ -251,7 +254,16 @@ Each milestone is a **single-purpose, individually tested, individually committe
   IMMEDIATELY (fresh `lastSeen` → no double-collect); modal only when sales > 0 AND away ≥
   `minAwaySec` (60s). Upgrades compose offline: Faster Counter → more sales, Extra Shelf → more
   sellable stock, Better Signage → more rep.
-- **M6 — Kongregate no-op bridge stub + one `loaded` stat.** Purely additive; can't break local/itch.
+- **M6 — Kongregate no-op bridge. BUILT — browser-confirm + commit pending.** `src/kongregate.js`:
+  `initKongregate()` (called unconditionally from main.js) no-ops unless `window.kongregateAPI`
+  exists — i.e. unless the page is `index.kongregate.html`, a copy of index.html plus ONE script tag
+  (`https://cdn1.kongregate.com/javascripts/kongregate_api.js`, verified against live Kongregate
+  docs). On Kongregate: `loadAPI` → `getAPI` → submit the `loaded` stat. `submitStat(name, value)`
+  + `isKongregate()` exported for future stats. Every path try/caught — a broken/absent API can
+  never crash the game. **Kongregate-side setup at submission time:** create a statistic named
+  exactly `loaded` in the game's edit page (Statistics section), or submissions are ignored; upload
+  with `index.kongregate.html` as the entry page. **Sync rule:** any edit to index.html must be
+  mirrored in index.kongregate.html (they are identical apart from the script tag).
 
 ---
 
@@ -292,8 +304,31 @@ Each milestone is a **single-purpose, individually tested, individually committe
 
 ## 9. Asset specs (Daniel authors all assets)
 
-Stage **1280×720**; PNG-32 (RGBA); filenames lowercase matching the data `id`. Perspective: PixelLab
-low top-down (~20°), front-facing, single facing. Placeholders-first; missing image → placeholder.
+Stage **1280×720**; everything **PNG-32 (RGBA)**; filenames **lowercase, matching the data `id`**.
+**Perspective: PixelLab low top-down (~20°), front-facing, single facing** — author characters,
+props, and backdrop at the same angle. Placeholders-first: a missing image degrades to a placeholder,
+never a crash. Sheet convention: **one horizontal strip per animation**, frames left-to-right at
+equal width, auto-sliced by frame count in code (no pixel sizes to enter); static prop = `<id>.png`,
+animation = `<id>_<anim>.png`.
+
+**IMPORTANT (measured, supersedes the original spec):** the shipped `shop_bg.png` has its wall/floor
+seam at **y=462**, not the originally spec'd 446 — `FLOOR_Y` in scene.js is 462 and all floor-contact
+anchoring keys off it. Author the backdrop with the seam at 462 (wall 0→462, floor 462→720).
+
+| Asset | Target size (authoring) | Animations | Filename(s) | Status |
+|---|---|---|---|---|
+| Slimey / Batty / Skele (customers) | 128×128/frame | idle 2–4 · shuffle 4–6 · react 3–4 (strips) | `slime.png` (static) or `slime_idle.png` etc.; same for `bat_`, `skeleton_` | **PLACEHOLDER RECTS** — drawn at 88px (`QUEUE.size`) |
+| Bob (mimic merchant) | 128×128 or 160×160/frame | idle 6f · serve 6f (one-shot) | `mimic_merchant.png` (static fallback), `bob_idle.png`, `bob_serve.png` (6-frame strips) | **IN** — 240px on-screen (`BOB.height`), feet anchored to `COUNTER.baseY` − 50 |
+| Counter / desk | ~480px wide (author 2× ≈ 960 for crisp) | static | `counter.png` | **IN** — 480px (`COUNTER.width`), base at H*0.74 (~533) + contact shadow |
+| Battle door (ex-portal) | **160×160/frame**, 4 frames → **640×160 strip**; frame 0 CLOSED → 3 OPEN | one-shot open/hold/close on paid serve | `portal_glow.png` (strip), `portal.png` (static fallback) | **IN** — 320px on-screen (2×); bottom = `FLOOR_Y + 6` (art has 3px bottom padding ×2 scale) |
+| Shop backdrop | 1280×720, **seam at y=462** | optional torch flicker later | `shop_bg.png` | **IN (WIP)** — iterating |
+| Item icons (Club / Metal Helmet / HP Flask) | 64×64 | static | `club.png`, `metal_helmet.png`, `hp_flask.png` | **NOT YET USED** — DOM item cards are text-only so far |
+| UI icons (gold, rep crown, scrap-reserved) | 32×32 | static | `icon_gold.png`, `icon_rep.png`, `icon_scrap.png` | **NOT YET USED** — HUD uses text glyphs |
+| Panel / button chrome | — | — | — | CSS-styled (DOM), few image assets needed |
+
+Item icons are the one exception to the perspective rule — they live in DOM cards, so a clean
+front/slightly-angled icon is fine. The Aseprite fitting pass sets exact sizes and aligns every
+customer's baseline to the same floor plane (queue feet currently ~495; see `QUEUE.y`).
 
 **Art integration status:** Bob's scale is locked (`BOB.height` 240px in `scene.js`, feet anchored to
 `COUNTER.baseY`). Bob is animated — idle loop + serving one-shot, each a 6-frame horizontal strip
@@ -484,6 +519,16 @@ not shipped) passes, including regressions for both audit fixes.
   boot hook in `main.js` (bank → save immediately → modal); modal markup in `index.html` +
   appended styles in `style.css`. Suite grown to **78 assertions** (17 new: zero cases, stock-limit,
   time-limit, cap equality, clock skew, upgrade composition offline, apply/no-op).
+- **Battle door + grounding + comedy-grammar era (committed):** door art replaces the swirl (one-shot
+  open/hold/close on paid serve only); grounding pass (FLOOR_Y measured = 462, counter/Bob to
+  mid-ground H*0.74 + contact shadow, queue to feet ~495); comedy grammar fixes (dismiss lines get
+  the real item — "no something" bug — store-policy line rewritten, "a {item}" article hazard) with
+  registry-level test guards. Strays finally removed at `efc69d5`.
+- **M6 (BUILT — browser-confirm + commit pending): the Kongregate bridge — MVP ROADMAP COMPLETE.**
+  New `src/kongregate.js` (no-op bridge, verified against live Kongregate docs) +
+  `index.kongregate.html` (index.html + one script tag) + one `initKongregate()` line in main.js.
+  Suite grown to **88 assertions** (7 new: headless no-op, mocked-API activation, 'loaded' stat,
+  submitStat forwarding, throwing-loader containment).
 
 ---
 

@@ -9,6 +9,7 @@ import { loadSprite } from './render/sprites.js';
 import { initHud, renderHud } from './ui/hud.js';
 import { initPanels, renderPanels } from './ui/panels.js';
 import { initNav } from './ui/nav.js';
+import { initKongregate } from './kongregate.js';
 
 const stage = document.getElementById('stage');
 const canvas = document.getElementById('scene');
@@ -16,6 +17,11 @@ const ctx = canvas.getContext('2d');
 ctx.imageSmoothingEnabled = false;                 // crisp pixels once sprites replace the rects
 
 const state = loadState();                         // resume from a saved shop, or a fresh one
+
+// M6 — Kongregate bridge. Unconditional and safe on every platform: without the API's script tag
+// (index.html locally / on itch) this is a silent no-op; on Kongregate (index.kongregate.html) it
+// loads the API and submits the 'loaded' stat.
+initKongregate();
 
 // M5 — offline earnings, once at boot, BEFORE any autosave can refresh lastSeen. Compute what Bob
 // sold while away (capped, stock-consuming), bank it, and save IMMEDIATELY: the save writes a fresh
