@@ -244,7 +244,10 @@ plays right (the ID+filename convention + graceful fallback means art never touc
   guarded), the capped FIFO queue with per-mob patience, and the reputation HUD (service-based rep +
   tier labels). Built as three separate passes; all committed.
 - **M3 — Upgrades + spend economy.** Extra Shelf / Faster Counter / Better Signage as data-driven
-  upgrades feeding a real gold sink.
+  upgrades feeding a real gold sink. Built in three passes: **(1) layout — DONE** (bottom nav that
+  swaps the center panel Shop↔Upgrades, corner panels stay live; Upgrades view + Extra Shelf wired
+  end-to-end: buy → gold down → `effectiveMaxStock` up → restock higher; persisted); (2) the other
+  upgrade effects (serveSpeed, repMult); (3) rep-tier gating.
 - **M4 — First mimic worker (auto-serve).** Bob auto-serves on an interval — the automation/idle
   proof; the shop earns without clicking.
 - **M5 — Offline earnings.** Timestamp delta → capped estimate → "While you were away" modal.
@@ -349,7 +352,7 @@ mob-mart/
 │   │   ├── monsters.js     <- customer registry (Slime, Bat, Skeleton; Goblin/Rat later)   [M1]
 │   │   ├── items.js        <- item registry (Club, Metal Helmet, HP Flask)                 [M1]
 │   │   ├── results.js      <- full tiered log-line batch, generic + per-character       [voice]
-│   │   ├── upgrades.js     <- upgrade registry                                             [M3]
+│   │   ├── upgrades.js     <- upgrade registry + typed-effect accessors               [M3 p1]
 │   │   └── workers.js      <- worker registry (mimic_merchant "Bob")                       [M4]
 │   ├── render/
 │   │   ├── scene.js        <- canvas diorama (placeholder rects -> sprites)                [M1]
@@ -357,7 +360,7 @@ mob-mart/
 │   └── ui/
 │       ├── hud.js          <- top resource bar                                             [M1]
 │       ├── panels.js       <- DOM panels (customer, workers, upgrades, log)                [M1]
-│       └── nav.js          <- bottom nav tab switching                                     [M3]
+│       └── nav.js          <- bottom nav; swaps the center panel                      [M3 p1]
 └── assets/
     ├── sprites/            <- character + prop PNGs (filenames match data ids)
     ├── ui/                 <- UI icons (icon_gold.png, icon_rep.png, ...)
@@ -417,8 +420,12 @@ now — fully local).
   Gumball / Gravity Falls, wrote `COMEDY_BIBLE.md` (voice spec + ~150 PG lines across 7 outcome
   tiers, generic + per-character), shipped the batch into `src/data/results.js`, and refactored line
   selection into `src/messages.js` (`logLine`) so combat, leave, and dismiss all pull varied lines.
-- **Next:** M3 — upgrades + a real gold sink (Extra Shelf / Faster Counter / Better Signage as
-  data-driven upgrades), and rep tiers begin gating content.
+- **M3 pass 1 (done):** bottom nav (Shop / Upgrades / Workers· / Bestiary·, last two disabled stubs)
+  swapping the center panel; a data-driven Upgrades view; **Extra Shelf** wired end-to-end (+1 max
+  stock/item, cost `60·1.8^level`, maxLevel 5) via `effectiveMaxStock` + `buyUpgrade`; upgrade levels
+  persisted. New modules: `src/data/upgrades.js`, `src/ui/nav.js`.
+- **Next:** M3 pass 2 — wire the other upgrade effects (Faster Counter → serve speed, Better Signage
+  → rep multiplier), then pass 3 gates upgrades behind reputation tiers.
 
 ---
 

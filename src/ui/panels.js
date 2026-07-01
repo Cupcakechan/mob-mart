@@ -1,9 +1,11 @@
-// panels.js — DOM panels: current customer (front of line), shelf cards (restock), serve/dismiss, log.
+// panels.js — DOM panels: current customer (front), Shelf (restock), Upgrades view, battle log.
+// The Shelf and Upgrades panels share the center slot; the bottom nav toggles which is visible.
 import { ITEMS, ITEM_ORDER } from '../data/items.js';
 import { MONSTERS } from '../data/monsters.js';
-import { serveBlockReason, canRestock } from '../game.js';
+import { UPGRADES, UPGRADE_ORDER, upgradeLevel, upgradeCost, isMaxed } from '../data/upgrades.js';
+import { serveBlockReason, canRestock, effectiveMaxStock, canBuyUpgrade } from '../game.js';
 
-let handlers = { onServe: () => {}, onDismiss: () => {}, onRestock: () => {} };
+let handlers = { onServe: () => {}, onDismiss: () => {}, onRestock: () => {}, onBuyUpgrade: () => {} };
 
 export function initPanels(root, h) {
   handlers = h;
@@ -15,9 +17,14 @@ export function initPanels(root, h) {
       <button id="dismiss-btn" class="dismiss-btn">Send Away</button>
     </section>
 
-    <section class="panel items-panel">
+    <section id="items-panel" class="panel items-panel">
       <h2 class="panel-title">Shelf</h2>
       <div id="item-cards" class="item-cards"></div>
+    </section>
+
+    <section id="upgrades-panel" class="panel upgrades-panel hidden">
+      <h2 class="panel-title">Upgrades</h2>
+      <div id="upgrade-cards" class="upgrade-cards"></div>
     </section>
 
     <section class="panel log-panel">
@@ -28,18 +35,30 @@ export function initPanels(root, h) {
   document.getElementById('serve-btn').addEventListener('click', () => handlers.onServe());
   document.getElementById('dismiss-btn').addEventListener('click', () => handlers.onDismiss());
 
+  // Shelf cards (static structure; stock + cap + button state update at runtime).
   document.getElementById('item-cards').innerHTML = ITEM_ORDER.map((id) => {
     const it = ITEMS[id];
     return `<div class="item-card" data-item="${id}">
         <div class="item-name">${it.displayName}</div>
         <div class="item-price">&#9670; ${it.basePrice}</div>
-        <div class="item-stock">Stock: <span id="stock-${id}">0</span>/${it.maxStock}</div>
+        <div class="item-stock">Stock: <span id="stock-${id}">0</span>/<span id="max-${id}">${it.maxStock}</span></div>
         <button class="restock-btn" data-item="${id}">Restock &#9670;${it.restockCost}</button>
       </div>`;
   }).join('');
-
   root.querySelectorAll('.restock-btn').forEach((btn) =>
     btn.addEventListener('click', () => handlers.onRestock(btn.dataset.item)));
+
+  // Upgrade cards (data-driven; cost/level/button update at runtime).
+  document.getElementById('upgrade-cards').innerHTML = UPGRADE_ORDER.map((id) => {
+    const u = UPGRADES[id];
+    return `<div class="upgrade-card" data-upg="${id}">
+        <div class="upg-head"><span class="upg-name">${u.displayName}</span><span class="upg-cost" id="upgcost-${id}"></span></div>
+        <div class="upg-desc">${u.description}</div>
+        <div class="upg-foot"><span class="upg-level" id="upglvl-${id}"></span><button class="upg-buy" data-upg="${id}">Buy</button></div>
+      </div>`;
+  }).join('');
+  root.querySelectorAll('.upg-buy').forEach((btn) =>
+    btn.addEventListener('click', () => handlers.onBuyUpgrade(btn.dataset.upg)));
 }
 
 const REASON_LABEL = {
@@ -50,17 +69,17 @@ const REASON_LABEL = {
 };
 
 export function renderPanels(state) {
+  // --- Current customer (front of line) ---
   const body = document.getElementById('customer-body');
   const serveBtn = document.getElementById('serve-btn');
   const dismissBtn = document.getElementById('dismiss-btn');
-  const c = state.queue[0];                 // the front of the line is the current customer
+  const c = state.queue[0];
 
   if (c) {
     const m = MONSTERS[c.monsterId];
     const want = ITEMS[c.wantedItemId];
     const waiting = state.queue.length - 1;
-    const waitLine = waiting > 0
-      ? `<div class="cust-wait">${waiting} more in line</div>` : '';
+    const waitLine = waiting > 0 ? `<div class="cust-wait">${waiting} more in line</div>` : '';
     body.innerHTML = `
       <div class="cust-name">${m?.displayName ?? '???'}</div>
       <div class="cust-line">Wants: <b>${want?.displayName ?? '???'}</b></div>
@@ -76,14 +95,34 @@ export function renderPanels(state) {
   }
   dismissBtn.disabled = !c;
 
+  // --- Shelf: stock + (upgradeable) cap + restock affordability ---
   for (const id of ITEM_ORDER) {
     const stockEl = document.getElementById(`stock-${id}`);
     if (stockEl) stockEl.textContent = state.items[id]?.stock ?? 0;
+    const maxEl = document.getElementById(`max-${id}`);
+    if (maxEl) maxEl.textContent = effectiveMaxStock(state, id);
   }
   document.querySelectorAll('.restock-btn').forEach((btn) => {
     btn.disabled = !canRestock(state, btn.dataset.item);
   });
 
+  // --- Upgrades: level, next cost (or MAX), buyability ---
+  for (const id of UPGRADE_ORDER) {
+    const u = UPGRADES[id];
+    const lvl = upgradeLevel(state, id);
+    const maxed = isMaxed(state, id);
+    const lvlEl = document.getElementById(`upglvl-${id}`);
+    if (lvlEl) lvlEl.textContent = maxed ? `Lv ${lvl} · Max` : `Lv ${lvl}`;
+    const costEl = document.getElementById(`upgcost-${id}`);
+    if (costEl) costEl.innerHTML = maxed ? 'MAX' : `&#9670; ${upgradeCost(id, lvl)}`;
+    const buyBtn = document.querySelector(`.upg-buy[data-upg="${id}"]`);
+    if (buyBtn) {
+      buyBtn.disabled = !canBuyUpgrade(state, id);
+      buyBtn.textContent = maxed ? 'Maxed' : 'Buy';
+    }
+  }
+
+  // --- Battle log ---
   const log = document.getElementById('battle-log');
   if (log) {
     log.innerHTML = state.log.map((e) => {

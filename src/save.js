@@ -1,8 +1,8 @@
 // save.js — localStorage persistence. Versioned key, every field default-filled on load, all I/O
 // wrapped in try/catch so a disabled/full/private-mode store degrades to a fresh game, never a crash.
-// Pure merge/serialize are split out from the I/O so the risky logic is unit-testable.
 import { clamp } from './utils.js';
 import { ITEMS } from './data/items.js';
+import { UPGRADES } from './data/upgrades.js';
 import { createInitialState } from './state.js';
 
 export const SAVE_VERSION = 1;
@@ -11,7 +11,6 @@ export const SAVE_KEY = 'mobmart.save.v1';
 const numOr = (v, fallback) => (typeof v === 'number' && Number.isFinite(v)) ? v : fallback;
 
 // Pure: overlay validated saved data onto a fresh state (default-fill + guards). No I/O.
-// Guards every value so a tampered/corrupt save (NaN, negative, over-cap) can't break the game.
 export function mergeSave(fresh, data) {
   if (!data || typeof data !== 'object') return fresh;
   fresh.gold = Math.max(0, numOr(data.gold, fresh.gold));
@@ -21,6 +20,13 @@ export function mergeSave(fresh, data) {
       const maxStock = ITEMS[id]?.maxStock ?? Infinity;
       const saved = data.items[id]?.stock;
       fresh.items[id].stock = clamp(Math.floor(numOr(saved, fresh.items[id].stock)), 0, maxStock);
+    }
+  }
+  if (data.upgrades && typeof data.upgrades === 'object') {
+    for (const id of Object.keys(fresh.upgrades)) {              // iterate CURRENT upgrades
+      const maxLevel = UPGRADES[id]?.maxLevel ?? 0;
+      const saved = data.upgrades[id];
+      fresh.upgrades[id] = clamp(Math.floor(numOr(saved, fresh.upgrades[id])), 0, maxLevel);
     }
   }
   fresh.lastSeen = numOr(data.lastSeen, fresh.lastSeen);         // kept for M5 offline earnings
@@ -36,18 +42,18 @@ export function serializeSave(state) {
     gold: state.gold,
     reputation: state.reputation,
     items,
+    upgrades: { ...state.upgrades },
     lastSeen: Date.now(),
   };
 }
 
-// Load a fresh state overlaid with any valid save. Any failure -> a clean fresh state.
 export function loadState() {
   const fresh = createInitialState();
   let raw;
-  try { raw = localStorage.getItem(SAVE_KEY); } catch { return fresh; }  // storage unavailable
-  if (!raw) return fresh;                                                 // no save yet
+  try { raw = localStorage.getItem(SAVE_KEY); } catch { return fresh; }
+  if (!raw) return fresh;
   let data;
-  try { data = JSON.parse(raw); } catch { return fresh; }                // corrupt JSON -> fresh
+  try { data = JSON.parse(raw); } catch { return fresh; }
   return mergeSave(fresh, data);
 }
 
