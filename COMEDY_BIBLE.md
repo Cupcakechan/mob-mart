@@ -183,7 +183,7 @@ lost, and so did his left femur. Again. Somewhere. *(new — gag ×2)*
 - The hero's {item} was better. Same {item}. Just better. *(new)*
 
 **Slimey:** Slimey was defeated. He's still smiling. Doesn't know yet. · The hero stepped over Slimey.
-That was the whole battle. · Slimey took a {item} to a sword fight. It went how you'd think.
+That was the whole battle. · Slimey took the {item} to a sword fight. It went how you'd think.
 **Batty:** Batty saw the hero, screamed, and lost on principle. · Batty was defeated by the doorway
 before the hero arrived. · Batty fainted at "En garde." The hero felt a little bad.
 **Skele:** Skele got tapped once and became a tidy little pile. · Skele's {item} outlasted Skele by a
@@ -247,7 +247,7 @@ murder on his joints.
 - Shooed out, {name} promised to "save up." Bless him. *(new — fits the auto-wave case)*
 - {name} got a firm, friendly no and a free peppermint. *(new)*
 - Bob pointed at the door with genuine warmth. {name} obliged. *(new — Bob voice)*
-- Store policy, {name}: no coin, no {item}. He nodded sagely. *(new — fits the auto-wave case)*
+- Bob cited store policy: no coin, no {item}. {name} nodded sagely. *(new — fits the auto-wave case)*
 
 **Slimey:** You point at the door. Slimey oozes off, cheerful as ever. · You wave Slimey off. He
 leaves a happy little trail. Aw. · Bob waved Slimey off. Slimey waved back for a full minute. *(new)*

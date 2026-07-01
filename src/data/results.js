@@ -99,7 +99,7 @@ export const GENERIC_RESULTS = {
     `Shooed out, {name} promised to "save up." Bless him.`,
     `{name} got a firm, friendly no and a free peppermint.`,
     `Bob pointed at the door with genuine warmth. {name} obliged.`,
-    `Store policy, {name}: no coin, no {item}. He nodded sagely.`,
+    `Bob cited store policy: no coin, no {item}. {name} nodded sagely.`,
   ],
 };
 
@@ -125,7 +125,7 @@ export const MONSTER_RESULTS = {
     failure: [
       `Slimey was defeated. He's still smiling. Doesn't know yet.`,
       `The hero stepped over Slimey. That was the whole battle.`,
-      `Slimey took a {item} to a sword fight. It went how you'd think.`,
+      `Slimey took the {item} to a sword fight. It went how you'd think.`,
     ],
     funnyFailure: [
       `Slimey tried to eat the {item} and lost to indigestion.`,

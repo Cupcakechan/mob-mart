@@ -76,7 +76,11 @@ export function dismissCurrent(state) {
   const c = state.queue[0];
   if (!c) return false;
   const name = MONSTERS[c.monsterId]?.displayName ?? 'Someone';
-  pushLog(state, { text: logLine(c.monsterId, 'dismiss', { name }), repDelta: 0, tier: 'dismiss', monsterId: c.monsterId });
+  // Pass the wanted item too — two dismiss templates use {item} ("...off with no {item}..."), and
+  // without it logLine's 'something' fallback produced "no something". wantedItemId is always a
+  // valid item id (spawn guarantees it since the audit fix), so displayName always resolves.
+  const item = ITEMS[c.wantedItemId]?.displayName;
+  pushLog(state, { text: logLine(c.monsterId, 'dismiss', { name, item }), repDelta: 0, tier: 'dismiss', monsterId: c.monsterId });
   state.queue.shift();
   state.uiDirty = true;
   return true;

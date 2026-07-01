@@ -5,7 +5,7 @@ import { CONFIG } from '../config.js';
 import { getSprite } from './sprites.js';
 
 const W = CONFIG.stage.width, H = CONFIG.stage.height;
-const FLOOR_Y = H * 0.62;   // wall/floor split (y=446) — matches the shop_bg.png authoring spec
+const FLOOR_Y = 462;   // wall/floor split (y=446) — matches the shop_bg.png authoring spec
 
 const COL = {
   wall:'#1d1526', floor:'#2a2033',
@@ -19,7 +19,10 @@ const colorFor = (id) => CUST_COLOR[id] ?? '#cccccc';
 const QUEUE = {
   frontX: W * 0.247,   // ~316 left-edge of the front mob
   stepX:  W * 0.105,   // ~134 gap between mobs
-  y:      H * 0.528,   // ~380 top of the box
+  y:      H * 0.565,   // ~407 top of the box -> mob FEET at ~495, forward of the wall seam so the
+                       // line stands on the same floor plane the counter now occupies. PROVISIONAL:
+                       // if feet hide behind the Current Customer DOM panel, raise toward H*0.545;
+                       // if the mobs still read as glued to the wall, sink toward H*0.60.
   size:   88,          // box size (drives the placeholder + shadow footprint)
   spriteScale: 1.0,    // drawn sprite height = size * this
 };
@@ -30,10 +33,15 @@ const QUEUE = {
 // to lift the desk. Bob is anchored to this below, so tuning baseY keeps his hands on the counter.
 const COUNTER = {
   centerX: W * 0.57,   // ~730
-  baseY:   H * 0.66,   // ~475, desk's bottom sits here on the floor   <-- FLOOR-CONTACT DIAL
+  baseY:   H * 0.74,   // ~533 — desk bottom. Pulled OFF the back wall (was H*0.66, hugging the seam
+                       // at 446): in this low top-down view, lower on screen = closer to the viewer,
+                       // so ~87px of visible floor BEHIND the desk gives the scene a mid-ground and
+                       // kills the "sticker on the wall" float.       <-- FLOOR-CONTACT DIAL
   width:   480,        // ON-SCREEN WIDTH IN PX                         <-- desk-size dial
   phHeight: 118,       // placeholder rect height (until the sprite loads)
   color:'#5b3a24', topColor:'#7a5233',
+  shadowRx: 0.55,      // contact-shadow half-width as a fraction of `width` (0 disables the shadow)
+  shadowRy: 13,        // contact-shadow half-height in px
 };
 
 // --- Bob (shopkeeper). Feet sit ABOVE the counter base by the `lift` amount so his arms/hands
@@ -74,9 +82,8 @@ export function playBobServe() {
 // Fallback chain: strip -> static portal.png -> placeholder slab. Glow is alpha-aware and slight.
 const PORTAL = {
   centerX: W * 0.855,          // ~1094 — horizontal center
-  baseY:   H * 0.68,           // ~490 — DOOR-FLOOR DIAL: bigger number = door sits LOWER. Estimate;
-                               //        nudge by eye (see also: trimming transparent rows under the
-                               //        door in the art makes this dial exact again).
+  baseY:   FLOOR_Y + 6,            // door bottom sits exactly ON the wall/floor seam (y=446) — the door
+                               // lives on the back wall, so it tracks the backdrop spec, not a guess.
   size:    320,                // ON-SCREEN HEIGHT IN PX. 320 = crisp 2x of 160px art (160 = 1x).
                                //        NOTE: set to your locally-tuned value if it differs.
   anim: { frames: 4, fps: 10, holdMs: 350 },  // open 0.4s -> hold 0.35s -> close 0.4s (~1.15s total)
@@ -97,10 +104,21 @@ export function drawScene(ctx, state, tMs) {
 
   drawBackground(ctx);          // shop_bg.png if present, else flat wall + floor
 
+  drawCounterShadow(ctx);       // contact shadow FIRST: grounds the desk AND Bob standing behind it
   drawBob(ctx, tMs);            // before the counter, so the counter front overlaps his lower body
   drawCounter(ctx);
   drawPortal(ctx, tMs);
   drawQueue(ctx, state, tMs);
+}
+
+// The grounding cue the queue mobs already have and the desk was missing: a soft ellipse pinned
+// under the desk's base. Same COL.shadow as the mobs so the whole scene shares one light logic.
+function drawCounterShadow(ctx) {
+  if (!COUNTER.shadowRx) return;
+  ctx.fillStyle = COL.shadow;
+  ctx.beginPath();
+  ctx.ellipse(COUNTER.centerX, COUNTER.baseY - 5, COUNTER.width * COUNTER.shadowRx, COUNTER.shadowRy, 0, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 // Full-stage backdrop (wall + floor baked in). Falls back to flat colors with the floor line at
