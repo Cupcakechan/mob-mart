@@ -46,6 +46,23 @@ const BOB = {
   placeholderColor:'#7a4a2a',
 };
 
+// Bob's animations — each is a horizontal-strip sheet (frames left-to-right, equal width),
+// auto-sliced by frame count (no pixel sizes to enter). Drop a PNG named for its spriteId and it
+// plays; absent, Bob falls back to the static mimic_merchant.png, then a placeholder. fps is
+// per-animation, so tune idle/serving speed here independently.
+const BOB_ANIMS = {
+  idle:    { spriteId: 'bob_idle',  frames: 6, fps: 6,  loop: true  },  // gentle looping breathe
+  serving: { spriteId: 'bob_serve', frames: 6, fps: 12, loop: false },  // one-shot, snappier
+};
+const bobAnim = { name: 'idle', startMs: null };   // current animation + when it started (ms)
+
+// Play the one-shot serving animation (call when a serve actually happens). It runs once, then Bob
+// drops back into the idle loop by itself.
+export function playBobServe() {
+  bobAnim.name = 'serving';
+  bobAnim.startMs = null;          // reset so it restarts from frame 0 on the next draw
+}
+
 // --- Portal ("To Battle" door). Sprite stretches to this box. -----------------
 const PORTAL = { x: W * 0.80, y: H * 0.30, w: W * 0.11, h: H * 0.34, glow:'#8b5cf6', frame:'#3a2b1a' };
 
@@ -55,7 +72,7 @@ export function drawScene(ctx, state, tMs) {
   ctx.fillStyle = COL.wall;  ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = COL.floor; ctx.fillRect(0, H * 0.62, W, H * 0.38);
 
-  drawBob(ctx);                 // before the counter, so the counter front overlaps his lower body
+  drawBob(ctx, tMs);            // before the counter, so the counter front overlaps his lower body
   drawCounter(ctx);
   drawPortal(ctx, tMs);
   drawQueue(ctx, state, tMs);
@@ -100,19 +117,35 @@ function drawMob(ctx, x, y, size, monsterId, tMs, isFront) {
   }
 }
 
-function drawBob(ctx) {
-  const spr = getSprite('mimic_merchant');
-  const h = BOB.height;
-  if (spr) {
-    const w = h * (spr.naturalWidth / spr.naturalHeight);
-    ctx.drawImage(spr, BOB.centerX - w / 2, BOB.feetY - h, w, h);
-  } else {
-    const w = h * 0.7;
+function drawBob(ctx, tMs) {
+  const cfg = BOB_ANIMS[bobAnim.name];
+  let spr = getSprite(cfg.spriteId);
+  let frameCount = cfg.frames;
+  if (!spr) { spr = getSprite('mimic_merchant'); frameCount = 1; }   // sheet absent -> static Bob
+
+  if (!spr) {                                                        // nothing loaded -> placeholder
+    const h = BOB.height, w = h * 0.7;
     ctx.fillStyle = BOB.placeholderColor;
     ctx.fillRect(BOB.centerX - w / 2, BOB.feetY - h, w, h);
     ctx.fillStyle = '#00000055';
     ctx.fillRect(BOB.centerX - w / 2, BOB.feetY - h * 0.45, w, 6);
+    return;
   }
+
+  if (bobAnim.startMs == null) bobAnim.startMs = tMs;
+  let frame = Math.floor((tMs - bobAnim.startMs) / (1000 / cfg.fps));
+  if (cfg.loop || frameCount === 1) {
+    frame %= frameCount;                            // loop (or a single static frame)
+  } else if (frame >= frameCount) {
+    bobAnim.name = 'idle'; bobAnim.startMs = tMs;   // one-shot done -> return to idle...
+    drawBob(ctx, tMs); return;                      // ...and draw idle this frame (idle loops, so no re-recursion)
+  }
+
+  const fw = spr.naturalWidth / frameCount;         // auto-sliced frame width
+  const fh = spr.naturalHeight;
+  const drawH = BOB.height;
+  const drawW = drawH * (fw / fh);
+  ctx.drawImage(spr, frame * fw, 0, fw, fh, BOB.centerX - drawW / 2, BOB.feetY - drawH, drawW, drawH);
 }
 
 function drawCounter(ctx) {

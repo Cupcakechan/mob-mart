@@ -3,7 +3,7 @@ import { CONFIG } from './config.js';
 import { clamp } from './utils.js';
 import { update, serveCurrent, dismissCurrent, restockItem, buyUpgrade } from './game.js';
 import { loadState, saveState, clearSave } from './save.js';
-import { drawScene } from './render/scene.js';
+import { drawScene, playBobServe } from './render/scene.js';
 import { loadSprite } from './render/sprites.js';
 import { initHud, renderHud } from './ui/hud.js';
 import { initPanels, renderPanels } from './ui/panels.js';
@@ -24,6 +24,8 @@ loadSprite('bat',      'assets/sprites/bat.png');
 loadSprite('skeleton', 'assets/sprites/skeleton.png');
 loadSprite('counter',  'assets/sprites/counter.png');
 loadSprite('portal',   'assets/sprites/portal.png');
+loadSprite('bob_idle',  'assets/sprites/bob_idle.png');   // 6-frame horizontal strip
+loadSprite('bob_serve', 'assets/sprites/bob_serve.png');  // 6-frame horizontal strip
 
 function resize() {
   const s = Math.min(window.innerWidth / CONFIG.stage.width, window.innerHeight / CONFIG.stage.height);
@@ -35,7 +37,7 @@ resize();
 // UI wiring — panels/nav call back into game logic; game logic never touches the DOM.
 initHud(document.getElementById('hud'));
 initPanels(document.getElementById('shop-ui'), {
-  onServe:      () => serveCurrent(state),
+  onServe:      () => { if (serveCurrent(state)) playBobServe(); },  // serve -> play the anim
   onDismiss:    () => dismissCurrent(state),
   onRestock:    (id) => restockItem(state, id),
   onBuyUpgrade: (id) => buyUpgrade(state, id),
