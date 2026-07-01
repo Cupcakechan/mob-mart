@@ -1,6 +1,8 @@
 // results.js — battle/shop log line templates (the Mob Mart "comedy bible", shipped).
 // {name} = the mob, {item} = what they bought (present for sale outcomes; absent for leave/dismiss).
 // Voice: cozy, dry, a little pathetic — we laugh WITH the lovable losers, never at them. PG only.
+// Genre-parody rule: tropes, never trademarks — dungeon-game furniture (natural 1s, side quests,
+// loot, boss music) is fair game; named games, characters, or recognizable quotes are not.
 // The message picker (messages.js) POOLS the generic lines with any per-monster lines for the tier,
 // so each mob draws from both. New monsters without specific lines fall back to generic cleanly.
 
@@ -16,6 +18,8 @@ export const GENERIC_RESULTS = {
     `The hero rage-quit. {name} is the dungeon's problem now.`,
     `{name} won and is already telling everyone. Everyone.`,
     `{name} returns victorious, slightly crunchy, mostly fine.`,
+    `{name} rolled a natural twenty at exactly the right time.`,
+    `The hero heard boss music and left. {name} takes the win.`,
   ],
   success: [
     `{name} survived! The {item} has some new dents.`,
@@ -26,6 +30,8 @@ export const GENERIC_RESULTS = {
     `No wins, no wounds. {name} calls that a Tuesday.`,
     `{name} negotiated a truce over snacks. Everyone's fine.`,
     `{name} lived! The {item} did about half the work.`,
+    `{name} respawned at the entrance and called it a win.`,
+    `The hero marked {name} "optional" and moved on. Phew.`,
   ],
   partial: [
     `{name} lost the fight but won a coupon. Net positive?`,
@@ -36,6 +42,8 @@ export const GENERIC_RESULTS = {
     `The hero won but felt bad about it. Small win, {name}.`,
     `{name} lost, yet learned the hero's name. Progress!`,
     `{name} dropped the {item} but kept his dignity. Some of it.`,
+    `The hero looted {name} for 3 copper and an apology note.`,
+    `{name} lost, but leveled up in something. Probably patience.`,
   ],
   failure: [
     `{name} charged bravely. The hero yawned. Over fast.`,
@@ -46,6 +54,9 @@ export const GENERIC_RESULTS = {
     `{name} gave it everything. Everything was not enough.`,
     `{name} fought valiantly for almost four whole seconds.`,
     `The hero won. {name} is home, wrapped in a blanket.`,
+    `{name} failed the saving throw. And the throw. And the saving.`,
+    `{name} was, it turns out, not proficient with the {item}.`,
+    `The hero's {item} was better. Same {item}. Just better.`,
   ],
   funnyFailure: [
     `{name} lost a staring contest with a very still statue.`,
@@ -58,6 +69,9 @@ export const GENERIC_RESULTS = {
     `{name} rolled a natural one at existing today.`,
     `{name} was defeated by gravity. Just regular gravity.`,
     `{name} forgot which end of the {item} to hold. Fatal.`,
+    `{name} is still in the tutorial area. Emotionally.`,
+    `{name} accepted a side quest mid-fight. Fatal curiosity.`,
+    `{name}'s inventory was full. Of regret, mostly.`,
   ],
   leave: [
     `{name} waited, sighed a tiny sigh, and wandered off.`,
@@ -66,6 +80,10 @@ export const GENERIC_RESULTS = {
     `{name} left. Something about "other dungeons." Rude.`,
     `{name} checked a tiny watch he doesn't own, and left.`,
     `{name} got bored and floated out the door. Bye, {name}.`,
+    `{name} left to "check on something." The something: leaving.`,
+    `{name} muttered about respawn timers and shuffled out.`,
+    `{name} left a one-star review in his heart, then the shop.`,
+    `{name} gave up his spot in line. His greatest sacrifice yet.`,
   ],
   dismiss: [
     `You waved {name} along. {name} took it surprisingly well.`,
@@ -74,6 +92,14 @@ export const GENERIC_RESULTS = {
     `{name} was politely declined and somehow thanked you.`,
     `"Come back later," you said. {name} definitely will.`,
     `You sent {name} off with no {item} and a kind word.`,
+    `Bob smiled {name} toward the door. Professionally.`,
+    `Bob offered {name} a coupon instead. Nobody honors it.`,
+    `{name} was 3 gold short and 100% understanding about it.`,
+    `Bob rang the little bell. {name} knew what it meant. Bye.`,
+    `Shooed out, {name} promised to "save up." Bless him.`,
+    `{name} got a firm, friendly no and a free peppermint.`,
+    `Bob pointed at the door with genuine warmth. {name} obliged.`,
+    `Store policy, {name}: no coin, no {item}. He nodded sagely.`,
   ],
 };
 
@@ -105,6 +131,7 @@ export const MONSTER_RESULTS = {
       `Slimey tried to eat the {item} and lost to indigestion.`,
       `Slimey got stuck to the floor and called it a nap.`,
       `Slimey fought his own reflection. A draw, then a loss.`,
+      `Slimey tried to eat the {item} again. Third time this week.`,
     ],
     leave: [
       `Slimey forgot why he came in and slowly oozed away.`,
@@ -113,6 +140,7 @@ export const MONSTER_RESULTS = {
     dismiss: [
       `You point at the door. Slimey oozes off, cheerful as ever.`,
       `You wave Slimey off. He leaves a happy little trail. Aw.`,
+      `Bob waved Slimey off. Slimey waved back for a full minute.`,
     ],
   },
   bat: {
@@ -131,6 +159,7 @@ export const MONSTER_RESULTS = {
       `Batty lost, but flew home before dark. Silver lining!`,
       `Batty fainted, woke up, apologized to a rock, went home.`,
       `Batty lost the {item} but kept his emotional support pebble.`,
+      `Batty lost, but his emotional support pebble never left him.`,
     ],
     failure: [
       `Batty saw the hero, screamed, and lost on principle.`,
@@ -141,6 +170,7 @@ export const MONSTER_RESULTS = {
       `Batty flew into the same window six times. The window won.`,
       `Batty got startled by his own echo and surrendered to it.`,
       `Batty hid in a chest and fought it from the inside.`,
+      `Batty dropped his emotional support pebble. Fight over.`,
     ],
     leave: [
       `Batty got nervous about the wait and fluttered off.`,
@@ -149,6 +179,7 @@ export const MONSTER_RESULTS = {
     dismiss: [
       `You shoo Batty out before the panic sets in. He's grateful.`,
       `One head-shake and Batty apologizes for existing, then leaves.`,
+      `Bob waved him off gently. Batty thanked him eleven times.`,
     ],
   },
   skeleton: {
@@ -167,6 +198,7 @@ export const MONSTER_RESULTS = {
       `Skele lost a fight and a kneecap, but gained a funny walk.`,
       `Skele scattered heroically. Found most of himself later.`,
       `Skele lost, but his skull rolled somewhere with a nice view.`,
+      `Skele lost, and so did his left femur. Again. Somewhere.`,
     ],
     failure: [
       `Skele got tapped once and became a tidy little pile.`,
@@ -177,6 +209,7 @@ export const MONSTER_RESULTS = {
       `Skele sneezed and spent the whole fight finding his arm.`,
       `Skele's knees popped. He got distracted. He lost. Classic.`,
       `Skele tried to high-five the hero. Lost the hand and the fight.`,
+      `Skele paused to look for his left femur. The hero waited. Then won.`,
     ],
     leave: [
       `Skele tapped his foot till it fell off, then rattled away.`,
@@ -185,6 +218,7 @@ export const MONSTER_RESULTS = {
     dismiss: [
       `You wave Skele off. He rattles a goodbye. A rib falls.`,
       `"Not now, Skele." He salutes, drops an arm, heads out.`,
+      `Bob waved. Skele saluted with the wrong arm. His, though.`,
     ],
   },
 };
