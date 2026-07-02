@@ -31,9 +31,24 @@ export const UPGRADES = {
     maxLevel: 5,
     requiredTier: 2,       // unlocks at Trusted (rep 50)
   },
+  backroom_storage: {
+    id: 'backroom_storage',
+    displayName: 'Backroom Storage',
+    description: 'Bob restocks offline from the backroom',
+    // +1 full shelf-restock of RESERVE per level, sold while you're away (offline.js). Chosen over
+    // the originally-planned '+capHours' effect, which the test suite proved inert: Bob's interval
+    // empties any shelf in minutes, so STOCK — never time — binds offline earnings. Reserve units
+    // pay basePrice minus restockCost (Bob buys the restock out of the margin). Scales with
+    // effectiveMaxStock, so Extra Shelf compounds into the backroom.
+    effect: { type: 'offlineReserve', perLevel: 1 },
+    baseCost: 250,
+    costGrowth: 1.8,       // 250 -> 450 -> 810 (total 1510 to max)
+    maxLevel: 3,           // L3 ~= 4x offline income on a same-size shelf
+    requiredTier: 3,       // unlocks at Beloved (rep 100) — finally gives the top tier a purchase
+  },
 };
 
-export const UPGRADE_ORDER = ['extra_shelf', 'faster_counter', 'better_signage'];
+export const UPGRADE_ORDER = ['extra_shelf', 'faster_counter', 'better_signage', 'backroom_storage'];
 
 export function upgradeLevel(state, id) {
   return state.upgrades?.[id] ?? 0;

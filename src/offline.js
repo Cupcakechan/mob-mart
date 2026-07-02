@@ -12,7 +12,8 @@
 import { CONFIG } from './config.js';
 import { ITEMS, ITEM_ORDER } from './data/items.js';
 import { WORKERS, WORKER_ORDER, isWorkerOwned } from './data/workers.js';
-import { effectiveWorkerInterval, effectiveRepPerSale } from './game.js';
+import { sumEffect } from './data/upgrades.js';
+import { effectiveWorkerInterval, effectiveRepPerSale, effectiveMaxStock } from './game.js';
 
 // Compute the offline result for `state` as of `nowMs`. Returns
 //   { awaySec, cappedSec, sales, gold, rep, consumed: { itemId: count } }
@@ -20,8 +21,12 @@ import { effectiveWorkerInterval, effectiveRepPerSale } from './game.js';
 // empty shelf, no time away) and the caller simply skips the modal for them.
 export function computeOffline(state, nowMs) {
   const awaySec = Math.max(0, (nowMs - (state.lastSeen ?? nowMs)) / 1000);   // clock-skew guard: never negative
-  const cappedSec = Math.min(awaySec, (CONFIG.offline?.capHours ?? 0) * 3600);
-  const zero = { awaySec, cappedSec, sales: 0, gold: 0, rep: 0, consumed: {} };
+  // Effective cap = base hours + any future 'offlineCap' effects (none today; harmless plumbing —
+  // NOTE: with current numbers STOCK binds long before time, which is why backroom_storage extends
+  // inventory, not hours).
+  const capHours = (CONFIG.offline?.capHours ?? 0) + sumEffect(state, 'offlineCap');
+  const cappedSec = Math.min(awaySec, capHours * 3600);
+  const zero = { awaySec, cappedSec, sales: 0, gold: 0, rep: 0, consumed: {}, reserveUsed: 0 };
 
   // First owned serve-worker sets the pace (just Bob for now; a second serve-worker would need a
   // combined-throughput pass — deliberately out of scope until one exists).
@@ -35,20 +40,32 @@ export function computeOffline(state, nowMs) {
   const maxSales = Math.floor((cappedSec / interval) * (CONFIG.offline?.efficiency ?? 1));
   if (maxSales <= 0) return zero;
 
-  // Consume stock round-robin across the shelf (a fair, deterministic stand-in for the live want
-  // weights) until time or stock runs out. Works on a copy; state is untouched.
-  const stocks = {};
-  for (const id of ITEM_ORDER) stocks[id] = state.items[id]?.stock ?? 0;
-  const consumed = {};
-  let sales = 0, gold = 0, soldThisPass = true;
+  // Backroom Storage: each level stocks one full shelf-refill of RESERVE per item for this absence.
+  // Bob sells the live shelf first, then restocks from the backroom — a reserve unit pays
+  // basePrice MINUS restockCost (Bob buys the restock out of the margin), so it's always profitable
+  // (every item's basePrice > restockCost) but active play still out-earns it per unit.
+  const reservePerItem = sumEffect(state, 'offlineReserve');                 // full refills per item
+  const stocks = {}, reserves = {};
+  for (const id of ITEM_ORDER) {
+    stocks[id] = state.items[id]?.stock ?? 0;                                // live shelf units
+    reserves[id] = reservePerItem * effectiveMaxStock(state, id);            // Extra Shelf compounds in
+  }
+  const consumed = {};                                                       // LIVE units only (applyOffline
+  let sales = 0, gold = 0, reserveUsed = 0, soldThisPass = true;             //  decrements the real shelf)
   while (sales < maxSales && soldThisPass) {
     soldThisPass = false;
     for (const id of ITEM_ORDER) {
       if (sales >= maxSales) break;
-      if (stocks[id] > 0) {
+      if (stocks[id] > 0) {                                                  // shelf first
         stocks[id] -= 1;
         consumed[id] = (consumed[id] ?? 0) + 1;
         gold += ITEMS[id]?.basePrice ?? 0;
+        sales += 1;
+        soldThisPass = true;
+      } else if (reserves[id] > 0) {                                         // then the backroom
+        reserves[id] -= 1;
+        reserveUsed += 1;
+        gold += (ITEMS[id]?.basePrice ?? 0) - (ITEMS[id]?.restockCost ?? 0); // net of the restock Bob paid
         sales += 1;
         soldThisPass = true;
       }
@@ -56,7 +73,7 @@ export function computeOffline(state, nowMs) {
   }
 
   const rep = sales * effectiveRepPerSale(state);                            // Better Signage applies offline too
-  return { awaySec, cappedSec, sales, gold, rep, consumed };
+  return { awaySec, cappedSec, sales, gold, rep, consumed, reserveUsed };
 }
 
 // Bank a computed result into state. Safe to call with a zero result (no-op, returns false).

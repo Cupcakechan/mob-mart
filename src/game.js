@@ -23,6 +23,7 @@ export function spawnCustomer() {
     budget: randInt(minB, maxB),
     patienceRemaining: CONFIG.queue.defaultPatienceSec,
     brokeWait: 0,               // seconds spent unaffordable at the front; drives the worker auto-wave
+    frontWait: 0,               // seconds spent AT the front; gates the worker greet delay (feel fix)
     state: 'queued',
   };
 }
@@ -167,6 +168,11 @@ function updateWorkers(state, dt) {
     if (!w.owned || WORKERS[id].role !== 'serve') continue;    // future restock role is skipped here
     w.timer -= dt;
     if (w.timer > 0) continue;
+    // Greet gate (feel fix): the front customer must have been VISIBLE at the counter for greetSec
+    // before a worker may serve them — at max Faster Counter, serves had become invisible teleports
+    // straight to the battle log. Worker stays ready and fires the moment the greet elapses.
+    // Manual serving is deliberately NOT gated (clicking = looking; active play stays faster).
+    if ((state.queue[0]?.frontWait ?? 0) < (CONFIG.workers?.greetSec ?? 0)) { w.timer = 0; continue; }
     if (serveCurrent(state)) {                                 // sold one -> pace the next by the interval
       w.timer = effectiveWorkerInterval(state, id);
       state.workerServed = true;                               // signal main.js to play Bob's serve anim
@@ -231,6 +237,10 @@ export function update(state, dt) {
       state.uiDirty = true;
     }
   }
+
+  // The settled front customer accrues counter time (drives the worker greet gate). Accrued AFTER
+  // spawns/leavers so a mob promoted to the front this tick starts its greet from ~0.
+  if (state.queue[0]) state.queue[0].frontWait = (state.queue[0].frontWait ?? 0) + dt;
 
   if (anyServeWorkerOwned(state)) autoWaveBroke(state, dt);  // clear broke blockers so the line keeps flowing
   updateWorkers(state, dt);   // auto-serve runs last, on the settled queue (spawns in, leavers out)

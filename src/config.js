@@ -48,12 +48,21 @@ export const CONFIG = {
 
   offline: {
     // M5 "While you were away": a hired serve-worker keeps selling (capped, stock-consuming).
-    capHours: 2,               // <-- THE BIG LEVER: max unattended hours that pay out. Kept stingy on
-                               //     purpose so a future backroom_storage upgrade (+hours/level) has
-                               //     room to feel good.
+    capHours: 2,               // <-- BASE cap: max unattended hours that pay out. Kept stingy on
+                               //     purpose — the backroom_storage upgrade adds +2h/level on top
+                               //     (effective cap = capHours + sumEffect 'offlineCap', see offline.js).
     minAwaySec: 60,            // modal only shows after this much time away (quick reloads stay silent)
     efficiency: 1.0,           // multiplier on offline sale count (the classic "offline earns at X%"
                                // dial). 1.0 = full rate; lower it if offline ever outshines active play.
+  },
+
+  workers: {
+    // The customer-visibility floor: a FRONT customer must stand at the counter this long before a
+    // hired worker may serve them, no matter how fast upgrades make Bob. Guarantees every mob is
+    // SEEN (name + want readable) — at max Faster Counter, serves had become invisible teleports to
+    // the battle log. Manual serving is deliberately NOT gated: the player clicking is the player
+    // looking, and staying faster than Bob keeps active play a strict bonus.
+    greetSec: 1.2,
   },
 
   log: { maxEntries: 30 },
