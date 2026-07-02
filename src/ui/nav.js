@@ -11,7 +11,25 @@ const TABS = [
 // Which center panel each tab shows. Tabs without an entry here don't swap the center.
 const PANEL_FOR = { shop: 'items-panel', upgrades: 'upgrades-panel', workers: 'workers-panel' };
 
+let navRoot = null;          // kept for the attention hook below
+let activeTab = 'shop';
+let wantAttention = false;   // "a sale is blocked by empty stock right now" (set by panels.js)
+
+// Attention hook (called by renderPanels): when the front customer's item is out of stock, the
+// signal must survive tab-blindness — the shelf card pulses on the Shop tab, and THIS makes the
+// SHOP tab itself pulse whenever the shelf panel isn't the visible one. Chain: nav pulse -> click
+// Shop -> pulsing card -> Restock.
+export function setShopAttention(on) {
+  wantAttention = on;
+  applyShopAttention();
+}
+function applyShopAttention() {
+  const btn = navRoot?.querySelector('.nav-btn[data-tab="shop"]');
+  if (btn) btn.classList.toggle('attention', wantAttention && activeTab !== 'shop');
+}
+
 export function initNav(root) {
+  navRoot = root;
   root.innerHTML = TABS.map((t) => {
     const soon = t.disabled ? '<span class="nav-soon">soon</span>' : '';
     const dis = t.disabled ? ' disabled title="Coming soon"' : '';
@@ -26,6 +44,8 @@ export function initNav(root) {
 }
 
 function setTab(root, tab) {
+  activeTab = tab;
+  applyShopAttention();      // switching to Shop clears the nav pulse (the card takes over)
   // Show the chosen center panel, hide the others.
   for (const panelId of Object.values(PANEL_FOR)) {
     const el = document.getElementById(panelId);

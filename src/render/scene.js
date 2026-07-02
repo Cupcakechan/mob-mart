@@ -162,6 +162,8 @@ export function drawScene(ctx, state, tMs) {
 // Replaces both the panel's info lines AND the old gold chevron (the bubble itself marks the front
 // mob now). Width is measured from the text each frame; the tail bobs in phase with the mob.
 // A purchase float briefly crosses the bubble on a serve — deliberate, it fades in 0.9s.
+// The bubble is PURE CHARACTER VOICE: no system text. The blocked-sale signal (out of stock)
+// lives in the shelf-card + Shop-tab attention pulse (panels.js/nav.js) — where the fix is.
 const BUBBLE = {
   tipGapY: 18,        // gap between the mob box top (QUEUE.y) and the tail tip — clears 1.15-scaled heads
   padX: 12, padY: 9,  // inner padding
@@ -174,7 +176,6 @@ const BUBBLE = {
   border: '#4b3a63',
   name: '#ffcf4a',             // gold, matching panel titles
   text: '#f4eede',
-  alert: '#ff9184',            // the "out of stock! / can't afford it!" line
 };
 
 function drawBubble(ctx, state, tMs) {
@@ -183,20 +184,15 @@ function drawBubble(ctx, state, tMs) {
   const name = MONSTERS[c.monsterId]?.displayName ?? '???';
   const item = ITEMS[c.wantedItemId];
   const want = `wants ${item?.displayName ?? '???'} \u25C6 ${c.budget}`;
-  // The mob's dilemma lives in the bubble (reads better than only a greyed button). Same rules as
-  // game.js's serveBlockReason, computed inline to keep render free of game-module imports.
-  const stock = state.items[c.wantedItemId]?.stock ?? 0;
-  const status = stock <= 0 ? 'out of stock!'
-    : (c.budget < (item?.basePrice ?? 0) ? "can't afford it!" : null);
 
   ctx.save();
   ctx.font = BUBBLE.nameFont;
   let textW = ctx.measureText(name).width;
   ctx.font = BUBBLE.lineFont;
-  textW = Math.max(textW, ctx.measureText(want).width, status ? ctx.measureText(status).width : 0);
+  textW = Math.max(textW, ctx.measureText(want).width);
 
   const w = Math.ceil(textW) + BUBBLE.padX * 2;
-  const h = BUBBLE.padY * 2 + 15 + BUBBLE.lineGap + 13 + (status ? BUBBLE.lineGap + 13 : 0);
+  const h = BUBBLE.padY * 2 + 15 + BUBBLE.lineGap + 13;
   const bob = Math.sin(tMs / 300 + QUEUE.frontX) * 4;            // same phase as the front mob
   const cx = QUEUE.frontX + QUEUE.size / 2;
   const tipY = QUEUE.y - BUBBLE.tipGapY + bob;
@@ -217,10 +213,6 @@ function drawBubble(ctx, state, tMs) {
   ctx.fillText(name, x + BUBBLE.padX, y + BUBBLE.padY);
   ctx.font = BUBBLE.lineFont; ctx.fillStyle = BUBBLE.text;
   ctx.fillText(want, x + BUBBLE.padX, y + BUBBLE.padY + 15 + BUBBLE.lineGap);
-  if (status) {
-    ctx.fillStyle = BUBBLE.alert;
-    ctx.fillText(status, x + BUBBLE.padX, y + BUBBLE.padY + 15 + BUBBLE.lineGap + 13 + BUBBLE.lineGap);
-  }
   ctx.restore();
 }
 

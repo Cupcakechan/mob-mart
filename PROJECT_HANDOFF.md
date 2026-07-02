@@ -556,6 +556,17 @@ not shipped) passes, including regressions for both audit fixes.
   its job); customer panel slimmed to name + line count (want/budget live in the bubble). Known
   cosmetic: a purchase float crosses the bubble for ~0.9s on serve — deliberate. Uses
   ctx.roundRect (Chrome 99+/FF 112+; fine for Kongregate's browser floor).
+- **Attention system (BUILT — commit pending; Daniel: "assume users WILL miss things"):** the
+  bubble's system text was disliked and REMOVED — the bubble is now pure character voice (name +
+  want/budget only; the unused alert dial was dropped). The blocked-sale signal moved to WHERE THE
+  FIX IS: when the FRONT customer's item has stock 0, that shelf card breathes gold (border +
+  Restock button, 1.2s, keyframe `attn-breathe`) and — the tab-blindness guard — the SHOP nav
+  button pulses via `setShopAttention()` (exported from nav.js, called each renderPanels) whenever
+  the shelf panel isn't visible; switching to Shop clears the nav pulse and the card takes over.
+  Deliberately FRONT-ONLY (= "a sale is blocked right now") so the pulse stays rare and meaningful.
+  "can't afford it!" removed with no replacement (Bob's auto-wave self-resolves it).
+  prefers-reduced-motion falls back to a static gold border. Chosen over bubble-text after an
+  options pass (dials: card border+button / breathe / gold / front-only / include nav pulse).
 - **Door destinations (BUILT — commit pending):** three variant strips (mountain/forest/dungeon —
   identical door, different world through the opening) rolled per PAID serve in `playPortalOpen`
   via `pickDoorVariant` (picks only among LOADED strips; anti-repeat re-draw like the log picker;

@@ -257,3 +257,25 @@ body{
   margin: 0 auto 4px;
   image-rendering: pixelated;   /* keep the pixel-art crisp at the downscale */
 }
+
+/* --- Attention pulse: the front customer's item is out of stock. The exact shelf card breathes
+   gold (border + its Restock button) and, when the shelf isn't the visible tab, the SHOP nav
+   button pulses instead — the signal survives tab-blindness and always points at the remedy.
+   Gold, not alert-red: this is a call-to-action, matching the game's "act here" color. --------- */
+@keyframes attn-breathe {
+  0%, 100% { box-shadow: 0 0 0 2px #ffcf4a, 0 0 10px 2px rgba(255, 207, 74, 0.30); }
+  50%      { box-shadow: 0 0 0 2px #ffcf4a, 0 0 22px 6px rgba(255, 207, 74, 0.60); }
+}
+.item-card.attention { animation: attn-breathe 1.2s ease-in-out infinite; border-color: #ffcf4a; }
+.item-card.attention .restock-btn { animation: attn-breathe 1.2s ease-in-out infinite; border-color: #ffcf4a; }
+@keyframes attn-nav {
+  0%, 100% { color: #b6abc9; text-shadow: none; }
+  50%      { color: #ffcf4a; text-shadow: 0 0 8px rgba(255, 207, 74, 0.6); }
+}
+.nav-btn.attention { animation: attn-nav 1.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .item-card.attention, .item-card.attention .restock-btn, .nav-btn.attention {
+    animation: none;                     /* static gold border/color still marks the target */
+    border-color: #ffcf4a; color: #ffcf4a;
+  }
+}

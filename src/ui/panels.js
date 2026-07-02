@@ -1,6 +1,7 @@
 // panels.js — DOM panels: current customer (front), Shelf (restock), Upgrades view, Workers view,
 // battle log. The Shelf / Upgrades / Workers panels share the center slot; the bottom nav toggles
 // which is visible.
+import { setShopAttention } from './nav.js';
 import { CONFIG } from '../config.js';
 import { ITEMS, ITEM_ORDER } from '../data/items.js';
 import { MONSTERS } from '../data/monsters.js';
@@ -143,6 +144,15 @@ export function renderPanels(state) {
   document.querySelectorAll('.restock-btn').forEach((btn) => {
     btn.disabled = !canRestock(state, btn.dataset.item);
   });
+
+  // Attention system: the FRONT customer's sale is blocked by empty stock -> pulse exactly that
+  // shelf card (and, via setShopAttention, the Shop tab when the shelf isn't visible). Deliberately
+  // front-only: it means "a sale is blocked RIGHT NOW", so the pulse stays rare and meaningful —
+  // a signal that's always on is a signal nobody sees.
+  const starvedId = (c && (state.items[c.wantedItemId]?.stock ?? 0) <= 0) ? c.wantedItemId : null;
+  document.querySelectorAll('.item-card').forEach((card) =>
+    card.classList.toggle('attention', card.dataset.item === starvedId));
+  setShopAttention(starvedId !== null);
 
   // --- Upgrades: locked state (rep tier), level, cost, buyability ---
   for (const id of UPGRADE_ORDER) {
