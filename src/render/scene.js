@@ -93,9 +93,32 @@ const PORTAL = {
 };
 const portalAnim = { startMs: null };   // null = door closed/idle; a timestamp = one-shot in progress
 
+// --- Door destinations: same door strip, different world through the opening (frame 0 is
+// pixel-identical across all variants, so the closed door never pops between picks). Each PAID
+// serve re-rolls where that customer is headed. Files are optional and independent: the picker
+// only chooses among strips that actually loaded, so drop them in piecemeal — none loaded falls
+// back to the base portal_glow.png (the original void), then static portal.png, then placeholder.
+// Adding a biome later = author one strip + add its id here.
+const DOOR_VARIANTS = ['portal_glow_mountain', 'portal_glow_forest', 'portal_glow_dungeon'];
+let doorVariant = null;                 // strip id for the current opening; null = base strip
+let lastVariant = null;                 // anti-repeat memory (same trick as the log-line picker)
+
+function pickDoorVariant() {
+  const ready = DOOR_VARIANTS.filter((id) => getSprite(id));   // only art that has actually loaded
+  if (ready.length === 0) return null;
+  let pick = ready[Math.floor(Math.random() * ready.length)];
+  if (ready.length > 1 && pick === lastVariant) {              // one re-draw: never the same biome
+    const others = ready.filter((id) => id !== pick);          // twice in a row
+    pick = others[Math.floor(Math.random() * others.length)];
+  }
+  lastVariant = pick;
+  return pick;
+}
+
 // Open the battle door (call on a successful SERVE — the customer paid and is leaving to fight).
 // A serve mid-animation restarts it from frame 0, so rapid sales keep the door lively, never stuck.
 export function playPortalOpen() {
+  doorVariant = pickDoorVariant();       // this customer's destination, rolled at the moment of sale
   portalAnim.startMs = -1;               // sentinel: stamp with the real tMs on the next draw
 }
 
@@ -263,7 +286,9 @@ function drawPortal(ctx, tMs) {
   ctx.shadowBlur = PORTAL.glowBase + PORTAL.glowPulse * pulse;   // slight, breathing glow
 
   const h = PORTAL.size;
-  const strip = getSprite('portal_glow');                        // preferred: 4-frame door strip
+  // Variant strip for this opening if rolled+loaded, else the base (void) strip. The variant
+  // persists while the door idles closed — harmless, since frame 0 is identical across strips.
+  const strip = (doorVariant && getSprite(doorVariant)) || getSprite('portal_glow');
   if (strip) {
     const { frames, fps, holdMs } = PORTAL.anim;
     let frame = 0;                                               // default: door closed

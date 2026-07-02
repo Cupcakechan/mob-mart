@@ -329,7 +329,7 @@ anchoring keys off it. Author the backdrop with the seam at 462 (wall 0→462, f
 | Slimey / Batty / Skele (customers) | 128×128/frame | idle 2–4 · shuffle 4–6 · react 3–4 (strips) | `slime.png` (static) or `slime_idle.png` etc.; same for `bat_`, `skeleton_` | **PLACEHOLDER RECTS** — drawn at 88px (`QUEUE.size`) |
 | Bob (mimic merchant) | 128×128 or 160×160/frame | idle 6f · serve 6f (one-shot) | `mimic_merchant.png` (static fallback), `bob_idle.png`, `bob_serve.png` (6-frame strips) | **IN** — 240px on-screen (`BOB.height`), feet anchored to `COUNTER.baseY` − 50 |
 | Counter / desk | ~480px wide (author 2× ≈ 960 for crisp) | static | `counter.png` | **IN** — 480px (`COUNTER.width`), base at H*0.74 (~533) + contact shadow |
-| Battle door (ex-portal) | **160×160/frame**, 4 frames → **640×160 strip**; frame 0 CLOSED → 3 OPEN | one-shot open/hold/close on paid serve | `portal_glow.png` (strip), `portal.png` (static fallback) | **IN** — 320px on-screen (2×); bottom = `FLOOR_Y + 6` (art has 3px bottom padding ×2 scale) |
+| Battle door (ex-portal) | **160×160/frame**, 4 frames → **640×160 strip**; frame 0 CLOSED → 3 OPEN; **frame 0 must be pixel-identical across variants** | one-shot open/hold/close on paid serve; destination re-rolled per opening | `portal_glow.png` (base/void), `portal_glow_mountain/_forest/_dungeon.png` (destination variants — a new biome = one strip + one `DOOR_VARIANTS` entry), `portal.png` (static fallback) | **IN** — 320px on-screen (2×); bottom = `FLOOR_Y + 6` (art has 3px bottom padding ×2 scale) |
 | Shop backdrop | 1280×720, **seam at y=462** | optional torch flicker later | `shop_bg.png` | **IN (WIP)** — iterating |
 | Item icons (Club / Metal Helmet / HP Flask) | 64×64 | static | `club.png`, `metal_helmet.png`, `hp_flask.png` | **WIRED, art pending** — shelf cards show them at 32px (2:1; missing PNG hides itself) + canvas purchase float (32px, rises 46px, fades 900ms) |
 | UI icons (gold, rep crown, scrap-reserved) | 32×32 | static | `icon_gold.png`, `icon_rep.png`, `icon_scrap.png` | **NOT YET USED** — HUD uses text glyphs |
@@ -526,6 +526,11 @@ not shipped) passes, including regressions for both audit fixes.
   front item — reliable BECAUSE the greet gate forbids same-tick serve of a just-promoted customer.
   Suite at **104 assertions** (greet hold/release, manual ungated, backroom exact-math L0/L1/L3,
   live-only consumed, save clamp).
+- **Door destinations (BUILT — commit pending):** three variant strips (mountain/forest/dungeon —
+  identical door, different world through the opening) rolled per PAID serve in `playPortalOpen`
+  via `pickDoorVariant` (picks only among LOADED strips; anti-repeat re-draw like the log picker;
+  none loaded -> base void strip). `DOOR_VARIANTS` list in scene.js; 3 loadSprite lines in main.js.
+  Upgrade path noted: variants can later gain per-monster weights (destination-as-characterization).
 
 ---
 

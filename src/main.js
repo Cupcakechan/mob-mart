@@ -52,6 +52,9 @@ loadSprite('skeleton', 'assets/sprites/skeleton.png');
 loadSprite('counter',  'assets/sprites/counter.png');
 loadSprite('portal',   'assets/sprites/portal.png');
 loadSprite('portal_glow', 'assets/sprites/portal_glow.png');  // 4-frame swirl strip (640x160); absent -> static portal
+loadSprite('portal_glow_mountain', 'assets/sprites/portal_glow_mountain.png');  // door destinations:
+loadSprite('portal_glow_forest',   'assets/sprites/portal_glow_forest.png');    // same door, different
+loadSprite('portal_glow_dungeon',  'assets/sprites/portal_glow_dungeon.png');   // world through it
 loadSprite('bob_idle',  'assets/sprites/bob_idle.png');   // 6-frame horizontal strip
 loadSprite('bob_serve', 'assets/sprites/bob_serve.png');  // 6-frame horizontal strip
 loadSprite('club',         'assets/sprites/club.png');         // item icons (64x64) — used by the
