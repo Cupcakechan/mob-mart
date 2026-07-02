@@ -17,10 +17,14 @@ export function initPanels(root, h) {
   handlers = h;
   root.innerHTML = `
     <section class="panel customer-panel">
-      <h2 class="panel-title">Current Customer</h2>
-      <div id="customer-body" class="customer-body"></div>
-      <button id="serve-btn" class="serve-btn">Serve</button>
-      <button id="dismiss-btn" class="dismiss-btn">Send Away</button>
+      <div class="customer-info">
+        <h2 class="panel-title">Current Customer</h2>
+        <div id="customer-body" class="customer-body"></div>
+      </div>
+      <div class="customer-actions">
+        <button id="serve-btn" class="serve-btn">Serve</button>
+        <button id="dismiss-btn" class="dismiss-btn">Send Away</button>
+      </div>
     </section>
 
     <section id="items-panel" class="panel items-panel">

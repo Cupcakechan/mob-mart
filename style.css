@@ -49,7 +49,7 @@ body{
 }
 
 /* Items (center, over the counter) */
-.items-panel{left:40px;top:140px;width:430px;}
+.items-panel{left:40px;top:96px;width:430px;}   /* top strip: clears mob heads (y~407) */
 .item-cards{display:flex;gap:10px;}
 .item-card{
   flex:1;background:var(--parchment);color:var(--ink);border:2px solid var(--wood-edge);
@@ -66,8 +66,14 @@ body{
 .restock-btn:disabled{opacity:.4;cursor:not-allowed;}
 
 /* Current customer (bottom-left) */
-.customer-panel{left:24px;bottom:28px;width:300px;}
-.customer-body{min-height:70px;}
+.customer-panel{
+  left:24px;bottom:16px;width:520px;               /* bottom bar, left segment */
+  display:flex;align-items:center;gap:16px;        /* info grows, actions fixed right */
+}
+.customer-info{flex:1;min-width:0;}                /* min-width:0 lets long item names ellipse, not overflow */
+.customer-actions{display:flex;flex-direction:column;gap:8px;width:186px;flex-shrink:0;}
+.customer-actions .serve-btn,.customer-actions .dismiss-btn{margin-top:0;}
+.customer-body{min-height:58px;}
 .cust-name{font-size:20px;font-weight:800;color:#fff;}
 .cust-line{font-size:14px;margin-top:4px;}
 .cust-line b{color:var(--gold);}
@@ -83,7 +89,7 @@ body{
 .serve-btn:disabled{background:#5a5348;color:#2c281f;border-color:#3f3a32;box-shadow:0 4px 0 #2c281f;cursor:not-allowed;}
 
 /* Battle log (bottom-right) */
-.log-panel{right:24px;bottom:28px;width:380px;max-height:230px;display:flex;flex-direction:column;}
+.log-panel{right:24px;bottom:16px;width:300px;max-height:230px;display:flex;flex-direction:column;}  /* right dock, under the door (top ~474 vs door bottom 462) */
 .battle-log{list-style:none;margin:0;padding:0;overflow-y:auto;}
 .log-item{
   display:flex;justify-content:space-between;gap:8px;align-items:center;
@@ -150,7 +156,7 @@ body{
 .hidden{display:none;}
 
 /* Upgrades panel shares the center slot with the Shelf */
-.upgrades-panel{left:40px;top:140px;width:430px;max-height:210px;overflow-y:auto;}
+.upgrades-panel{left:40px;top:96px;width:430px;max-height:280px;overflow-y:auto;}
 .upgrade-cards{display:flex;flex-direction:column;gap:7px;}
 .upgrade-card{
   display:flex;align-items:center;gap:8px;
@@ -177,7 +183,7 @@ body{
 
 /* Bottom nav — slim bar in the center gap between the corner panels */
 .nav{
-  position:absolute;bottom:22px;left:50%;transform:translateX(-50%);z-index:6;
+  position:absolute;bottom:16px;left:556px;z-index:6;  /* docked between customer bar (ends 544) and log (starts 956) */
   display:flex;gap:6px;background:var(--panel-bg);border:2px solid var(--panel-edge);
   border-radius:14px;padding:5px;box-shadow:0 5px 0 rgba(0,0,0,.4);
 }
@@ -194,7 +200,7 @@ body{
   color:var(--purple);background:var(--stone);border-radius:6px;padding:0 4px;
 }
 /* Workers panel — shares the center slot with Shelf/Upgrades (nav toggles visibility). */
-.workers-panel{left:40px;top:140px;width:430px;max-height:210px;overflow-y:auto;}
+.workers-panel{left:40px;top:96px;width:430px;max-height:280px;overflow-y:auto;}
 .worker-cards{display:flex;flex-direction:column;gap:7px;}
 .worker-card{
   display:flex;align-items:center;gap:8px;

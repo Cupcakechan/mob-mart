@@ -441,6 +441,14 @@ not shipped) passes, including regressions for both audit fixes.
 - **Tuning sweep (queued by name — run AFTER backroom absorption is observed in play):** stretch the
   economy with numbers only: upgrade `costGrowth` 1.8 → ~2.1 and/or `maxLevel` 5 → 7–8 (cap Faster
   Counter where legibility survives), spawn 3 → ~2.6s, patience to match. One pass, own commit.
+- **UI hybrid stage 2 — the speech bubble (queued by name):** replace the Current Customer panel
+  with a canvas speech bubble above the front mob (name/want/budget + Serve/Wave hit-targets).
+  Canvas text layout + wrapping + click regions — the deliberately-deferred hard part of the hybrid.
+- **Mob sprite calibration (parked rider, MEASURED):** all three statics are 128x128 with similar
+  body heights (bat 96x98 / slime 109x92 / skeleton 47x96 — 72–77% of frame) and 15–18px dead
+  padding BELOW the feet, so every mob floats ~11px above its shadow at draw scale. Fix = trim the
+  bottom padding in the art (preferred) and/or per-monster `spriteScale` in monsters.js (guarded
+  `?? 1.0`; try slime/skeleton ~1.15 — their "smallness" is skinny/squat silhouette, not scale).
 - **Gobbo (recommended first content add):** one `monsters.js` entry auto-flows everywhere; comedy
   lever already defined (cocky over-promoter). Placeholder rect until art.
 - **Customer mob art:** slime/bat/skeleton are the last placeholder rects standing (specs in §9).
@@ -526,6 +534,14 @@ not shipped) passes, including regressions for both audit fixes.
   front item — reliable BECAUSE the greet gate forbids same-tick serve of a just-promoted customer.
   Suite at **104 assertions** (greet hold/release, manual ungated, backroom exact-math L0/L1/L3,
   live-only consumed, save clamp).
+- **UI edge-frame (hybrid stage 1, BUILT — commit pending):** Daniel picked the HYBRID after a
+  visualized Option-3 exploration (decision: Option 2 edge-frame skeleton now, Option 3's speech
+  bubble as a queued follow-up; door destinations stay RANDOM — per-monster mapping rejected).
+  Layout rule: nothing may cover the actor band (mob tops y~407 to counter base y~533). Customer
+  panel -> horizontal bottom bar (left:24 bottom:16 w:520; info flex + fixed 186px action column;
+  template reflowed in panels.js, all IDs unchanged); nav docked beside it (left:556); log -> right
+  column (w:300, top ~474, clears the door at 462); center panels raised to top:96 (upgrades/workers
+  max-height 280). Seven CSS edits + one template reflow; no game-logic changes.
 - **Door destinations (BUILT — commit pending):** three variant strips (mountain/forest/dungeon —
   identical door, different world through the opening) rolled per PAID serve in `playPortalOpen`
   via `pickDoorVariant` (picks only among LOADED strips; anti-repeat re-draw like the log picker;
