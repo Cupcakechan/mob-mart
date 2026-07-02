@@ -13,6 +13,7 @@ import { CONFIG } from './config.js';
 import { ITEMS, ITEM_ORDER } from './data/items.js';
 import { WORKERS, WORKER_ORDER, isWorkerOwned } from './data/workers.js';
 import { sumEffect } from './data/upgrades.js';
+import { itemGoldMult, globalGoldMult } from './data/milestones.js';
 import { effectiveWorkerInterval, effectiveRepPerSale, effectiveMaxStock } from './game.js';
 
 // Compute the offline result for `state` as of `nowMs`. Returns
@@ -26,7 +27,7 @@ export function computeOffline(state, nowMs) {
   // inventory, not hours).
   const capHours = (CONFIG.offline?.capHours ?? 0) + sumEffect(state, 'offlineCap');
   const cappedSec = Math.min(awaySec, capHours * 3600);
-  const zero = { awaySec, cappedSec, sales: 0, gold: 0, rep: 0, consumed: {}, reserveUsed: 0 };
+  const zero = { awaySec, cappedSec, sales: 0, gold: 0, rep: 0, consumed: {}, reserveUsed: 0, soldByItem: {} };
 
   // First owned serve-worker sets the pace (just Bob for now; a second serve-worker would need a
   // combined-throughput pass — deliberately out of scope until one exists).
@@ -45,13 +46,19 @@ export function computeOffline(state, nowMs) {
   // basePrice MINUS restockCost (Bob buys the restock out of the margin), so it's always profitable
   // (every item's basePrice > restockCost) but active play still out-earns it per unit.
   const reservePerItem = sumEffect(state, 'offlineReserve');                 // full refills per item
-  const stocks = {}, reserves = {};
+  const stocks = {}, reserves = {}, goldPer = {};
+  // Milestone multipliers apply offline too (loyal regulars keep tipping) but are FROZEN at the
+  // absence's start: counts crossed mid-absence don't compound within the same absence —
+  // deterministic and conservative. Per-unit rounding matches the live serve path exactly.
+  const gMult = globalGoldMult(state);
   for (const id of ITEM_ORDER) {
     stocks[id] = state.items[id]?.stock ?? 0;                                // live shelf units
     reserves[id] = reservePerItem * effectiveMaxStock(state, id);            // Extra Shelf compounds in
+    goldPer[id] = Math.round((ITEMS[id]?.basePrice ?? 0) * itemGoldMult(state, id) * gMult);
   }
   const consumed = {};                                                       // LIVE units only (applyOffline
-  let sales = 0, gold = 0, reserveUsed = 0, soldThisPass = true;             //  decrements the real shelf)
+  const soldByItem = {};                                                     //  decrements the real shelf);
+  let sales = 0, gold = 0, reserveUsed = 0, soldThisPass = true;             // soldByItem = live + reserve (ledger fuel)
   while (sales < maxSales && soldThisPass) {
     soldThisPass = false;
     for (const id of ITEM_ORDER) {
@@ -59,13 +66,15 @@ export function computeOffline(state, nowMs) {
       if (stocks[id] > 0) {                                                  // shelf first
         stocks[id] -= 1;
         consumed[id] = (consumed[id] ?? 0) + 1;
-        gold += ITEMS[id]?.basePrice ?? 0;
+        soldByItem[id] = (soldByItem[id] ?? 0) + 1;
+        gold += goldPer[id];
         sales += 1;
         soldThisPass = true;
       } else if (reserves[id] > 0) {                                         // then the backroom
         reserves[id] -= 1;
         reserveUsed += 1;
-        gold += (ITEMS[id]?.basePrice ?? 0) - (ITEMS[id]?.restockCost ?? 0); // net of the restock Bob paid
+        soldByItem[id] = (soldByItem[id] ?? 0) + 1;
+        gold += goldPer[id] - (ITEMS[id]?.restockCost ?? 0);                 // loyalty applies; Bob still paid the restock
         sales += 1;
         soldThisPass = true;
       }
@@ -73,7 +82,9 @@ export function computeOffline(state, nowMs) {
   }
 
   const rep = sales * effectiveRepPerSale(state);                            // Better Signage applies offline too
-  return { awaySec, cappedSec, sales, gold, rep, consumed, reserveUsed };
+  // (Monster rep-milestones are NOT applied offline: the sim sells items, it doesn't simulate WHO
+  // bought them — monster counts stay live-only, flagged in the handoff.)
+  return { awaySec, cappedSec, sales, gold, rep, consumed, reserveUsed, soldByItem };
 }
 
 // Bank a computed result into state. Safe to call with a zero result (no-op, returns false).
@@ -83,6 +94,12 @@ export function applyOffline(state, result) {
   state.reputation += result.rep;
   for (const [id, n] of Object.entries(result.consumed)) {
     if (state.items[id]) state.items[id].stock = Math.max(0, state.items[id].stock - n);
+  }
+  // Bank the lifetime ledger (live + reserve units). Crossings during an absence are deliberately
+  // SILENT — the away modal already summarizes the haul, and a burst of milestone log lines at boot
+  // would drown it; the bonuses are active immediately either way.
+  for (const [id, n] of Object.entries(result.soldByItem ?? {})) {
+    if (state.stats?.itemSales?.[id] !== undefined) state.stats.itemSales[id] += n;
   }
   state.uiDirty = true;
   return true;

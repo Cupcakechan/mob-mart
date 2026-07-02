@@ -14,6 +14,17 @@ const numOr = (v, fallback) => (typeof v === 'number' && Number.isFinite(v)) ? v
 // Pure: overlay validated saved data onto a fresh state (default-fill + guards). No I/O.
 export function mergeSave(fresh, data) {
   if (!data || typeof data !== 'object') return fresh;
+  // Lifetime ledger: iterate FRESH keys (current registries — stale saved ids are dropped), clamp
+  // to non-negative integers (a corrupt/edited count must never NaN the milestone math). Pre-ledger
+  // saves simply start counting from 0 — additive schema, SAVE_VERSION unchanged.
+  if (data.stats && typeof data.stats === 'object') {
+    for (const id of Object.keys(fresh.stats.itemSales)) {
+      fresh.stats.itemSales[id] = Math.max(0, Math.floor(numOr(data.stats.itemSales?.[id], 0)));
+    }
+    for (const id of Object.keys(fresh.stats.monsterServes)) {
+      fresh.stats.monsterServes[id] = Math.max(0, Math.floor(numOr(data.stats.monsterServes?.[id], 0)));
+    }
+  }
   fresh.gold = Math.max(0, numOr(data.gold, fresh.gold));
   fresh.reputation = Math.max(0, numOr(data.reputation, fresh.reputation));
   // Upgrades merge FIRST: the item-stock clamp below needs the restored Extra Shelf level to compute
@@ -63,6 +74,10 @@ export function serializeSave(state) {
     items,
     upgrades: { ...state.upgrades },
     workers,
+    stats: {
+      itemSales: { ...(state.stats?.itemSales ?? {}) },
+      monsterServes: { ...(state.stats?.monsterServes ?? {}) },
+    },
     lastSeen: Date.now(),
   };
 }

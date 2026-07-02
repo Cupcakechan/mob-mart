@@ -279,3 +279,13 @@ body{
     border-color: #ffcf4a; color: #ffcf4a;
   }
 }
+
+/* --- Regulars' Loyalty (milestones): the per-card sales counter and the gold announcement lines
+   in the battle log. The counter is deliberately quiet (muted, small) — it's a slow-burn want, not
+   an alert; the log line is the celebration moment, so IT gets the gold. ------------------------ */
+.item-sold { font-size: 11px; color: #b6abc9; margin-top: 2px; }
+.battle-log li.milestone {
+  border-left: 3px solid #ffcf4a;
+  color: #ffe9ad;
+  background: rgba(255, 207, 74, 0.07);
+}

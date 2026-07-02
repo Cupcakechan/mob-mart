@@ -2,6 +2,7 @@
 // battle log. The Shelf / Upgrades / Workers panels share the center slot; the bottom nav toggles
 // which is visible.
 import { setShopAttention } from './nav.js';
+import { ITEM_BREAKPOINTS, nextBreakpoint } from '../data/milestones.js';
 import { CONFIG } from '../config.js';
 import { ITEMS, ITEM_ORDER } from '../data/items.js';
 import { MONSTERS } from '../data/monsters.js';
@@ -60,6 +61,7 @@ export function initPanels(root, h) {
         <div class="item-name">${it.displayName}</div>
         <div class="item-price">&#9670; ${it.basePrice}</div>
         <div class="item-stock">Stock: <span id="stock-${id}">0</span>/<span id="max-${id}">${it.maxStock}</span></div>
+        <div class="item-sold">Sold <span id="sold-${id}">0</span><span id="next-${id}"></span></div>
         <button class="restock-btn" data-item="${id}">Restock &#9670;${it.restockCost}</button>
       </div>`;
   }).join('');
@@ -140,6 +142,15 @@ export function renderPanels(state) {
     if (stockEl) stockEl.textContent = state.items[id]?.stock ?? 0;
     const maxEl = document.getElementById(`max-${id}`);
     if (maxEl) maxEl.textContent = effectiveMaxStock(state, id);
+    // Regulars' Loyalty: lifetime count + the next breakpoint = a visible want on every card.
+    const sold = state.stats?.itemSales?.[id] ?? 0;
+    const soldEl = document.getElementById(`sold-${id}`);
+    if (soldEl) soldEl.textContent = sold;
+    const nextEl = document.getElementById(`next-${id}`);
+    if (nextEl) {
+      const nb = nextBreakpoint(sold, ITEM_BREAKPOINTS);
+      nextEl.textContent = nb !== null ? ` · next bonus: ${nb}` : ' · maxed!';
+    }
   }
   document.querySelectorAll('.restock-btn').forEach((btn) => {
     btn.disabled = !canRestock(state, btn.dataset.item);
@@ -212,7 +223,8 @@ export function renderPanels(state) {
   const log = document.getElementById('battle-log');
   if (log) {
     log.innerHTML = state.log.map((e) => {
-      const cls = e.repDelta > 0 ? 'good' : (e.repDelta < 0 ? 'bad' : 'meh');
+      const cls = e.tier === 'milestone' ? 'milestone'
+        : (e.repDelta > 0 ? 'good' : (e.repDelta < 0 ? 'bad' : 'meh'));
       const crown = e.repDelta !== 0
         ? `<span class="log-crown">${e.repDelta > 0 ? '+' : ''}${e.repDelta}&#9819;</span>`
         : '';

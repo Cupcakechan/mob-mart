@@ -272,3 +272,27 @@ drops an arm, heads out. · Bob waved. Skele saluted with the wrong arm. His, th
   deals the same line twice in a row — worth doing now that auto-serve raises line volume.
 - **Dismiss stays the hot tier** while the auto-wave is the main dismiss source — check it first
   when expanding.
+
+## Milestone announcements (system voice — lives in `src/data/milestones.js`, not results.js)
+
+Gold-accented lines the Battle Results log shows when a Regulars' Loyalty breakpoint is crossed.
+Same voice rules as everything else (Bob's shop-side voice, PG, fits the log width) plus one
+mechanic-critical rule: **never imply a price increase** — milestone bonuses are paid ON TOP of
+sales (tips, loyalty, bestseller tags), because prices rising would break customer affordability.
+Article rule applies: "the {item}" / "{item}s", never "a {item}".
+
+**Item breakpoints ({count}, {item}):**
+- Sale #{count} of the {item}! Regulars now tip extra for it.
+- Bob framed receipt #{count}. The {item} now earns a loyalty bonus.
+- {count} {item}s sold. Bob knows the pitch by heart — it pays better now.
+- The {item} hit {count} sales. Bob added a 'bestseller' tag. It works.
+
+**Monster breakpoints ({count}, {name}):**
+- {name} milestone: {count} served! Their kind trusts Bob — extra rep per visit.
+- Bob memorized the usual order. {count} served like {name} — rep flows faster.
+- {count} sales to {name} and friends. Word spreads in the dungeon: more rep.
+- Regulars' wall updated: {name} x{count}. Their visits impress the whole cave.
+
+**Everything tiers ({tier}):**
+- Every item past {tier} sales! Bob rang the big bell. Everything pays more now.
+- Full-shelf milestone: {tier}+ of each. Mob Mart is officially an institution.

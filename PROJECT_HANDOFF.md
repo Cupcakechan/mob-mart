@@ -441,11 +441,21 @@ The problem it solves: the game has ONE growth axis (gold -> 4 upgrades -> done 
 research's answer is a lattice of small bolt-on layers on existing hooks, staged so every pass
 leaves 2–3 affordable-soon wants visible. One system per pass, in this order:
 
-- **Pass 1 — Milestone sales bonuses ("Regulars' Loyalty", LOW, both players).** Lifetime sales
-  counts per item + per monster; permanent bonuses at breakpoints (10/25/50/100/250… item sales;
-  25/50/100… serves per monster) + an "everything" tier for a global multiplier. Bolts onto the
-  registries + gold math. The genre's single most proven engine (AdVenture Capitalist's core).
-  Clean integer stats double as future Kongregate badge hooks.
+- **Pass 1 — Milestone sales bonuses ("Regulars' Loyalty") — BUILT (commit pending).** New
+  `src/data/milestones.js`: item breakpoints 10/25/50/100/250/500/1000 -> +8% gold on that item
+  each; monster breakpoints 25/50/100/250/500 -> +10% rep serving that monster each; "everything"
+  tiers (ALL items past 50/250/1000, laggard-driven) -> global gold x1.25 each (~x3 gold at full
+  ladder). THE RULE: bonuses multiply the PAYOUT, never basePrice — affordability untouched, so
+  loyalty can never lock customers out (fiction: tips/bestseller tags, never markups — bible rule).
+  `state.stats` lifetime ledger { itemSales, monsterServes } (persisted, clamped in mergeSave,
+  additive schema; pre-ledger saves start at 0). Live serve pays with pre-sale multipliers, then
+  counts, then announces crossings as gold `tier:'milestone'` log lines (10 lines in
+  milestones.js, mirrored in the bible). Offline: soldByItem returned + banked by applyOffline;
+  multipliers FROZEN at absence start (deterministic); offline crossings silent by design; monster
+  counts live-only (sim sells items, not buyers). Shelf cards show "Sold N · next bonus: M".
+  Suite at **128** (24 new: mult math, laggard tier, exact payouts 14/19/3, exact-budget
+  affordability guard, once-only announcements, dismiss counts nothing, double announcement on
+  laggard crossing, save clamps, offline frozen-mult unit gold + ledger banking, line guards).
 - **Pass 2 — Reputation meaning ("Fame", LOW, check-in + both).** Tiers above Beloved
   (e.g. Renowned 500 / Legendary 1500) gating what comes next, and/or rep as a spendable perk
   currency. Fixes the dead number; creates the gates passes 3–5 need.

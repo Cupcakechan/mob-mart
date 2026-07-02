@@ -1,5 +1,7 @@
 // game.js — core loop logic. Operates on the state object; no DOM/canvas here (so it's testable).
 import { CONFIG } from './config.js';
+import { itemGoldMult, monsterRepMult, globalGoldMult, everythingTier,
+  ITEM_BREAKPOINTS, MONSTER_BREAKPOINTS, EVERYTHING_TIERS, milestoneLine } from './data/milestones.js';
 import { MONSTERS, MONSTER_IDS } from './data/monsters.js';
 import { ITEMS, ITEM_ORDER } from './data/items.js';
 import { UPGRADES, upgradeLevel, upgradeCost, isMaxed, sumEffect } from './data/upgrades.js';
@@ -58,14 +60,39 @@ export function serveCurrent(state) {
   const monster = MONSTERS[c.monsterId];
   const item = ITEMS[c.wantedItemId];
 
-  const repGain = effectiveRepPerSale(state);                   // Better Signage may boost this
+  // Milestone bonuses (Regulars' Loyalty) multiply the PAYOUT, never the price — affordability
+  // above keeps checking basePrice, so loyalty growth can never lock customers out. This sale pays
+  // with the multipliers earned BEFORE it; the ledger increments after, so a crossing kicks in from
+  // the NEXT sale (and announces below).
+  const repGain = Math.round(effectiveRepPerSale(state) * monsterRepMult(state, c.monsterId));
+  const goldGain = Math.round(item.basePrice * itemGoldMult(state, c.wantedItemId) * globalGoldMult(state));
   state.items[c.wantedItemId].stock -= 1;                       // hand over the item
-  state.gold += item.basePrice;                                 // take payment (gold in)
+  state.gold += goldGain;                                       // take payment (base + loyalty on top)
   state.reputation += repGain;                                  // a good sale earns reputation
 
   const { tier } = resolveCombat(monster, item);               // off-screen fight -> outcome tier
   const text = logLine(monster.id, tier, { name: monster.displayName, item: item.displayName });
   pushLog(state, { text, repDelta: repGain, tier, monsterId: monster.id });
+
+  // Lifetime ledger + crossing announcements (gold lines in the log, above the battle line).
+  const prevEvery = everythingTier(state);
+  const soldNow = (state.stats.itemSales[c.wantedItemId] ?? 0) + 1;
+  const servedNow = (state.stats.monsterServes[c.monsterId] ?? 0) + 1;
+  state.stats.itemSales[c.wantedItemId] = soldNow;
+  state.stats.monsterServes[c.monsterId] = servedNow;
+  if (ITEM_BREAKPOINTS.includes(soldNow)) {
+    pushLog(state, { text: milestoneLine('item', { count: soldNow, item: item.displayName }),
+      repDelta: 0, tier: 'milestone', monsterId: monster.id });
+  }
+  if (MONSTER_BREAKPOINTS.includes(servedNow)) {
+    pushLog(state, { text: milestoneLine('monster', { count: servedNow, name: monster.displayName }),
+      repDelta: 0, tier: 'milestone', monsterId: monster.id });
+  }
+  const nowEvery = everythingTier(state);
+  if (nowEvery > prevEvery) {                                   // this sale's item was the laggard
+    pushLog(state, { text: milestoneLine('everything', { tier: EVERYTHING_TIERS[nowEvery - 1] }),
+      repDelta: 0, tier: 'milestone', monsterId: monster.id });
+  }
 
   state.serveCooldown = effectiveServeCooldown(state);          // start the counter cooldown
   state.queue.shift();                                          // front leaves; line shifts forward
