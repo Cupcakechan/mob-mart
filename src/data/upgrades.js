@@ -7,8 +7,8 @@ export const UPGRADES = {
     description: '+1 max stock per item',
     effect: { type: 'maxStock', perLevel: 1 },
     baseCost: 60,
-    costGrowth: 1.8,       // cost(level) = round(baseCost * costGrowth^level)
-    maxLevel: 5,
+    costGrowth: 2.1,       // cost(level) = round(baseCost * costGrowth^level)  (sweep: was 1.8)
+    maxLevel: 7,           // sweep: was 5 — long-tail sink; extra depth also feeds Backroom reserve
     requiredTier: 0,       // rep-tier index needed to unlock (gating lands in M3 pass 3)
   },
   faster_counter: {
@@ -17,8 +17,8 @@ export const UPGRADES = {
     description: 'Shorter serve cooldown',
     effect: { type: 'serveSpeed', perLevel: 0.3 },   // effective cooldown = base / (1 + 0.3*level)
     baseCost: 80,
-    costGrowth: 1.8,
-    maxLevel: 5,
+    costGrowth: 2.1,       // sweep: was 1.8
+    maxLevel: 5,           // DELIBERATELY unchanged — the legibility cap: past 2.4s/serve, speed only makes the shop harder to watch
     requiredTier: 1,       // unlocks at Friendly (rep 20)
   },
   better_signage: {
@@ -27,8 +27,8 @@ export const UPGRADES = {
     description: 'More reputation per sale',
     effect: { type: 'repMult', perLevel: 0.5 },      // rep/sale = round(perSale * (1 + 0.5*level))
     baseCost: 100,
-    costGrowth: 1.8,
-    maxLevel: 5,
+    costGrowth: 2.1,       // sweep: was 1.8
+    maxLevel: 7,           // sweep: was 5 — rep long-tail, pairs with the stretched tiers
     requiredTier: 2,       // unlocks at Trusted (rep 50)
   },
   backroom_storage: {
@@ -42,7 +42,7 @@ export const UPGRADES = {
     // effectiveMaxStock, so Extra Shelf compounds into the backroom.
     effect: { type: 'offlineReserve', perLevel: 1 },
     baseCost: 250,
-    costGrowth: 1.8,       // 250 -> 450 -> 810 (total 1510 to max)
+    costGrowth: 2.1,       // sweep: was 1.8 — 250 -> 525 -> 1103 (total ~1878 to max)
     maxLevel: 3,           // L3 ~= 4x offline income on a same-size shelf
     requiredTier: 3,       // unlocks at Beloved (rep 100) — finally gives the top tier a purchase
   },

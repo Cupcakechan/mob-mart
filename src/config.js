@@ -13,9 +13,9 @@ export const CONFIG = {
     leavePenalty: 1,           // rep lost when a customer leaves unserved (patience timeout)
     tiers: [
       { label: 'Neutral',  min: 0 },
-      { label: 'Friendly', min: 20 },
-      { label: 'Trusted',  min: 50 },
-      { label: 'Beloved',  min: 100 },
+      { label: 'Friendly', min: 25 },   // TUNING SWEEP: tiers stretched (were 20/50/100) so rep
+      { label: 'Trusted',  min: 75 },   // stays meaningful past the first minutes; signage still
+      { label: 'Beloved',  min: 200 },  // makes Beloved a session-one goal, not a minute-five one
     ],
   },
 
@@ -28,10 +28,10 @@ export const CONFIG = {
 
   queue: {
     maxLength: 4,              // most mobs that can wait in line at once
-    spawnIntervalSec: 3,       // a new mob joins the back this often, if there's room
+    spawnIntervalSec: 2.6,     // a new mob joins the back this often, if there's room (sweep: was 3 — denser line so an upgraded shop isn't standing empty)
     firstCustomerDelaySec: 0.4,// initial delay after opening the shop
     // Each mob waits this long (patience drains while in line, wherever they stand) then leaves.
-    defaultPatienceSec: 20,
+    defaultPatienceSec: 24,    // sweep: was 20 — longer queues shouldn't bleed rep by themselves
     // With a serve-worker hired, a FRONT customer who can't afford their item is auto-waved (rep-
     // neutral) after this grace — the one blocker the player can't clear by restocking. Long enough
     // to read the "Can't afford it" state, short enough that they don't stall the line and make
