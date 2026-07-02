@@ -253,7 +253,7 @@ Each milestone is a **single-purpose, individually tested, individually committe
   `mimic_merchant`, role `serve`, `baseInterval` 6s). Workers tab activated; single Bob card
   (Hire → Active). No worker leveling, no restock automation, no second worker. **Includes the broke
   auto-wave follow-up:** hired worker → unaffordable front customers rep-neutrally waved after 2s.
-- **M5 — Offline earnings. BUILT — browser-confirm + commit pending.** `src/offline.js`:
+- **M5 — Offline earnings. committed.** `src/offline.js`:
   `computeOffline(state, now)` (pure) → elapsed since `lastSeen`, clamped ≥ 0 (clock-skew guard) and
   capped at `CONFIG.offline.capHours` (2h) → sales = min(floor(cappedSec / effectiveWorkerInterval)
   × efficiency, total shelf stock), consumed round-robin at real basePrices; rep = sales ×
@@ -263,7 +263,7 @@ Each milestone is a **single-purpose, individually tested, individually committe
   IMMEDIATELY (fresh `lastSeen` → no double-collect); modal only when sales > 0 AND away ≥
   `minAwaySec` (60s). Upgrades compose offline: Faster Counter → more sales, Extra Shelf → more
   sellable stock, Better Signage → more rep.
-- **M6 — Kongregate no-op bridge. BUILT — browser-confirm + commit pending.** `src/kongregate.js`:
+- **M6 — Kongregate no-op bridge. committed.** `src/kongregate.js`:
   `initKongregate()` (called unconditionally from main.js) no-ops unless `window.kongregateAPI`
   exists — i.e. unless the page is `index.kongregate.html`, a copy of index.html plus ONE script tag
   (`https://cdn1.kongregate.com/javascripts/kongregate_api.js`, verified against live Kongregate
@@ -362,6 +362,8 @@ mob-mart/
 ├── style.css               <- all DOM/panel styling (M4: + .workers-panel / .worker-card block)
 ├── PROJECT_HANDOFF.md      <- this doc (tracked; NOT shipped)
 ├── COMEDY_BIBLE.md         <- voice spec + line batch reference (tracked; NOT shipped)
+├── MOB_MART_RESEARCH.md    <- idle-progression design research (tracked; NOT shipped) — the
+│                              source for the gameplay roadmap in "Next up"
 ├── .gitignore
 ├── src/
 │   ├── main.js             <- entry point + game loop            [M1] (M4: hire wiring + worker anim flag)
@@ -403,7 +405,7 @@ persistence keys; default missing save fields on load. No secrets on the client.
   Daniel owns commit/ship timing — Claude proposes commands, never commits. Inline git blocks omit the
   `cd` (Daniel runs git from the repo directory already). Repo: `github.com/Cupcakechan/mob-mart`.
 - **`.gitignore`** excludes `builds/`, `node_modules/`, `.vscode/` / `.idea/`, OS cruft.
-  `PROJECT_HANDOFF.md` + `COMEDY_BIBLE.md` are tracked but NOT shipped. Scratch tests (e.g.
+  `PROJECT_HANDOFF.md` + `COMEDY_BIBLE.md` + `MOB_MART_RESEARCH.md` are tracked but NOT shipped. Scratch tests (e.g.
   `test_m4.mjs`) are dev-only — not shipped.
 - **Ship folder** = the folder holding `index.html` + `src/` + `style.css` + `assets/`. No build step.
 - **Publish (primary): Kongregate** — manual upload via the Developer Portal. Bridge/loader at M6.
@@ -433,22 +435,53 @@ serving) with a WIP `shop_bg.png`; mob/portal sprites are still placeholders (ar
 clean on every module; a **61-assertion** headless smoke test (`test_m4.mjs`, scratch — gitignored,
 not shipped) passes, including regressions for both audit fixes.
 
-### Next up
+### Next up — the idle-progression roadmap (from MOB_MART_RESEARCH.md)
 
-- **Commit the two pending passes** (retention, then icons — no file overlap; see checkpoints).
-- **Author the item icons** — 64×64 PNG-32: `club.png`, `metal_helmet.png`, `hp_flask.png` in
-  `assets/sprites/`. Everything is wired; cards and floats light up the moment the files drop.
-- **Mob shadow-float (remaining art nit):** all three statics carry 15–18px dead padding below the
-  feet, so mobs float ~11px above their shadows. Fix is art-side: trim the bottom rows in Aseprite
-  (the spriteScale calibration shipped in the tuning-sweep era; padding trim is the other half).
-- **Gobbo (recommended first content add):** one `monsters.js` entry auto-flows everywhere; comedy
-  lever already defined (cocky over-promoter). Placeholder rect until art.
-- **Customer mob art:** slime/bat/skeleton are the last placeholder rects standing (specs in §9).
-- **Ladder rungs 2–3 (post-backroom):** restock worker (role reserved in workers.js; visual-home
-  decision pending), then worker leveling.
-- **Outstanding (non-blocking):** backdrop iteration (floor seam MEASURED at y=462 — supersedes the
-  446 spec), itch.io dual-publish decision (§13), Bestiary tab stub, Kongregate submission pass
-  (entry page `index.kongregate.html`; create the `loaded` stat; AI-use disclosure).
+The problem it solves: the game has ONE growth axis (gold -> 4 upgrades -> done at ~10.6k). The
+research's answer is a lattice of small bolt-on layers on existing hooks, staged so every pass
+leaves 2–3 affordable-soon wants visible. One system per pass, in this order:
+
+- **Pass 1 — Milestone sales bonuses ("Regulars' Loyalty", LOW, both players).** Lifetime sales
+  counts per item + per monster; permanent bonuses at breakpoints (10/25/50/100/250… item sales;
+  25/50/100… serves per monster) + an "everything" tier for a global multiplier. Bolts onto the
+  registries + gold math. The genre's single most proven engine (AdVenture Capitalist's core).
+  Clean integer stats double as future Kongregate badge hooks.
+- **Pass 2 — Reputation meaning ("Fame", LOW, check-in + both).** Tiers above Beloved
+  (e.g. Renowned 500 / Legendary 1500) gating what comes next, and/or rep as a spendable perk
+  currency. Fixes the dead number; creates the gates passes 3–5 need.
+- **Pass 3 — Item-tier cascade ("Better Stock", LOW–MED, both).** Higher-tier goods as registry
+  rows (Club -> Iron Sword -> …), gated by rep tiers/milestones; optional per-monster preferences.
+  ALSO: raise the 2h offline cap here (Pecorella calls Egg Inc's 2h cap a churn mistake he quit
+  over) — cheap config change; 8–12h or scale it with Backroom level.
+- **Pass 4 — Bestiary + new monsters ("Field Guide" + Gobbo/rat, MED, both).** Fill the stubbed
+  tab: per-monster served counts unlock new comedy lines, per-monster bonuses, completion %.
+  Ship Gobbo (+ rat) alongside — new monsters multiply milestones + bestiary at near-zero marginal
+  cost. (Gobbo is order-flexible: it can ship earlier as pure content if wanted.)
+- **Pass 5 — Restock worker + automation tiers ("The Back Room", MED, check-in).** The reserved
+  role becomes real (visual: the flying companion behind the counter — decided earlier); then
+  worker tiers (serve/restock speed) as the gold sink for the larger economy.
+- **Pass 6 — Daily supplier delivery + market events ("Market Day", LOW–MED, check-in).** Once-a-day
+  free crate/bonus on check-in (streak-friendly, NEVER punishes missed days) + rotating demand
+  events ("everyone wants HP Flasks today"). Bolts onto lastSeen + the item registry.
+- **Pass 7 (distant, optional) — light prestige ("Franchise").** Only after 1–6 and only if players
+  reach buyout and keep playing; sqrt-based multiplier, reset at +50–200% gain.
+
+**Number-curve rule for all of it (research §Recommendations):** repeatable sinks use GENTLE
+multipliers (~1.1–1.15) so they last; the steep 2.1x stays reserved for the small fixed core-upgrade
+set. Add "bumpy" x2 spikes at 25/50-style breakpoints. Never add decay/backward progress.
+
+### Polish / art track (parallel, order-flexible)
+
+- **Mob idle animations (code pass ready to build):** generalize Bob's strip logic to queue mobs —
+  optional `anim` field in monsters.js, `<id>_idle.png` auto-sliced, static fallback. Batty first
+  (4-frame wing flap, 512x128). Author bats body-high in frame (bottom ~40px empty = hover).
+- **Skele mass (art):** measured verdict — he's the TALLEST mob but a 37px-wide stick (~2.8k px²
+  vs Slimey ~6.3k). Fix is silhouette, not scale: bigger skull / wider stance / chunkier bones.
+  spriteScale stopgap 1.3 available; Daniel parked it for now.
+- **Shadow-float (art):** all mobs carry 15–18px dead padding below the feet (~11px float on
+  screen); trim bottom rows in Aseprite.
+- **Backdrop iteration** (seam MEASURED y=462), **itch.io dual-publish decision**, **Kongregate
+  submission pass** (entry `index.kongregate.html`, create the `loaded` stat, AI-use disclosure).
 
 ### Build history (chronological)
 
@@ -499,7 +532,7 @@ not shipped) passes, including regressions for both audit fixes.
   `src/workers.js` — exact copies of the `ui/`/`data/` originals, unimported). **(4)** `.gitignore`
   now excludes `test_*.mjs`; `messages.js` trailing newline restored. Smoke test grown to
   **61 assertions** incl. regressions for (1) and (2).
-- **M5 (BUILT — browser-confirm + commit pending):** offline earnings, Option 2 (gold + rep,
+- **M5 (committed):** offline earnings, Option 2 (gold + rep,
   worker-only, stock-consuming, 2h cap). New `src/offline.js` (`computeOffline` pure +
   `applyOffline` + `formatAway`); `CONFIG.offline` (capHours 2 / minAwaySec 60 / efficiency 1.0);
   boot hook in `main.js` (bank → save immediately → modal); modal markup in `index.html` +
@@ -510,23 +543,23 @@ not shipped) passes, including regressions for both audit fixes.
   mid-ground H*0.74 + contact shadow, queue to feet ~495); comedy grammar fixes (dismiss lines get
   the real item — "no something" bug — store-policy line rewritten, "a {item}" article hazard) with
   registry-level test guards. Strays finally removed at `efc69d5`.
-- **M6 (BUILT — browser-confirm + commit pending): the Kongregate bridge — MVP ROADMAP COMPLETE.**
+- **M6 (committed): the Kongregate bridge — MVP ROADMAP COMPLETE.**
   New `src/kongregate.js` (no-op bridge, verified against live Kongregate docs) +
   `index.kongregate.html` (index.html + one script tag) + one `initKongregate()` line in main.js.
   Suite grown to **88 assertions** (7 new: headless no-op, mocked-API activation, 'loaded' stat,
   submitStat forwarding, throwing-loader containment).
-- **Retention pass (BUILT — commit pending):** greet gate (`workers.greetSec` 1.2; `frontWait` on
+- **Retention pass (committed):** greet gate (`workers.greetSec` 1.2; `frontWait` on
   customers; worker-only — manual ungated) + **Backroom Storage v2** (offlineReserve; the suite
   PROVED the planned +capHours effect inert — stock always binds — so the effect was rethemed to an
   offline inventory reserve with Daniel's approval; same costs/gate). offline.js sells live shelf
   first, then reserve at net margin; returns `reserveUsed`.
-- **Item-icons pass (BUILT — commit pending):** shelf cards render `assets/sprites/<itemId>.png` at
+- **Item-icons pass (committed):** shelf cards render `assets/sprites/<itemId>.png` at
   32px (onerror hides; text-only degrade) + canvas purchase float (`spawnItemFloat`, 32px, rise
   46px / fade 900ms, cap 8 alive, skips silently without art). Auto-path float reads the pre-update
   front item — reliable BECAUSE the greet gate forbids same-tick serve of a just-promoted customer.
   Suite at **104 assertions** (greet hold/release, manual ungated, backroom exact-math L0/L1/L3,
   live-only consumed, save clamp).
-- **UI edge-frame (hybrid stage 1, BUILT — commit pending):** Daniel picked the HYBRID after a
+- **UI edge-frame (hybrid stage 1, committed):** Daniel picked the HYBRID after a
   visualized Option-3 exploration (decision: Option 2 edge-frame skeleton now, Option 3's speech
   bubble as a queued follow-up; door destinations stay RANDOM — per-monster mapping rejected).
   Layout rule: nothing may cover the actor band (mob tops y~407 to counter base y~533). Customer
@@ -539,15 +572,15 @@ not shipped) passes, including regressions for both audit fixes.
   slimmed to 8x12px pad / 13px font) with the customer bar at 500px; the log gets FIXED height:230
   (bottom-anchored max-height made a sparse log float as a lone title). Layout is robust to a future
   5th tab.
-- **Tuning sweep (BUILT — commit pending):** sink-side + pacing only, payouts untouched. All four
+- **Tuning sweep (committed):** sink-side + pacing only, payouts untouched. All four
   upgrades `costGrowth` 1.8 -> **2.1**; `extra_shelf`/`better_signage` maxLevel 5 -> **7** (long-tail
   sinks); `faster_counter` max **stays 5** (the legibility cap); spawn 3 -> **2.6s**; patience 20 ->
   **24**; rep tiers 20/50/100 -> **25/75/200** (existing saves above 200 unaffected). Total buyout
   roughly ~6.9k -> ~10.6k+ gold. All provisional pending feel-check.
-- **Mob calibration (BUILT — commit pending):** optional per-monster `spriteScale` in monsters.js
+- **Mob calibration (committed):** optional per-monster `spriteScale` in monsters.js
   (slime/skeleton 1.15, bat omitted = 1.0 reference), multiplied into drawMob guarded `?? 1` —
   data-driven, future mobs need nothing. Suite still 104 (one tier assertion updated to Beloved 200).
-- **Speech bubble (hybrid stage 2, INFO-ONLY variant — BUILT, commit pending):** canvas bubble above
+- **Speech bubble (hybrid stage 2, INFO-ONLY variant — committed):** canvas bubble above
   the front mob: gold name, "wants <item> ◆ <budget>", plus an alert line for the mob's dilemma
   ("out of stock!" / "can't afford it!", computed inline — render stays free of game imports). Width
   measured from text per frame; tail bobs in phase with the mob; clamped to stage edges; `BUBBLE`
@@ -556,7 +589,10 @@ not shipped) passes, including regressions for both audit fixes.
   its job); customer panel slimmed to name + line count (want/budget live in the bubble). Known
   cosmetic: a purchase float crosses the bubble for ~0.9s on serve — deliberate. Uses
   ctx.roundRect (Chrome 99+/FF 112+; fine for Kongregate's browser floor).
-- **Attention system (BUILT — commit pending; Daniel: "assume users WILL miss things"):** the
+- **Research pass (doc tracked):** idle-progression design research completed (genre survey:
+  AdCap/Clicker Heroes/Kittens/NGU/Melvor + Recettear/Moonlighter/Shop Titans + Pecorella pacing) ->
+  `MOB_MART_RESEARCH.md` at repo root; "Next up" rewritten as its staged 7-pass roadmap.
+- **Attention system (committed; Daniel: "assume users WILL miss things"):** the
   bubble's system text was disliked and REMOVED — the bubble is now pure character voice (name +
   want/budget only; the unused alert dial was dropped). The blocked-sale signal moved to WHERE THE
   FIX IS: when the FRONT customer's item has stock 0, that shelf card breathes gold (border +
@@ -567,7 +603,7 @@ not shipped) passes, including regressions for both audit fixes.
   "can't afford it!" removed with no replacement (Bob's auto-wave self-resolves it).
   prefers-reduced-motion falls back to a static gold border. Chosen over bubble-text after an
   options pass (dials: card border+button / breathe / gold / front-only / include nav pulse).
-- **Door destinations (BUILT — commit pending):** three variant strips (mountain/forest/dungeon —
+- **Door destinations (committed):** three variant strips (mountain/forest/dungeon —
   identical door, different world through the opening) rolled per PAID serve in `playPortalOpen`
   via `pickDoorVariant` (picks only among LOADED strips; anti-repeat re-draw like the log picker;
   none loaded -> base void strip). `DOOR_VARIANTS` list in scene.js; 3 loadSprite lines in main.js.
