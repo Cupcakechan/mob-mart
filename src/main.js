@@ -4,7 +4,7 @@ import { clamp } from './utils.js';
 import { update, serveCurrent, dismissCurrent, restockItem, buyUpgrade, hireWorker } from './game.js';
 import { loadState, saveState, clearSave } from './save.js';
 import { computeOffline, applyOffline, formatAway } from './offline.js';
-import { drawScene, playBobServe, playPortalOpen } from './render/scene.js';
+import { drawScene, playBobServe, playPortalOpen, spawnItemFloat } from './render/scene.js';
 import { loadSprite } from './render/sprites.js';
 import { initHud, renderHud } from './ui/hud.js';
 import { initPanels, renderPanels } from './ui/panels.js';
@@ -54,6 +54,9 @@ loadSprite('portal',   'assets/sprites/portal.png');
 loadSprite('portal_glow', 'assets/sprites/portal_glow.png');  // 4-frame swirl strip (640x160); absent -> static portal
 loadSprite('bob_idle',  'assets/sprites/bob_idle.png');   // 6-frame horizontal strip
 loadSprite('bob_serve', 'assets/sprites/bob_serve.png');  // 6-frame horizontal strip
+loadSprite('club',         'assets/sprites/club.png');         // item icons (64x64) — used by the
+loadSprite('metal_helmet', 'assets/sprites/metal_helmet.png'); // canvas purchase float; the DOM
+loadSprite('hp_flask',     'assets/sprites/hp_flask.png');     // shelf cards load the same files
 
 function resize() {
   const s = Math.min(window.innerWidth / CONFIG.stage.width, window.innerHeight / CONFIG.stage.height);
@@ -65,7 +68,10 @@ resize();
 // UI wiring — panels/nav call back into game logic; game logic never touches the DOM.
 initHud(document.getElementById('hud'));
 initPanels(document.getElementById('shop-ui'), {
-  onServe:      () => { if (serveCurrent(state)) { playBobServe(); playPortalOpen(); } },  // paid -> anims
+  onServe:      () => {                                              // paid -> anims + item float
+    const bought = state.queue[0]?.wantedItemId;                     // read BEFORE serve shifts the queue
+    if (serveCurrent(state)) { playBobServe(); playPortalOpen(); spawnItemFloat(bought); }
+  },
   onDismiss:    () => dismissCurrent(state),
   onRestock:    (id) => restockItem(state, id),
   onBuyUpgrade: (id) => buyUpgrade(state, id),
@@ -97,10 +103,17 @@ function frame(now) {
   const dt = clamp((now - last) / 1000, 0, 0.1);   // clamp: a backgrounded tab can hand us a huge dt
   last = now;
 
+  // Capture the front customer's want BEFORE update: if a worker serves this tick, this is who they
+  // served. Reliable BECAUSE of the greet gate — a worker may only serve a customer who's already
+  // been at the front >= greetSec, so a mob promoted mid-tick can never be the one served this tick.
+  const preFrontItem = state.queue[0]?.wantedItemId;
   update(state, dt);
   // A worker auto-served this tick -> play Bob's serve one-shot, same as a manual serve. (Manual
   // serves fire the anim directly in onServe; this covers the auto path without duplicating it.)
-  if (state.workerServed) { playBobServe(); playPortalOpen(); state.workerServed = false; }
+  if (state.workerServed) {
+    playBobServe(); playPortalOpen(); spawnItemFloat(preFrontItem);
+    state.workerServed = false;
+  }
   drawScene(ctx, state, now);
 
   if (state.uiDirty) {

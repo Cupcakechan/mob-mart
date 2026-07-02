@@ -50,6 +50,8 @@ export function initPanels(root, h) {
   document.getElementById('item-cards').innerHTML = ITEM_ORDER.map((id) => {
     const it = ITEMS[id];
     return `<div class="item-card" data-item="${id}">
+        <img class="item-icon" src="assets/sprites/${id}.png" alt=""
+             onerror="this.style.display='none'">
         <div class="item-name">${it.displayName}</div>
         <div class="item-price">&#9670; ${it.basePrice}</div>
         <div class="item-stock">Stock: <span id="stock-${id}">0</span>/<span id="max-${id}">${it.maxStock}</span></div>

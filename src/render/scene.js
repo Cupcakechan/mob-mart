@@ -99,6 +99,25 @@ export function playPortalOpen() {
   portalAnim.startMs = -1;               // sentinel: stamp with the real tMs on the next draw
 }
 
+// --- Purchase float: on a successful serve, the bought item's icon rises from the front-of-queue
+// spot and fades — the moment-of-sale readout the log can't give at a glance. Purely cosmetic and
+// transient (never saved). If the item sprite hasn't been dropped yet, the float silently skips —
+// no placeholder box mid-air.
+const FLOAT = {
+  size: 32,          // ON-SCREEN PX — 64px art at clean 2:1, matching the shelf-card icons
+  risePx: 46,        // how far the icon drifts up over its lifetime
+  durMs: 900,        // lifetime; alpha fades linearly to 0 across it
+  maxAlive: 8,       // hard cap — a maxed-Bob hot streak can't grow the list unbounded
+};
+const floaters = [];                     // { itemId, startMs } — x/y derive from QUEUE at draw time
+
+// Queue a float for the just-purchased item (call alongside playBobServe/playPortalOpen).
+export function spawnItemFloat(itemId) {
+  if (!itemId) return;
+  floaters.push({ itemId, startMs: -1 });          // stamped with real tMs on the next draw
+  if (floaters.length > FLOAT.maxAlive) floaters.shift();
+}
+
 export function drawScene(ctx, state, tMs) {
   ctx.clearRect(0, 0, W, H);
 
@@ -109,6 +128,27 @@ export function drawScene(ctx, state, tMs) {
   drawCounter(ctx);
   drawPortal(ctx, tMs);
   drawQueue(ctx, state, tMs);
+  drawFloaters(ctx, tMs);       // purchase floats on top of everything — they're the payoff beat
+}
+
+// Rise-and-fade the queued purchase icons above the front-of-queue spot.
+function drawFloaters(ctx, tMs) {
+  for (let i = floaters.length - 1; i >= 0; i--) {
+    const f = floaters[i];
+    if (f.startMs === -1) f.startMs = tMs;                       // stamp freshly-spawned floats
+    const age = tMs - f.startMs;
+    if (age >= FLOAT.durMs) { floaters.splice(i, 1); continue; } // lifetime over -> gone
+    const spr = getSprite(f.itemId);
+    if (!spr) { floaters.splice(i, 1); continue; }               // no art yet -> skip silently
+    const t = age / FLOAT.durMs;                                 // 0..1 progress
+    const s = FLOAT.size;
+    const x = QUEUE.frontX + QUEUE.size / 2 - s / 2;             // centered on the front mob's spot
+    const y = QUEUE.y - s - t * FLOAT.risePx;                    // starts above the mob, drifts up
+    ctx.save();
+    ctx.globalAlpha = 1 - t;                                     // linear fade-out
+    ctx.drawImage(spr, x, y, s, s);
+    ctx.restore();
+  }
 }
 
 // The grounding cue the queue mobs already have and the desk was missing: a soft ellipse pinned

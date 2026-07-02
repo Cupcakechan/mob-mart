@@ -241,3 +241,13 @@ body{
 }
 .offline-collect-btn:hover{filter:brightness(1.06);}
 .offline-collect-btn:active{transform:translateY(2px);box-shadow:0 3px 0 var(--gold-deep);}
+
+/* --- Item icons (shelf cards) — authored 64x64, shown at 32px (clean 2:1 integer downscale). A
+   missing PNG hides itself via onerror, so cards degrade to text-only exactly as before. -------- */
+.item-icon {
+  display: block;
+  width: 32px;
+  height: 32px;
+  margin: 0 auto 4px;
+  image-rendering: pixelated;   /* keep the pixel-art crisp at the downscale */
+}

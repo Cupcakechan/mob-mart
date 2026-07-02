@@ -13,9 +13,9 @@ expanded, Bob voice, genre-trope lines, gags seeded), the **no-repeat line picke
 pass** (fixed a real save bug — reload used to clamp stock to the BASE cap, eating Extra-Shelf stock;
 fixed a wrong-registry spawn fallback; removed stray duplicate files). 61-assertion headless smoke
 test + `node --check` clean on every module.
-**M6 (Kongregate no-op bridge) is BUILT — browser-confirm + commit pending — which COMPLETES the
-M1–M6 MVP roadmap.** All milestones done: the game is structurally shippable to its primary target;
-everything from here is content/polish/tuning on a publishable base.
+**M1–M6 MVP roadmap COMPLETE (all committed).** Post-MVP work now: the **retention pass** (worker
+greet delay + Backroom Storage v2 offline reserve) and the **item-icons pass** (shelf-card icons +
+purchase float) are BUILT — browser-confirm + two commits pending (no file overlap by design).
 **M5 (offline earnings) is DONE (committed):** on return, a hired Bob's
 capped, stock-consuming sales are banked and shown in a "While you were away" modal (Option 2 —
 gold + rep, worker-only, 2h cap; the no-worker "drip" was decided AGAINST: Bob is hireable within
@@ -202,14 +202,23 @@ with gold** (no rep gate; upgrades already carry rep gating). Effective interval
 `baseInterval / (1 + serveSpeed)`, so Faster Counter shortens it (6s → ~4.6s at L1 → 2.4s at L5).
 **serveSpeed compounding switch:** currently Faster Counter shortens *both* the counter cooldown and
 Bob's interval. To make it affect only one, change what `effectiveWorkerInterval` /
-`effectiveServeCooldown` divide by — they're the two consumers of the `serveSpeed` sum. **Feel note:**
-a worker whose timer is ready in an empty shop serves the next arrival almost instantly (readiness
-"pounces"); if that reads as too eager, gate the timer countdown on a servable customer being present.
+`effectiveServeCooldown` divide by — they're the two consumers of the `serveSpeed` sum. **Greet gate (retention pass — RESOLVES the old "pounce" feel note):** `CONFIG.workers.greetSec`
+= 1.2 — a FRONT customer must be visible at the counter this long before a hired worker may serve
+them (customers carry a transient `frontWait`, accrued on the settled queue[0] each tick). At max
+Faster Counter, serves had become invisible teleports to the battle log; now every mob is SEEN.
+Manual serving is deliberately NOT gated — clicking is looking, and active play stays a strict bonus.
 **Auto-wave tunable:** `CONFIG.queue.brokeGraceSec` = 2 — seconds an unaffordable FRONT customer
 lingers before a hired worker waves them off (rep-neutral). Lower toward 0 for a snappier clear.
 
-**Suggested upgrades (M3):** `extra_shelf`, `faster_counter`, `better_signage`, `backroom_storage`
-(offlineCap +2h), `hire_goblin` → "hire mimic worker" (unlock/discount a second worker).
+**Shipped upgrades:** `extra_shelf` (+1 maxStock), `faster_counter` (serveSpeed 0.3), `better_signage`
+(repMult 0.5), `backroom_storage` (**offlineReserve +1 shelf-refill/level** — 250g, growth 1.8, max
+L3, Beloved-gated). Backroom v2 rationale: the planned '+capHours' effect was PROVEN INERT by the
+suite — offline sales = min(time/interval, stock) and Bob empties any shelf in ~3 min, so STOCK
+always binds; hours were placebo. The reserve sells AFTER live stock at basePrice − restockCost
+(always profitable: club +6 / helm +9 / flask +7 net), scales with `effectiveMaxStock` (Extra Shelf
+compounds), and returns `reserveUsed` (live-shelf `consumed` untouched). The 'offlineCap' consumer
+plumbing remains in offline.js (sums 0) for a future restock-worker era. Future: `hire_goblin` →
+"hire mimic worker" (unlock/discount a second worker).
 
 **Combat tuning (M1 start):** `encounterDifficulty` 10, `rng spread` ±6; tiers ≥8 excellent / 2..7
 success / −1..1 partial / −6..−2 failure / ≤−7 funnyFailure. Tier drives the log line only, never rep.
@@ -322,7 +331,7 @@ anchoring keys off it. Author the backdrop with the seam at 462 (wall 0→462, f
 | Counter / desk | ~480px wide (author 2× ≈ 960 for crisp) | static | `counter.png` | **IN** — 480px (`COUNTER.width`), base at H*0.74 (~533) + contact shadow |
 | Battle door (ex-portal) | **160×160/frame**, 4 frames → **640×160 strip**; frame 0 CLOSED → 3 OPEN | one-shot open/hold/close on paid serve | `portal_glow.png` (strip), `portal.png` (static fallback) | **IN** — 320px on-screen (2×); bottom = `FLOOR_Y + 6` (art has 3px bottom padding ×2 scale) |
 | Shop backdrop | 1280×720, **seam at y=462** | optional torch flicker later | `shop_bg.png` | **IN (WIP)** — iterating |
-| Item icons (Club / Metal Helmet / HP Flask) | 64×64 | static | `club.png`, `metal_helmet.png`, `hp_flask.png` | **NOT YET USED** — DOM item cards are text-only so far |
+| Item icons (Club / Metal Helmet / HP Flask) | 64×64 | static | `club.png`, `metal_helmet.png`, `hp_flask.png` | **WIRED, art pending** — shelf cards show them at 32px (2:1; missing PNG hides itself) + canvas purchase float (32px, rises 46px, fades 900ms) |
 | UI icons (gold, rep crown, scrap-reserved) | 32×32 | static | `icon_gold.png`, `icon_rep.png`, `icon_scrap.png` | **NOT YET USED** — HUD uses text glyphs |
 | Panel / button chrome | — | — | — | CSS-styled (DOM), few image assets needed |
 
@@ -426,43 +435,20 @@ not shipped) passes, including regressions for both audit fixes.
 
 ### Next up
 
-- **Cleanup commit (immediate, BEFORE the M5 commit):** `git rm src/nav.js src/panels.js
-  src/workers.js src/test_m4.mjs` — the audit's stray deletion never ran, and a mis-placed test copy
-  is tracked inside `src/` (it would ship in the Kongregate zip; gitignore cannot untrack it).
-- **Confirm M5 in the browser + commit.** Hire Bob, stock the shelf, be away > 60s, reload → modal
-  shows time worked / items sold / +gold / +rep; Collect closes it; values landed in the HUD/shelf;
-  an immediate second reload pays NOTHING extra; no-worker and empty-shelf returns stay silent.
-- **Battle DOOR (evolved from the portal pass — commit pending).** The art is now a wooden door;
-  `portal_glow.png` = 4 equal frames left-to-right, frame 0 CLOSED -> frame 3 OPEN. EVENT-DRIVEN,
-  not looping: the door sits closed and `playPortalOpen()` (fired in main.js on every SUCCESSFUL
-  serve, manual or auto — dismiss/leave never trigger it) plays a one-shot open -> hold
-  (`anim.holdMs` 350) -> close (~1.15s at fps 10); a serve mid-anim restarts it. Drawn
-  aspect-preserved with dials `centerX` / `baseY` (door-floor dial, H*0.68 estimate — bigger sinks
-  it) / `size` (320 = 2x of 160px art) + slight alpha-aware glow (`glowBase` 10 / `glowPulse` 8).
-  Fallback: strip -> static `portal.png` -> placeholder. Internal ids stay `portal`/`portal_glow`.
-- **Grounding pass (commit pending):** the "everything floats" fix. Door `baseY` = `FLOOR_Y` (sits
-  exactly on the wall/floor seam, y=446). Counter pulled off the back wall into the mid-ground
-  (`COUNTER.baseY` H*0.66 -> **H*0.74**, ~533 — lower on screen = closer to the viewer, so ~87px of
-  floor now shows BEHIND the desk; Bob follows via his anchor). Queue brought onto the same floor
-  plane (`QUEUE.y` H*0.528 -> **H*0.565**, feet ~495 — PROVISIONAL, raise toward H*0.545 if feet
-  hide behind the Current Customer panel). New `drawCounterShadow` contact ellipse (drawn before
-  Bob; dials `COUNTER.shadowRx` 0.55 / `shadowRy` 13, 0 disables) — the same grounding cue the
-  queue mobs always had.
-- **`backroom_storage` upgrade (queued, post-portal candidate).** +capHours per level via the
-  existing `sumEffect` plumbing — one registry entry + one consumer in `offline.js` — once the 2h
-  cap has actually been felt in play.
-- **M6 — Kongregate no-op bridge stub.** Purely additive `src/kongregate.js` + `index.kongregate.html`;
-  one `loaded` stat.
-- **Outstanding (non-blocking):**
-  - **Backdrop + props (art, in progress):** iterate `shop_bg.png`, then optionally split wall shelves
-    / torches / crates into modular props. Floor line fixed at y=446. Mob + portal sprites still
-    placeholder rects.
-  - **itch.io dual-publish decision** (§13).
-  - **Bestiary tab** — still a disabled nav stub.
-  - **Content options (parked):** add a customer (Gobbo) and/or activate the Bestiary — revisit after
-    M5 if desired.
-  - **Worker "pounce" feel (watch):** a ready worker serves a new arrival almost instantly; fine so
-    far — gate the countdown on a present customer if it ever reads as too eager.
+- **Commit the two pending passes** (retention, then icons — no file overlap; see checkpoints).
+- **Author the item icons** — 64×64 PNG-32: `club.png`, `metal_helmet.png`, `hp_flask.png` in
+  `assets/sprites/`. Everything is wired; cards and floats light up the moment the files drop.
+- **Tuning sweep (queued by name — run AFTER backroom absorption is observed in play):** stretch the
+  economy with numbers only: upgrade `costGrowth` 1.8 → ~2.1 and/or `maxLevel` 5 → 7–8 (cap Faster
+  Counter where legibility survives), spawn 3 → ~2.6s, patience to match. One pass, own commit.
+- **Gobbo (recommended first content add):** one `monsters.js` entry auto-flows everywhere; comedy
+  lever already defined (cocky over-promoter). Placeholder rect until art.
+- **Customer mob art:** slime/bat/skeleton are the last placeholder rects standing (specs in §9).
+- **Ladder rungs 2–3 (post-backroom):** restock worker (role reserved in workers.js; visual-home
+  decision pending), then worker leveling.
+- **Outstanding (non-blocking):** backdrop iteration (floor seam MEASURED at y=462 — supersedes the
+  446 spec), itch.io dual-publish decision (§13), Bestiary tab stub, Kongregate submission pass
+  (entry page `index.kongregate.html`; create the `loaded` stat; AI-use disclosure).
 
 ### Build history (chronological)
 
@@ -529,6 +515,17 @@ not shipped) passes, including regressions for both audit fixes.
   `index.kongregate.html` (index.html + one script tag) + one `initKongregate()` line in main.js.
   Suite grown to **88 assertions** (7 new: headless no-op, mocked-API activation, 'loaded' stat,
   submitStat forwarding, throwing-loader containment).
+- **Retention pass (BUILT — commit pending):** greet gate (`workers.greetSec` 1.2; `frontWait` on
+  customers; worker-only — manual ungated) + **Backroom Storage v2** (offlineReserve; the suite
+  PROVED the planned +capHours effect inert — stock always binds — so the effect was rethemed to an
+  offline inventory reserve with Daniel's approval; same costs/gate). offline.js sells live shelf
+  first, then reserve at net margin; returns `reserveUsed`.
+- **Item-icons pass (BUILT — commit pending):** shelf cards render `assets/sprites/<itemId>.png` at
+  32px (onerror hides; text-only degrade) + canvas purchase float (`spawnItemFloat`, 32px, rise
+  46px / fade 900ms, cap 8 alive, skips silently without art). Auto-path float reads the pre-update
+  front item — reliable BECAUSE the greet gate forbids same-tick serve of a just-promoted customer.
+  Suite at **104 assertions** (greet hold/release, manual ungated, backroom exact-math L0/L1/L3,
+  live-only consumed, save clamp).
 
 ---
 
