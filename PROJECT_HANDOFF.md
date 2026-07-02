@@ -438,17 +438,12 @@ not shipped) passes, including regressions for both audit fixes.
 - **Commit the two pending passes** (retention, then icons — no file overlap; see checkpoints).
 - **Author the item icons** — 64×64 PNG-32: `club.png`, `metal_helmet.png`, `hp_flask.png` in
   `assets/sprites/`. Everything is wired; cards and floats light up the moment the files drop.
-- **Tuning sweep (queued by name — run AFTER backroom absorption is observed in play):** stretch the
-  economy with numbers only: upgrade `costGrowth` 1.8 → ~2.1 and/or `maxLevel` 5 → 7–8 (cap Faster
-  Counter where legibility survives), spawn 3 → ~2.6s, patience to match. One pass, own commit.
 - **UI hybrid stage 2 — the speech bubble (queued by name):** replace the Current Customer panel
   with a canvas speech bubble above the front mob (name/want/budget + Serve/Wave hit-targets).
   Canvas text layout + wrapping + click regions — the deliberately-deferred hard part of the hybrid.
-- **Mob sprite calibration (parked rider, MEASURED):** all three statics are 128x128 with similar
-  body heights (bat 96x98 / slime 109x92 / skeleton 47x96 — 72–77% of frame) and 15–18px dead
-  padding BELOW the feet, so every mob floats ~11px above its shadow at draw scale. Fix = trim the
-  bottom padding in the art (preferred) and/or per-monster `spriteScale` in monsters.js (guarded
-  `?? 1.0`; try slime/skeleton ~1.15 — their "smallness" is skinny/squat silhouette, not scale).
+- **Mob shadow-float (remaining art nit):** all three statics carry 15–18px dead padding below the
+  feet, so mobs float ~11px above their shadows. Fix is art-side: trim the bottom rows in Aseprite
+  (the spriteScale calibration shipped in the tuning-sweep era; padding trim is the other half).
 - **Gobbo (recommended first content add):** one `monsters.js` entry auto-flows everywhere; comedy
   lever already defined (cocky over-promoter). Placeholder rect until art.
 - **Customer mob art:** slime/bat/skeleton are the last placeholder rects standing (specs in §9).
@@ -547,6 +542,14 @@ not shipped) passes, including regressions for both audit fixes.
   slimmed to 8x12px pad / 13px font) with the customer bar at 500px; the log gets FIXED height:230
   (bottom-anchored max-height made a sparse log float as a lone title). Layout is robust to a future
   5th tab.
+- **Tuning sweep (BUILT — commit pending):** sink-side + pacing only, payouts untouched. All four
+  upgrades `costGrowth` 1.8 -> **2.1**; `extra_shelf`/`better_signage` maxLevel 5 -> **7** (long-tail
+  sinks); `faster_counter` max **stays 5** (the legibility cap); spawn 3 -> **2.6s**; patience 20 ->
+  **24**; rep tiers 20/50/100 -> **25/75/200** (existing saves above 200 unaffected). Total buyout
+  roughly ~6.9k -> ~10.6k+ gold. All provisional pending feel-check.
+- **Mob calibration (BUILT — commit pending):** optional per-monster `spriteScale` in monsters.js
+  (slime/skeleton 1.15, bat omitted = 1.0 reference), multiplied into drawMob guarded `?? 1` —
+  data-driven, future mobs need nothing. Suite still 104 (one tier assertion updated to Beloved 200).
 - **Door destinations (BUILT — commit pending):** three variant strips (mountain/forest/dungeon —
   identical door, different world through the opening) rolled per PAID serve in `playPortalOpen`
   via `pickDoorVariant` (picks only among LOADED strips; anti-repeat re-draw like the log picker;

@@ -3,6 +3,7 @@
 export const MONSTERS = {
   slime: {
     id:'slime', displayName:'Slimey', spriteId:'slime', combatMod:-2, budgetRange:[10,20],
+    spriteScale: 1.15,   // squat silhouette reads small next to the chunky bat (measured: 72% frame height)
     wantWeights:[{value:'hp_flask',weight:3},{value:'club',weight:2},{value:'metal_helmet',weight:1}],
   },
   bat: {
@@ -11,6 +12,7 @@ export const MONSTERS = {
   },
   skeleton: {
     id:'skeleton', displayName:'Skele', spriteId:'skeleton', combatMod:1, budgetRange:[12,24],
+    spriteScale: 1.15,   // beanpole silhouette (47px wide) carries little mass — same bump as Slimey
     wantWeights:[{value:'club',weight:3},{value:'metal_helmet',weight:2},{value:'hp_flask',weight:1}],
   },
 };

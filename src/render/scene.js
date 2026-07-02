@@ -2,6 +2,7 @@
 // placeholder, so art can drop in piecemeal without touching game logic. The blocks below are the
 // tunable knobs: change a size/position here and reload to fit your sprites.
 import { CONFIG } from '../config.js';
+import { MONSTERS } from '../data/monsters.js';
 import { getSprite } from './sprites.js';
 
 const W = CONFIG.stage.width, H = CONFIG.stage.height;
@@ -214,7 +215,8 @@ function drawMob(ctx, x, y, size, monsterId, tMs, isFront) {
 
   const spr = getSprite(monsterId);
   if (spr) {
-    const h = size * QUEUE.spriteScale;
+    // Global dial x per-monster calibration (optional registry field, ?? 1 so new mobs need nothing).
+    const h = size * QUEUE.spriteScale * (MONSTERS[monsterId]?.spriteScale ?? 1);
     const w = h * (spr.naturalWidth / spr.naturalHeight);   // preserve aspect at target height
     ctx.drawImage(spr, x + size / 2 - w / 2, (y + size) - h + bob, w, h);  // anchored feet, bobbing
   } else {
