@@ -3,6 +3,7 @@
 // tunable knobs: change a size/position here and reload to fit your sprites.
 import { CONFIG } from '../config.js';
 import { MONSTERS } from '../data/monsters.js';
+import { ITEMS } from '../data/items.js';
 import { getSprite } from './sprites.js';
 
 const W = CONFIG.stage.width, H = CONFIG.stage.height;
@@ -152,7 +153,75 @@ export function drawScene(ctx, state, tMs) {
   drawCounter(ctx);
   drawPortal(ctx, tMs);
   drawQueue(ctx, state, tMs);
+  drawBubble(ctx, state, tMs);  // front customer's ask, pinned to the asker (hybrid stage 2)
   drawFloaters(ctx, tMs);       // purchase floats on top of everything — they're the payoff beat
+}
+
+// --- Speech bubble: the front customer's name/want/budget, drawn above them on the canvas. The
+// INFO-ONLY variant of the hybrid plan — Serve/Send Away stay as DOM buttons in the bottom bar.
+// Replaces both the panel's info lines AND the old gold chevron (the bubble itself marks the front
+// mob now). Width is measured from the text each frame; the tail bobs in phase with the mob.
+// A purchase float briefly crosses the bubble on a serve — deliberate, it fades in 0.9s.
+const BUBBLE = {
+  tipGapY: 18,        // gap between the mob box top (QUEUE.y) and the tail tip — clears 1.15-scaled heads
+  padX: 12, padY: 9,  // inner padding
+  lineGap: 5,         // vertical gap between text lines
+  radius: 9,          // corner rounding
+  tailW: 16, tailH: 11,
+  nameFont: "700 15px 'Segoe UI', system-ui, sans-serif",  // mirrors --font in style.css
+  lineFont: "600 13px 'Segoe UI', system-ui, sans-serif",
+  bg: 'rgba(31,23,43,0.93)',   // same family as the DOM panels
+  border: '#4b3a63',
+  name: '#ffcf4a',             // gold, matching panel titles
+  text: '#f4eede',
+  alert: '#ff9184',            // the "out of stock! / can't afford it!" line
+};
+
+function drawBubble(ctx, state, tMs) {
+  const c = state.queue[0];
+  if (!c) return;
+  const name = MONSTERS[c.monsterId]?.displayName ?? '???';
+  const item = ITEMS[c.wantedItemId];
+  const want = `wants ${item?.displayName ?? '???'} \u25C6 ${c.budget}`;
+  // The mob's dilemma lives in the bubble (reads better than only a greyed button). Same rules as
+  // game.js's serveBlockReason, computed inline to keep render free of game-module imports.
+  const stock = state.items[c.wantedItemId]?.stock ?? 0;
+  const status = stock <= 0 ? 'out of stock!'
+    : (c.budget < (item?.basePrice ?? 0) ? "can't afford it!" : null);
+
+  ctx.save();
+  ctx.font = BUBBLE.nameFont;
+  let textW = ctx.measureText(name).width;
+  ctx.font = BUBBLE.lineFont;
+  textW = Math.max(textW, ctx.measureText(want).width, status ? ctx.measureText(status).width : 0);
+
+  const w = Math.ceil(textW) + BUBBLE.padX * 2;
+  const h = BUBBLE.padY * 2 + 15 + BUBBLE.lineGap + 13 + (status ? BUBBLE.lineGap + 13 : 0);
+  const bob = Math.sin(tMs / 300 + QUEUE.frontX) * 4;            // same phase as the front mob
+  const cx = QUEUE.frontX + QUEUE.size / 2;
+  const tipY = QUEUE.y - BUBBLE.tipGapY + bob;
+  const x = Math.max(8, Math.min(W - w - 8, cx - w / 2));        // clamp inside the stage
+  const y = tipY - BUBBLE.tailH - h;
+
+  ctx.beginPath();                                               // rounded body + tail, one path
+  ctx.roundRect(x, y, w, h, BUBBLE.radius);
+  ctx.moveTo(cx - BUBBLE.tailW / 2, tipY - BUBBLE.tailH);
+  ctx.lineTo(cx, tipY);
+  ctx.lineTo(cx + BUBBLE.tailW / 2, tipY - BUBBLE.tailH);
+  ctx.closePath();
+  ctx.fillStyle = BUBBLE.bg;     ctx.fill();
+  ctx.strokeStyle = BUBBLE.border; ctx.lineWidth = 2; ctx.stroke();
+
+  ctx.textBaseline = 'top';
+  ctx.font = BUBBLE.nameFont; ctx.fillStyle = BUBBLE.name;
+  ctx.fillText(name, x + BUBBLE.padX, y + BUBBLE.padY);
+  ctx.font = BUBBLE.lineFont; ctx.fillStyle = BUBBLE.text;
+  ctx.fillText(want, x + BUBBLE.padX, y + BUBBLE.padY + 15 + BUBBLE.lineGap);
+  if (status) {
+    ctx.fillStyle = BUBBLE.alert;
+    ctx.fillText(status, x + BUBBLE.padX, y + BUBBLE.padY + 15 + BUBBLE.lineGap + 13 + BUBBLE.lineGap);
+  }
+  ctx.restore();
 }
 
 // Rise-and-fade the queued purchase icons above the front-of-queue spot.
@@ -228,13 +297,8 @@ function drawMob(ctx, x, y, size, monsterId, tMs, isFront) {
     ctx.fillRect(x + size * 0.60, my + size * 0.35, size * 0.09, size * 0.09);
   }
 
-  if (isFront) {                                    // gold chevron over the mob Serve/Send Away hits
-    const cxm = x + size / 2, ty = (y + bob) - 16;
-    ctx.fillStyle = COL.marker;
-    ctx.beginPath();
-    ctx.moveTo(cxm - 9, ty); ctx.lineTo(cxm + 9, ty); ctx.lineTo(cxm, ty + 11);
-    ctx.closePath(); ctx.fill();
-  }
+  // (The old gold front-marker chevron was retired when the speech bubble arrived — the bubble's
+  // tail points at the front mob, doing the same job with more information.)
 }
 
 function drawBob(ctx, tMs) {

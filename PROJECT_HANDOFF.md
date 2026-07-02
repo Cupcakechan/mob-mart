@@ -438,9 +438,6 @@ not shipped) passes, including regressions for both audit fixes.
 - **Commit the two pending passes** (retention, then icons — no file overlap; see checkpoints).
 - **Author the item icons** — 64×64 PNG-32: `club.png`, `metal_helmet.png`, `hp_flask.png` in
   `assets/sprites/`. Everything is wired; cards and floats light up the moment the files drop.
-- **UI hybrid stage 2 — the speech bubble (queued by name):** replace the Current Customer panel
-  with a canvas speech bubble above the front mob (name/want/budget + Serve/Wave hit-targets).
-  Canvas text layout + wrapping + click regions — the deliberately-deferred hard part of the hybrid.
 - **Mob shadow-float (remaining art nit):** all three statics carry 15–18px dead padding below the
   feet, so mobs float ~11px above their shadows. Fix is art-side: trim the bottom rows in Aseprite
   (the spriteScale calibration shipped in the tuning-sweep era; padding trim is the other half).
@@ -550,6 +547,15 @@ not shipped) passes, including regressions for both audit fixes.
 - **Mob calibration (BUILT — commit pending):** optional per-monster `spriteScale` in monsters.js
   (slime/skeleton 1.15, bat omitted = 1.0 reference), multiplied into drawMob guarded `?? 1` —
   data-driven, future mobs need nothing. Suite still 104 (one tier assertion updated to Beloved 200).
+- **Speech bubble (hybrid stage 2, INFO-ONLY variant — BUILT, commit pending):** canvas bubble above
+  the front mob: gold name, "wants <item> ◆ <budget>", plus an alert line for the mob's dilemma
+  ("out of stock!" / "can't afford it!", computed inline — render stays free of game imports). Width
+  measured from text per frame; tail bobs in phase with the mob; clamped to stage edges; `BUBBLE`
+  dial block in scene.js (fonts mirror --font). Serve/Send Away STAY as DOM buttons (full-bubble
+  variant with canvas hit-targets deliberately not built). Gold front-chevron RETIRED (bubble does
+  its job); customer panel slimmed to name + line count (want/budget live in the bubble). Known
+  cosmetic: a purchase float crosses the bubble for ~0.9s on serve — deliberate. Uses
+  ctx.roundRect (Chrome 99+/FF 112+; fine for Kongregate's browser floor).
 - **Door destinations (BUILT — commit pending):** three variant strips (mountain/forest/dungeon —
   identical door, different world through the opening) rolled per PAID serve in `playPortalOpen`
   via `pickDoorVariant` (picks only among LOADED strips; anti-repeat re-draw like the log picker;

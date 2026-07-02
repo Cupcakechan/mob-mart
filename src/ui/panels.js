@@ -118,12 +118,11 @@ export function renderPanels(state) {
     const m = MONSTERS[c.monsterId];
     const want = ITEMS[c.wantedItemId];
     const waiting = state.queue.length - 1;
-    const waitLine = waiting > 0 ? `<div class="cust-wait">${waiting} more in line</div>` : '';
+    // Want/budget now live in the canvas speech bubble above the mob (hybrid stage 2); the panel
+    // keeps the name (context for the buttons below it) and the line count.
     body.innerHTML = `
       <div class="cust-name">${m?.displayName ?? '???'}</div>
-      <div class="cust-line">Wants: <b>${want?.displayName ?? '???'}</b></div>
-      <div class="cust-line">Budget: &#9670; ${c.budget}</div>
-      ${waitLine}`;
+      <div class="cust-line">${waiting > 0 ? `${waiting} more in line` : 'No one else in line'}</div>`;
     const reason = serveBlockReason(state);
     serveBtn.disabled = reason !== null;
     serveBtn.textContent = reason ? (REASON_LABEL[reason] ?? 'Serve') : `Serve ${want?.displayName ?? ''}`;
