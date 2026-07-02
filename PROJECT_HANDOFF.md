@@ -542,6 +542,11 @@ not shipped) passes, including regressions for both audit fixes.
   template reflowed in panels.js, all IDs unchanged); nav docked beside it (left:556); log -> right
   column (w:300, top ~474, clears the door at 462); center panels raised to top:96 (upgrades/workers
   max-height 280). Seven CSS edits + one template reflow; no game-logic changes.
+  **Browser-test fixes (same pass):** the nav's real width is ~465px (estimate was ~380) and it
+  overlapped the log — nav is now RIGHT-anchored (right:340, edge 940, growth goes leftward; buttons
+  slimmed to 8x12px pad / 13px font) with the customer bar at 500px; the log gets FIXED height:230
+  (bottom-anchored max-height made a sparse log float as a lone title). Layout is robust to a future
+  5th tab.
 - **Door destinations (BUILT — commit pending):** three variant strips (mountain/forest/dungeon —
   identical door, different world through the opening) rolled per PAID serve in `playPortalOpen`
   via `pickDoorVariant` (picks only among LOADED strips; anti-repeat re-draw like the log picker;
