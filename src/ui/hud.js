@@ -25,5 +25,7 @@ export function renderHud(state) {
   if (rep) rep.textContent = Math.floor(state.reputation);
 
   const tier = document.getElementById('hud-tier');
-  if (tier) tier.textContent = reputationTier(state.reputation).label;
+  // Dual-track Fame: the NUMBER is the spendable balance; the BADGE is the lifetime tier —
+  // spending on perks lowers the number but can never lower the badge.
+  if (tier) tier.textContent = reputationTier(state.lifetimeRep ?? state.reputation).label;
 }

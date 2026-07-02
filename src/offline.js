@@ -92,6 +92,8 @@ export function applyOffline(state, result) {
   if (!result || result.sales <= 0) return false;
   state.gold += result.gold;
   state.reputation += result.rep;
+  state.lifetimeRep = (state.lifetimeRep ?? 0) + result.rep;  // lifetime tracks every rep gain
+                                                              // (always initialized by state/merge)
   for (const [id, n] of Object.entries(result.consumed)) {
     if (state.items[id]) state.items[id].stock = Math.max(0, state.items[id].stock - n);
   }

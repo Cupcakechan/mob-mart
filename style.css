@@ -289,3 +289,9 @@ body{
   color: #ffe9ad;
   background: rgba(255, 207, 74, 0.07);
 }
+
+/* --- Fame Perks (Pass 2): a second purchase list inside the Upgrades panel, costed in reputation.
+   Cards reuse the upgrade-card layout; the cost tint says "this spends the crown number". ------- */
+.panel-subtitle { color: #ffcf4a; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; margin: 12px 0 6px; }
+.panel-subtitle .subtitle-hint { color: #b6abc9; font-size: 11px; text-transform: none; letter-spacing: 0; margin-left: 6px; }
+.perk-cost { color: #cfa8ff; }   /* rep-purple, distinct from gold costs */

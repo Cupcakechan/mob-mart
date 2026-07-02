@@ -1,7 +1,7 @@
 // main.js — entry point: wires DOM, scale-to-fit, input, save/load, nav, and the rAF game loop.
 import { CONFIG } from './config.js';
 import { clamp } from './utils.js';
-import { update, serveCurrent, dismissCurrent, restockItem, buyUpgrade, hireWorker } from './game.js';
+import { update, serveCurrent, dismissCurrent, restockItem, buyUpgrade, buyPerk, hireWorker } from './game.js';
 import { loadState, saveState, clearSave } from './save.js';
 import { computeOffline, applyOffline, formatAway } from './offline.js';
 import { drawScene, playBobServe, playPortalOpen, spawnItemFloat } from './render/scene.js';
@@ -78,6 +78,7 @@ initPanels(document.getElementById('shop-ui'), {
   onDismiss:    () => dismissCurrent(state),
   onRestock:    (id) => restockItem(state, id),
   onBuyUpgrade: (id) => buyUpgrade(state, id),
+  onBuyPerk:    (id) => buyPerk(state, id),      // Fame perks: spends rep, never the lifetime track
   onHireWorker: (id) => hireWorker(state, id),
 });
 initNav(document.getElementById('nav'));           // bottom nav swaps the center panel

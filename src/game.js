@@ -1,5 +1,6 @@
 // game.js — core loop logic. Operates on the state object; no DOM/canvas here (so it's testable).
 import { CONFIG } from './config.js';
+import { PERKS, PERK_ORDER, perkLevel, perkCost, isPerkMaxed, sumPerkEffect } from './data/perks.js';
 import { itemGoldMult, monsterRepMult, globalGoldMult, everythingTier,
   ITEM_BREAKPOINTS, MONSTER_BREAKPOINTS, EVERYTHING_TIERS, milestoneLine } from './data/milestones.js';
 import { MONSTERS, MONSTER_IDS } from './data/monsters.js';
@@ -13,7 +14,7 @@ import { logLine } from './messages.js';
 
 // --- Customer spawning -------------------------------------------------------
 
-export function spawnCustomer() {
+export function spawnCustomer(state) {
   const monster = MONSTERS[pick(MONSTER_IDS)];
   // Fallback must be an ITEM id (guards a monster shipped with missing/empty wantWeights). A monster
   // id here made the customer want a nonexistent item -> a permanent 'no-item' front blocker.
@@ -23,7 +24,7 @@ export function spawnCustomer() {
     monsterId: monster.id,
     wantedItemId,
     budget: randInt(minB, maxB),
-    patienceRemaining: CONFIG.queue.defaultPatienceSec,
+    patienceRemaining: CONFIG.queue.defaultPatienceSec + (state ? sumPerkEffect(state, 'patience') : 0),  // Warm Welcome
     brokeWait: 0,               // seconds spent unaffordable at the front; drives the worker auto-wave
     frontWait: 0,               // seconds spent AT the front; gates the worker greet delay (feel fix)
     state: 'queued',
@@ -68,7 +69,8 @@ export function serveCurrent(state) {
   const goldGain = Math.round(item.basePrice * itemGoldMult(state, c.wantedItemId) * globalGoldMult(state));
   state.items[c.wantedItemId].stock -= 1;                       // hand over the item
   state.gold += goldGain;                                       // take payment (base + loyalty on top)
-  state.reputation += repGain;                                  // a good sale earns reputation
+  state.reputation += repGain;                                  // spendable balance...
+  state.lifetimeRep = fameOf(state) + repGain;                  // ...and the tier track (never falls)
 
   const { tier } = resolveCombat(monster, item);               // off-screen fight -> outcome tier
   const text = logLine(monster.id, tier, { name: monster.displayName, item: item.displayName });
@@ -122,16 +124,23 @@ export function effectiveMaxStock(state, itemId) {
   return base + sumEffect(state, 'maxStock');
 }
 
+// Haggler's Charm perk: gold off every restock, floored at 1 so an item can never restock free
+// (the offline reserve margin math and the "always profitable" invariant both rely on cost >= 1).
+export function effectiveRestockCost(state, itemId) {
+  const base = ITEMS[itemId]?.restockCost ?? 0;
+  return Math.max(1, base - sumPerkEffect(state, 'restockDiscount'));
+}
+
 export function canRestock(state, itemId) {
   const item = ITEMS[itemId];
   const slot = state.items[itemId];
   if (!item || !slot) return false;
-  return slot.stock < effectiveMaxStock(state, itemId) && state.gold >= item.restockCost;
+  return slot.stock < effectiveMaxStock(state, itemId) && state.gold >= effectiveRestockCost(state, itemId);
 }
 
 export function restockItem(state, itemId) {
   if (!canRestock(state, itemId)) return false;
-  state.gold -= ITEMS[itemId].restockCost;
+  state.gold -= effectiveRestockCost(state, itemId);
   state.items[itemId].stock += 1;
   state.uiDirty = true;
   return true;
@@ -139,18 +148,42 @@ export function restockItem(state, itemId) {
 
 // --- Upgrades ----------------------------------------------------------------
 
-// An upgrade unlocks once the player's reputation reaches its required tier (index into
-// CONFIG.reputation.tiers). Derived from live reputation — nothing to persist.
+// Fame (dual-track): tiers are driven by LIFETIME rep — the never-decreasing track — so spending
+// the current balance on perks can never revoke a gate the player already earned.
+export const fameOf = (state) => state.lifetimeRep ?? state.reputation;
+
 export function isUpgradeUnlocked(state, id) {
   const u = UPGRADES[id];
   if (!u) return false;
-  return reputationTier(state.reputation).index >= (u.requiredTier ?? 0);
+  return reputationTier(fameOf(state)).index >= (u.requiredTier ?? 0);
 }
 
 export function canBuyUpgrade(state, id) {
   if (!UPGRADES[id] || isMaxed(state, id)) return false;
   if (!isUpgradeUnlocked(state, id)) return false;             // gated behind a reputation tier
   return state.gold >= upgradeCost(id, upgradeLevel(state, id));
+}
+
+// --- Fame perks (rep-costed; see perks.js). Spending draws down state.reputation ONLY — the
+// lifetime track is untouched, so tiers survive any spending spree. -----------------------------
+export function isPerkUnlocked(state, id) {
+  const p = PERKS[id];
+  if (!p) return false;
+  return reputationTier(fameOf(state)).index >= (p.requiredTier ?? 0);
+}
+
+export function canBuyPerk(state, id) {
+  if (!PERKS[id] || isPerkMaxed(state, id)) return false;
+  if (!isPerkUnlocked(state, id)) return false;
+  return state.reputation >= perkCost(id, perkLevel(state, id));
+}
+
+export function buyPerk(state, id) {
+  if (!canBuyPerk(state, id)) return false;
+  state.reputation -= perkCost(id, perkLevel(state, id));   // spend the balance; lifetime unmoved
+  state.perks[id] = perkLevel(state, id) + 1;
+  state.uiDirty = true;
+  return true;
 }
 
 export function buyUpgrade(state, id) {
@@ -243,8 +276,8 @@ export function update(state, dt) {
 
   state.spawnTimer -= dt;
   if (state.spawnTimer <= 0) {
-    if (state.queue.length < CONFIG.queue.maxLength) {
-      state.queue.push(spawnCustomer());
+    if (state.queue.length < CONFIG.queue.maxLength + sumPerkEffect(state, 'queueLength')) {  // Velvet Rope
+      state.queue.push(spawnCustomer(state));
       state.uiDirty = true;
     }
     state.spawnTimer = CONFIG.queue.spawnIntervalSec;

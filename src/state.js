@@ -2,6 +2,7 @@
 import { CONFIG } from './config.js';
 import { ITEMS, ITEM_ORDER } from './data/items.js';
 import { MONSTER_IDS } from './data/monsters.js';
+import { PERK_ORDER } from './data/perks.js';
 import { UPGRADE_ORDER } from './data/upgrades.js';
 import { WORKER_ORDER } from './data/workers.js';
 
@@ -25,10 +26,16 @@ export function createInitialState() {
   for (const id of ITEM_ORDER) stats.itemSales[id] = 0;
   for (const id of MONSTER_IDS) stats.monsterServes[id] = 0;
 
+  const perks = {};
+  for (const id of PERK_ORDER) perks[id] = 0;   // Fame perk levels (rep-costed purchases)
+
   return {
     screen: 'title',            // 'title' | 'shop'
     gold: CONFIG.economy.startingGold,
-    reputation: CONFIG.economy.startingReputation, // shown on the HUD; service-based (see game.js)
+    reputation: CONFIG.economy.startingReputation, // SPENDABLE rep balance (Fame perks draw this down)
+    lifetimeRep: CONFIG.economy.startingReputation, // never decreases; drives tiers — spending can't
+                                                    // cost you a gate you earned (dual-track Fame)
+    perks,                      // { id: level } — rep-costed Fame perks
     items,                      // { id: { stock } }
     upgrades,                   // { id: level }
     workers,                    // { id: { owned, timer } }  timer is transient (not persisted)

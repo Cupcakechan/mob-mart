@@ -16,6 +16,8 @@ export const CONFIG = {
       { label: 'Friendly', min: 25 },   // TUNING SWEEP: tiers stretched (were 20/50/100) so rep
       { label: 'Trusted',  min: 75 },   // stays meaningful past the first minutes; signage still
       { label: 'Beloved',  min: 200 },  // makes Beloved a session-one goal, not a minute-five one
+      { label: 'Renowned', min: 500 },  // Fame (Pass 2): tiers read LIFETIME rep (never decreases);
+      { label: 'Legendary', min: 1500 },// a Mythic ~5000 row is the reserved future rung
     ],
   },
 

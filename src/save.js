@@ -3,6 +3,7 @@
 import { clamp } from './utils.js';
 import { ITEMS } from './data/items.js';
 import { UPGRADES, sumEffect } from './data/upgrades.js';
+import { PERKS } from './data/perks.js';
 import { WORKERS } from './data/workers.js';
 import { createInitialState } from './state.js';
 
@@ -27,6 +28,16 @@ export function mergeSave(fresh, data) {
   }
   fresh.gold = Math.max(0, numOr(data.gold, fresh.gold));
   fresh.reputation = Math.max(0, numOr(data.reputation, fresh.reputation));
+  // Dual-track migration: pre-Fame saves have no lifetimeRep — seed it from current rep so every
+  // tier the player had already reached stays reached. Lifetime can never be below current.
+  fresh.lifetimeRep = Math.max(fresh.reputation, Math.max(0, numOr(data.lifetimeRep, 0)));
+  // Perk levels: iterate CURRENT registry, clamp to each perk's maxLevel (same guard as upgrades).
+  if (data.perks && typeof data.perks === 'object') {
+    for (const id of Object.keys(fresh.perks)) {
+      const max = PERKS[id]?.maxLevel ?? 0;
+      fresh.perks[id] = Math.min(max, Math.max(0, Math.floor(numOr(data.perks[id], 0))));
+    }
+  }
   // Upgrades merge FIRST: the item-stock clamp below needs the restored Extra Shelf level to compute
   // the effective cap. (Clamping to the BASE cap here used to eat any stock bought above it on every
   // reload — silently refunding nothing.)
@@ -71,6 +82,8 @@ export function serializeSave(state) {
     version: SAVE_VERSION,
     gold: state.gold,
     reputation: state.reputation,
+    lifetimeRep: state.lifetimeRep ?? state.reputation,
+    perks: { ...(state.perks ?? {}) },
     items,
     upgrades: { ...state.upgrades },
     workers,

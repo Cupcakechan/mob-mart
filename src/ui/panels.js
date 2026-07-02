@@ -3,6 +3,7 @@
 // which is visible.
 import { setShopAttention } from './nav.js';
 import { ITEM_BREAKPOINTS, nextBreakpoint } from '../data/milestones.js';
+import { PERKS, PERK_ORDER, perkCost } from '../data/perks.js';
 import { CONFIG } from '../config.js';
 import { ITEMS, ITEM_ORDER } from '../data/items.js';
 import { MONSTERS } from '../data/monsters.js';
@@ -10,10 +11,10 @@ import { UPGRADES, UPGRADE_ORDER, upgradeLevel, upgradeCost, isMaxed } from '../
 import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost } from '../data/workers.js';
 import {
   serveBlockReason, canRestock, effectiveMaxStock, canBuyUpgrade, isUpgradeUnlocked,
-  canHireWorker, effectiveWorkerInterval,
+  canHireWorker, effectiveWorkerInterval, isPerkUnlocked, canBuyPerk, effectiveRestockCost,
 } from '../game.js';
 
-let handlers = { onServe: () => {}, onDismiss: () => {}, onRestock: () => {}, onBuyUpgrade: () => {}, onHireWorker: () => {} };
+let handlers = { onServe: () => {}, onDismiss: () => {}, onRestock: () => {}, onBuyUpgrade: () => {}, onBuyPerk: () => {}, onHireWorker: () => {} };
 
 export function initPanels(root, h) {
   handlers = h;
@@ -37,6 +38,8 @@ export function initPanels(root, h) {
     <section id="upgrades-panel" class="panel upgrades-panel hidden">
       <h2 class="panel-title">Upgrades</h2>
       <div id="upgrade-cards" class="upgrade-cards"></div>
+      <h3 class="panel-subtitle">Fame Perks <span class="subtitle-hint">spend reputation</span></h3>
+      <div id="perk-cards" class="upgrade-cards"></div>
     </section>
 
     <section id="workers-panel" class="panel workers-panel hidden">
@@ -62,7 +65,7 @@ export function initPanels(root, h) {
         <div class="item-price">&#9670; ${it.basePrice}</div>
         <div class="item-stock">Stock: <span id="stock-${id}">0</span>/<span id="max-${id}">${it.maxStock}</span></div>
         <div class="item-sold">Sold <span id="sold-${id}">0</span><span id="next-${id}"></span></div>
-        <button class="restock-btn" data-item="${id}">Restock &#9670;${it.restockCost}</button>
+        <button class="restock-btn" data-item="${id}">Restock &#9670;<span id="rcost-${id}">${it.restockCost}</span></button>
       </div>`;
   }).join('');
   root.querySelectorAll('.restock-btn').forEach((btn) =>
@@ -84,7 +87,24 @@ export function initPanels(root, h) {
         <button class="upg-buy" data-upg="${id}">Buy</button>
       </div>`;
   }).join('');
-  root.querySelectorAll('.upg-buy').forEach((btn) =>
+  document.getElementById('perk-cards').innerHTML = PERK_ORDER.map((id) => {
+    const p = PERKS[id];
+    return `<div class="upgrade-card perk-card" data-perk="${id}">
+        <div class="upg-info">
+          <div class="upg-name">${p.displayName}</div>
+          <div class="upg-desc">${p.description}</div>
+        </div>
+        <div class="upg-meta">
+          <span class="upg-level" id="perklvl-${id}"></span>
+          <span class="upg-cost perk-cost" id="perkcost-${id}"></span>
+        </div>
+        <button class="upg-buy perk-buy" data-perk="${id}">Buy</button>
+      </div>`;
+  }).join('');
+  root.querySelectorAll('.perk-buy').forEach((btn) =>
+    btn.addEventListener('click', () => handlers.onBuyPerk(btn.dataset.perk)));
+
+  root.querySelectorAll('.upg-buy:not(.perk-buy)').forEach((btn) =>
     btn.addEventListener('click', () => handlers.onBuyUpgrade(btn.dataset.upg)));
 
   // Worker cards (data-driven; status + button update at runtime). Same compact-row look as upgrades.
@@ -151,6 +171,8 @@ export function renderPanels(state) {
       const nb = nextBreakpoint(sold, ITEM_BREAKPOINTS);
       nextEl.textContent = nb !== null ? ` · next bonus: ${nb}` : ' · maxed!';
     }
+    const rcostEl = document.getElementById(`rcost-${id}`);
+    if (rcostEl) rcostEl.textContent = effectiveRestockCost(state, id);   // Haggler's Charm live
   }
   document.querySelectorAll('.restock-btn').forEach((btn) => {
     btn.disabled = !canRestock(state, btn.dataset.item);
@@ -164,6 +186,30 @@ export function renderPanels(state) {
   document.querySelectorAll('.item-card').forEach((card) =>
     card.classList.toggle('attention', card.dataset.item === starvedId));
   setShopAttention(starvedId !== null);
+
+  // --- Fame perks: locked state (LIFETIME tier), level, rep cost, buyability ---
+  for (const id of PERK_ORDER) {
+    const p = PERKS[id];
+    const card = document.querySelector(`.perk-card[data-perk="${id}"]`);
+    if (!card) continue;
+    const unlocked = isPerkUnlocked(state, id);
+    card.classList.toggle('locked', !unlocked);
+    const lvl = document.getElementById(`perklvl-${id}`);
+    const cost = document.getElementById(`perkcost-${id}`);
+    const btn = card.querySelector('.perk-buy');
+    const level = state.perks?.[id] ?? 0;
+    const maxed = level >= (p.maxLevel ?? Infinity);
+    if (!unlocked) {
+      const tierLabel = CONFIG.reputation.tiers[p.requiredTier]?.label ?? '???';
+      if (lvl) lvl.textContent = '';
+      if (cost) cost.textContent = `Reach ${tierLabel}`;
+      if (btn) { btn.disabled = true; btn.textContent = 'Locked'; }
+    } else {
+      if (lvl) lvl.textContent = maxed ? `Lv ${level} · Max` : `Lv ${level}`;
+      if (cost) cost.textContent = maxed ? 'MAX' : `♛ ${perkCost(id, level)}`;
+      if (btn) { btn.disabled = !canBuyPerk(state, id); btn.textContent = maxed ? 'Maxed' : 'Buy'; }
+    }
+  }
 
   // --- Upgrades: locked state (rep tier), level, cost, buyability ---
   for (const id of UPGRADE_ORDER) {

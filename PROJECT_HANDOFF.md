@@ -456,9 +456,21 @@ leaves 2–3 affordable-soon wants visible. One system per pass, in this order:
   Suite at **128** (24 new: mult math, laggard tier, exact payouts 14/19/3, exact-budget
   affordability guard, once-only announcements, dismiss counts nothing, double announcement on
   laggard crossing, save clamps, offline frozen-mult unit gold + ledger banking, line guards).
-- **Pass 2 — Reputation meaning ("Fame", LOW, check-in + both).** Tiers above Beloved
-  (e.g. Renowned 500 / Legendary 1500) gating what comes next, and/or rep as a spendable perk
-  currency. Fixes the dead number; creates the gates passes 3–5 need.
+- **Pass 2 — Fame — BUILT (commit pending). DUAL-TRACK:** `state.lifetimeRep` (never decreases;
+  drives ALL tier gates via `fameOf`) vs `state.reputation` (spendable balance). Gains feed both
+  (live + offline); the leave penalty hits the balance only. Migration: pre-Fame saves seed
+  lifetime from current rep — no earned gate is ever lost (tested at 3600). New tiers: **Renowned
+  500 / Legendary 1500** (Mythic ~5000 reserved); HUD badge reads lifetime, number stays the wallet.
+  New `src/data/perks.js` (upgrades-shaped registry, REP-costed): **Haggler's Charm** (-1 restock
+  gold/level, floor 1 — protects the reserve-margin invariant; 200/1.6x/max3, Trusted),
+  **Velvet Rope** (+1 queue slot; 300/max2, Beloved), **Warm Welcome** (+4s patience; 250/max2,
+  RENOWNED — the new tier gates something on day one). Consumers: `effectiveRestockCost` (canRestock/
+  restockItem/card labels all live), queue-cap + spawn-patience in game.js (spawnCustomer now takes
+  state, guarded). "Fame Perks" section in the Upgrades panel (perk-card, rep-purple costs, Reach-
+  Tier locks). Perk levels persisted + clamped. Suite at **151** (23 new: dual-track, lifetime
+  gates at wallet-0, migration, spend math + curve 200/320/512, maxLevel stop, all three consumers
+  incl. same-tick patience decay, clamps, offline lifetime banking). All costs/thresholds are dials,
+  provisional pending feel.
 - **Pass 3 — Item-tier cascade ("Better Stock", LOW–MED, both).** Higher-tier goods as registry
   rows (Club -> Iron Sword -> …), gated by rep tiers/milestones; optional per-monster preferences.
   ALSO: raise the 2h offline cap here (Pecorella calls Egg Inc's 2h cap a churn mistake he quit
