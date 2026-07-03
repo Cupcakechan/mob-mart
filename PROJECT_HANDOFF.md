@@ -13,9 +13,12 @@ expanded, Bob voice, genre-trope lines, gags seeded), the **no-repeat line picke
 pass** (fixed a real save bug — reload used to clamp stock to the BASE cap, eating Extra-Shelf stock;
 fixed a wrong-registry spawn fallback; removed stray duplicate files). 61-assertion headless smoke
 test + `node --check` clean on every module.
-**M1–M6 MVP roadmap COMPLETE (all committed).** Post-MVP work now: the **retention pass** (worker
-greet delay + Backroom Storage v2 offline reserve) and the **item-icons pass** (shelf-card icons +
-purchase float) are BUILT — browser-confirm + two commits pending (no file overlap by design).
+**M1–M6 MVP COMPLETE. Idle-progression roadmap Passes 1–3 + 3.5 SHIPPED (all committed through
+`14887fd`):** Regulars' Loyalty milestones, dual-track Fame + perks, Better Stock tier-2 licenses
++ fame budgets, Shelf 2.0 (category tabs / collapsible panels / Restock All), spawn director,
+diegetic wall shelf (C-lite), mob idle animations (Batty flapping — `bat_idle.png` in). Suite:
+**211 assertions** incl. the module-import health section. NEXT AGREED CODE PASS: **Shelf
+decoration v2** (spec below). This handoff is the cold-boot source of truth for the next session.
 **M5 (offline earnings) is DONE (committed):** on return, a hired Bob's
 capped, stock-consuming sales are banked and shown in a "While you were away" modal (Option 2 —
 gold + rep, worker-only, 2h cap; the no-worker "drip" was decided AGAINST: Bob is hireable within
@@ -437,11 +440,24 @@ not shipped) passes, including regressions for both audit fixes.
 
 ### Next up — the idle-progression roadmap (from MOB_MART_RESEARCH.md)
 
+**Agreed immediate order (next session starts here):**
+1. **Shelf decoration v2** — the next code pass (Daniel's evolution of C-lite; full spec in the
+   parked entry below/build history): wall shelves become pure SET DRESSING — multiple shelves, a
+   RANDOM ROTATING SAMPLE of the item pool (scales to a 100-item catalog), NO slot squares, KEEP
+   stock bars + starved-glow; the Shop panel remains the management UI. Daniel may author extra
+   shelf props; code-drawn planks remain the fallback.
+2. **Mob react animation (TO-DO, queued by name):** a short one-shot when a mob is SERVED (happy
+   hop/flap) — and optionally a sad variant on dismiss. Unlike the stateless idle loop this needs
+   per-mob one-shot state + a trigger (the serve path already knows the customer; mirror the
+   playBobServe pattern at mob level). Registry: `anim.react: { frames: 3-4, fps }` +
+   `<id>_react.png` strips, optional per monster like idle. NOT built — spec only.
+3. **Pass 4 — Bestiary + Gobbo** (roadmap resumes).
+
 The problem it solves: the game has ONE growth axis (gold -> 4 upgrades -> done at ~10.6k). The
 research's answer is a lattice of small bolt-on layers on existing hooks, staged so every pass
 leaves 2–3 affordable-soon wants visible. One system per pass, in this order:
 
-- **Pass 1 — Milestone sales bonuses ("Regulars' Loyalty") — BUILT (commit pending).** New
+- **Pass 1 — Milestone sales bonuses ("Regulars' Loyalty") — committed.** New
   `src/data/milestones.js`: item breakpoints 10/25/50/100/250/500/1000 -> +8% gold on that item
   each; monster breakpoints 25/50/100/250/500 -> +10% rep serving that monster each; "everything"
   tiers (ALL items past 50/250/1000, laggard-driven) -> global gold x1.25 each (~x3 gold at full
@@ -456,7 +472,7 @@ leaves 2–3 affordable-soon wants visible. One system per pass, in this order:
   Suite at **128** (24 new: mult math, laggard tier, exact payouts 14/19/3, exact-budget
   affordability guard, once-only announcements, dismiss counts nothing, double announcement on
   laggard crossing, save clamps, offline frozen-mult unit gold + ledger banking, line guards).
-- **Pass 2 — Fame — BUILT (commit pending). DUAL-TRACK:** `state.lifetimeRep` (never decreases;
+- **Pass 2 — Fame — committed. DUAL-TRACK:** `state.lifetimeRep` (never decreases;
   drives ALL tier gates via `fameOf`) vs `state.reputation` (spendable balance). Gains feed both
   (live + offline); the leave penalty hits the balance only. Migration: pre-Fame saves seed
   lifetime from current rep — no earned gate is ever lost (tested at 3600). New tiers: **Renowned
@@ -471,7 +487,7 @@ leaves 2–3 affordable-soon wants visible. One system per pass, in this order:
   gates at wallet-0, migration, spend math + curve 200/320/512, maxLevel stop, all three consumers
   incl. same-tick patience decay, clamps, offline lifetime banking). All costs/thresholds are dials,
   provisional pending feel.
-- **Pass 3 — Better Stock — BUILT (commit pending).** THREE tier-2 registry rows: **Iron Sword**
+- **Pass 3 — Better Stock — committed.** THREE tier-2 registry rows: **Iron Sword**
   (26/13, eff 10, license 800g @ Renowned), **Greater Flask** (27/13, eff 8, license 800g @
   Renowned), **Knight Helm** (30/15, eff 9, license 1200g @ Legendary). Items carry a `license:
   { cost, requiredTier }` field; `state.licenses` booleans (persisted; merge is STRICT ===true —
@@ -492,7 +508,7 @@ leaves 2–3 affordable-soon wants visible. One system per pass, in this order:
   base-only everything tier, offline reserve gating, tier-2 serve + own ladder, strict-boolean
   saves; cap test moved to 12h). A hand-typed test range map failed once (Batty is [12,22]) —
   bounds now read the live registry.
-- **Shelf 2.0 (Pass 3.5, BUILT — commit pending; Daniel picked Option 3):** the 6-item shelf broke
+- **Shelf 2.0 (Pass 3.5, committed; Daniel picked Option 3):** the 6-item shelf broke
   the SPEECH BUBBLE's airspace (bubble top ~y328 worst case — now a documented layout budget beside
   the actor band). Three pieces: (1) **category sub-tabs** (Weapons/Armor/Potions from the
   registry's dormant `category` field) — one row per category, the shelf never stacks vertically
@@ -505,13 +521,13 @@ leaves 2–3 affordable-soon wants visible. One system per pass, in this order:
   tab) -> card pulse. New game API: restockAllCost/canRestockAll/restockAll; handlers onRestockAll
   + onDirty. Suite at **203** (10 new: quote 47 exact + Haggler 29, full fill 6-for-47, round-robin
   23-gold one-each, no-op on full, licensed joins/locked excluded, cap respect).
-- **Spawn director (BUILT — commit pending; the "spotlight" fix).** Flat spawn rate's equilibrium
+- **Spawn director (committed; the "spotlight" fix).** Flat spawn rate's equilibrium
   was ONE customer at maxed Bob (throughput >= arrivals). `CONFIG.queue.spawnIntervalByQueue:
   [1.2, 1.8, 2.6, 3.6]` — next interval indexed by post-spawn queue length (clamped to last).
   Self-balancing at every Bob speed: empty -> hurry, deep -> relax; keeps ~2-3 mobs on stage.
   FLAGGED economy nudge: a maxed shop sells more per minute (arguably what maxed should feel like).
   Suite proves it: 120s maxed-Bob sim must be non-empty most of the time.
-- **Diegetic wall shelf, C-LITE (BUILT — commit pending; Daniel's "art should be the centerpiece").**
+- **Diegetic wall shelf, C-LITE (committed; Daniel's "art should be the centerpiece").**
   `drawWallShelf` in scene.js: code-drawn plank on the upper-left wall (`WALL_SHELF` dials, icons
   at y176, below HUD / above bubble airspace) showing every item's icon + a stock bar (gold, red
   sliver when dry); unlicensed items = dim empty slots (silent tease); the STARVED slot breathes
@@ -539,7 +555,8 @@ set. Add "bumpy" x2 spikes at 25/50-style breakpoints. Never add decay/backward 
 
 ### Polish / art track (parallel, order-flexible)
 
-- **Mob idle animations — BUILT (commit pending).** drawMob generalizes Bob's strip pattern:
+- **Mob idle animations — committed, art IN (`bat_idle.png` shipped; Batty flaps).** drawMob
+  generalizes Bob's strip pattern:
   optional `anim: { frames, fps }` per monster; chain = `<id>_idle.png` strip (auto-sliced,
   +x*37ms phase offset so a line of same-species mobs never flaps in lockstep) -> static `<id>.png`
   -> rect. Batty declares `{ frames: 4, fps: 6 }`; **bat_idle.png PENDING from Daniel** (4 frames
