@@ -125,71 +125,188 @@ export function playPortalOpen() {
   portalAnim.startMs = -1;               // sentinel: stamp with the real tMs on the next draw
 }
 
-// --- Diegetic wall shelf (C-lite): the shop's goods ON the wall as a scene prop — ambient stock
-// awareness with zero panels open, and the wall prop the back wall was missing. Per item: a slot,
-// its icon (the same sprites the cards/floats use), and a stock bar. Unlicensed items show as dim
-// empty slots (a silent tease). The attention system extends here: the STARVED slot (front
-// customer's want at stock 0) breathes gold, same rhythm as the door glow. C-LITE means display
-// only — no canvas click region; SHOP still opens the management panel. Code-drawn plank until/
-// unless a shelf sprite ever lands (it may simply not need one).
+// --- Wall shelves v2 (set dressing): the wall shelf is now PURE DECORATION — two staggered
+// planks showing a random ROTATING SAMPLE of the unlocked item pool, so the wall stays readable
+// even when the catalog someday outgrows what one plank can show. Changes from C-lite: the
+// semi-transparent slot squares are GONE (goods sit straight on the plank), locked items no longer
+// appear as dim teases (the greyed Shop card carries that job now), and slots swap with a short
+// crossfade so a rotation reads as restocking, never a glitch. KEPT from C-lite: the per-item
+// stock bar and the starved-glow — the front customer's out-of-stock want is force-swapped into
+// view (shelf A, slot 0) so the gold breathe always has a home, keeping the attention system's
+// canvas level intact. Still display only: no click region; SHOP opens the management panel.
+// Optional art hook: drop assets/sprites/wall_shelf.png and BOTH planks use it (drawn into the
+// plankBoxH band under the icons); absent, the code-drawn plank remains the fallback.
 const WALL_SHELF = {
-  x: 84,             // left edge of the first slot
-  y: 176,            // icon top — upper wall band: below the HUD, above the bubble airspace (~328)
-  slotStep: 56,      // horizontal spacing between slots
-  iconSize: 32,      // 64px art at clean 2:1, matching the cards
-  barW: 32, barH: 4, // stock bar under the plank
-  plank: '#5b3a24', plankEdge: '#3a2415', slotBg: 'rgba(0,0,0,0.28)',
+  shelves: [            // one entry per plank; staggered x so the wall reads dressed, not gridded.
+    { x: 84,  y: 168 }, // y = icon TOP. Band budget: below the HUD, above bubble airspace (~328);
+    { x: 128, y: 244 }, // shelf B's lowest pixel lands at y≈312 with the values below.
+  ],
+  slotsPerShelf: 4,     // display capacity per plank — the sample size, NOT the catalog size
+  slotStep: 60,         // horizontal spacing between slots
+  iconSize: 32,         // 64px art at clean 2:1, matching the cards
+  plankPad: 16,         // plank extends this far past the outer icons on each side (plank w = 244)
+  plankBoxH: 24,        // vertical band reserved for the plank — art OR code-drawn fills it
+  rotateSec: 45,        // one shelf re-rolls its sample this often (shelves alternate)
+  crossfadeMs: 300,     // per-slot swap fade; 0 = instant
+  barW: 32, barH: 4,    // stock bar under the plank band
+  barGapY: 6,           // gap between plank band bottom and the bar
+  propId: 'wall_shelf', // optional authored plank sprite (see the art spec / handoff §9)
+  plank: '#5b3a24', plankEdge: '#3a2415',
   barFill: '#ffcf4a', barEmpty: '#b3402e', glow: '#ffcf4a',
 };
 
+// Ephemeral presentation state — like the log picker and the floaters, never saved.
+// slots[shelfIdx][slotIdx] = { itemId, prevId, fadeStart } (itemId null = empty plank space).
+const shelfDress = { slots: null, nextRotateMs: -1, rotateIdx: 0, poolSig: '' };
+
+// Items allowed on the wall: unlicensed rows never appear (same gate as spawn wants / restock).
+function unlockedPool(state) {
+  return ITEM_ORDER.filter((id) => !ITEMS[id]?.license || state.licenses?.[id] === true);
+}
+
+// Pure sampler (exported for the headless suite): pick up to `count` ids from `pool`, no
+// duplicates within the result, PREFERRING ids not in `avoid` (the other shelf's goods) and
+// topping up from `avoid` only when the pool is too small to fill the shelf otherwise — so a big
+// catalog spreads variety across planks, while today's small one still fills both. Order is part
+// of the sample: even when every item is on display, a re-roll visibly rearranges the goods.
+export function sampleShelf(pool, count, avoid = [], rand = Math.random) {
+  const shuffle = (arr) => {                     // Fisher-Yates on a copy
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+  const fresh = shuffle(pool.filter((id) => !avoid.includes(id)));
+  const reused = shuffle(pool.filter((id) => avoid.includes(id)));
+  return fresh.concat(reused).slice(0, count);   // may be SHORTER than count — pad happens at slot level
+}
+
+// Write a sample into a shelf's slots, starting a crossfade only where the item actually changed.
+function dressShelf(shelfIdx, ids, tMs) {
+  const row = shelfDress.slots[shelfIdx];
+  for (let s = 0; s < WALL_SHELF.slotsPerShelf; s++) {
+    const id = ids[s] ?? null;                   // sample shorter than capacity -> empty slot
+    if (row[s].itemId === id) continue;
+    row[s] = { itemId: id, prevId: row[s].itemId, fadeStart: tMs };
+  }
+}
+
+function currentIds(shelfIdx) {
+  return shelfDress.slots[shelfIdx].map((sl) => sl.itemId).filter((id) => id !== null);
+}
+
 function drawWallShelf(ctx, state, tMs) {
-  const n = ITEM_ORDER.length;
-  const left = WALL_SHELF.x - 10;
-  const right = WALL_SHELF.x + (n - 1) * WALL_SHELF.slotStep + WALL_SHELF.iconSize + 10;
-  const plankY = WALL_SHELF.y + WALL_SHELF.iconSize + 2;
+  const nShelves = WALL_SHELF.shelves.length;
 
-  ctx.save();
-  ctx.fillStyle = WALL_SHELF.plank;                             // the plank the goods sit on
-  ctx.fillRect(left, plankY, right - left, 8);
-  ctx.fillStyle = WALL_SHELF.plankEdge;
-  ctx.fillRect(left, plankY + 8, right - left, 3);
-  ctx.fillRect(left + 8, plankY + 11, 6, 7);                    // two bracket nubs
-  ctx.fillRect(right - 14, plankY + 11, 6, 7);
+  // (Re)dress everything when the unlocked pool changes — boot, and the instant a license is
+  // bought (the new good crossfades onto the wall: a free visual payoff, no event wiring needed).
+  const pool = unlockedPool(state);
+  const sig = pool.join(',');
+  if (shelfDress.slots === null || sig !== shelfDress.poolSig) {
+    if (shelfDress.slots === null) {
+      shelfDress.slots = WALL_SHELF.shelves.map(() =>
+        Array.from({ length: WALL_SHELF.slotsPerShelf }, () => ({ itemId: null, prevId: null, fadeStart: 0 })));
+    }
+    shelfDress.poolSig = sig;
+    let placed = [];
+    for (let i = 0; i < nShelves; i++) {
+      const ids = sampleShelf(pool, WALL_SHELF.slotsPerShelf, placed);
+      dressShelf(i, ids, tMs);
+      placed = placed.concat(ids);
+    }
+    shelfDress.nextRotateMs = tMs + WALL_SHELF.rotateSec * 1000;
+  }
 
-  // Starved slot = the front customer's want at stock 0 (same rule as the panel attention system).
+  // Slow rotation: one shelf re-rolls per tick, alternating — with the log picker's anti-repeat
+  // (one re-draw if the new arrangement matches the old exactly; identical is possible but rare).
+  if (tMs >= shelfDress.nextRotateMs) {
+    const i = shelfDress.rotateIdx % nShelves;
+    const avoid = currentIds((i + 1) % nShelves);
+    let ids = sampleShelf(pool, WALL_SHELF.slotsPerShelf, avoid);
+    if (pool.length > 1 && ids.join(',') === currentIds(i).join(',')) {
+      ids = sampleShelf(pool, WALL_SHELF.slotsPerShelf, avoid);
+    }
+    dressShelf(i, ids, tMs);
+    shelfDress.rotateIdx++;
+    shelfDress.nextRotateMs = tMs + WALL_SHELF.rotateSec * 1000;
+  }
+
+  // Starved force-include: if the front customer's want is unlocked, dry, and NOT on display,
+  // swap it into shelf A slot 0 so the attention glow is always visible. Self-idempotent — once
+  // displayed, the "not on display" test fails, so this fires once per starvation, not per frame.
   const front = state.queue[0];
-  const starvedId = (front && (state.items[front.wantedItemId]?.stock ?? 0) <= 0)
-    ? front.wantedItemId : null;
+  const starvedId = (front && pool.includes(front.wantedItemId)
+    && (state.items[front.wantedItemId]?.stock ?? 0) <= 0) ? front.wantedItemId : null;
+  if (starvedId && !shelfDress.slots.some((row) => row.some((sl) => sl.itemId === starvedId))) {
+    const row = shelfDress.slots[0];
+    row[0] = { itemId: starvedId, prevId: row[0].itemId, fadeStart: tMs };
+  }
   const pulse = 0.5 + 0.5 * Math.sin(tMs / 500);
 
-  for (let i = 0; i < n; i++) {
-    const id = ITEM_ORDER[i];
-    const x = WALL_SHELF.x + i * WALL_SHELF.slotStep;
-    const unlocked = !ITEMS[id]?.license || state.licenses?.[id] === true;
+  ctx.save();
+  for (let i = 0; i < nShelves; i++) {
+    const sh = WALL_SHELF.shelves[i];
+    const plankLeft = sh.x - WALL_SHELF.plankPad;
+    const plankW = (WALL_SHELF.slotsPerShelf - 1) * WALL_SHELF.slotStep
+      + WALL_SHELF.iconSize + 2 * WALL_SHELF.plankPad;
+    const plankY = sh.y + WALL_SHELF.iconSize + 2;
 
-    ctx.globalAlpha = unlocked ? 1 : 0.35;                      // locked = dim empty slot (a tease)
-    ctx.save();
-    if (id === starvedId) {                                     // gold breathe on the blocked good
-      ctx.shadowColor = WALL_SHELF.glow;
-      ctx.shadowBlur = 8 + 10 * pulse;
+    const prop = getSprite(WALL_SHELF.propId);       // authored plank art, if it ever lands
+    if (prop) {
+      ctx.drawImage(prop, plankLeft, plankY, plankW, WALL_SHELF.plankBoxH);
+    } else {                                          // code-drawn fallback (the C-lite plank)
+      ctx.fillStyle = WALL_SHELF.plank;
+      ctx.fillRect(plankLeft, plankY, plankW, 8);
+      ctx.fillStyle = WALL_SHELF.plankEdge;
+      ctx.fillRect(plankLeft, plankY + 8, plankW, 3);
+      ctx.fillRect(plankLeft + 8, plankY + 11, 6, 7);            // two bracket nubs
+      ctx.fillRect(plankLeft + plankW - 14, plankY + 11, 6, 7);
     }
-    ctx.fillStyle = WALL_SHELF.slotBg;
-    ctx.fillRect(x - 4, WALL_SHELF.y - 4, WALL_SHELF.iconSize + 8, WALL_SHELF.iconSize + 6);
-    const spr = unlocked ? getSprite(id) : null;
-    if (spr) ctx.drawImage(spr, x, WALL_SHELF.y, WALL_SHELF.iconSize, WALL_SHELF.iconSize);
-    ctx.restore();
 
-    if (unlocked) {                                             // stock bar: gold fill, red when dry
-      const max = (ITEMS[id]?.maxStock ?? 0) + sumEffect(state, 'maxStock');
-      const stock = state.items[id]?.stock ?? 0;
-      const frac = max > 0 ? Math.min(1, stock / max) : 0;
-      const bx = x + (WALL_SHELF.iconSize - WALL_SHELF.barW) / 2, by = plankY + 14;
-      ctx.fillStyle = 'rgba(0,0,0,0.4)';
-      ctx.fillRect(bx, by, WALL_SHELF.barW, WALL_SHELF.barH);
-      ctx.fillStyle = frac > 0 ? WALL_SHELF.barFill : WALL_SHELF.barEmpty;
-      ctx.fillRect(bx, by, Math.max(2, Math.round(WALL_SHELF.barW * frac)), WALL_SHELF.barH);
+    for (let s = 0; s < WALL_SHELF.slotsPerShelf; s++) {
+      const slot = shelfDress.slots[i][s];
+      if (slot.itemId === null && slot.prevId === null) continue;   // truly empty plank space
+      const x = sh.x + s * WALL_SHELF.slotStep;
+      const t = WALL_SHELF.crossfadeMs > 0
+        ? Math.min(1, (tMs - slot.fadeStart) / WALL_SHELF.crossfadeMs) : 1;
+      if (t >= 1) slot.prevId = null;                 // fade done — drop the outgoing icon
+
+      if (slot.prevId !== null) {                     // outgoing icon fades away underneath
+        const prevSpr = getSprite(slot.prevId);
+        if (prevSpr) {
+          ctx.globalAlpha = 1 - t;
+          ctx.drawImage(prevSpr, x, sh.y, WALL_SHELF.iconSize, WALL_SHELF.iconSize);
+          ctx.globalAlpha = 1;
+        }
+      }
+      if (slot.itemId !== null) {
+        ctx.save();
+        if (slot.itemId === starvedId) {              // gold breathe on the blocked good
+          ctx.shadowColor = WALL_SHELF.glow;
+          ctx.shadowBlur = 8 + 10 * pulse;
+        }
+        const spr = getSprite(slot.itemId);
+        if (spr) {
+          ctx.globalAlpha = t;
+          ctx.drawImage(spr, x, sh.y, WALL_SHELF.iconSize, WALL_SHELF.iconSize);
+          ctx.globalAlpha = 1;
+        }
+        ctx.restore();
+
+        // Stock bar: gold fill, red when dry — same readout as C-lite, one per DISPLAYED item.
+        const max = (ITEMS[slot.itemId]?.maxStock ?? 0) + sumEffect(state, 'maxStock');
+        const stock = state.items[slot.itemId]?.stock ?? 0;
+        const frac = max > 0 ? Math.min(1, stock / max) : 0;
+        const bx = x + (WALL_SHELF.iconSize - WALL_SHELF.barW) / 2;
+        const by = plankY + WALL_SHELF.plankBoxH + WALL_SHELF.barGapY;
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        ctx.fillRect(bx, by, WALL_SHELF.barW, WALL_SHELF.barH);
+        ctx.fillStyle = frac > 0 ? WALL_SHELF.barFill : WALL_SHELF.barEmpty;
+        ctx.fillRect(bx, by, Math.max(2, Math.round(WALL_SHELF.barW * frac)), WALL_SHELF.barH);
+      }
     }
-    ctx.globalAlpha = 1;
   }
   ctx.restore();
 }

@@ -4,30 +4,28 @@
 session before doing any work. Update it as decisions change. Kept self-contained so a fresh
 Claude or ChatGPT can parse it cold.*
 
-**Status:** **M1–M4 complete and pushed.** The core loop, `localStorage` save, full FIFO queue +
-reputation, all three rep-gated upgrades, and the M4 automation proof — **Bob hired for gold,
-auto-serving the front of the line on an interval through the manual serve path** — are live,
-browser-confirmed, and committed. M4 also shipped the **rep-neutral auto-wave** of unaffordable front
-customers (worker-gated, 2s grace). Post-M4 polish is in: **comedy v2** (148 lines: dismiss/leave
-expanded, Bob voice, genre-trope lines, gags seeded), the **no-repeat line picker**, and an **audit
-pass** (fixed a real save bug — reload used to clamp stock to the BASE cap, eating Extra-Shelf stock;
-fixed a wrong-registry spawn fallback; removed stray duplicate files). 61-assertion headless smoke
-test + `node --check` clean on every module.
-**M1–M6 MVP COMPLETE. Idle-progression roadmap Passes 1–3 + 3.5 SHIPPED (all committed through
-`14887fd`):** Regulars' Loyalty milestones, dual-track Fame + perks, Better Stock tier-2 licenses
-+ fame budgets, Shelf 2.0 (category tabs / collapsible panels / Restock All), spawn director,
-diegetic wall shelf (C-lite), mob idle animations (Batty flapping — `bat_idle.png` in). Suite:
-**211 assertions** incl. the module-import health section. NEXT AGREED CODE PASS: **Shelf
-decoration v2** (spec below). This handoff is the cold-boot source of truth for the next session.
-**M5 (offline earnings) is DONE (committed):** on return, a hired Bob's
-capped, stock-consuming sales are banked and shown in a "While you were away" modal (Option 2 —
-gold + rep, worker-only, 2h cap; the no-worker "drip" was decided AGAINST: Bob is hireable within
-minutes, so it had no window).
-**Next action:** commit M5 (browser-confirmed) + the portal micro-pass (built; drop
-`portal_glow.png` to see it), then `backroom_storage` or **M6 — Kongregate no-op bridge**.
-**Last updated:** M5 built (`src/offline.js` + `CONFIG.offline` + modal); 78-assertion suite
-passes. NOTE: the audit's stray-file `git rm` never ran and a mis-placed `src/test_m4.mjs` is
-tracked — cleanup commit queued (§12).
+**Status (current):** **M1–M6 MVP COMPLETE; idle-progression roadmap Passes 1–3 + 3.5 SHIPPED**,
+plus spawn director, mob idle animations (Batty flaps), and — this session — **Shelf decoration v2
+(SHIPPED, browser-confirmed):** the C-lite wall shelf replaced by two staggered SET-DRESSING planks
+showing a random rotating sample of the unlocked pool (45s alternating re-rolls, anti-repeat,
+300ms crossfade), slot squares and locked-teases removed, stock bars + starved-glow kept (the
+starved front-want force-swaps into shelf A slot 0), optional `wall_shelf.png` prop art **IN**
+(authored 486×37 **MEASURED**, drawn 244×24 — `plankBoxH` dial; set 18 for exact 2:1). Files
+changed: `src/render/scene.js` (v2 block) + `src/main.js` (one `loadSprite('wall_shelf')` line —
+the pass's one shipped bug: the prop-hook consumer landed without its registry line; graceful
+fallback masked it silently. Full write-up in `LESSONS.md`, new this session). Suite: Daniel's
+local **211 assertions** (`test_m4.mjs`, gitignored) + scratch probe `test_shelf_v2.mjs`
+(329 assertions: module-import health, `sampleShelf` exact behavior, rotation/starved/license
+smoke). New export: `sampleShelf` (pure, suite-facing).
+**NEXT, in order:** **(1) Housekeeping commit** — a fresh clone currently has NO test suite
+(`test_*.mjs` gitignored, no negation): rename the local suite to `test_suite.mjs`, COMMIT it, add
+`!test_suite.mjs` to `.gitignore` (negation AFTER the pattern), and add a new suite assertion that
+every literal `getSprite('…')` id in scene.js has a `loadSprite('…')` registration in main.js (the
+LESSONS.md guard). **(2) Mob react animation** (spec queued by name in "Next up"). **(3) Pass 4 —
+Bestiary + Gobbo** (roadmap resumes).
+**Workflow note: NO DevLog for Mob Mart** — Daniel opted out (2026-07-03). Skip the DevLog draft
+step at feature completion for this project.
+**Last updated:** 2026-07-03 — Shelf decoration v2 session.
 
 ---
 
@@ -329,12 +327,13 @@ anchoring keys off it. Author the backdrop with the seam at 462 (wall 0→462, f
 
 | Asset | Target size (authoring) | Animations | Filename(s) | Status |
 |---|---|---|---|---|
-| Slimey / Batty / Skele (customers) | 128×128/frame | idle 2–4 · shuffle 4–6 · react 3–4 (strips) | `slime.png` (static) or `slime_idle.png` etc.; same for `bat_`, `skeleton_` | **PLACEHOLDER RECTS** — drawn at 88px (`QUEUE.size`) |
+| Slimey / Batty / Skele (customers) | 128×128/frame | idle 2–4 · shuffle 4–6 · react 3–4 (strips) | `slime.png` (static) or `slime_idle.png` etc.; same for `bat_`, `skeleton_` | **IN** (static art for all three + `bat_idle.png` strip — inferred from the sprites-folder screenshot 2026-07-03); drawn at 88px (`QUEUE.size`), Slimey/Skele `spriteScale` 1.15 |
 | Bob (mimic merchant) | 128×128 or 160×160/frame | idle 6f · serve 6f (one-shot) | `mimic_merchant.png` (static fallback), `bob_idle.png`, `bob_serve.png` (6-frame strips) | **IN** — 240px on-screen (`BOB.height`), feet anchored to `COUNTER.baseY` − 50 |
 | Counter / desk | ~480px wide (author 2× ≈ 960 for crisp) | static | `counter.png` | **IN** — 480px (`COUNTER.width`), base at H*0.74 (~533) + contact shadow |
 | Battle door (ex-portal) | **160×160/frame**, 4 frames → **640×160 strip**; frame 0 CLOSED → 3 OPEN; **frame 0 must be pixel-identical across variants** | one-shot open/hold/close on paid serve; destination re-rolled per opening | `portal_glow.png` (base/void), `portal_glow_mountain/_forest/_dungeon.png` (destination variants — a new biome = one strip + one `DOOR_VARIANTS` entry), `portal.png` (static fallback) | **IN** — 320px on-screen (2×); bottom = `FLOOR_Y + 6` (art has 3px bottom padding ×2 scale) |
 | Shop backdrop | 1280×720, **seam at y=462** | optional torch flicker later | `shop_bg.png` | **IN (WIP)** — iterating |
-| Item icons (Club / Metal Helmet / HP Flask) | 64×64 | static | `club.png`, `metal_helmet.png`, `hp_flask.png` | **WIRED, art pending** — shelf cards show them at 32px (2:1; missing PNG hides itself) + canvas purchase float (32px, rises 46px, fades 900ms) |
+| Item icons (all six: Club / Metal Helmet / HP Flask / Iron Sword / Greater Flask / Knight Helm) | 64×64 | static | `club.png`, `metal_helmet.png`, `hp_flask.png`, `iron_sword.png`, `greater_flask.png`, `knight_helm.png` | **IN** (all six — inferred from the sprites-folder screenshot 2026-07-03) — shelf cards at 32px (2:1) + canvas purchase float (32px, rises 46px, fades 900ms) + wall-shelf slots |
+| Wall-shelf plank prop (Shelf v2) | authored **486×37 (MEASURED**; spec asked 488×48 — fine); drawn stretched to 244×24 (`plankBoxH` dial — set 18 for exact 2:1 of this art) | static | `wall_shelf.png` | **IN** — both planks reuse it; absent → code-drawn plank |
 | UI icons (gold, rep crown, scrap-reserved) | 32×32 | static | `icon_gold.png`, `icon_rep.png`, `icon_scrap.png` | **NOT YET USED** — HUD uses text glyphs |
 | Panel / button chrome | — | — | — | CSS-styled (DOM), few image assets needed |
 
@@ -377,8 +376,8 @@ mob-mart/
 │   ├── messages.js         <- logLine(): picks + fills a line     [voice]
 │   ├── utils.js            <- rng, clamp, number formatting       [M1]
 │   ├── save.js             <- localStorage load/save              [M2] (M4: workers:{id:{owned}} persist + guard)
-│   ├── offline.js          <- timestamp-delta offline earnings    [M5 — not yet created]
-│   ├── kongregate.js       <- isolated no-op bridge stub          [M6 — not yet created]
+│   ├── offline.js          <- timestamp-delta offline earnings    [M5 — IN]
+│   ├── kongregate.js       <- isolated no-op bridge stub          [M6 — IN]
 │   ├── data/
 │   │   ├── monsters.js     <- customer registry                   [M1]
 │   │   ├── items.js        <- item registry                       [M1]
@@ -413,6 +412,8 @@ persistence keys; default missing save fields on load. No secrets on the client.
 - **Ship folder** = the folder holding `index.html` + `src/` + `style.css` + `assets/`. No build step.
 - **Publish (primary): Kongregate** — manual upload via the Developer Portal. Bridge/loader at M6.
 - **itch.io: undecided** (§13). If added, a `butler` push of the same ship folder.
+- **No DevLog for Mob Mart** — Daniel opted out (2026-07-03). Skip the dev-method's DevLog draft
+  step at feature completion for this project; the handoff + build history are the only records.
 - **Recover before diagnosing:** restore the last good build first, then debug.
 - **Pre-flight before "Released":** clean load, no console errors, links + mobile check, DEBUG/log
   flags off, `node --check` on changed JS.
@@ -441,17 +442,18 @@ not shipped) passes, including regressions for both audit fixes.
 ### Next up — the idle-progression roadmap (from MOB_MART_RESEARCH.md)
 
 **Agreed immediate order (next session starts here):**
-1. **Shelf decoration v2** — the next code pass (Daniel's evolution of C-lite; full spec in the
-   parked entry below/build history): wall shelves become pure SET DRESSING — multiple shelves, a
-   RANDOM ROTATING SAMPLE of the item pool (scales to a 100-item catalog), NO slot squares, KEEP
-   stock bars + starved-glow; the Shop panel remains the management UI. Daniel may author extra
-   shelf props; code-drawn planks remain the fallback.
+1. **Housekeeping commit (tiny):** the suite is invisible to a fresh clone — rename the local
+   211-assertion `test_m4.mjs` to **`test_suite.mjs`**, COMMIT it, add the **`!test_suite.mjs`**
+   negation to `.gitignore` (must come AFTER the `test_*.mjs` pattern), and grow it with the
+   LESSONS.md guard: assert every literal `getSprite('…')` id in `src/render/scene.js` has a
+   matching `loadSprite('…')` registration in `src/main.js`.
 2. **Mob react animation (TO-DO, queued by name):** a short one-shot when a mob is SERVED (happy
    hop/flap) — and optionally a sad variant on dismiss. Unlike the stateless idle loop this needs
    per-mob one-shot state + a trigger (the serve path already knows the customer; mirror the
    playBobServe pattern at mob level). Registry: `anim.react: { frames: 3-4, fps }` +
    `<id>_react.png` strips, optional per monster like idle. NOT built — spec only.
 3. **Pass 4 — Bestiary + Gobbo** (roadmap resumes).
+   (Shelf decoration v2 — formerly item 1 here — SHIPPED 2026-07-03; see build history.)
 
 The problem it solves: the game has ONE growth axis (gold -> 4 upgrades -> done at ~10.6k). The
 research's answer is a lattice of small bolt-on layers on existing hooks, staged so every pass
@@ -563,11 +565,8 @@ set. Add "bumpy" x2 spikes at 25/50-style breakpoints. Never add decay/backward 
   x 128 = 512x128, PNG-32, left-to-right, body high in frame — the existing ~15px bottom padding
   gives the hover). Slimey/Skele declare nothing (guarded absence, tested). Gobbo later = one field
   + one PNG.
-- **Shelf decoration v2 (PARKED by name — Daniel's evolution of C-lite):** the wall shelf becomes
-  pure SET DRESSING: multiple shelves, displaying a RANDOM ROTATING SAMPLE of the item pool (scales
-  to a someday-100-item catalog where showing all is impossible); REMOVE the semi-transparent slot
-  squares; KEEP the stock bars + starved-glow. The Shop tab/panel remains the management UI. Revisit
-  after Batty.
+- **Shelf decoration v2 — SHIPPED 2026-07-03** (was parked here; Daniel picked Option 2 —
+  rotation + crossfade + prop hook). Full detail in the build-history entry; `wall_shelf.png` IN.
 - **Skele mass (art):** measured verdict — he's the TALLEST mob but a 37px-wide stick (~2.8k px²
   vs Slimey ~6.3k). Fix is silhouette, not scale: bigger skull / wider stance / chunkier bones.
   spriteScale stopgap 1.3 available; Daniel parked it for now.
@@ -701,6 +700,27 @@ set. Add "bumpy" x2 spikes at 25/50-style breakpoints. Never add decay/backward 
   via `pickDoorVariant` (picks only among LOADED strips; anti-repeat re-draw like the log picker;
   none loaded -> base void strip). `DOOR_VARIANTS` list in scene.js; 3 loadSprite lines in main.js.
   Upgrade path noted: variants can later gain per-monster weights (destination-as-characterization).
+- **Shelf decoration v2 (this session, 2026-07-03; Daniel picked Option 2 of 3 — rotation +
+  crossfade + prop hook):** the C-lite shelf block in scene.js replaced wholesale. TWO staggered
+  planks (`WALL_SHELF.shelves`: A at 84/168, B at 128/244; plank width 244; lowest pixel y≈312,
+  16px clear of bubble airspace 328), 4 slots each, showing a random rotating sample of the
+  UNLOCKED pool: boot + any pool-signature change (license bought → the new good crossfades onto
+  the wall, no event wiring) dress both planks; every `rotateSec` 45s ONE shelf re-rolls
+  (alternating, log-picker-style one-re-draw anti-repeat); changed slots crossfade `crossfadeMs`
+  300. Slot squares REMOVED; locked-teases REMOVED (the greyed Shop card owns the tease); stock
+  bars + starved-glow KEPT — the front customer's dry, unlocked want force-swaps into shelf A
+  slot 0 (self-idempotent: fires only while not displayed). New pure export `sampleShelf(pool,
+  count, avoid, rand)`: Fisher-Yates, prefers ids not on the other shelf, tops up only when the
+  pool is too small, order is part of the sample (small catalogs still visibly rearrange). Prop
+  hook: `getSprite('wall_shelf')` fills the `plankBoxH` 24 band, else the code plank. **Shipped
+  bug + plug (LESSONS.md):** the prop hook landed WITHOUT its `loadSprite('wall_shelf')`
+  registration in main.js — sprites.js is a registry, and graceful fallback hid the miss silently;
+  fix = one registration line, sweep = all literal `getSprite` ids verified registered (dynamic
+  sites audited clean), guard = pairing assertion queued into the `test_suite.mjs` housekeeping
+  commit. Scratch probe `test_shelf_v2.mjs` (329 assertions: module-import health, sampler
+  exact-behavior incl. seeded determinism, rotation/starved/license smoke). Art: `wall_shelf.png`
+  authored 486×37 (**MEASURED**), drawn 244×24 — slight vertical stretch; `plankBoxH` 18 is the
+  one-dial exact-2:1 option if the chunkier board bothers on review.
 
 ---
 

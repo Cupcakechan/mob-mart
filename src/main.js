@@ -64,6 +64,7 @@ loadSprite('iron_sword',    'assets/sprites/iron_sword.png');    // tier-2 icons
 loadSprite('greater_flask', 'assets/sprites/greater_flask.png'); // floats skip + cards degrade to
 loadSprite('knight_helm',   'assets/sprites/knight_helm.png');   // text until the PNGs land)
 loadSprite('bat_idle', 'assets/sprites/bat_idle.png');            // Batty's 4-frame wing-flap strip (512x128)
+loadSprite('wall_shelf', 'assets/sprites/wall_shelf.png');        // wall-shelf plank prop (shelf v2; absent -> code-drawn plank)
 
 function resize() {
   const s = Math.min(window.innerWidth / CONFIG.stage.width, window.innerHeight / CONFIG.stage.height);
