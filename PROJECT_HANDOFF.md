@@ -13,15 +13,15 @@ starved front-want force-swaps into shelf A slot 0), optional `wall_shelf.png` p
 (authored 486×37 **MEASURED**, drawn 244×24 — `plankBoxH` dial; set 18 for exact 2:1). Files
 changed: `src/render/scene.js` (v2 block) + `src/main.js` (one `loadSprite('wall_shelf')` line —
 the pass's one shipped bug: the prop-hook consumer landed without its registry line; graceful
-fallback masked it silently. Full write-up in `LESSONS.md`, new this session). Suite: Daniel's
-local **211 assertions** (`test_m4.mjs`, gitignored) + scratch probe `test_shelf_v2.mjs`
-(329 assertions: module-import health, `sampleShelf` exact behavior, rotation/starved/license
-smoke). New export: `sampleShelf` (pure, suite-facing).
-**NEXT, in order:** **(1) Housekeeping commit** — a fresh clone currently has NO test suite
-(`test_*.mjs` gitignored, no negation): rename the local suite to `test_suite.mjs`, COMMIT it, add
-`!test_suite.mjs` to `.gitignore` (negation AFTER the pattern), and add a new suite assertion that
-every literal `getSprite('…')` id in scene.js has a `loadSprite('…')` registration in main.js (the
-LESSONS.md guard). **(2) Mob react animation** (spec queued by name in "Next up"). **(3) Pass 4 —
+fallback masked it silently. Full write-up in `LESSONS.md`, new this session). Suite: **COMMITTED
+as `test_suite.mjs` at 223 assertions** (housekeeping pass 2026-07-03: renamed from the formerly
+gitignored `test_m4.mjs`, `!test_suite.mjs` negation added, new section 0b sprite-registry pairing
+guard — literal `getSprite('…')` ids PLUS config-carried `propId:`/`spriteId:` ids across `src/`
+checked against `loadSprite` registrations in main.js; the config shape is the one the wall_shelf
+bug wore, negative-tested: removing the registration fails exactly one assertion naming the
+culprit file). A fresh clone can now verify itself: `node test_suite.mjs`. New export:
+`sampleShelf` (pure, suite-facing).
+**NEXT, in order:** **(1) Mob react animation** (spec queued by name in "Next up"). **(2) Pass 4 —
 Bestiary + Gobbo** (roadmap resumes).
 **Workflow note: NO DevLog for Mob Mart** — Daniel opted out (2026-07-03). Skip the DevLog draft
 step at feature completion for this project.
@@ -407,8 +407,9 @@ persistence keys; default missing save fields on load. No secrets on the client.
   Daniel owns commit/ship timing — Claude proposes commands, never commits. Inline git blocks omit the
   `cd` (Daniel runs git from the repo directory already). Repo: `github.com/Cupcakechan/mob-mart`.
 - **`.gitignore`** excludes `builds/`, `node_modules/`, `.vscode/` / `.idea/`, OS cruft.
-  `PROJECT_HANDOFF.md` + `COMEDY_BIBLE.md` + `MOB_MART_RESEARCH.md` are tracked but NOT shipped. Scratch tests (e.g.
-  `test_m4.mjs`) are dev-only — not shipped.
+  `PROJECT_HANDOFF.md` + `COMEDY_BIBLE.md` + `MOB_MART_RESEARCH.md` are tracked but NOT shipped. Scratch tests
+  (`test_*.mjs`) are dev-only — EXCEPT `test_suite.mjs`, which is COMMITTED (gitignore negation) so a
+  fresh clone can verify itself; still not shipped to the host.
 - **Ship folder** = the folder holding `index.html` + `src/` + `style.css` + `assets/`. No build step.
 - **Publish (primary): Kongregate** — manual upload via the Developer Portal. Bridge/loader at M6.
 - **itch.io: undecided** (§13). If added, a `butler` push of the same ship folder.
@@ -442,18 +443,14 @@ not shipped) passes, including regressions for both audit fixes.
 ### Next up — the idle-progression roadmap (from MOB_MART_RESEARCH.md)
 
 **Agreed immediate order (next session starts here):**
-1. **Housekeeping commit (tiny):** the suite is invisible to a fresh clone — rename the local
-   211-assertion `test_m4.mjs` to **`test_suite.mjs`**, COMMIT it, add the **`!test_suite.mjs`**
-   negation to `.gitignore` (must come AFTER the `test_*.mjs` pattern), and grow it with the
-   LESSONS.md guard: assert every literal `getSprite('…')` id in `src/render/scene.js` has a
-   matching `loadSprite('…')` registration in `src/main.js`.
-2. **Mob react animation (TO-DO, queued by name):** a short one-shot when a mob is SERVED (happy
+1. **Mob react animation (TO-DO, queued by name):** a short one-shot when a mob is SERVED (happy
    hop/flap) — and optionally a sad variant on dismiss. Unlike the stateless idle loop this needs
    per-mob one-shot state + a trigger (the serve path already knows the customer; mirror the
    playBobServe pattern at mob level). Registry: `anim.react: { frames: 3-4, fps }` +
    `<id>_react.png` strips, optional per monster like idle. NOT built — spec only.
-3. **Pass 4 — Bestiary + Gobbo** (roadmap resumes).
-   (Shelf decoration v2 — formerly item 1 here — SHIPPED 2026-07-03; see build history.)
+2. **Pass 4 — Bestiary + Gobbo** (roadmap resumes).
+   (Shelf decoration v2 and the suite housekeeping commit — formerly items here — SHIPPED
+   2026-07-03; see build history and the status header.)
 
 The problem it solves: the game has ONE growth axis (gold -> 4 upgrades -> done at ~10.6k). The
 research's answer is a lattice of small bolt-on layers on existing hooks, staged so every pass
@@ -721,6 +718,17 @@ set. Add "bumpy" x2 spikes at 25/50-style breakpoints. Never add decay/backward 
   exact-behavior incl. seeded determinism, rotation/starved/license smoke). Art: `wall_shelf.png`
   authored 486×37 (**MEASURED**), drawn 244×24 — slight vertical stretch; `plankBoxH` 18 is the
   one-dial exact-2:1 option if the chunkier board bothers on review.
+- **Housekeeping: suite committed (2026-07-03, same session):** `test_m4.mjs` (211) renamed to
+  **`test_suite.mjs`**, COMMITTED via `!test_suite.mjs` gitignore negation (after the `test_*.mjs`
+  pattern; verified with `git check-ignore` — suite tracked, scratch probes still ignored). Grown
+  to **223 assertions** with new **section 0b — sprite registry pairing** (the LESSONS.md guard,
+  broadened beyond the original spec): scans ALL of `src/` for literal `getSprite('…')` ids AND
+  config-carried `propId:`/`spriteId:` ids, asserts each has a `loadSprite` registration in
+  main.js. The config shape is the one the wall_shelf bug actually wore — a literals-only check
+  would have missed it. Negative-tested: registration removed → exactly 1 failure naming id +
+  culprit file; restored → 223 green. Fresh clones self-verify with `node test_suite.mjs`.
+  Template ids (`` `${monsterId}_idle` ``) remain statically uncheckable — covered by the
+  anim-contract assertions. Daniel's local `test_m4.mjs` deleted post-confirmation (one suite).
 
 ---
 

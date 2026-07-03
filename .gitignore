@@ -19,4 +19,7 @@ desktop.ini
 *.log
 
 # --- Scratch / dev-only test harnesses (run locally, never shipped or committed) ---
+# Exception: test_suite.mjs IS committed — the one suite a fresh clone can run (negation must
+# come AFTER the pattern or git ignores it).
 test_*.mjs
+!test_suite.mjs
