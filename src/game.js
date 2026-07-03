@@ -351,7 +351,10 @@ export function update(state, dt) {
       state.queue.push(spawnCustomer(state));
       state.uiDirty = true;
     }
-    state.spawnTimer = CONFIG.queue.spawnIntervalSec;
+    // Spawn director: the NEXT interval depends on how the line looks now (post-spawn length),
+    // clamped to the table's last entry. Empty -> hurry, deep -> relax; see CONFIG.queue.
+    const table = CONFIG.queue.spawnIntervalByQueue ?? [2.6];
+    state.spawnTimer = table[Math.min(state.queue.length, table.length - 1)];
   }
 
   if (state.queue.length) {

@@ -30,7 +30,12 @@ export const CONFIG = {
 
   queue: {
     maxLength: 4,              // most mobs that can wait in line at once
-    spawnIntervalSec: 2.6,     // a new mob joins the back this often, if there's room (sweep: was 3 — denser line so an upgraded shop isn't standing empty)
+    // SPAWN DIRECTOR (replaces the flat spawnIntervalSec): next-spawn interval indexed by CURRENT
+    // queue length (index clamps to the last entry). Self-balancing at every Bob speed — the flat
+    // rate's equilibrium was min(1, throughput-limited) customers: maxed Bob served faster than
+    // 2.6s arrivals, so the "spotlight" line was forever one mob. Empty shop -> hurry (1.2s);
+    // healthy line -> relax (3.6s). Keeps 2-3 mobs on stage without flooding the slow early game.
+    spawnIntervalByQueue: [1.2, 1.8, 2.6, 3.6],
     firstCustomerDelaySec: 0.4,// initial delay after opening the shop
     // Each mob waits this long (patience drains while in line, wherever they stand) then leaves.
     defaultPatienceSec: 24,    // sweep: was 20 — longer queues shouldn't bleed rep by themselves
