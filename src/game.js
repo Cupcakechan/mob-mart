@@ -16,14 +16,23 @@ import { logLine } from './messages.js';
 
 export function spawnCustomer(state) {
   const monster = MONSTERS[pick(MONSTER_IDS)];
+  // Wants are filtered to UNLOCKED items (Pass 3): a locked tier-2 item is invisible to customers,
+  // so adding registry rows can never create permanently-unservable wants. Without state (older
+  // tests), only license-free items count — the safe default.
+  const available = (monster.wantWeights ?? []).filter((w) =>
+    state ? isItemUnlocked(state, w.value) : !ITEMS[w.value]?.license);
   // Fallback must be an ITEM id (guards a monster shipped with missing/empty wantWeights). A monster
   // id here made the customer want a nonexistent item -> a permanent 'no-item' front blocker.
-  const wantedItemId = weightedPick(monster.wantWeights) ?? ITEM_ORDER[0];
+  const wantedItemId = weightedPick(available) ?? ITEM_ORDER[0];
   const [minB, maxB] = monster.budgetRange ?? [10, 20];
+  // Fame-scaled budgets: tiers ABOVE Beloved (index 3) attract wealthier mobs — the customer-side
+  // answer to tier-2 prices. x1.15 at Renowned, x1.30 at Legendary (CONFIG.fame dial).
+  const tierIdx = state ? reputationTier(fameOf(state)).index : 0;
+  const budgetMult = 1 + (CONFIG.fame?.budgetPerTierAboveBeloved ?? 0) * Math.max(0, tierIdx - 3);
   return {
     monsterId: monster.id,
     wantedItemId,
-    budget: randInt(minB, maxB),
+    budget: Math.round(randInt(minB, maxB) * budgetMult),
     patienceRemaining: CONFIG.queue.defaultPatienceSec + (state ? sumPerkEffect(state, 'patience') : 0),  // Warm Welcome
     brokeWait: 0,               // seconds spent unaffordable at the front; drives the worker auto-wave
     frontWait: 0,               // seconds spent AT the front; gates the worker greet delay (feel fix)
@@ -124,6 +133,31 @@ export function effectiveMaxStock(state, itemId) {
   return base + sumEffect(state, 'maxStock');
 }
 
+// --- Supplier licenses (Pass 3). A tier-2 item exists on the shelf but is INERT until its
+// one-time gold license is bought: customers never want it, it can't be restocked, and the
+// offline sim skips it. License-free items are always unlocked. -------------------------------
+export function isItemUnlocked(state, itemId) {
+  const item = ITEMS[itemId];
+  if (!item) return false;
+  if (!item.license) return true;                     // base items need no license
+  return state?.licenses?.[itemId] === true;
+}
+
+export function canBuyLicense(state, itemId) {
+  const lic = ITEMS[itemId]?.license;
+  if (!lic || isItemUnlocked(state, itemId)) return false;
+  if (reputationTier(fameOf(state)).index < (lic.requiredTier ?? 0)) return false;
+  return state.gold >= lic.cost;
+}
+
+export function buyLicense(state, itemId) {
+  if (!canBuyLicense(state, itemId)) return false;
+  state.licenses[itemId] = true;
+  state.gold -= ITEMS[itemId].license.cost;           // one-time gold sink
+  state.uiDirty = true;
+  return true;
+}
+
 // Haggler's Charm perk: gold off every restock, floored at 1 so an item can never restock free
 // (the offline reserve margin math and the "always profitable" invariant both rely on cost >= 1).
 export function effectiveRestockCost(state, itemId) {
@@ -135,6 +169,7 @@ export function canRestock(state, itemId) {
   const item = ITEMS[itemId];
   const slot = state.items[itemId];
   if (!item || !slot) return false;
+  if (!isItemUnlocked(state, itemId)) return false;   // licensed goods only (Pass 3)
   return slot.stock < effectiveMaxStock(state, itemId) && state.gold >= effectiveRestockCost(state, itemId);
 }
 

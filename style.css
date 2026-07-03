@@ -295,3 +295,21 @@ body{
 .panel-subtitle { color: #ffcf4a; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; margin: 12px 0 6px; }
 .panel-subtitle .subtitle-hint { color: #b6abc9; font-size: 11px; text-transform: none; letter-spacing: 0; margin-left: 6px; }
 .perk-cost { color: #cfa8ff; }   /* rep-purple, distinct from gold costs */
+
+/* --- Better Stock (Pass 3): six-item shelf grid, locked tier-2 cards, license buttons, and the
+   restyled Sold line (parked rider). The shelf panel scrolls like Upgrades if it overflows —
+   the actor band below stays protected. -------------------------------------------------------- */
+.items-panel { max-height: 300px; overflow-y: auto; }
+#item-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.item-card.locked { opacity: 0.75; filter: saturate(0.55); }
+.item-card.locked .item-price, .item-card.locked .item-stock { visibility: hidden; } /* price/stock meaningless while locked */
+.license-btn {
+  background: #3b2a55; color: #ffcf4a; border: 1px solid #ffcf4a;
+  border-radius: 8px; padding: 6px 8px; font-weight: 800; font-size: 12px; cursor: pointer; width: 100%;
+}
+.license-btn:disabled { color: #8f86a3; border-color: #5a4a75; cursor: default; }
+.license-btn.hidden, .restock-btn.hidden { display: none; }
+
+/* Sold line restyle: gold count pops, the rest stays quiet, never wraps. */
+.item-sold { font-size: 11px; color: #8f86a3; margin-top: 2px; white-space: nowrap; }
+.item-sold b { color: #ffcf4a; font-weight: 800; }

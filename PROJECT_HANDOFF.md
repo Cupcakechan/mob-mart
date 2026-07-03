@@ -471,10 +471,27 @@ leaves 2–3 affordable-soon wants visible. One system per pass, in this order:
   gates at wallet-0, migration, spend math + curve 200/320/512, maxLevel stop, all three consumers
   incl. same-tick patience decay, clamps, offline lifetime banking). All costs/thresholds are dials,
   provisional pending feel.
-- **Pass 3 — Item-tier cascade ("Better Stock", LOW–MED, both).** Higher-tier goods as registry
-  rows (Club -> Iron Sword -> …), gated by rep tiers/milestones; optional per-monster preferences.
-  ALSO: raise the 2h offline cap here (Pecorella calls Egg Inc's 2h cap a churn mistake he quit
-  over) — cheap config change; 8–12h or scale it with Backroom level.
+- **Pass 3 — Better Stock — BUILT (commit pending).** THREE tier-2 registry rows: **Iron Sword**
+  (26/13, eff 10, license 800g @ Renowned), **Greater Flask** (27/13, eff 8, license 800g @
+  Renowned), **Knight Helm** (30/15, eff 9, license 1200g @ Legendary). Items carry a `license:
+  { cost, requiredTier }` field; `state.licenses` booleans (persisted; merge is STRICT ===true —
+  tampered truthy strings unlock nothing). Until licensed an item is INERT everywhere: spawn wants
+  filter to unlocked items (locked rows can't create unservable wants), canRestock false, offline
+  reserve conjures nothing. Locked shelf cards grey out and sell their LICENSE (gold button;
+  "Reach <Tier>" below the gate). **Fame budgets:** rolls x(1 + 0.15 x tiers above Beloved) —
+  Renowned x1.15 / Legendary x1.30 (`CONFIG.fame.budgetPerTierAboveBeloved`), the customer-side
+  answer to tier-2 prices; occasional can't-afford window-shoppers are handled by the existing
+  auto-wave. **Regression guard:** the "everything" milestone tier keys off BASE (license-free)
+  items only — new rows at 0 sales can't drop an earned global tier, and the ladder can't stall
+  behind an unbought license. **Riders shipped:** offline capHours 2 -> **12** (research churn
+  warning); "Sold N" card line restyled (gold count, no-wrap). Shelf = 3-col grid, scrolls within
+  max-height 300 (actor band protected). Want-weights: tier-2 added modestly per monster (base
+  stays the volume business). Icons pending: `iron_sword.png`, `greater_flask.png`,
+  `knight_helm.png` (64x64 — cards degrade to text, floats skip). Suite at **185** (12+ new:
+  license gates/one-time, 400-spawn locked-want filter, registry-driven Legendary budget bounds,
+  base-only everything tier, offline reserve gating, tier-2 serve + own ladder, strict-boolean
+  saves; cap test moved to 12h). A hand-typed test range map failed once (Batty is [12,22]) —
+  bounds now read the live registry.
 - **Pass 4 — Bestiary + new monsters ("Field Guide" + Gobbo/rat, MED, both).** Fill the stubbed
   tab: per-monster served counts unlock new comedy lines, per-monster bonuses, completion %.
   Ship Gobbo (+ rat) alongside — new monsters multiply milestones + bestiary at near-zero marginal

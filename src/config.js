@@ -50,12 +50,20 @@ export const CONFIG = {
 
   offline: {
     // M5 "While you were away": a hired serve-worker keeps selling (capped, stock-consuming).
-    capHours: 2,               // <-- BASE cap: max unattended hours that pay out. Kept stingy on
-                               //     purpose — the backroom_storage upgrade adds +2h/level on top
-                               //     (effective cap = capHours + sumEffect 'offlineCap', see offline.js).
+    capHours: 12,              // <-- BASE cap (Pass 3: raised from 2h — the research flags short
+                               //     caps as a churn driver; 12h covers a work day + evening).
+                               //     Stock still binds long before time; the cap is a safety rail.
     minAwaySec: 60,            // modal only shows after this much time away (quick reloads stay silent)
     efficiency: 1.0,           // multiplier on offline sale count (the classic "offline earns at X%"
                                // dial). 1.0 = full rate; lower it if offline ever outshines active play.
+  },
+
+  fame: {
+    // Fame-scaled customer budgets (Pass 3): famous shops attract wealthier mobs. Budget rolls are
+    // multiplied by 1 + perTierAboveBeloved x (tier index - 3), for tiers ABOVE Beloved (index 3).
+    // At Renowned x1.15, Legendary x1.30 — tuned so tier-2 prices (26–30) are reachable on good
+    // rolls without making base items trivial. THE dial if tier-2 sales feel too rare/common.
+    budgetPerTierAboveBeloved: 0.15,
   },
 
   workers: {

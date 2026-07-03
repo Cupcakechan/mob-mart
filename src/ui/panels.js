@@ -12,9 +12,12 @@ import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost } from '../data/wo
 import {
   serveBlockReason, canRestock, effectiveMaxStock, canBuyUpgrade, isUpgradeUnlocked,
   canHireWorker, effectiveWorkerInterval, isPerkUnlocked, canBuyPerk, effectiveRestockCost,
+  isItemUnlocked, canBuyLicense, fameOf,
 } from '../game.js';
+import { reputationTier } from '../reputation.js';
+const reputationTierIndex = (state) => reputationTier(fameOf(state)).index;
 
-let handlers = { onServe: () => {}, onDismiss: () => {}, onRestock: () => {}, onBuyUpgrade: () => {}, onBuyPerk: () => {}, onHireWorker: () => {} };
+let handlers = { onServe: () => {}, onDismiss: () => {}, onRestock: () => {}, onBuyUpgrade: () => {}, onBuyPerk: () => {}, onBuyLicense: () => {}, onHireWorker: () => {} };
 
 export function initPanels(root, h) {
   handlers = h;
@@ -64,10 +67,13 @@ export function initPanels(root, h) {
         <div class="item-name">${it.displayName}</div>
         <div class="item-price">&#9670; ${it.basePrice}</div>
         <div class="item-stock">Stock: <span id="stock-${id}">0</span>/<span id="max-${id}">${it.maxStock}</span></div>
-        <div class="item-sold">Sold <span id="sold-${id}">0</span><span id="next-${id}"></span></div>
+        <div class="item-sold"><b id="sold-${id}">0</b> sold<span id="next-${id}"></span></div>
         <button class="restock-btn" data-item="${id}">Restock &#9670;<span id="rcost-${id}">${it.restockCost}</span></button>
+        <button class="license-btn hidden" data-item="${id}"></button>
       </div>`;
   }).join('');
+  root.querySelectorAll('.license-btn').forEach((btn) =>
+    btn.addEventListener('click', () => handlers.onBuyLicense(btn.dataset.item)));
   root.querySelectorAll('.restock-btn').forEach((btn) =>
     btn.addEventListener('click', () => handlers.onRestock(btn.dataset.item)));
 
@@ -169,10 +175,28 @@ export function renderPanels(state) {
     const nextEl = document.getElementById(`next-${id}`);
     if (nextEl) {
       const nb = nextBreakpoint(sold, ITEM_BREAKPOINTS);
-      nextEl.textContent = nb !== null ? ` · next bonus: ${nb}` : ' · maxed!';
+      nextEl.textContent = nb !== null ? ` · next ${nb}` : ' · maxed';
     }
     const rcostEl = document.getElementById(`rcost-${id}`);
     if (rcostEl) rcostEl.textContent = effectiveRestockCost(state, id);   // Haggler's Charm live
+    // Supplier licenses: a locked card sells its LICENSE instead of restocks — the visible want.
+    const card = document.querySelector(`.item-card[data-item="${id}"]`);
+    const restockBtn = card?.querySelector('.restock-btn');
+    const licenseBtn = card?.querySelector('.license-btn');
+    const lic = ITEMS[id].license;
+    if (lic && restockBtn && licenseBtn) {
+      const unlocked = isItemUnlocked(state, id);
+      card.classList.toggle('locked', !unlocked);
+      restockBtn.classList.toggle('hidden', !unlocked);
+      licenseBtn.classList.toggle('hidden', unlocked);
+      if (!unlocked) {
+        const tierIdx = lic.requiredTier ?? 0;
+        const tierLabel = CONFIG.reputation.tiers[tierIdx]?.label ?? '???';
+        const tierReached = reputationTierIndex(state) >= tierIdx;
+        licenseBtn.textContent = tierReached ? `License ◆${lic.cost}` : `Reach ${tierLabel}`;
+        licenseBtn.disabled = !canBuyLicense(state, id);
+      }
+    }
   }
   document.querySelectorAll('.restock-btn').forEach((btn) => {
     btn.disabled = !canRestock(state, btn.dataset.item);

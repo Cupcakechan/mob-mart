@@ -8,7 +8,7 @@
 //
 // All numbers here are dials. Magnitudes at full ladder: items 1 + 7x0.08 = x1.56 each,
 // monsters 1 + 5x0.10 = x1.50 rep, everything 1.25^3 ~= x1.95 global -> ~x3 gold deep-endgame.
-import { ITEM_ORDER } from './items.js';
+import { ITEMS, ITEM_ORDER } from './items.js';
 
 export const ITEM_BREAKPOINTS = [10, 25, 50, 100, 250, 500, 1000];   // lifetime SALES of one item
 export const ITEM_GOLD_PER_BREAKPOINT = 0.08;    // +8% gold on that item per breakpoint crossed
@@ -34,9 +34,13 @@ export function monsterRepMult(state, monsterId) {
   return 1 + MONSTER_REP_PER_BREAKPOINT * crossedCount(monsterCount(state, monsterId), MONSTER_BREAKPOINTS);
 }
 
-// The "everything" tier is driven by the LAGGARD: the minimum lifetime count across all items.
+// The "everything" tier is driven by the LAGGARD — but only across the BASE (license-free) items.
+// Two reasons: adding tier-2 registry rows must never REGRESS an earned global tier (three new
+// items at 0 sales would drop the laggard to 0), and a ladder stalled behind an unbought license
+// would be a dead want. Tier-2 items still get their own per-item ladders.
+const BASE_ITEMS = ITEM_ORDER.filter((id) => !ITEMS[id]?.license);
 export function everythingTier(state) {
-  const min = Math.min(...ITEM_ORDER.map((id) => itemCount(state, id)));
+  const min = Math.min(...BASE_ITEMS.map((id) => itemCount(state, id)));
   return crossedCount(min, EVERYTHING_TIERS);
 }
 

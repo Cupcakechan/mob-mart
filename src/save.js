@@ -38,6 +38,13 @@ export function mergeSave(fresh, data) {
       fresh.perks[id] = Math.min(max, Math.max(0, Math.floor(numOr(data.perks[id], 0))));
     }
   }
+  // Licenses: strict-boolean coercion over CURRENT license-bearing items (a truthy string in a
+  // tampered save must not unlock anything).
+  if (data.licenses && typeof data.licenses === 'object') {
+    for (const id of Object.keys(fresh.licenses)) {
+      fresh.licenses[id] = data.licenses[id] === true;
+    }
+  }
   // Upgrades merge FIRST: the item-stock clamp below needs the restored Extra Shelf level to compute
   // the effective cap. (Clamping to the BASE cap here used to eat any stock bought above it on every
   // reload — silently refunding nothing.)
@@ -84,6 +91,7 @@ export function serializeSave(state) {
     reputation: state.reputation,
     lifetimeRep: state.lifetimeRep ?? state.reputation,
     perks: { ...(state.perks ?? {}) },
+    licenses: { ...(state.licenses ?? {}) },
     items,
     upgrades: { ...state.upgrades },
     workers,

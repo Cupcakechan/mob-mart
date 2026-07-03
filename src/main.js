@@ -1,7 +1,7 @@
 // main.js — entry point: wires DOM, scale-to-fit, input, save/load, nav, and the rAF game loop.
 import { CONFIG } from './config.js';
 import { clamp } from './utils.js';
-import { update, serveCurrent, dismissCurrent, restockItem, buyUpgrade, buyPerk, hireWorker } from './game.js';
+import { update, serveCurrent, dismissCurrent, restockItem, buyUpgrade, buyPerk, buyLicense, hireWorker } from './game.js';
 import { loadState, saveState, clearSave } from './save.js';
 import { computeOffline, applyOffline, formatAway } from './offline.js';
 import { drawScene, playBobServe, playPortalOpen, spawnItemFloat } from './render/scene.js';
@@ -60,6 +60,9 @@ loadSprite('bob_serve', 'assets/sprites/bob_serve.png');  // 6-frame horizontal 
 loadSprite('club',         'assets/sprites/club.png');         // item icons (64x64) — used by the
 loadSprite('metal_helmet', 'assets/sprites/metal_helmet.png'); // canvas purchase float; the DOM
 loadSprite('hp_flask',     'assets/sprites/hp_flask.png');     // shelf cards load the same files
+loadSprite('iron_sword',    'assets/sprites/iron_sword.png');    // tier-2 icons (authoring pending;
+loadSprite('greater_flask', 'assets/sprites/greater_flask.png'); // floats skip + cards degrade to
+loadSprite('knight_helm',   'assets/sprites/knight_helm.png');   // text until the PNGs land)
 
 function resize() {
   const s = Math.min(window.innerWidth / CONFIG.stage.width, window.innerHeight / CONFIG.stage.height);
@@ -79,6 +82,7 @@ initPanels(document.getElementById('shop-ui'), {
   onRestock:    (id) => restockItem(state, id),
   onBuyUpgrade: (id) => buyUpgrade(state, id),
   onBuyPerk:    (id) => buyPerk(state, id),      // Fame perks: spends rep, never the lifetime track
+  onBuyLicense: (id) => buyLicense(state, id),   // supplier licenses: one-time gold, unlocks tier-2
   onHireWorker: (id) => hireWorker(state, id),
 });
 initNav(document.getElementById('nav'));           // bottom nav swaps the center panel

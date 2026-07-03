@@ -29,6 +29,11 @@ export function createInitialState() {
   const perks = {};
   for (const id of PERK_ORDER) perks[id] = 0;   // Fame perk levels (rep-costed purchases)
 
+  const licenses = {};
+  for (const id of ITEM_ORDER) {
+    if (ITEMS[id].license) licenses[id] = false;  // supplier licenses (tier-2 items start locked)
+  }
+
   return {
     screen: 'title',            // 'title' | 'shop'
     gold: CONFIG.economy.startingGold,
@@ -36,6 +41,7 @@ export function createInitialState() {
     lifetimeRep: CONFIG.economy.startingReputation, // never decreases; drives tiers — spending can't
                                                     // cost you a gate you earned (dual-track Fame)
     perks,                      // { id: level } — rep-costed Fame perks
+    licenses,                   // { itemId: bool } — one-time supplier licenses (tier-2 items)
     items,                      // { id: { stock } }
     upgrades,                   // { id: level }
     workers,                    // { id: { owned, timer } }  timer is transient (not persisted)

@@ -52,8 +52,11 @@ export function computeOffline(state, nowMs) {
   // deterministic and conservative. Per-unit rounding matches the live serve path exactly.
   const gMult = globalGoldMult(state);
   for (const id of ITEM_ORDER) {
-    stocks[id] = state.items[id]?.stock ?? 0;                                // live shelf units
-    reserves[id] = reservePerItem * effectiveMaxStock(state, id);            // Extra Shelf compounds in
+    // Unlicensed tier-2 items are inert offline too: live stock is 0 by construction, but the
+    // backroom RESERVE would otherwise conjure sellable units for goods Bob can't legally stock.
+    const unlocked = !ITEMS[id]?.license || state.licenses?.[id] === true;
+    stocks[id] = unlocked ? (state.items[id]?.stock ?? 0) : 0;               // live shelf units
+    reserves[id] = unlocked ? reservePerItem * effectiveMaxStock(state, id) : 0;  // Extra Shelf compounds in
     goldPer[id] = Math.round((ITEMS[id]?.basePrice ?? 0) * itemGoldMult(state, id) * gMult);
   }
   const consumed = {};                                                       // LIVE units only (applyOffline
