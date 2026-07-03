@@ -4,7 +4,7 @@ import { clamp } from './utils.js';
 import { update, serveCurrent, dismissCurrent, restockItem, restockAll, buyUpgrade, buyPerk, buyLicense, hireWorker } from './game.js';
 import { loadState, saveState, clearSave } from './save.js';
 import { computeOffline, applyOffline, formatAway } from './offline.js';
-import { drawScene, playBobServe, playPortalOpen, spawnItemFloat } from './render/scene.js';
+import { drawScene, playBobServe, playPortalOpen, spawnItemFloat, spawnCelebrant } from './render/scene.js';
 import { loadSprite } from './render/sprites.js';
 import { initHud, renderHud } from './ui/hud.js';
 import { initPanels, renderPanels } from './ui/panels.js';
@@ -65,6 +65,9 @@ loadSprite('greater_flask', 'assets/sprites/greater_flask.png'); // floats skip 
 loadSprite('knight_helm',   'assets/sprites/knight_helm.png');   // text until the PNGs land)
 loadSprite('bat_idle', 'assets/sprites/bat_idle.png');            // Batty's 4-frame wing-flap strip (512x128)
 loadSprite('wall_shelf', 'assets/sprites/wall_shelf.png');        // wall-shelf plank prop (shelf v2; absent -> code-drawn plank)
+loadSprite('slime_walk_happy', 'assets/sprites/slime_walk_happy.png');        // celebrate pass: happy-walk strips,
+loadSprite('bat_walk_happy', 'assets/sprites/bat_walk_happy.png');            //   4 equal frames each; absent ->
+loadSprite('skeleton_walk_happy', 'assets/sprites/skeleton_walk_happy.png');  //   idle strip / static march fallback
 
 function resize() {
   const s = Math.min(window.innerWidth / CONFIG.stage.width, window.innerHeight / CONFIG.stage.height);
@@ -78,7 +81,8 @@ initHud(document.getElementById('hud'));
 initPanels(document.getElementById('shop-ui'), {
   onServe:      () => {                                              // paid -> anims + item float
     const bought = state.queue[0]?.wantedItemId;                     // read BEFORE serve shifts the queue
-    if (serveCurrent(state)) { playBobServe(); playPortalOpen(); spawnItemFloat(bought); }
+    const buyer  = state.queue[0]?.monsterId;                        // ditto — the celebrant's identity
+    if (serveCurrent(state)) { playBobServe(); playPortalOpen(); spawnItemFloat(bought); spawnCelebrant(buyer); }
   },
   onDismiss:    () => dismissCurrent(state),
   onRestock:    (id) => restockItem(state, id),
@@ -119,11 +123,12 @@ function frame(now) {
   // served. Reliable BECAUSE of the greet gate — a worker may only serve a customer who's already
   // been at the front >= greetSec, so a mob promoted mid-tick can never be the one served this tick.
   const preFrontItem = state.queue[0]?.wantedItemId;
+  const preFrontMob  = state.queue[0]?.monsterId;   // same pre-tick capture, for the celebrant
   update(state, dt);
   // A worker auto-served this tick -> play Bob's serve one-shot, same as a manual serve. (Manual
   // serves fire the anim directly in onServe; this covers the auto path without duplicating it.)
   if (state.workerServed) {
-    playBobServe(); playPortalOpen(); spawnItemFloat(preFrontItem);
+    playBobServe(); playPortalOpen(); spawnItemFloat(preFrontItem); spawnCelebrant(preFrontMob);
     state.workerServed = false;
   }
   drawScene(ctx, state, now);

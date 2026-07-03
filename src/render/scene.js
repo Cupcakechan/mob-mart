@@ -123,6 +123,7 @@ function pickDoorVariant() {
 export function playPortalOpen() {
   doorVariant = pickDoorVariant();       // this customer's destination, rolled at the moment of sale
   portalAnim.startMs = -1;               // sentinel: stamp with the real tMs on the next draw
+  portalAnim.holdLatch = 0;              // fresh one-shot -> re-derive the hold (see drawPortal)
 }
 
 // --- Wall shelves v2 (set dressing): the wall shelf is now PURE DECORATION — two staggered
@@ -341,6 +342,7 @@ export function drawScene(ctx, state, tMs) {
   drawCounter(ctx);
   drawPortal(ctx, tMs);
   drawQueue(ctx, state, tMs);
+  drawCelebrants(ctx, tMs);     // served-mob ghosts: hop at the counter, then march into the door
   drawBubble(ctx, state, tMs);  // front customer's ask, pinned to the asker (hybrid stage 2)
   drawFloaters(ctx, tMs);       // purchase floats on top of everything — they're the payoff beat
 }
@@ -495,6 +497,151 @@ function drawMob(ctx, x, y, size, monsterId, tMs, isFront) {
   // tail points at the front mob, doing the same job with more information.)
 }
 
+// --- Serve celebration (react pass): a PAID serve spawns a render-side "celebrant" — a ghost of
+// the just-served mob (game state already shifted; zero economy impact) that does a happy double
+// hop at the counter, then marches right and walks THROUGH the battle door, fading at the
+// threshold while the door's hold phase stretches to cover its arrival (see drawPortal). The mob
+// buying, celebrating, and marching off to lose is the game's core joke made visible.
+// Art chain during the walk: <id>_walk_happy.png strip (4 equal-width frames, auto-sliced — same
+// convention as <id>_idle.png) -> idle strip if declared -> static <id>.png -> placeholder rect.
+// The hop phase is fully code-driven (squash-and-stretch), so every mob celebrates with NO art.
+const CELEBRATE = {
+  hopMs: 700,          // celebrate-in-place duration
+  hops: 2,             // full hops inside hopMs
+  hopHeight: 16,       // px of air per hop
+  squash: 0.12,        // squash-and-stretch amount at landing (0 = rigid)
+  nudgeX: 70,          // instant-ish sidestep toward the door, so the next-in-line's snap-forward
+  nudgeMs: 150,        //   into the front slot never overlaps the celebrant
+  walkSpeed: 650,      // px/s toward the door (~1.0s for the ~660px run)
+  walkAnim: { frames: 4, fps: 8 },  // shared happy-walk contract (per-monster override: walkHappy field)
+  sinkMs: 250,         // easing time from the QUEUE's foot plane down onto the COUNTER's contact
+                       //   plane at walk start — the march runs IN FRONT of the desk, so feet belong
+                       //   on the plane the desk stands on (COUNTER.baseY), not the queue's (~38px
+                       //   higher/behind, which read as walking on a ledge up the counter's face)
+  enterMs: 450,        // ENTER leg: time to turn at the doorway and walk up-screen INTO the portal
+                       //   (feet: counter plane -> door base on the wall plane), fading out en route
+  enterFadeFrom: 0.4,  // fraction of the enter leg that plays fully opaque before the fade starts —
+                       //   the turn should be SEEN; only the last stretch dissolves into the doorway
+  depthScale: 0.85,    // size multiplier at the end of the ENTER leg — the mob is genuinely receding
+                       //   to the wall plane there, so the shrink reads as depth (it was disabled
+                       //   while the march faded at floor level, where it read as just shrinking)
+  arriveBufferMs: 150, // door stays held this long past the last celebrant's fade-out
+  max: 4,              // rapid worker serves cap the parade; oldest is dropped
+};
+const celebrants = [];   // ephemeral, never saved: { monsterId, startMs (-1 until first draw) }
+
+export function spawnCelebrant(monsterId) {
+  if (!monsterId) return;                          // guard: serve raced an empty queue
+  if (celebrants.length >= CELEBRATE.max) celebrants.shift();
+  celebrants.push({ monsterId, startMs: -1 });     // -1 sentinel: stamped on the next draw (Bob's pattern)
+}
+
+// Walk geometry is fixed (front slot -> door center), so the walk duration is a constant.
+function celebrantWalkMs() {
+  const startX = QUEUE.frontX + CELEBRATE.nudgeX;
+  const doorX = PORTAL.centerX - QUEUE.size / 2;   // left edge such that mob CENTER meets door center
+  return ((doorX - startX) / CELEBRATE.walkSpeed) * 1000;
+}
+
+// The door needs to stay open until the last celebrant has finished ENTERING it (+ buffer).
+// Returns the latest still-needed "door open until" time, or -Infinity when nobody's en route.
+function celebrantsNeedDoorUntil() {
+  let until = -Infinity;
+  for (const c of celebrants) {
+    if (c.startMs === -1) continue;                // not yet stamped — covered on the next frame
+    until = Math.max(until, c.startMs + CELEBRATE.hopMs + celebrantWalkMs()
+                            + CELEBRATE.enterMs + CELEBRATE.arriveBufferMs);
+  }
+  return until;
+}
+
+function drawCelebrants(ctx, tMs) {
+  const C = CELEBRATE;
+  const size = QUEUE.size;
+  const startX = QUEUE.frontX + C.nudgeX;
+  const doorX = PORTAL.centerX - size / 2;
+  const walkMs = celebrantWalkMs();
+  const homeFeetY = QUEUE.y + size;                // the queue's floor plane
+
+  for (let i = celebrants.length - 1; i >= 0; i--) {
+    const c = celebrants[i];
+    if (c.startMs === -1) c.startMs = tMs;
+    const t = tMs - c.startMs;
+    if (t > C.hopMs + walkMs + C.enterMs) { celebrants.splice(i, 1); continue; }
+
+    // Phase math -> position, air, squash, depth, alpha. Three phases:
+    //   HOP   celebrate in place at the old front slot
+    //   WALK  march right, in front of the desk, feet on the counter's floor-contact plane
+    //   ENTER turn at the doorway and walk UP-SCREEN into the portal (counter plane -> door base),
+    //         shrinking for depth and fading out — the walk cycle keeps playing through the turn
+    let x, feetY = homeFeetY, scale = 1, alpha = 1, air = 0, land = 0, walkT = -1;
+    if (t < C.hopMs) {                             // HOP: sidestep in, then bounce in place
+      x = QUEUE.frontX + Math.min(1, t / C.nudgeMs) * C.nudgeX;
+      const arc = Math.abs(Math.sin((t / C.hopMs) * Math.PI * C.hops));
+      air = -C.hopHeight * arc;
+      land = 1 - arc;                              // 1 at touchdown -> full squash exactly on landing
+    } else if (t < C.hopMs + walkMs) {             // WALK: feet ease down onto the counter's contact
+      walkT = t - C.hopMs;                         // plane (tracks the COUNTER.baseY dial), then hold
+      const wf = walkT / walkMs;                   // it all the way to the doorway — no fade here
+      x = startX + (doorX - startX) * wf;
+      const sink = Math.min(1, walkT / C.sinkMs);
+      feetY = homeFeetY + (COUNTER.baseY - homeFeetY) * sink;
+    } else {                                       // ENTER: x holds at the door center; feet climb to
+      walkT = t - C.hopMs;                         // the door's base on the wall plane
+      const ef = (t - C.hopMs - walkMs) / C.enterMs;
+      x = doorX;
+      feetY = COUNTER.baseY + (PORTAL.baseY - COUNTER.baseY) * ef;
+      scale = 1 + (C.depthScale - 1) * ef;
+      alpha = ef < C.enterFadeFrom ? 1 : 1 - (ef - C.enterFadeFrom) / (1 - C.enterFadeFrom);
+    }
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    // Shadow first, ON THE GROUND — it squashes with the depth scale but never lifts with the hop
+    // (same grounding rule as drawMob: the shadow is what sells the air).
+    ctx.fillStyle = COL.shadow;
+    ctx.beginPath();
+    ctx.ellipse(x + size / 2, feetY - 4, size * 0.42 * scale, 10 * scale, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Sprite chain, squash-and-stretch applied about the feet anchor so it reads ground-planted.
+    const m = MONSTERS[c.monsterId];
+    const h = size * QUEUE.spriteScale * (m?.spriteScale ?? 1) * scale;
+    const sx = 1 + land * C.squash * 0.6;          // widen on landing...
+    const sy = 1 - land * C.squash;                // ...while flattening — classic squash
+    const cxA = x + size / 2, cyA = feetY;         // anchor: feet center
+    ctx.translate(cxA, cyA + air);
+    ctx.scale(sx, sy);
+    ctx.translate(-cxA, -cyA);
+
+    const wa = m?.walkHappy ?? C.walkAnim;
+    const walkStrip = walkT >= 0 ? getSprite(`${c.monsterId}_walk_happy`) : null;
+    const idleAnim = m?.anim;
+    const idleStrip = idleAnim ? getSprite(`${c.monsterId}_idle`) : null;
+    const strip = walkStrip ?? idleStrip;
+    const anim = walkStrip ? wa : idleAnim;
+    const spr = strip ?? getSprite(c.monsterId);
+    if (spr) {
+      if (strip) {
+        const clock = walkStrip ? walkT : t;       // walk strip steps from the walk's own t=0
+        const frame = Math.floor(clock / (1000 / anim.fps)) % anim.frames;
+        const fw = strip.naturalWidth / anim.frames;
+        const fh = strip.naturalHeight;
+        const w = h * (fw / fh);
+        ctx.drawImage(strip, frame * fw, 0, fw, fh, x + size / 2 - w / 2, feetY - h, w, h);
+      } else {
+        const w = h * (spr.naturalWidth / spr.naturalHeight);
+        ctx.drawImage(spr, x + size / 2 - w / 2, feetY - h, w, h);
+      }
+    } else {                                       // last resort: the same placeholder rect language
+      ctx.fillStyle = colorFor(c.monsterId);
+      ctx.fillRect(x, feetY - size, size, size);
+    }
+    ctx.restore();
+  }
+}
+
 function drawBob(ctx, tMs) {
   const cfg = BOB_ANIMS[bobAnim.name];
   let spr = getSprite(cfg.spriteId);
@@ -557,12 +704,20 @@ function drawPortal(ctx, tMs) {
       const t = tMs - portalAnim.startMs;
       const frameMs = 1000 / fps;
       const openDur = frames * frameMs;                          // 0 -> fully open
+      // The hold stretches while celebrants are marching: the door must not close in a mob's face.
+      // LATCHED (never shrinks within one one-shot): when the last celebrant despawns its
+      // contribution vanishes, and an unlatched hold would snap back to base mid-cycle — teleporting
+      // the close-phase math forward and slamming the door shut with no animation.
+      const needUntil = celebrantsNeedDoorUntil();               // absolute tMs, or -Infinity
+      portalAnim.holdLatch = Math.max(portalAnim.holdLatch ?? holdMs,
+                                      holdMs, needUntil - portalAnim.startMs - openDur);
+      const holdEff = portalAnim.holdLatch;
       if (t < openDur) {
         frame = Math.floor(t / frameMs);                         // opening: 0,1,2,3
-      } else if (t < openDur + holdMs) {
+      } else if (t < openDur + holdEff) {
         frame = frames - 1;                                      // held open: customer walks through
-      } else if (t < openDur * 2 + holdMs) {
-        frame = (frames - 1) - Math.floor((t - openDur - holdMs) / frameMs);  // closing: 3,2,1,0
+      } else if (t < openDur * 2 + holdEff) {
+        frame = (frames - 1) - Math.floor((t - openDur - holdEff) / frameMs);  // closing: 3,2,1,0
       } else {
         portalAnim.startMs = null;                               // one-shot done -> settle closed
       }

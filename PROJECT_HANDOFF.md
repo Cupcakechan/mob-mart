@@ -21,7 +21,27 @@ checked against `loadSprite` registrations in main.js; the config shape is the o
 bug wore, negative-tested: removing the registration fails exactly one assertion naming the
 culprit file). A fresh clone can now verify itself: `node test_suite.mjs`. New export:
 `sampleShelf` (pure, suite-facing).
-**NEXT, in order:** **(1) Mob react animation** (spec queued by name in "Next up"). **(2) Pass 4 —
+**ALSO SHIPPED 2026-07-03 (later the same day):** **(a) Suite-location fix** — the housekeeping
+commit had landed the suite at `src/test_suite.mjs` (inside the SHIP folder, and unrunnable there:
+its imports resolve from repo root); one `git mv` moved it to root. **(b) Serve-celebration pass**
+(react, happy-only — Daniel picked Option 2 of 3, then evolved it across three confirmed feel
+iterations): a paid serve spawns a render-side celebrant ghost (game state untouched — ZERO economy
+impact; `queue.shift()` unchanged) that runs THREE PHASES: **HOP** (700ms double-hop with
+squash-and-stretch at the old front slot, +70px sidestep so the next-in-line's snap never overlaps),
+**WALK** (~1.0s march right IN FRONT of the desk — feet ease onto the counter's floor-contact plane
+`COUNTER.baseY` over `sinkMs` 250; earlier planes read as "on the counter" / "on a ledge"), **ENTER**
+(450ms: x locks at door center, feet climb counter plane → `PORTAL.baseY`, shrink to `depthScale`
+0.85 — legitimate here, the mob genuinely recedes — fading from 40% in via `enterFadeFrom`). The
+door's hold phase LATCHES open until the last celebrant finishes entering (+150ms buffer; latched so
+a despawn can't snap the close animation). All dials in the `CELEBRATE` block (scene.js). Triggers:
+`spawnCelebrant(monsterId)` called at BOTH serve sites in main.js (manual + worker, pre-shift
+capture). Art hooks registered: `<id>_walk_happy.png` strips ×3 (4 frames, 128×128/frame, RIGHTWARD-
+facing; fallback chain walk strip → idle strip → static → rect, so it plays TODAY with zero art).
+Scratch probe `test_react.mjs` (spawn guard, full three-phase frame sweep, overlapping serves vs the
+hold latch, cap spam). Suite unchanged at **223**.
+**NEXT, in order:** **(1) Pass B — Slimey/Skele idle wiring** (contract CONFIRMED by Daniel: all
+monsters share the 4-frame idle, Batty's convention — `anim` entries + `slime_idle`/`skeleton_idle`
+registrations + update the one suite assertion pinning "statics declare nothing"). **(2) Pass 4 —
 Bestiary + Gobbo** (roadmap resumes).
 **Workflow note: NO DevLog for Mob Mart** — Daniel opted out (2026-07-03). Skip the DevLog draft
 step at feature completion for this project.
@@ -334,6 +354,7 @@ anchoring keys off it. Author the backdrop with the seam at 462 (wall 0→462, f
 | Shop backdrop | 1280×720, **seam at y=462** | optional torch flicker later | `shop_bg.png` | **IN (WIP)** — iterating |
 | Item icons (all six: Club / Metal Helmet / HP Flask / Iron Sword / Greater Flask / Knight Helm) | 64×64 | static | `club.png`, `metal_helmet.png`, `hp_flask.png`, `iron_sword.png`, `greater_flask.png`, `knight_helm.png` | **IN** (all six — inferred from the sprites-folder screenshot 2026-07-03) — shelf cards at 32px (2:1) + canvas purchase float (32px, rises 46px, fades 900ms) + wall-shelf slots |
 | Wall-shelf plank prop (Shelf v2) | authored **486×37 (MEASURED**; spec asked 488×48 — fine); drawn stretched to 244×24 (`plankBoxH` dial — set 18 for exact 2:1 of this art) | static | `wall_shelf.png` | **IN** — both planks reuse it; absent → code-drawn plank |
+| Happy-walk strips (celebration pass) | 4 equal frames, 128×128/frame (512×128 strip), **RIGHTWARD-facing** (the march is left→right; code doesn't mirror) | 4-frame loop @ 8fps (`CELEBRATE.walkAnim`; per-monster `walkHappy` override, guarded) | `slime_walk_happy.png`, `bat_walk_happy.png`, `skeleton_walk_happy.png` | **WIRED, art pending** — registered in main.js; fallback chain: walk strip → idle strip → static → rect |
 | UI icons (gold, rep crown, scrap-reserved) | 32×32 | static | `icon_gold.png`, `icon_rep.png`, `icon_scrap.png` | **NOT YET USED** — HUD uses text glyphs |
 | Panel / button chrome | — | — | — | CSS-styled (DOM), few image assets needed |
 
@@ -443,14 +464,14 @@ not shipped) passes, including regressions for both audit fixes.
 ### Next up — the idle-progression roadmap (from MOB_MART_RESEARCH.md)
 
 **Agreed immediate order (next session starts here):**
-1. **Mob react animation (TO-DO, queued by name):** a short one-shot when a mob is SERVED (happy
-   hop/flap) — and optionally a sad variant on dismiss. Unlike the stateless idle loop this needs
-   per-mob one-shot state + a trigger (the serve path already knows the customer; mirror the
-   playBobServe pattern at mob level). Registry: `anim.react: { frames: 3-4, fps }` +
-   `<id>_react.png` strips, optional per monster like idle. NOT built — spec only.
+1. **Pass B — Slimey/Skele idle animation wiring:** contract CONFIRMED — all monsters share the
+   4-frame idle (Batty's convention: 128×128/frame, 512×128 strip, 6fps). Wiring = `anim` entries
+   for slime + skeleton in `src/data/monsters.js`, `loadSprite` registrations for `slime_idle` /
+   `skeleton_idle` (registered BEFORE the art exists — the wall_shelf lesson; missing PNG degrades
+   to static), and updating the one suite assertion that pins "statics declare nothing."
 2. **Pass 4 — Bestiary + Gobbo** (roadmap resumes).
-   (Shelf decoration v2 and the suite housekeeping commit — formerly items here — SHIPPED
-   2026-07-03; see build history and the status header.)
+   (Shelf decoration v2, the suite housekeeping + location fix, and the serve-celebration pass —
+   formerly items here — all SHIPPED 2026-07-03; see build history and the status header.)
 
 The problem it solves: the game has ONE growth axis (gold -> 4 upgrades -> done at ~10.6k). The
 research's answer is a lattice of small bolt-on layers on existing hooks, staged so every pass
@@ -729,6 +750,31 @@ set. Add "bumpy" x2 spikes at 25/50-style breakpoints. Never add decay/backward 
   culprit file; restored → 223 green. Fresh clones self-verify with `node test_suite.mjs`.
   Template ids (`` `${monsterId}_idle` ``) remain statically uncheckable — covered by the
   anim-contract assertions. Daniel's local `test_m4.mjs` deleted post-confirmation (one suite).
+- **Suite-location fix (2026-07-03):** the housekeeping commit had placed the suite at
+  `src/test_suite.mjs` — inside the SHIP folder, and unrunnable there (its imports and section-0
+  walk resolve from repo root). One `git mv src/test_suite.mjs test_suite.mjs` commit moved it home;
+  223 green from root confirmed.
+- **Serve-celebration pass (2026-07-03; Daniel picked Option 2 of 3 — hop + march-through-the-door;
+  refined across three confirmed feel iterations):** a paid serve spawns a render-side celebrant
+  ghost — game state untouched, `queue.shift()` unchanged, ZERO economy impact; dismissals spawn
+  nothing (happy-only per Daniel). Three phases, all dials in `CELEBRATE` (scene.js): **HOP**
+  (`hopMs` 700, 2 hops, 16px air, squash-and-stretch on landing; +`nudgeX` 70 sidestep over
+  `nudgeMs` 150 so the next-in-line's index-snap never overlaps), **WALK** (`walkSpeed` 650 px/s,
+  ~1.0s; feet ease onto the counter's floor-contact plane over `sinkMs` 250 — iterations: wall-plane
+  drift read as "walking ON the counter", queue-plane read as "on a ledge up its face"; the march
+  belongs on `COUNTER.baseY`, derived not copied, so it tracks the counter dial), **ENTER**
+  (`enterMs` 450: x locks at door center, feet climb to `PORTAL.baseY`, shrink to `depthScale` 0.85 —
+  re-enabled here where the mob genuinely recedes — fade from `enterFadeFrom` 0.4 so the turn is
+  SEEN before the dissolve). Door hold LATCHES (`portalAnim.holdLatch`, reset per one-shot in
+  `playPortalOpen`) until the last celebrant finishes entering + `arriveBufferMs` 150 — latched
+  because an unlatched hold snaps the close animation when a celebrant despawns. Cap `max` 4,
+  oldest dropped. Triggers: `spawnCelebrant(monsterId)` at both serve sites in main.js (pre-shift
+  capture, mirroring `preFrontItem`); 3 `loadSprite` registrations for the walk strips (registered
+  before art exists — the wall_shelf lesson; template ids aren't statically checkable by the
+  pairing guard, registration is the runtime half). Art fallback chain: `<id>_walk_happy.png`
+  strip → idle strip → static → placeholder rect — the full arc plays TODAY with zero art (code
+  hop + static march). Scratch probe `test_react.mjs`: spawn guard, three-phase frame sweep,
+  overlapping serves vs the hold latch, cap spam, late idle. Suite unchanged at 223.
 
 ---
 
