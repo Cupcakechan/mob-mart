@@ -1,7 +1,7 @@
 // main.js — entry point: wires DOM, scale-to-fit, input, save/load, nav, and the rAF game loop.
 import { CONFIG } from './config.js';
 import { clamp } from './utils.js';
-import { update, serveCurrent, dismissCurrent, restockItem, buyUpgrade, buyPerk, buyLicense, hireWorker } from './game.js';
+import { update, serveCurrent, dismissCurrent, restockItem, restockAll, buyUpgrade, buyPerk, buyLicense, hireWorker } from './game.js';
 import { loadState, saveState, clearSave } from './save.js';
 import { computeOffline, applyOffline, formatAway } from './offline.js';
 import { drawScene, playBobServe, playPortalOpen, spawnItemFloat } from './render/scene.js';
@@ -80,6 +80,8 @@ initPanels(document.getElementById('shop-ui'), {
   },
   onDismiss:    () => dismissCurrent(state),
   onRestock:    (id) => restockItem(state, id),
+  onRestockAll: () => restockAll(state),
+  onDirty:      () => { state.uiDirty = true; },   // shelf category switch -> re-render next frame
   onBuyUpgrade: (id) => buyUpgrade(state, id),
   onBuyPerk:    (id) => buyPerk(state, id),      // Fame perks: spends rep, never the lifetime track
   onBuyLicense: (id) => buyLicense(state, id),   // supplier licenses: one-time gold, unlocks tier-2

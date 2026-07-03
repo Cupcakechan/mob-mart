@@ -492,6 +492,20 @@ leaves 2–3 affordable-soon wants visible. One system per pass, in this order:
   base-only everything tier, offline reserve gating, tier-2 serve + own ladder, strict-boolean
   saves; cap test moved to 12h). A hand-typed test range map failed once (Batty is [12,22]) —
   bounds now read the live registry.
+- **Shelf 2.0 (Pass 3.5, BUILT — commit pending; Daniel picked Option 3):** the 6-item shelf broke
+  the SPEECH BUBBLE's airspace (bubble top ~y328 worst case — now a documented layout budget beside
+  the actor band). Three pieces: (1) **category sub-tabs** (Weapons/Armor/Potions from the
+  registry's dormant `category` field) — one row per category, the shelf never stacks vertically
+  again; panel max-height 224 (bottom ~320, clear of the bubble); compact card CSS. (2) **Collapsible
+  center panels** — clicking the ACTIVE nav tab dismisses it; boot is COLLAPSED (the diorama is the
+  resting state); attention pulses summon the player back. (3) **Restock All** in the shelf header:
+  quote = full fill at effective costs (Haggler + licenses respected); short purse fills ROUND-ROBIN
+  one unit per item per pass (the offline sim's fairness loop); disabled only when no unit is
+  buyable. Attention now hops THREE levels: nav pulse (panel closed) -> category-tab pulse (wrong
+  tab) -> card pulse. New game API: restockAllCost/canRestockAll/restockAll; handlers onRestockAll
+  + onDirty. Suite at **203** (10 new: quote 47 exact + Haggler 29, full fill 6-for-47, round-robin
+  23-gold one-each, no-op on full, licensed joins/locked excluded, cap respect). Batty idle-strip
+  pass queued next by name.
 - **Pass 4 — Bestiary + new monsters ("Field Guide" + Gobbo/rat, MED, both).** Fill the stubbed
   tab: per-monster served counts unlock new comedy lines, per-monster bonuses, completion %.
   Ship Gobbo (+ rat) alongside — new monsters multiply milestones + bestiary at near-zero marginal

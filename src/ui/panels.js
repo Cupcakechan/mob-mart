@@ -12,12 +12,13 @@ import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost } from '../data/wo
 import {
   serveBlockReason, canRestock, effectiveMaxStock, canBuyUpgrade, isUpgradeUnlocked,
   canHireWorker, effectiveWorkerInterval, isPerkUnlocked, canBuyPerk, effectiveRestockCost,
-  isItemUnlocked, canBuyLicense, fameOf,
+  isItemUnlocked, canBuyLicense, fameOf, restockAllCost, canRestockAll,
 } from '../game.js';
 import { reputationTier } from '../reputation.js';
 const reputationTierIndex = (state) => reputationTier(fameOf(state)).index;
 
-let handlers = { onServe: () => {}, onDismiss: () => {}, onRestock: () => {}, onBuyUpgrade: () => {}, onBuyPerk: () => {}, onBuyLicense: () => {}, onHireWorker: () => {} };
+let handlers = { onServe: () => {}, onDismiss: () => {}, onRestock: () => {}, onRestockAll: () => {}, onBuyUpgrade: () => {}, onBuyPerk: () => {}, onBuyLicense: () => {}, onHireWorker: () => {}, onDirty: () => {} };
+let activeCategory = 'weapon';   // shelf sub-tab (not persisted; category comes from the item registry)
 
 export function initPanels(root, h) {
   handlers = h;
@@ -34,7 +35,15 @@ export function initPanels(root, h) {
     </section>
 
     <section id="items-panel" class="panel items-panel">
-      <h2 class="panel-title">Shelf</h2>
+      <div class="shelf-header">
+        <h2 class="panel-title">Shelf</h2>
+        <div class="shelf-tabs" id="shelf-tabs">
+          <button class="shelf-tab active" data-cat="weapon">Weapons</button>
+          <button class="shelf-tab" data-cat="armor">Armor</button>
+          <button class="shelf-tab" data-cat="consumable">Potions</button>
+        </div>
+        <button id="restock-all-btn" class="restock-all-btn">Restock All</button>
+      </div>
       <div id="item-cards" class="item-cards"></div>
     </section>
 
@@ -72,6 +81,16 @@ export function initPanels(root, h) {
         <button class="license-btn hidden" data-item="${id}"></button>
       </div>`;
   }).join('');
+  document.querySelectorAll('.shelf-tab').forEach((btn) =>
+    btn.addEventListener('click', () => {
+      activeCategory = btn.dataset.cat;
+      document.querySelectorAll('.shelf-tab').forEach((b) =>
+        b.classList.toggle('active', b.dataset.cat === activeCategory));
+      handlers.onDirty();                          // re-render so the card filter applies now
+    }));
+  document.getElementById('restock-all-btn')
+    .addEventListener('click', () => handlers.onRestockAll());
+
   root.querySelectorAll('.license-btn').forEach((btn) =>
     btn.addEventListener('click', () => handlers.onBuyLicense(btn.dataset.item)));
   root.querySelectorAll('.restock-btn').forEach((btn) =>
@@ -202,13 +221,31 @@ export function renderPanels(state) {
     btn.disabled = !canRestock(state, btn.dataset.item);
   });
 
+  // Category filter (Pass 3.5): only the active category's cards show — the shelf never stacks
+  // vertically again no matter how many items the registry grows.
+  document.querySelectorAll('.item-card').forEach((card) =>
+    card.classList.toggle('hidden', ITEMS[card.dataset.item]?.category !== activeCategory));
+
+  // Restock All: quote = full fill at effective costs; enabled while ANY unit is buyable.
+  const raBtn = document.getElementById('restock-all-btn');
+  if (raBtn) {
+    const quote = restockAllCost(state);
+    raBtn.textContent = quote > 0 ? `Restock All ◆${quote}` : 'Stocked';
+    raBtn.disabled = !canRestockAll(state);
+  }
+
   // Attention system: the FRONT customer's sale is blocked by empty stock -> pulse exactly that
   // shelf card (and, via setShopAttention, the Shop tab when the shelf isn't visible). Deliberately
   // front-only: it means "a sale is blocked RIGHT NOW", so the pulse stays rare and meaningful —
-  // a signal that's always on is a signal nobody sees.
+  // a signal that's always on is a signal nobody sees. With category tabs the signal hops levels:
+  // nav pulse (panel closed) -> category tab pulse (wrong tab open) -> card pulse (right tab open).
   const starvedId = (c && (state.items[c.wantedItemId]?.stock ?? 0) <= 0) ? c.wantedItemId : null;
+  const starvedCat = starvedId ? ITEMS[starvedId]?.category : null;
   document.querySelectorAll('.item-card').forEach((card) =>
     card.classList.toggle('attention', card.dataset.item === starvedId));
+  document.querySelectorAll('.shelf-tab').forEach((tab) =>
+    tab.classList.toggle('attention', starvedCat !== null && tab.dataset.cat === starvedCat
+      && activeCategory !== starvedCat));
   setShopAttention(starvedId !== null);
 
   // --- Fame perks: locked state (LIFETIME tier), level, rep cost, buyability ---

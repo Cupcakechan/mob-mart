@@ -313,3 +313,33 @@ body{
 /* Sold line restyle: gold count pops, the rest stays quiet, never wraps. */
 .item-sold { font-size: 11px; color: #8f86a3; margin-top: 2px; white-space: nowrap; }
 .item-sold b { color: #ffcf4a; font-weight: 800; }
+
+/* --- Shelf 2.0 (Pass 3.5): one-row header (title + category tabs + Restock All), compact cards,
+   collapsible center panels. Vertical budget: panel top y96, bottom must stay <= ~320 — the speech
+   bubble's airspace starts ~y328 worst case. One category row + header fits with ~20px to spare. */
+.items-panel { max-height: 224px; overflow: visible; }   /* replaces the 300px scroll cap */
+.shelf-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.shelf-header .panel-title { margin: 0; flex-shrink: 0; }
+.shelf-tabs { display: flex; gap: 4px; flex: 1; }
+.shelf-tab {
+  background: transparent; color: #b6abc9; border: 1px solid #4b3a63; border-radius: 8px;
+  padding: 4px 10px; font-weight: 800; font-size: 11px; text-transform: uppercase; cursor: pointer;
+}
+.shelf-tab.active { background: #ffcf4a; color: #241a33; border-color: #ffcf4a; }
+.shelf-tab.attention { animation: attn-nav 1.2s ease-in-out infinite; border-color: #ffcf4a; }
+.restock-all-btn {
+  background: #3b2a55; color: #ffcf4a; border: 1px solid #ffcf4a; border-radius: 8px;
+  padding: 5px 10px; font-weight: 800; font-size: 11px; cursor: pointer; flex-shrink: 0;
+}
+.restock-all-btn:disabled { color: #8f86a3; border-color: #5a4a75; cursor: default; }
+
+/* Compact cards: every vertical margin earns its place (icon 32 stays — clean 2:1 of the art). */
+.item-card { padding: 8px; }
+.item-card .item-icon { margin: 0 auto 2px; }
+.item-card .item-name { font-size: 13px; line-height: 1.15; }
+.item-card .item-price { font-size: 13px; line-height: 1.2; }
+.item-card .item-stock { font-size: 11px; line-height: 1.2; }
+.item-card .item-sold { margin-top: 1px; }
+.item-card .restock-btn, .item-card .license-btn { padding: 5px 6px; margin-top: 4px; }
+.item-card.hidden { display: none; }
+@media (prefers-reduced-motion: reduce) { .shelf-tab.attention { animation: none; color: #ffcf4a; } }

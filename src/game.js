@@ -181,6 +181,42 @@ export function restockItem(state, itemId) {
   return true;
 }
 
+// --- Restock All (Pass 3.5). The quote is the FULL fill (every unlocked item to cap at effective
+// cost); the action fills as much as gold allows, ROUND-ROBIN one unit per item per pass — the
+// same fairness loop the offline sim uses — so a short purse spreads evenly across the shelf
+// instead of topping up the first card and starving the last. ----------------------------------
+export function restockAllCost(state) {
+  let total = 0;
+  for (const id of ITEM_ORDER) {
+    if (!isItemUnlocked(state, id)) continue;
+    const need = Math.max(0, effectiveMaxStock(state, id) - (state.items[id]?.stock ?? 0));
+    total += need * effectiveRestockCost(state, id);
+  }
+  return total;
+}
+
+export function canRestockAll(state) {
+  // True when at least ONE unit somewhere is both needed and affordable.
+  return ITEM_ORDER.some((id) => canRestock(state, id));
+}
+
+export function restockAll(state) {
+  let bought = 0, boughtThisPass = true;
+  while (boughtThisPass) {
+    boughtThisPass = false;
+    for (const id of ITEM_ORDER) {
+      if (canRestock(state, id)) {                 // license, cap, and per-unit gold all checked
+        state.gold -= effectiveRestockCost(state, id);
+        state.items[id].stock += 1;
+        bought += 1;
+        boughtThisPass = true;
+      }
+    }
+  }
+  if (bought > 0) state.uiDirty = true;
+  return bought;
+}
+
 // --- Upgrades ----------------------------------------------------------------
 
 // Fame (dual-track): tiers are driven by LIFETIME rep — the never-decreasing track — so spending

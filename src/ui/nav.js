@@ -40,13 +40,16 @@ export function initNav(root) {
     if (btn.disabled) return;
     btn.addEventListener('click', () => setTab(root, btn.dataset.tab));
   });
-  setTab(root, 'shop');
+  setTab(root, null);   // boot COLLAPSED — the scene is the first thing a player sees
 }
 
 function setTab(root, tab) {
+  if (tab === activeTab) tab = null;   // COLLAPSE: re-clicking the active tab dismisses the panel —
+                                       // the diorama (and the speech bubble's airspace) is the
+                                       // resting state; the attention pulses summon you back.
   activeTab = tab;
   applyShopAttention();      // switching to Shop clears the nav pulse (the card takes over)
-  // Show the chosen center panel, hide the others.
+  // Show the chosen center panel, hide the others (tab null -> all hidden).
   for (const panelId of Object.values(PANEL_FOR)) {
     const el = document.getElementById(panelId);
     if (el) el.classList.toggle('hidden', PANEL_FOR[tab] !== panelId);
