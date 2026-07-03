@@ -539,9 +539,18 @@ set. Add "bumpy" x2 spikes at 25/50-style breakpoints. Never add decay/backward 
 
 ### Polish / art track (parallel, order-flexible)
 
-- **Mob idle animations (code pass ready to build):** generalize Bob's strip logic to queue mobs —
-  optional `anim` field in monsters.js, `<id>_idle.png` auto-sliced, static fallback. Batty first
-  (4-frame wing flap, 512x128). Author bats body-high in frame (bottom ~40px empty = hover).
+- **Mob idle animations — BUILT (commit pending).** drawMob generalizes Bob's strip pattern:
+  optional `anim: { frames, fps }` per monster; chain = `<id>_idle.png` strip (auto-sliced,
+  +x*37ms phase offset so a line of same-species mobs never flaps in lockstep) -> static `<id>.png`
+  -> rect. Batty declares `{ frames: 4, fps: 6 }`; **bat_idle.png PENDING from Daniel** (4 frames
+  x 128 = 512x128, PNG-32, left-to-right, body high in frame — the existing ~15px bottom padding
+  gives the hover). Slimey/Skele declare nothing (guarded absence, tested). Gobbo later = one field
+  + one PNG.
+- **Shelf decoration v2 (PARKED by name — Daniel's evolution of C-lite):** the wall shelf becomes
+  pure SET DRESSING: multiple shelves, displaying a RANDOM ROTATING SAMPLE of the item pool (scales
+  to a someday-100-item catalog where showing all is impossible); REMOVE the semi-transparent slot
+  squares; KEEP the stock bars + starved-glow. The Shop tab/panel remains the management UI. Revisit
+  after Batty.
 - **Skele mass (art):** measured verdict — he's the TALLEST mob but a 37px-wide stick (~2.8k px²
   vs Slimey ~6.3k). Fix is silhouette, not scale: bigger skull / wider stance / chunkier bones.
   spriteScale stopgap 1.3 available; Daniel parked it for now.

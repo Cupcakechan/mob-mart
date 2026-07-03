@@ -345,12 +345,26 @@ function drawMob(ctx, x, y, size, monsterId, tMs, isFront) {
   ctx.ellipse(x + size / 2, groundY, size * 0.42, 10, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  const spr = getSprite(monsterId);
+  // Sprite chain (all registry-driven, all optional): <id>_idle.png strip if the monster declares
+  // an `anim` field AND the strip loaded -> static <id>.png -> colored placeholder rect. Strips are
+  // horizontal, equal-width frames, auto-sliced by the declared frame count (Bob's convention).
+  const anim = MONSTERS[monsterId]?.anim;
+  const strip = anim ? getSprite(`${monsterId}_idle`) : null;
+  const spr = strip ?? getSprite(monsterId);
   if (spr) {
     // Global dial x per-monster calibration (optional registry field, ?? 1 so new mobs need nothing).
     const h = size * QUEUE.spriteScale * (MONSTERS[monsterId]?.spriteScale ?? 1);
-    const w = h * (spr.naturalWidth / spr.naturalHeight);   // preserve aspect at target height
-    ctx.drawImage(spr, x + size / 2 - w / 2, (y + size) - h + bob, w, h);  // anchored feet, bobbing
+    if (strip) {
+      // +x*37ms phase offset so two Battys in line don't flap in lockstep (same trick as the hop).
+      const frame = Math.floor((tMs + x * 37) / (1000 / anim.fps)) % anim.frames;
+      const fw = strip.naturalWidth / anim.frames;
+      const fh = strip.naturalHeight;
+      const w = h * (fw / fh);
+      ctx.drawImage(strip, frame * fw, 0, fw, fh, x + size / 2 - w / 2, (y + size) - h + bob, w, h);
+    } else {
+      const w = h * (spr.naturalWidth / spr.naturalHeight);   // preserve aspect at target height
+      ctx.drawImage(spr, x + size / 2 - w / 2, (y + size) - h + bob, w, h);  // anchored feet, bobbing
+    }
   } else {
     const my = y + bob;
     ctx.fillStyle = colorFor(monsterId);

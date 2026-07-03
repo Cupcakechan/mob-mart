@@ -9,6 +9,8 @@ export const MONSTERS = {
   },
   bat: {
     id:'bat', displayName:'Batty', spriteId:'bat', combatMod:-1, budgetRange:[12,22],
+    anim: { frames: 4, fps: 6 },   // idle wing-flap: bat_idle.png, 4x128 -> 512x128 strip (optional
+                                   // field — absent = static <id>.png, then the placeholder rect)
     wantWeights:[{value:'metal_helmet',weight:3},{value:'hp_flask',weight:2},{value:'club',weight:1},
       {value:'knight_helm',weight:2},{value:'greater_flask',weight:1}],  // tier-2: armor lover
   },

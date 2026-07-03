@@ -63,6 +63,7 @@ loadSprite('hp_flask',     'assets/sprites/hp_flask.png');     // shelf cards lo
 loadSprite('iron_sword',    'assets/sprites/iron_sword.png');    // tier-2 icons (authoring pending;
 loadSprite('greater_flask', 'assets/sprites/greater_flask.png'); // floats skip + cards degrade to
 loadSprite('knight_helm',   'assets/sprites/knight_helm.png');   // text until the PNGs land)
+loadSprite('bat_idle', 'assets/sprites/bat_idle.png');            // Batty's 4-frame wing-flap strip (512x128)
 
 function resize() {
   const s = Math.min(window.innerWidth / CONFIG.stage.width, window.innerHeight / CONFIG.stage.height);
