@@ -1027,5 +1027,25 @@ console.log('M4 auto-serve worker — smoke test\n');
   ok(cl.crossed === 0 && cl.pct === 0, 'bestiary: absent stats ledger reads as 0 (legacy save shape)');
 }
 
+// 24. Grounding pass — flyer bob gate + MEASURED footPad registry contract ----------------------
+// footPad values are MEASURED from the shipped PNGs (pngjs alpha scan, 2026-07-03): transparent
+// rows below the lowest opaque pixel. Pinning them here stops a later pass from "correcting" a
+// measured value back to a remembered one (the Batty-budget lesson). Art trimmed later -> update
+// registry + this test together.
+{
+  const { MONSTERS, MONSTER_IDS } = await import('./src/data/monsters.js');
+  ok(MONSTERS.bat.flying === true, 'grounding: Batty declares flying (keeps the idle hover bob)');
+  ok(MONSTERS.bat.footPad === undefined,
+     'grounding: Batty declares NO footPad (its 15px padding is the hover altitude)');
+  ok(MONSTERS.slime.footPad === 18, 'grounding: Slimey footPad pinned at MEASURED 18');
+  ok(MONSTERS.skeleton.footPad === 12, 'grounding: Skele footPad pinned at MEASURED 12');
+  // Contract guard for future mobs: footPad, when declared, is a non-negative finite number
+  // (drawMob multiplies it — a NaN here would silently un-draw the mob).
+  ok(MONSTER_IDS.every((id) => {
+    const fp = MONSTERS[id].footPad;
+    return fp === undefined || (Number.isFinite(fp) && fp >= 0);
+  }), 'grounding: every declared footPad is a non-negative finite number');
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

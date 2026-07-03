@@ -456,7 +456,12 @@ function drawQueue(ctx, state, tMs) {
 }
 
 function drawMob(ctx, x, y, size, monsterId, tMs, isFront) {
-  const bob = Math.sin(tMs / 300 + x) * 4;          // +x so mobs don't bob in lockstep
+  const m = MONSTERS[monsterId];
+  // Grounding pass: the idle hover bob is a FLYER behavior (registry `flying`, ?? false) — a slime
+  // gently rising and falling reads as levitation. Grounded mobs sit still; their motion arrives
+  // with the idle strips. The serve celebration's hop is untouched (drawCelebrants has its own math).
+  const flying = m?.flying ?? false;
+  const bob = flying ? Math.sin(tMs / 300 + x) * 4 : 0;   // +x so flyers don't bob in lockstep
   const groundY = y + size - 4;                     // shadow stays on the ground while the mob hops
 
   ctx.fillStyle = COL.shadow;
@@ -467,22 +472,27 @@ function drawMob(ctx, x, y, size, monsterId, tMs, isFront) {
   // Sprite chain (all registry-driven, all optional): <id>_idle.png strip if the monster declares
   // an `anim` field AND the strip loaded -> static <id>.png -> colored placeholder rect. Strips are
   // horizontal, equal-width frames, auto-sliced by the declared frame count (Bob's convention).
-  const anim = MONSTERS[monsterId]?.anim;
+  const anim = m?.anim;
   const strip = anim ? getSprite(`${monsterId}_idle`) : null;
   const spr = strip ?? getSprite(monsterId);
   if (spr) {
     // Global dial x per-monster calibration (optional registry field, ?? 1 so new mobs need nothing).
-    const h = size * QUEUE.spriteScale * (MONSTERS[monsterId]?.spriteScale ?? 1);
+    const h = size * QUEUE.spriteScale * (m?.spriteScale ?? 1);
     if (strip) {
       // +x*37ms phase offset so two Battys in line don't flap in lockstep (same trick as the hop).
       const frame = Math.floor((tMs + x * 37) / (1000 / anim.fps)) % anim.frames;
       const fw = strip.naturalWidth / anim.frames;
       const fh = strip.naturalHeight;
       const w = h * (fw / fh);
-      ctx.drawImage(strip, frame * fw, 0, fw, fh, x + size / 2 - w / 2, (y + size) - h + bob, w, h);
+      // footPad (registry, MEASURED art-space rows below the feet, ?? 0): shift the draw DOWN so
+      // the art's real feet — not the transparent padding — meet the shadow line. The overflow is
+      // transparent rows sinking invisibly below the floor. Trimmed art later -> field goes to 0.
+      const pad = (m?.footPad ?? 0) * (h / fh);
+      ctx.drawImage(strip, frame * fw, 0, fw, fh, x + size / 2 - w / 2, (y + size) - h + bob + pad, w, h);
     } else {
       const w = h * (spr.naturalWidth / spr.naturalHeight);   // preserve aspect at target height
-      ctx.drawImage(spr, x + size / 2 - w / 2, (y + size) - h + bob, w, h);  // anchored feet, bobbing
+      const pad = (m?.footPad ?? 0) * (h / spr.naturalHeight);
+      ctx.drawImage(spr, x + size / 2 - w / 2, (y + size) - h + bob + pad, w, h);  // anchored feet
     }
   } else {
     const my = y + bob;
@@ -629,10 +639,14 @@ function drawCelebrants(ctx, tMs) {
         const fw = strip.naturalWidth / anim.frames;
         const fh = strip.naturalHeight;
         const w = h * (fw / fh);
-        ctx.drawImage(strip, frame * fw, 0, fw, fh, x + size / 2 - w / 2, feetY - h, w, h);
+        // Same grounding rule as drawMob: footPad (?? 0) drops the art's real feet onto feetY, so
+        // the march reads planted on the counter plane instead of hovering above it.
+        const pad = (m?.footPad ?? 0) * (h / fh);
+        ctx.drawImage(strip, frame * fw, 0, fw, fh, x + size / 2 - w / 2, feetY - h + pad, w, h);
       } else {
         const w = h * (spr.naturalWidth / spr.naturalHeight);
-        ctx.drawImage(spr, x + size / 2 - w / 2, feetY - h, w, h);
+        const pad = (m?.footPad ?? 0) * (h / spr.naturalHeight);
+        ctx.drawImage(spr, x + size / 2 - w / 2, feetY - h + pad, w, h);
       }
     } else {                                       // last resort: the same placeholder rect language
       ctx.fillStyle = colorFor(c.monsterId);
