@@ -39,9 +39,12 @@ capture). Art hooks registered: `<id>_walk_happy.png` strips ×3 (4 frames, 128�
 facing; fallback chain walk strip → idle strip → static → rect, so it plays TODAY with zero art).
 Scratch probe `test_react.mjs` (spawn guard, full three-phase frame sweep, overlapping serves vs the
 hold latch, cap spam). Suite unchanged at **223**.
-**NEXT, in order:** **(1) Pass B — Slimey/Skele idle wiring** (contract CONFIRMED by Daniel: all
-monsters share the 4-frame idle, Batty's convention — `anim` entries + `slime_idle`/`skeleton_idle`
-registrations + update the one suite assertion pinning "statics declare nothing"). **(2) Pass 4 —
+**NEXT, in order:** **(1) Pass B — Slimey/Skele idle wiring — SHIPPED 2026-07-03** (this commit):
+shared 4-frame idle declared for slime + skeleton in `monsters.js`; `slime_idle`/`skeleton_idle`
+registered (strips absent → static, drop-in when authored); suite assertion "statics declare
+nothing" replaced by the shared-contract assertion; suite now **225** and RELOCATED to repo root
+(the `src/` copy from the housekeeping commit deleted in this same commit — see build history).
+No visual change today by design. **(2) Pass 4 —
 Bestiary + Gobbo** (roadmap resumes).
 **Workflow note: NO DevLog for Mob Mart** — Daniel opted out (2026-07-03). Skip the DevLog draft
 step at feature completion for this project.
@@ -354,7 +357,7 @@ anchoring keys off it. Author the backdrop with the seam at 462 (wall 0→462, f
 | Shop backdrop | 1280×720, **seam at y=462** | optional torch flicker later | `shop_bg.png` | **IN (WIP)** — iterating |
 | Item icons (all six: Club / Metal Helmet / HP Flask / Iron Sword / Greater Flask / Knight Helm) | 64×64 | static | `club.png`, `metal_helmet.png`, `hp_flask.png`, `iron_sword.png`, `greater_flask.png`, `knight_helm.png` | **IN** (all six — inferred from the sprites-folder screenshot 2026-07-03) — shelf cards at 32px (2:1) + canvas purchase float (32px, rises 46px, fades 900ms) + wall-shelf slots |
 | Wall-shelf plank prop (Shelf v2) | authored **486×37 (MEASURED**; spec asked 488×48 — fine); drawn stretched to 244×24 (`plankBoxH` dial — set 18 for exact 2:1 of this art) | static | `wall_shelf.png` | **IN** — both planks reuse it; absent → code-drawn plank |
-| Happy-walk strips (celebration pass) | 4 equal frames, 128×128/frame (512×128 strip), **RIGHTWARD-facing** (the march is left→right; code doesn't mirror) | 4-frame loop @ 8fps (`CELEBRATE.walkAnim`; per-monster `walkHappy` override, guarded) | `slime_walk_happy.png`, `bat_walk_happy.png`, `skeleton_walk_happy.png` | **WIRED, art pending** — registered in main.js; fallback chain: walk strip → idle strip → static → rect |
+| Happy-walk strips (celebration pass) | 4 equal frames, 128×128/frame (512×128 strip), **RIGHTWARD-facing** (the march is left→right; code doesn't mirror) | 4-frame loop @ 8fps (`CELEBRATE.walkAnim`; per-monster `walkHappy` override, guarded) | `slime_walk_happy.png`, `bat_walk_happy.png` (**IN** — shipped with the celebration commit), `skeleton_walk_happy.png` | **Batty IN; Slimey/Skele WIRED, art pending** — registered in main.js; fallback chain: walk strip → idle strip → static → rect |
 | UI icons (gold, rep crown, scrap-reserved) | 32×32 | static | `icon_gold.png`, `icon_rep.png`, `icon_scrap.png` | **NOT YET USED** — HUD uses text glyphs |
 | Panel / button chrome | — | — | — | CSS-styled (DOM), few image assets needed |
 
@@ -750,10 +753,11 @@ set. Add "bumpy" x2 spikes at 25/50-style breakpoints. Never add decay/backward 
   culprit file; restored → 223 green. Fresh clones self-verify with `node test_suite.mjs`.
   Template ids (`` `${monsterId}_idle` ``) remain statically uncheckable — covered by the
   anim-contract assertions. Daniel's local `test_m4.mjs` deleted post-confirmation (one suite).
-- **Suite-location fix (2026-07-03):** the housekeeping commit had placed the suite at
+- **Suite-location fix (2026-07-03; landed WITH the Pass B commit, not standalone — the standalone
+  fix command was lost to a client rendering drop):** the housekeeping commit had placed the suite at
   `src/test_suite.mjs` — inside the SHIP folder, and unrunnable there (its imports and section-0
-  walk resolve from repo root). One `git mv src/test_suite.mjs test_suite.mjs` commit moved it home;
-  223 green from root confirmed.
+  walk resolve from repo root). Relocated in the Pass B commit: `src/` copy deleted + suite placed
+  at root; green from root confirmed.
 - **Serve-celebration pass (2026-07-03; Daniel picked Option 2 of 3 — hop + march-through-the-door;
   refined across three confirmed feel iterations):** a paid serve spawns a render-side celebrant
   ghost — game state untouched, `queue.shift()` unchanged, ZERO economy impact; dismissals spawn

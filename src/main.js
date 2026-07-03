@@ -64,6 +64,8 @@ loadSprite('iron_sword',    'assets/sprites/iron_sword.png');    // tier-2 icons
 loadSprite('greater_flask', 'assets/sprites/greater_flask.png'); // floats skip + cards degrade to
 loadSprite('knight_helm',   'assets/sprites/knight_helm.png');   // text until the PNGs land)
 loadSprite('bat_idle', 'assets/sprites/bat_idle.png');            // Batty's 4-frame wing-flap strip (512x128)
+loadSprite('slime_idle', 'assets/sprites/slime_idle.png');        // Slimey/Skele idle strips (Pass B): same
+loadSprite('skeleton_idle', 'assets/sprites/skeleton_idle.png');  //   shared 4-frame contract; absent -> static
 loadSprite('wall_shelf', 'assets/sprites/wall_shelf.png');        // wall-shelf plank prop (shelf v2; absent -> code-drawn plank)
 loadSprite('slime_walk_happy', 'assets/sprites/slime_walk_happy.png');        // celebrate pass: happy-walk strips,
 loadSprite('bat_walk_happy', 'assets/sprites/bat_walk_happy.png');            //   4 equal frames each; absent ->
