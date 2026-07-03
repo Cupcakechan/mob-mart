@@ -1,15 +1,15 @@
-// nav.js — bottom navigation. Swaps ONLY the center panel (Shop / Upgrades / Workers) so the corner
-// panels (Current Customer with Serve/Send Away, Battle Results) stay live on every tab. Owns
-// visibility; content is rendered by panels.js. Bestiary stays a disabled stub until a later pass.
+// nav.js — bottom navigation. Swaps ONLY the center panel (Shop / Upgrades / Workers / Bestiary)
+// so the corner panels (Current Customer with Serve/Send Away, Battle Results) stay live on every
+// tab. Owns visibility; content is rendered by panels.js. (Bestiary activated in Pass 4a.)
 const TABS = [
   { id: 'shop',     label: 'Shop' },
   { id: 'upgrades', label: 'Upgrades' },
   { id: 'workers',  label: 'Workers' },
-  { id: 'bestiary', label: 'Bestiary', disabled: true },
+  { id: 'bestiary', label: 'Bestiary' },
 ];
 
 // Which center panel each tab shows. Tabs without an entry here don't swap the center.
-const PANEL_FOR = { shop: 'items-panel', upgrades: 'upgrades-panel', workers: 'workers-panel' };
+const PANEL_FOR = { shop: 'items-panel', upgrades: 'upgrades-panel', workers: 'workers-panel', bestiary: 'bestiary-panel' };
 
 let navRoot = null;          // kept for the attention hook below
 let activeTab = 'shop';

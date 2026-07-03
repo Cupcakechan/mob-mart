@@ -999,5 +999,33 @@ console.log('M4 auto-serve worker — smoke test\n');
      'shared idle contract: every monster declares the 4-frame idle');
 }
 
+// 23. Pass 4a — Bestiary completion: pure math over the Pass-1 serve ledger ---------------------
+{
+  const { bestiaryCompletion, MONSTER_BREAKPOINTS } = await import('./src/data/milestones.js');
+  const { MONSTER_IDS } = await import('./src/data/monsters.js');
+  const total = MONSTER_IDS.length * MONSTER_BREAKPOINTS.length;
+
+  const s0 = createInitialState();
+  const c0 = bestiaryCompletion(s0);
+  ok(c0.crossed === 0 && c0.pct === 0, 'bestiary: fresh state is 0 crossed, 0%');
+  ok(c0.total === total,
+     `bestiary: total scales with the roster (${MONSTER_IDS.length} x ${MONSTER_BREAKPOINTS.length} = ${total})`);
+
+  const s1 = createInitialState();
+  s1.stats.monsterServes.slime = 100;   // crosses 25 / 50 / 100 -> exactly 3
+  const c1 = bestiaryCompletion(s1);
+  ok(c1.crossed === 3, 'bestiary: 100 slime serves cross exactly 3 breakpoints');
+  ok(c1.pct === Math.floor((100 * 3) / total), 'bestiary: pct floors, never rounds up');
+
+  const s2 = createInitialState();
+  for (const id of MONSTER_IDS) s2.stats.monsterServes[id] = 999999;
+  const c2 = bestiaryCompletion(s2);
+  ok(c2.crossed === total && c2.pct === 100, 'bestiary: full ledger reads 100%');
+
+  // Pre-Pass-1 save shape: no stats ledger at all — must read as 0, never crash (guarded ?. chain).
+  const cl = bestiaryCompletion({ stats: undefined });
+  ok(cl.crossed === 0 && cl.pct === 0, 'bestiary: absent stats ledger reads as 0 (legacy save shape)');
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

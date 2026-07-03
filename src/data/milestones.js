@@ -9,6 +9,8 @@
 // All numbers here are dials. Magnitudes at full ladder: items 1 + 7x0.08 = x1.56 each,
 // monsters 1 + 5x0.10 = x1.50 rep, everything 1.25^3 ~= x1.95 global -> ~x3 gold deep-endgame.
 import { ITEMS, ITEM_ORDER } from './items.js';
+import { MONSTER_IDS } from './monsters.js';   // bestiary completion walks the roster (no cycle:
+                                               // monsters.js is a leaf registry with no imports)
 
 export const ITEM_BREAKPOINTS = [10, 25, 50, 100, 250, 500, 1000];   // lifetime SALES of one item
 export const ITEM_GOLD_PER_BREAKPOINT = 0.08;    // +8% gold on that item per breakpoint crossed
@@ -32,6 +34,17 @@ export function itemGoldMult(state, itemId) {
 
 export function monsterRepMult(state, monsterId) {
   return 1 + MONSTER_REP_PER_BREAKPOINT * crossedCount(monsterCount(state, monsterId), MONSTER_BREAKPOINTS);
+}
+
+// Bestiary "studied %" (Pass 4a): crossed loyalty breakpoints over the total possible, across the
+// whole roster. Pure + registry-driven — a new monster (Gobbo) adds MONSTER_BREAKPOINTS.length to
+// the denominator automatically, so the % DROPS when a new mob joins. That's the field-guide feel
+// (a new page to fill), deliberate and not a bug. Guarded like the rest: absent stats read as 0.
+export function bestiaryCompletion(state) {
+  const total = MONSTER_IDS.length * MONSTER_BREAKPOINTS.length;
+  const crossed = MONSTER_IDS.reduce(
+    (sum, id) => sum + crossedCount(monsterCount(state, id), MONSTER_BREAKPOINTS), 0);
+  return { crossed, total, pct: total > 0 ? Math.floor((100 * crossed) / total) : 0 };
 }
 
 // The "everything" tier is driven by the LAGGARD — but only across the BASE (license-free) items.

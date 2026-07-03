@@ -2,11 +2,12 @@
 // battle log. The Shelf / Upgrades / Workers panels share the center slot; the bottom nav toggles
 // which is visible.
 import { setShopAttention } from './nav.js';
-import { ITEM_BREAKPOINTS, nextBreakpoint } from '../data/milestones.js';
+import { ITEM_BREAKPOINTS, MONSTER_BREAKPOINTS, MONSTER_REP_PER_BREAKPOINT,
+  nextBreakpoint, crossedCount, bestiaryCompletion } from '../data/milestones.js';
 import { PERKS, PERK_ORDER, perkCost } from '../data/perks.js';
 import { CONFIG } from '../config.js';
 import { ITEMS, ITEM_ORDER } from '../data/items.js';
-import { MONSTERS } from '../data/monsters.js';
+import { MONSTERS, MONSTER_IDS } from '../data/monsters.js';
 import { UPGRADES, UPGRADE_ORDER, upgradeLevel, upgradeCost, isMaxed } from '../data/upgrades.js';
 import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost } from '../data/workers.js';
 import {
@@ -57,6 +58,11 @@ export function initPanels(root, h) {
     <section id="workers-panel" class="panel workers-panel hidden">
       <h2 class="panel-title">Workers</h2>
       <div id="worker-cards" class="worker-cards"></div>
+    </section>
+
+    <section id="bestiary-panel" class="panel bestiary-panel hidden">
+      <h2 class="panel-title">Bestiary <span class="subtitle-hint" id="bestiary-completion"></span></h2>
+      <div id="beast-cards" class="beast-cards"></div>
     </section>
 
     <section class="panel log-panel">
@@ -145,6 +151,26 @@ export function initPanels(root, h) {
   }).join('');
   root.querySelectorAll('.wrk-buy').forEach((btn) =>
     btn.addEventListener('click', () => handlers.onHireWorker(btn.dataset.worker)));
+
+  // Bestiary cards (Pass 4a; data-driven — Gobbo will auto-appear from the registry). DISPLAY
+  // LAYER ONLY: the Pass-1 loyalty ledger (state.stats.monsterServes) is the single source of
+  // truth; this pass adds no new counting, no save change. One pip per MONSTER_BREAKPOINT.
+  document.getElementById('beast-cards').innerHTML = MONSTER_IDS.map((id) => {
+    const m = MONSTERS[id];
+    const pips = MONSTER_BREAKPOINTS.map(() => '<span class="beast-pip"></span>').join('');
+    return `<div class="beast-card" data-beast="${id}">
+        <img class="beast-portrait" src="assets/sprites/${m.spriteId ?? id}.png" alt=""
+             onerror="this.style.display='none'">
+        <div class="beast-info">
+          <div class="beast-name" id="beast-name-${id}">${m.displayName}</div>
+          <div class="beast-sub" id="beast-sub-${id}"></div>
+        </div>
+        <div class="beast-progress">
+          <div class="beast-pips" id="beast-pips-${id}">${pips}</div>
+          <div class="beast-next" id="beast-next-${id}"></div>
+        </div>
+      </div>`;
+  }).join('');
 }
 
 const REASON_LABEL = {
@@ -323,6 +349,37 @@ export function renderPanels(state) {
         buyBtn.disabled = !canHireWorker(state, id);
         buyBtn.innerHTML = `Hire &#9670; ${workerHireCost(id)}`;
       }
+    }
+  }
+
+  // --- Bestiary: lifetime serves -> loyalty pips + studied % (display over the Pass-1 ledger) ---
+  const comp = bestiaryCompletion(state);
+  const compEl = document.getElementById('bestiary-completion');
+  if (compEl) compEl.textContent = `${comp.pct}% studied`;
+  for (const id of MONSTER_IDS) {
+    const card = document.querySelector(`.beast-card[data-beast="${id}"]`);
+    if (!card) continue;
+    const served = state.stats?.monsterServes?.[id] ?? 0;
+    // Undiscovered = never served: silhouette + ??? until first serve. Moot for the launch trio on
+    // existing saves, but it makes a NEW monster's debut (Gobbo, next pass) a reveal, not a row.
+    const discovered = served > 0;
+    card.classList.toggle('undiscovered', !discovered);
+    const nameEl = document.getElementById(`beast-name-${id}`);
+    if (nameEl) nameEl.textContent = discovered ? (MONSTERS[id]?.displayName ?? id) : '???';
+    const crossed = crossedCount(served, MONSTER_BREAKPOINTS);
+    const subEl = document.getElementById(`beast-sub-${id}`);
+    if (subEl) {
+      subEl.textContent = discovered
+        ? `Served ${served}${crossed > 0
+            ? ` \u00b7 +${Math.round(crossed * MONSTER_REP_PER_BREAKPOINT * 100)}% rep` : ''}`
+        : 'Not yet served';
+    }
+    const pipsEl = document.getElementById(`beast-pips-${id}`);
+    if (pipsEl) [...pipsEl.children].forEach((pip, i) => pip.classList.toggle('filled', i < crossed));
+    const nextEl = document.getElementById(`beast-next-${id}`);
+    if (nextEl) {
+      const nb = nextBreakpoint(served, MONSTER_BREAKPOINTS);
+      nextEl.textContent = !discovered ? '' : (nb !== null ? `next ${nb}` : 'maxed');
     }
   }
 
