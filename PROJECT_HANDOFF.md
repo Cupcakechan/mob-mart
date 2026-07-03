@@ -43,7 +43,7 @@ hold latch, cap spam). Suite unchanged at **223**.
 shared 4-frame idle declared for slime + skeleton in `monsters.js`; `slime_idle`/`skeleton_idle`
 registered (strips absent → static, drop-in when authored); suite assertion "statics declare
 nothing" replaced by the shared-contract assertion; suite now **225** and RELOCATED to repo root
-(the `src/` copy from the housekeeping commit deleted in this same commit — see build history).
+(the stale `src/` copy was removed in a small follow-up commit — the delete step was lost to the same client rendering drops).
 No visual change today by design. **(2) Pass 4 —
 Bestiary + Gobbo** (roadmap resumes).
 **Workflow note: NO DevLog for Mob Mart** — Daniel opted out (2026-07-03). Skip the DevLog draft
@@ -756,8 +756,8 @@ set. Add "bumpy" x2 spikes at 25/50-style breakpoints. Never add decay/backward 
 - **Suite-location fix (2026-07-03; landed WITH the Pass B commit, not standalone — the standalone
   fix command was lost to a client rendering drop):** the housekeeping commit had placed the suite at
   `src/test_suite.mjs` — inside the SHIP folder, and unrunnable there (its imports and section-0
-  walk resolve from repo root). Relocated in the Pass B commit: `src/` copy deleted + suite placed
-  at root; green from root confirmed.
+  walk resolve from repo root). Relocated across two commits: Pass B placed the current suite
+  at root (225 green from root confirmed); the stale `src/` copy was removed in a follow-up cleanup commit.
 - **Serve-celebration pass (2026-07-03; Daniel picked Option 2 of 3 — hop + march-through-the-door;
   refined across three confirmed feel iterations):** a paid serve spawns a render-side celebrant
   ghost — game state untouched, `queue.shift()` unchanged, ZERO economy impact; dismissals spawn
