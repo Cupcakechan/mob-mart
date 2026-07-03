@@ -504,8 +504,22 @@ leaves 2–3 affordable-soon wants visible. One system per pass, in this order:
   buyable. Attention now hops THREE levels: nav pulse (panel closed) -> category-tab pulse (wrong
   tab) -> card pulse. New game API: restockAllCost/canRestockAll/restockAll; handlers onRestockAll
   + onDirty. Suite at **203** (10 new: quote 47 exact + Haggler 29, full fill 6-for-47, round-robin
-  23-gold one-each, no-op on full, licensed joins/locked excluded, cap respect). Batty idle-strip
-  pass queued next by name.
+  23-gold one-each, no-op on full, licensed joins/locked excluded, cap respect).
+- **Spawn director (BUILT — commit pending; the "spotlight" fix).** Flat spawn rate's equilibrium
+  was ONE customer at maxed Bob (throughput >= arrivals). `CONFIG.queue.spawnIntervalByQueue:
+  [1.2, 1.8, 2.6, 3.6]` — next interval indexed by post-spawn queue length (clamped to last).
+  Self-balancing at every Bob speed: empty -> hurry, deep -> relax; keeps ~2-3 mobs on stage.
+  FLAGGED economy nudge: a maxed shop sells more per minute (arguably what maxed should feel like).
+  Suite proves it: 120s maxed-Bob sim must be non-empty most of the time.
+- **Diegetic wall shelf, C-LITE (BUILT — commit pending; Daniel's "art should be the centerpiece").**
+  `drawWallShelf` in scene.js: code-drawn plank on the upper-left wall (`WALL_SHELF` dials, icons
+  at y176, below HUD / above bubble airspace) showing every item's icon + a stock bar (gold, red
+  sliver when dry); unlicensed items = dim empty slots (silent tease); the STARVED slot breathes
+  gold (attention system, level 0 — visible with all panels closed). DISPLAY ONLY by design: no
+  canvas click region (that's the deferred C-full upgrade); SHOP still opens the management panel,
+  which overlays the prop when open (top-left, deliberate). No new art required — icons reused;
+  a shelf sprite is optional future polish. Suite at **208**. Batty idle-strip pass queued next
+  by name.
 - **Pass 4 — Bestiary + new monsters ("Field Guide" + Gobbo/rat, MED, both).** Fill the stubbed
   tab: per-monster served counts unlock new comedy lines, per-monster bonuses, completion %.
   Ship Gobbo (+ rat) alongside — new monsters multiply milestones + bestiary at near-zero marginal

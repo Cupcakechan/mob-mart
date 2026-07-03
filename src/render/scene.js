@@ -3,7 +3,8 @@
 // tunable knobs: change a size/position here and reload to fit your sprites.
 import { CONFIG } from '../config.js';
 import { MONSTERS } from '../data/monsters.js';
-import { ITEMS } from '../data/items.js';
+import { ITEMS, ITEM_ORDER } from '../data/items.js';
+import { sumEffect } from '../data/upgrades.js';
 import { getSprite } from './sprites.js';
 
 const W = CONFIG.stage.width, H = CONFIG.stage.height;
@@ -124,6 +125,75 @@ export function playPortalOpen() {
   portalAnim.startMs = -1;               // sentinel: stamp with the real tMs on the next draw
 }
 
+// --- Diegetic wall shelf (C-lite): the shop's goods ON the wall as a scene prop — ambient stock
+// awareness with zero panels open, and the wall prop the back wall was missing. Per item: a slot,
+// its icon (the same sprites the cards/floats use), and a stock bar. Unlicensed items show as dim
+// empty slots (a silent tease). The attention system extends here: the STARVED slot (front
+// customer's want at stock 0) breathes gold, same rhythm as the door glow. C-LITE means display
+// only — no canvas click region; SHOP still opens the management panel. Code-drawn plank until/
+// unless a shelf sprite ever lands (it may simply not need one).
+const WALL_SHELF = {
+  x: 84,             // left edge of the first slot
+  y: 176,            // icon top — upper wall band: below the HUD, above the bubble airspace (~328)
+  slotStep: 56,      // horizontal spacing between slots
+  iconSize: 32,      // 64px art at clean 2:1, matching the cards
+  barW: 32, barH: 4, // stock bar under the plank
+  plank: '#5b3a24', plankEdge: '#3a2415', slotBg: 'rgba(0,0,0,0.28)',
+  barFill: '#ffcf4a', barEmpty: '#b3402e', glow: '#ffcf4a',
+};
+
+function drawWallShelf(ctx, state, tMs) {
+  const n = ITEM_ORDER.length;
+  const left = WALL_SHELF.x - 10;
+  const right = WALL_SHELF.x + (n - 1) * WALL_SHELF.slotStep + WALL_SHELF.iconSize + 10;
+  const plankY = WALL_SHELF.y + WALL_SHELF.iconSize + 2;
+
+  ctx.save();
+  ctx.fillStyle = WALL_SHELF.plank;                             // the plank the goods sit on
+  ctx.fillRect(left, plankY, right - left, 8);
+  ctx.fillStyle = WALL_SHELF.plankEdge;
+  ctx.fillRect(left, plankY + 8, right - left, 3);
+  ctx.fillRect(left + 8, plankY + 11, 6, 7);                    // two bracket nubs
+  ctx.fillRect(right - 14, plankY + 11, 6, 7);
+
+  // Starved slot = the front customer's want at stock 0 (same rule as the panel attention system).
+  const front = state.queue[0];
+  const starvedId = (front && (state.items[front.wantedItemId]?.stock ?? 0) <= 0)
+    ? front.wantedItemId : null;
+  const pulse = 0.5 + 0.5 * Math.sin(tMs / 500);
+
+  for (let i = 0; i < n; i++) {
+    const id = ITEM_ORDER[i];
+    const x = WALL_SHELF.x + i * WALL_SHELF.slotStep;
+    const unlocked = !ITEMS[id]?.license || state.licenses?.[id] === true;
+
+    ctx.globalAlpha = unlocked ? 1 : 0.35;                      // locked = dim empty slot (a tease)
+    ctx.save();
+    if (id === starvedId) {                                     // gold breathe on the blocked good
+      ctx.shadowColor = WALL_SHELF.glow;
+      ctx.shadowBlur = 8 + 10 * pulse;
+    }
+    ctx.fillStyle = WALL_SHELF.slotBg;
+    ctx.fillRect(x - 4, WALL_SHELF.y - 4, WALL_SHELF.iconSize + 8, WALL_SHELF.iconSize + 6);
+    const spr = unlocked ? getSprite(id) : null;
+    if (spr) ctx.drawImage(spr, x, WALL_SHELF.y, WALL_SHELF.iconSize, WALL_SHELF.iconSize);
+    ctx.restore();
+
+    if (unlocked) {                                             // stock bar: gold fill, red when dry
+      const max = (ITEMS[id]?.maxStock ?? 0) + sumEffect(state, 'maxStock');
+      const stock = state.items[id]?.stock ?? 0;
+      const frac = max > 0 ? Math.min(1, stock / max) : 0;
+      const bx = x + (WALL_SHELF.iconSize - WALL_SHELF.barW) / 2, by = plankY + 14;
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.fillRect(bx, by, WALL_SHELF.barW, WALL_SHELF.barH);
+      ctx.fillStyle = frac > 0 ? WALL_SHELF.barFill : WALL_SHELF.barEmpty;
+      ctx.fillRect(bx, by, Math.max(2, Math.round(WALL_SHELF.barW * frac)), WALL_SHELF.barH);
+    }
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+}
+
 // --- Purchase float: on a successful serve, the bought item's icon rises from the front-of-queue
 // spot and fades — the moment-of-sale readout the log can't give at a glance. Purely cosmetic and
 // transient (never saved). If the item sprite hasn't been dropped yet, the float silently skips —
@@ -148,6 +218,7 @@ export function drawScene(ctx, state, tMs) {
 
   drawBackground(ctx);          // shop_bg.png if present, else flat wall + floor
 
+  drawWallShelf(ctx, state, tMs);  // goods on the wall (diegetic shelf, C-lite — display only)
   drawCounterShadow(ctx);       // contact shadow FIRST: grounds the desk AND Bob standing behind it
   drawBob(ctx, tMs);            // before the counter, so the counter front overlaps his lower body
   drawCounter(ctx);
