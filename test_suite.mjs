@@ -158,7 +158,9 @@ console.log('M4 auto-serve worker — smoke test\n');
   ok(s.items.club.stock === stock0 - 1, 'auto-serve decremented stock by 1');
   ok(s.gold === 12, 'auto-serve took payment (club basePrice 12)');
   ok(s.reputation >= 2, 'auto-serve granted reputation (perSale)');
-  ok(s.log.length === 1 && typeof s.log[0].text === 'string', 'auto-serve wrote one battle-log line');
+  ok(s.log.length === 0 && s.pendingReports.length === 1
+     && typeof s.pendingReports[0].entry.text === 'string',
+     'auto-serve QUEUED one battle report (report-timing pass: the line lands at door entry / fallback)');
   ok(s.workerServed === true, 'workerServed flag set for main.js to play the serve anim');
   ok(s.serveCooldown > 0, 'auto-serve started the shared serve cooldown');
 }
@@ -1062,8 +1064,8 @@ console.log('M4 auto-serve worker — smoke test\n');
   // Values from the registry, not memory (the Batty-budget lesson): Option 2 identity pinned.
   ok(f.combatMod === 0 && f.budgetRange[0] === 16 && f.budgetRange[1] === 30,
      'frog: Option-2 identity pinned (combatMod 0, budget [16,30])');
-  ok(f.flying === undefined && f.footPad === undefined,
-     'frog: grounded, footPad deferred to art integration (guarded ?? everywhere)');
+  ok(f.flying === undefined && f.footPad === 15 && f.spriteScale === 1.1,
+     'frog: grounded; footPad pinned at MEASURED 15, spriteScale 1.1 (art integration 2026-07-04)');
   ok(f.wantWeights.every((w) => ITEMS[w.value] !== undefined),
      'frog: every want is a real ITEM id (the no-item front-blocker guard)');
   ok(f.wantWeights.some((w) => ITEMS[w.value]?.license),
@@ -1112,6 +1114,84 @@ console.log('M4 auto-serve worker — smoke test\n');
   const tiers = ['excellent', 'success', 'partial', 'failure', 'funnyFailure', 'leave', 'dismiss'];
   ok(tiers.every((t) => (MONSTER_RESULTS.frog?.[t] ?? []).length >= 2),
      'frog: every comedy tier has at least 2 lines (section-14 hazard guards auto-cover them)');
+}
+
+// 26. Battle-report timing (Daniel, 2026-07-04): the result lands at DOOR ENTRY, not at the sale --
+{
+  const { deliverBattleReport, dismissCurrent } = await import('./src/game.js');
+  const { serializeSave } = await import('./src/save.js');
+  const { CONFIG } = await import('./src/config.js');
+
+  // A paid serve: economy INSTANT (they pay at the counter), report PENDING (news travels slow).
+  {
+    const s = shopState();
+    s.gold = 0;                                     // isolate the sale's payment (fresh states start with seed gold)
+    s.queue = [customer('skeleton', 'club', 99)];
+    ok(serveCurrent(s) === true, 'report timing: serve succeeds');
+    ok(s.gold === 12 && s.reputation > 0, 'economy applies AT the serve (gold + rep instant)');
+    ok(s.log.length === 0, 'battle line is NOT in the log at serve time');
+    ok(s.pendingReports.length === 1 && s.pendingReports[0].entry.monsterId === 'skeleton',
+       'the report is pending, carrying the full entry');
+
+    // Door-entry delivery (what main.js's celebrant callback calls).
+    s.uiDirty = false;
+    ok(deliverBattleReport(s) === true, 'door entry delivers the report');
+    ok(s.log.length === 1 && s.log[0].monsterId === 'skeleton' && typeof s.log[0].repDelta === 'number',
+       'delivered line is the full battle entry');
+    ok(s.uiDirty === true, 'delivery requests a panel re-render');
+    ok(deliverBattleReport(s) === false, 'nothing pending -> deliver is a no-op returning false');
+  }
+
+  // Milestone lines stay INSTANT (shop-side voice at the sale); the battle line arrives on top later.
+  {
+    const s = shopState();
+    s.stats.itemSales.club = 9;                     // next club sale crosses the 10-sale breakpoint
+    s.queue = [customer('slime', 'club', 99)];
+    serveCurrent(s);
+    ok(s.log.length === 1 && s.log[0].tier === 'milestone',
+       'milestone announces at the SALE (instant), battle line still pending');
+    deliverBattleReport(s);
+    ok(s.log[0].tier !== 'milestone' && s.log[1].tier === 'milestone',
+       'battle line lands ON TOP of the earlier milestone line (log order matches fiction)');
+  }
+
+  // Fallback: with no door-entry event, update() delivers after CONFIG.log.reportFallbackSec.
+  {
+    const s = shopState();
+    s.queue = [customer('bat', 'club', 99)];
+    serveCurrent(s);
+    for (let t = 0; t < (CONFIG.log.reportFallbackSec ?? 3) - 0.2; t += 0.1) update(s, 0.1);
+    ok(s.log.length === 0, 'fallback: not yet delivered just before the deadline');
+    for (let t = 0; t < 0.5; t += 0.1) update(s, 0.1);
+    ok(s.log.length === 1 && s.pendingReports.length === 0,
+       'fallback: update() delivered the report past the deadline (no render event needed)');
+  }
+
+  // FIFO across two serves — the head is always the oldest report.
+  {
+    const s = shopState();
+    s.queue = [customer('skeleton', 'club', 99), customer('slime', 'club', 99)];
+    serveCurrent(s);
+    s.serveCooldown = 0;                            // clear the counter cooldown between sales
+    serveCurrent(s);
+    ok(s.pendingReports.length === 2, 'two serves -> two pending reports');
+    deliverBattleReport(s); deliverBattleReport(s);
+    ok(s.log[1].monsterId === 'skeleton' && s.log[0].monsterId === 'slime',
+       'FIFO: first serve delivered first (oldest deepest in the log)');
+  }
+
+  // Dismiss lines are shop-side and stay instant; and the pending queue is never serialized.
+  {
+    const s = shopState();
+    s.queue = [customer('frog', 'club', 5)];
+    dismissCurrent(s);
+    ok(s.log.length === 1 && s.log[0].tier === 'dismiss' && s.pendingReports.length === 0,
+       'dismiss logs instantly (no battle, no pending report)');
+    s.queue = [customer('bat', 'club', 99)];
+    serveCurrent(s);
+    ok(!('pendingReports' in serializeSave(s)),
+       'pendingReports is transient — never serialized (reload drops the line only, never economy)');
+  }
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

@@ -1,10 +1,10 @@
 // main.js — entry point: wires DOM, scale-to-fit, input, save/load, nav, and the rAF game loop.
 import { CONFIG } from './config.js';
 import { clamp } from './utils.js';
-import { update, serveCurrent, dismissCurrent, restockItem, restockAll, buyUpgrade, buyPerk, buyLicense, hireWorker } from './game.js';
+import { update, serveCurrent, dismissCurrent, restockItem, restockAll, buyUpgrade, buyPerk, buyLicense, hireWorker, deliverBattleReport } from './game.js';
 import { loadState, saveState, clearSave } from './save.js';
 import { computeOffline, applyOffline, formatAway } from './offline.js';
-import { drawScene, playBobServe, playPortalOpen, spawnItemFloat, spawnCelebrant } from './render/scene.js';
+import { drawScene, playBobServe, playPortalOpen, spawnItemFloat, spawnCelebrant, setCelebrantEnteredCallback } from './render/scene.js';
 import { loadSprite } from './render/sprites.js';
 import { initHud, renderHud } from './ui/hud.js';
 import { initPanels, renderPanels } from './ui/panels.js';
@@ -17,6 +17,11 @@ const ctx = canvas.getContext('2d');
 ctx.imageSmoothingEnabled = false;                 // crisp pixels once sprites replace the rects
 
 const state = loadState();                         // resume from a saved shop, or a fresh one
+
+// Battle-report timing: the celebrant walking THROUGH the door is what publishes the battle
+// result (deliverBattleReport sets uiDirty itself; the fallback timer in update() covers ghosts
+// that never arrive). Wired here because main.js owns all render<->game plumbing.
+setCelebrantEnteredCallback(() => deliverBattleReport(state));
 
 // M6 — Kongregate bridge. Unconditional and safe on every platform: without the API's script tag
 // (index.html locally / on itch) this is a silent no-op; on Kongregate (index.kongregate.html) it

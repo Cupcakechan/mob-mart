@@ -83,7 +83,16 @@ export function serveCurrent(state) {
 
   const { tier } = resolveCombat(monster, item);               // off-screen fight -> outcome tier
   const text = logLine(monster.id, tier, { name: monster.displayName, item: item.displayName });
-  pushLog(state, { text, repDelta: repGain, tier, monsterId: monster.id });
+  // Battle-report timing (Daniel, 2026-07-04): the RESULT line lands when the celebrant ENTERS the
+  // battle door — not at the counter. The fight is decided here (same math, same moment) but the
+  // report is queued; delivery = the render's door-entry event (main.js wires it) OR the fallback
+  // timer below in update(). Economy stays at serve on purpose: they PAY at the counter; only the
+  // news travels slow. Milestone lines below stay INSTANT — they're shop-side voice ("Sale #N!"),
+  // which happens at the sale. Net log order: milestone at serve, result ~2s later on top of it.
+  (state.pendingReports ??= []).push({
+    entry: { text, repDelta: repGain, tier, monsterId: monster.id },
+    fallback: CONFIG.log?.reportFallbackSec ?? 3.0,
+  });
 
   // Lifetime ledger + crossing announcements (gold lines in the log, above the battle line).
   const prevEvery = everythingTier(state);
@@ -340,6 +349,16 @@ function autoWaveBroke(state, dt) {
 export function update(state, dt) {
   if (state.screen !== 'shop') return;
 
+  // Battle-report fallback: deliver any pending report whose celebrant never fired the door-entry
+  // event (dropped by the celebrant cap, tab hidden, art edge case). HEAD-ONLY delivery keeps the
+  // log FIFO — reports share one duration, so the head is always the most overdue.
+  if (state.pendingReports?.length) {
+    for (const r of state.pendingReports) r.fallback -= dt;
+    while (state.pendingReports.length && state.pendingReports[0].fallback <= 0) {
+      deliverBattleReport(state);
+    }
+  }
+
   if (state.serveCooldown > 0) {                    // count down the post-sale counter cooldown
     state.serveCooldown = Math.max(0, state.serveCooldown - dt);
     if (state.serveCooldown === 0) state.uiDirty = true;  // re-enable the Serve button
@@ -383,4 +402,19 @@ export function update(state, dt) {
 function pushLog(state, entry) {
   state.log.unshift(entry);
   if (state.log.length > CONFIG.log.maxEntries) state.log.length = CONFIG.log.maxEntries;
+}
+
+// Deliver the OLDEST pending battle report to the log. Called from two places: main.js's
+// door-entry callback (the celebrant just walked through — the normal path) and the fallback tick
+// in update(). FIFO by design and ID-LESS on purpose: celebrants and reports are both
+// serve-ordered, so "oldest report on each entry event" stays correct even when the celebrant cap
+// drops a ghost — the NEXT entry event delivers the dropped one's report, one slot late and
+// visually indistinguishable. Returns true if a report was delivered (main.js doesn't need it —
+// uiDirty is set here — but the suite asserts on it).
+export function deliverBattleReport(state) {
+  const r = state.pendingReports?.shift();
+  if (!r) return false;
+  pushLog(state, r.entry);
+  state.uiDirty = true;
+  return true;
 }

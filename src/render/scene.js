@@ -551,6 +551,11 @@ const CELEBRATE = {
 };
 const celebrants = [];   // ephemeral, never saved: { monsterId, startMs (-1 until first draw) }
 
+// Battle-report timing: main.js registers a callback here; drawCelebrants fires it the frame a
+// celebrant finishes entering the door. Kept as a callback so render code never imports game state.
+let celebrantEnteredCb = null;
+export function setCelebrantEnteredCallback(cb) { celebrantEnteredCb = cb; }
+
 export function spawnCelebrant(monsterId) {
   if (!monsterId) return;                          // guard: serve raced an empty queue
   if (celebrants.length >= CELEBRATE.max) celebrants.shift();
@@ -588,7 +593,14 @@ function drawCelebrants(ctx, tMs) {
     const c = celebrants[i];
     if (c.startMs === -1) c.startMs = tMs;
     const t = tMs - c.startMs;
-    if (t > C.hopMs + walkMs + C.enterMs) { celebrants.splice(i, 1); continue; }
+    if (t > C.hopMs + walkMs + C.enterMs) {
+      celebrants.splice(i, 1);
+      // Door-entry event (battle-report timing pass): the celebrant is fully through the door —
+      // tell the game so the pending battle report lands NOW. Render->game is callback-only
+      // (main.js wires it); scene never touches state directly. Fired once per despawn.
+      celebrantEnteredCb?.();
+      continue;
+    }
 
     // Phase math -> position, air, squash, depth, alpha. Three phases:
     //   HOP   celebrate in place at the old front slot

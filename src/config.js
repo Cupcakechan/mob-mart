@@ -80,5 +80,10 @@ export const CONFIG = {
     greetSec: 1.2,
   },
 
-  log: { maxEntries: 30 },
+  log: { maxEntries: 30,
+    reportFallbackSec: 3.0 },  // battle-report safety valve: a pending report older than this is
+                               // delivered by update() even if its celebrant never fires the
+                               // door-entry event (dropped by the cap, tab hidden, art edge case).
+                               // Celebration runs ~2.15s (hop 700 + march ~1000 + enter 450), so
+                               // 3.0 only ever fires when the visual didn't.
 };

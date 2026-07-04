@@ -51,6 +51,12 @@ export function createInitialState() {
     serveCooldown: 0,           // transient: seconds until Serve re-enables after a sale (Faster Counter)
     workerServed: false,        // transient: a worker just auto-served -> main.js plays Bob's serve anim
     log: [],                    // [{ text, repDelta, tier, monsterId }]  newest first
+    pendingReports: [],         // battle results awaiting delivery — the report lands when the
+                                // celebrant ENTERS the door (render event), or via the fallback
+                                // timer (CONFIG.log.reportFallbackSec). TRANSIENT like uiDirty:
+                                // serializeSave lists fields explicitly, so this is never saved —
+                                // a reload inside the ~2s window drops the LINE only (gold/rep
+                                // applied at serve, so nothing economic can be lost).
     lastSeen: Date.now(),       // timestamp of last activity (persisted; used by M5 offline earnings)
     uiDirty: true,              // transient: request a DOM panel re-render (not persisted)
   };
