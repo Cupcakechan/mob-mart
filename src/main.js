@@ -68,6 +68,15 @@ loadSprite('hp_flask',     'assets/sprites/hp_flask.png');     // shelf cards lo
 loadSprite('iron_sword',    'assets/sprites/iron_sword.png');    // tier-2 icons (authoring pending;
 loadSprite('greater_flask', 'assets/sprites/greater_flask.png'); // floats skip + cards degrade to
 loadSprite('knight_helm',   'assets/sprites/knight_helm.png');   // text until the PNGs land)
+loadSprite('tattered_shirt', 'assets/sprites/tattered_shirt.png');  // Batch 1 icons (64x64, id-named,
+loadSprite('bandages',       'assets/sprites/bandages.png');        //   registered BEFORE the art —
+loadSprite('wooden_shield',  'assets/sprites/wooden_shield.png');   //   the wall_shelf lesson; absent
+loadSprite('rusty_key',      'assets/sprites/rusty_key.png');       //   -> cards text-only, floats
+loadSprite('leather_bracer', 'assets/sprites/leather_bracer.png');  //   skip, wall slots empty-draw)
+loadSprite('murk_tonic',     'assets/sprites/murk_tonic.png');
+loadSprite('pickaxe',        'assets/sprites/pickaxe.png');
+loadSprite('quiver',         'assets/sprites/quiver.png');
+loadSprite('zip_tonic',      'assets/sprites/zip_tonic.png');
 loadSprite('bat_idle', 'assets/sprites/bat_idle.png');            // Batty's 4-frame wing-flap strip (512x128)
 loadSprite('slime_idle', 'assets/sprites/slime_idle.png');        // Slimey/Skele idle strips (Pass B): same
 loadSprite('skeleton_idle', 'assets/sprites/skeleton_idle.png');  //   shared 4-frame contract; absent -> static

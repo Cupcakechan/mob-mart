@@ -317,7 +317,10 @@ body{
 /* --- Shelf 2.0 (Pass 3.5): one-row header (title + category tabs + Restock All), compact cards,
    collapsible center panels. Vertical budget: panel top y96, bottom must stay <= ~320 — the speech
    bubble's airspace starts ~y328 worst case. One category row + header fits with ~20px to spare. */
-.items-panel { max-height: 224px; overflow: visible; }   /* replaces the 300px scroll cap */
+.items-panel { max-height: 224px; overflow-y: auto; }   /* batch 1: categories are 4-6 cards = 2 grid
+  rows; 'overflow: visible' would spill row 2 over the queue heads (~y394), so the second row
+  scrolls instead. TRADEOFF (provisional): the attention-pulse glow clips at the panel edge —
+  if that reads badly on feel, the dials are this max-height vs the panel's top:96. */
 .shelf-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .shelf-header .panel-title { margin: 0; flex-shrink: 0; }
 .shelf-tabs { display: flex; gap: 4px; flex: 1; }

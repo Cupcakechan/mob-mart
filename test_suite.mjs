@@ -24,6 +24,15 @@ function shopState() {
   s.spawnTimer = 1e9;   // never spawn during the test
   return s;
 }
+// Batch-1 fixture: EXACT-MATH tests pin the live shelf to the launch trio (the arithmetic is the
+// assertion; the shelf composition is fixture). 'empty' zeroes the free batch's stock (offline
+// sims — the robin skips empties, so the old sequences hold); 'full' caps them (Restock-All
+// quotes — a full item quotes 0). RULE tests instead iterate the live registry; never pin those.
+const FREE_BATCH = ['tattered_shirt', 'bandages', 'wooden_shield', 'rusty_key'];
+function pinTrioShelf(s, mode = 'empty') {
+  for (const id of FREE_BATCH) s.items[id].stock = (mode === 'full' ? s.items[id].maxStock ?? 5 : 0);
+  return s;
+}
 
 console.log('M4 auto-serve worker — smoke test\n');
 
@@ -338,6 +347,7 @@ console.log('M4 auto-serve worker — smoke test\n');
   {
     const s = createInitialState();
     s.workers.mimic_merchant.owned = true;
+    pinTrioShelf(s);                                // exact-math fixture: trio shelf only
     s.lastSeen = now - HOUR;                        // 600 possible sales at 6s... but only 9 in stock
     const r = computeOffline(s, now);
     ok(r.sales === 9, 'offline: stock-limits sales to the 9 on the shelf');
@@ -354,6 +364,7 @@ console.log('M4 auto-serve worker — smoke test\n');
   {
     const s = createInitialState();
     s.workers.mimic_merchant.owned = true;
+    pinTrioShelf(s);                                // exact-math fixture: trio robin sequence
     s.lastSeen = now - 30 * 1000;
     const r = computeOffline(s, now);
     ok(r.sales === 5, 'offline: time-limits sales (30s / 6s = 5)');
@@ -509,31 +520,38 @@ console.log('M4 auto-serve worker — smoke test\n');
     s.reputation = 200; s.lifetimeRep = 200;        // Beloved — tiers read the LIFETIME track (Fame)
     ok(canBuyUpgrade(s, 'backroom_storage') === true, 'backroom: buyable at Beloved with gold');
 
-    // Fresh shop (base shelf: club 3, helm 2, flask 4 = 9 live; maxStock 5 each), Bob hired, away 24h.
+    // Registry-derived expectations (batch 1 grew the free shelf — reserve conjures per UNLOCKED
+    // item, so this block cannot be pinned to the trio; the formulas ARE the mechanic's spec).
+    const { ITEMS: ITEMS16, ITEM_ORDER: ORDER16 } = await import('./src/data/items.js');
+    const baseIds = ORDER16.filter((id) => !ITEMS16[id].license);
+    const liveUnits = baseIds.reduce((a, id) => a + ITEMS16[id].startStock, 0);
+    const liveGold  = baseIds.reduce((a, id) => a + ITEMS16[id].startStock * ITEMS16[id].basePrice, 0);
+    const perLvlUnits = baseIds.reduce((a, id) => a + ITEMS16[id].maxStock, 0);
+    const perLvlGold  = baseIds.reduce((a, id) => a + ITEMS16[id].maxStock * (ITEMS16[id].basePrice - ITEMS16[id].restockCost), 0);
     const now = Date.now();
     const mk = (lvl) => { const t = createInitialState(); t.workers.mimic_merchant.owned = true;
       t.upgrades.backroom_storage = lvl;
       t.lastSeen = now - 24 * 3600 * 1000; return t; };
 
-    // L0: reserve plays no part — 9 live units, stock-limited exactly as before the upgrade existed.
+    // L0: reserve plays no part — live units only, stock-limited exactly as before the upgrade.
     const r0 = computeOffline(mk(0), now);
-    ok(r0.sales === 9 && r0.reserveUsed === 0, 'backroom L0: 9 live sales, no reserve involved');
+    ok(r0.sales === liveUnits && r0.reserveUsed === 0,
+       `backroom L0: ${liveUnits} live sales, no reserve involved`);
 
-    // L1: 9 live + 15 reserve (5/item x 3 items) = 24 sales.
-    // Gold: live at basePrice (3x12 + 2x18 + 4x15 = 132) + reserve at basePrice - restockCost
-    // (5x(12-6) + 5x(18-9) + 5x(15-8) = 30+45+35 = 110) = 242. Rep: 24 sales x 2 = 48.
+    // L1: live + one full shelf-refill per item; reserve pays basePrice - restockCost.
     const r1 = computeOffline(mk(1), now);
-    ok(r1.sales === 24, 'backroom L1: 24 sales (9 live + 15 reserve)');
-    ok(r1.reserveUsed === 15, 'backroom L1: 15 reserve units drawn');
-    ok(r1.gold === 242, 'backroom L1: gold 242 (132 live + 110 reserve net of restock)');
-    ok(r1.rep === 48, 'backroom L1: rep 48 (every sale grants rep)');
+    ok(r1.sales === liveUnits + perLvlUnits, `backroom L1: ${liveUnits + perLvlUnits} sales (live + reserve)`);
+    ok(r1.reserveUsed === perLvlUnits, `backroom L1: ${perLvlUnits} reserve units drawn`);
+    ok(r1.gold === liveGold + perLvlGold, `backroom L1: gold ${liveGold + perLvlGold} (live + reserve net of restock)`);
+    ok(r1.rep === (liveUnits + perLvlUnits) * 2, 'backroom L1: every sale grants rep (perSale 2)');
     ok((r1.consumed.club ?? 0) === 3 && (r1.consumed.metal_helmet ?? 0) === 2
        && (r1.consumed.hp_flask ?? 0) === 4,
        'backroom: consumed counts LIVE shelf units only (reserve never dents the real shelf)');
 
-    // L3: 9 live + 45 reserve = 54 — the upgrade demonstrably scales offline income (vs 9 at L0).
+    // L3: three refills per item — the upgrade demonstrably scales offline income (vs L0).
     const r3 = computeOffline(mk(3), now);
-    ok(r3.sales === 54 && r3.sales > r0.sales, 'backroom L3: 54 sales — real scaling, not a placebo');
+    ok(r3.sales === liveUnits + 3 * perLvlUnits && r3.sales > r0.sales,
+       `backroom L3: ${liveUnits + 3 * perLvlUnits} sales — real scaling, not a placebo`);
   }
 
   // Save round-trip: the fourth upgrade persists and clamps like the others.
@@ -569,7 +587,8 @@ console.log('M4 auto-serve worker — smoke test\n');
     s.stats.itemSales.club = 1000;
     ok(near(itemGoldMult(s, 'club'), 1.56), '1000 club sales: x1.56 (all 7 breakpoints)');
     // The "everything" tier is laggard-driven: 50/50/49 is NOT a full-shelf tier.
-    s.stats.itemSales = { club: 50, metal_helmet: 50, hp_flask: 49 };
+    for (const id of Object.keys(s.stats.itemSales)) s.stats.itemSales[id] = 50;   // ALL base >= 50
+    s.stats.itemSales.hp_flask = 49;                                                // ...except the laggard
     ok(near(globalGoldMult(s), 1.0), 'everything: laggard at 49 -> still x1.0');
     s.stats.itemSales.hp_flask = 50;
     ok(near(globalGoldMult(s), 1.25), 'everything: all >= 50 -> x1.25');
@@ -588,7 +607,7 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
   {
     const s = shopState();
-    s.stats.itemSales = { club: 50, metal_helmet: 50, hp_flask: 50 };  // club x1.24, global x1.25
+    for (const id of Object.keys(s.stats.itemSales)) s.stats.itemSales[id] = 50;   // club x1.24, global x1.25
     s.queue = [customer('slime', 'club', 99)];
     const gold0 = s.gold;
     serveCurrent(s);
@@ -626,7 +645,8 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
   {
     const s = shopState();
-    s.stats.itemSales = { club: 50, metal_helmet: 50, hp_flask: 49 };
+    for (const id of Object.keys(s.stats.itemSales)) s.stats.itemSales[id] = 50;   // laggard: flask at 49
+    s.stats.itemSales.hp_flask = 49;
     s.items.hp_flask.stock = 3;
     s.queue = [customer('bat', 'hp_flask', 99)];
     serveCurrent(s);                                 // flask hits 50: item breakpoint + everything tier
@@ -850,8 +870,9 @@ console.log('M4 auto-serve worker — smoke test\n');
   // The regression guard: three new items at 0 sales must NOT drop an earned everything-tier.
   {
     const s = shopState();
-    s.stats.itemSales = { club: 60, metal_helmet: 60, hp_flask: 60,
-                          iron_sword: 0, greater_flask: 0, knight_helm: 0 };
+    for (const id of Object.keys(s.stats.itemSales)) {
+      s.stats.itemSales[id] = ITEMS[id]?.license ? 0 : 60;   // every license-FREE item at 60
+    }
     ok(everythingTier(s) === 1, 'everything tier keys off BASE items only (tier-2 at 0 is harmless)');
   }
 
@@ -902,7 +923,7 @@ console.log('M4 auto-serve worker — smoke test\n');
 
   // Quote: full fill at EFFECTIVE costs (Haggler applies), unlicensed items excluded.
   {
-    const s = shopState();                            // fresh: club 3/5, helm 2/5, flask 4/5
+    const s = pinTrioShelf(shopState(), 'full');      // fixture: batch four at cap quote 0
     // need: club 2x6 + helm 3x9 + flask 1x8 = 12+27+8 = 47; tier-2 locked -> excluded
     ok(restockAllCost(s) === 47, 'quote: 47 gold to fill the base shelf (locked items excluded)');
     s.perks.haggler_charm = 3;                        // costs 3/6/5
@@ -911,7 +932,7 @@ console.log('M4 auto-serve worker — smoke test\n');
 
   // Full fill when gold covers the quote.
   {
-    const s = shopState();
+    const s = pinTrioShelf(shopState(), 'full');      // fixture: only the trio has room to fill
     s.gold = 100;
     const bought = restockAll(s);
     ok(bought === 6 && s.gold === 53, 'full fill: 6 units bought, exactly the 47-gold quote spent');
@@ -1234,9 +1255,14 @@ console.log('M4 auto-serve worker — smoke test\n');
       consumableWants++;
       if (c.wantedItemId === 'greater_flask') flaskWants++;
     }
-    // Expected 3:1 over hp_flask -> ~75%; assert well clear of uniform 50%.
-    ok(consumableWants >= 100 && flaskWants / consumableWants > 0.6,
-       `A2: itemBias dominates within the category (${flaskWants}/${consumableWants} greater_flask)`);
+    // Expectation from the LIVE registry (a hand-typed 2-item-category threshold broke once when
+    // batch 1 grew the pool — same lesson as the budget bound): dominance = comfortably above the
+    // uniform per-item share.
+    const cPool = Object.values(ITEMS).filter((it) =>
+      it.category === 'consumable' && (!it.license || s.licenses[it.id] === true));
+    const uniform = 1 / cPool.length;
+    ok(consumableWants >= 100 && flaskWants / consumableWants > uniform * 1.4,
+       `A2: itemBias dominates within the category (${flaskWants}/${consumableWants}; uniform would be ${Math.round(uniform * 100)}%)`);
   }
 
   // B2 — the ratchet, pure math: earned floor holds when computed drops to 0.
@@ -1328,6 +1354,70 @@ console.log('M4 auto-serve worker — smoke test\n');
     }
   }
   ok(!sawTaggedWithoutItem, 'item-aware: no itemId -> tagged templates never fire (400 draws)');
+}
+
+// 29. Content batch 1: nine rows on the scaffold — the A2/B2 payoffs, end to end ----------------
+{
+  const { ITEMS, ITEM_ORDER } = await import('./src/data/items.js');
+  const { MONSTERS, MONSTER_IDS } = await import('./src/data/monsters.js');
+  const { spawnCustomer } = await import('./src/game.js');
+  const { mergeSave } = await import('./src/save.js');
+  const { everythingTier } = await import('./src/data/milestones.js');
+  const { CONFIG } = await import('./src/config.js');
+
+  const batch = ['tattered_shirt', 'bandages', 'wooden_shield', 'rusty_key',
+    'leather_bracer', 'murk_tonic', 'pickaxe', 'quiver', 'zip_tonic'];
+  ok(batch.every((id) => ITEMS[id] !== undefined) && ITEM_ORDER.length === 15,
+     'batch 1: all nine rows exist, ITEM_ORDER at 15');
+  const realCats = new Set(['weapon', 'armor', 'consumable']);
+  ok(batch.every((id) => realCats.has(ITEMS[id].category)
+       && ITEMS[id].basePrice > ITEMS[id].restockCost && Number.isFinite(ITEMS[id].combatEffect)),
+     'batch 1: real categories, restock < price (margin invariant), finite eff');
+
+  // Free-tier affordability INVARIANT: price <= the roster's minimum budget roll, from the LIVE
+  // registry — a free-tier want can never strand a customer at cant-afford.
+  const minRoll = Math.min(...MONSTER_IDS.map((id) => MONSTERS[id].budgetRange[0]));
+  const free = batch.filter((id) => !ITEMS[id].license);
+  ok(free.length === 4 && free.every((id) => ITEMS[id].basePrice <= minRoll),
+     `batch 1: free four never strand (every price <= min roll ${minRoll})`);
+
+  // The license rung: five gated rows, valid tier indices, empty shelves until bought, and the
+  // NEW Trusted rung actually exists below the old 800g Renowned tier.
+  const lic = batch.filter((id) => ITEMS[id].license);
+  ok(lic.length === 5 && lic.every((id) => {
+    const l = ITEMS[id].license;
+    return Number.isInteger(l.requiredTier) && l.requiredTier < CONFIG.reputation.tiers.length
+      && l.cost > 0 && ITEMS[id].startStock === 0;
+  }), 'batch 1: licensed five gated on real tiers and start empty');
+  ok(lic.some((id) => ITEMS[id].license.requiredTier === 2)
+     && lic.some((id) => ITEMS[id].license.requiredTier === 3),
+     'batch 1: the Trusted AND Beloved license rungs opened');
+
+  // B2 payoff, end to end: a pre-batch save (trio at 60 sales) keeps its earned everything tier
+  // even though four new FREE items now sit in the laggard set at 0 sales. This exact scenario is
+  // why the ratchet + pinned legacy basis exist.
+  const legacy = { stats: { itemSales: { club: 60, metal_helmet: 60, hp_flask: 60 }, monsterServes: {} } };
+  const m = mergeSave(createInitialState(), legacy);
+  ok(everythingTier(m) === 1, 'batch 1 x B2: earned everything tier survives four new free items');
+
+  // A2 payoff: new free items get WANTED with zero per-monster wiring...
+  let sawNewFree = false;
+  for (let i = 0; i < 600 && !sawNewFree; i++) {
+    if (free.includes(spawnCustomer(shopState()).wantedItemId)) sawNewFree = true;
+  }
+  ok(sawNewFree, 'batch 1 x A2: new free items enter the want pool with no wiring (600 spawns)');
+  // ...while locked rows stay invisible, then enter the pool once licensed.
+  let lockedLeak = false;
+  for (let i = 0; i < 400; i++) {
+    if (lic.includes(spawnCustomer(shopState()).wantedItemId)) lockedLeak = true;
+  }
+  const open = shopState();
+  for (const id of lic) open.licenses[id] = true;
+  let sawLicensed = false;
+  for (let i = 0; i < 800 && !sawLicensed; i++) {
+    if (lic.includes(spawnCustomer(open).wantedItemId)) sawLicensed = true;
+  }
+  ok(!lockedLeak && sawLicensed, 'batch 1: license gate holds locked; licensed rows become wantable');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

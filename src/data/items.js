@@ -17,7 +17,34 @@ export const ITEMS = {
                   license: { cost: 800,  requiredTier: 4 } },   // Renowned
   knight_helm:  { id:'knight_helm',  displayName:'Knight Helm',  iconId:'knight_helm',  category:'armor',      basePrice:30, restockCost:15, startStock:0, maxStock:5, combatEffect:9,
                   license: { cost: 1200, requiredTier: 5 } },   // Legendary — the top-shelf goal
+
+  // --- Batch 1 (items phase, 2026-07-04): FREE TIER. Priced <= the roster's MINIMUM budget roll
+  // (10), so a free-tier want can never strand a customer at 'cant-afford'. Remember combatEffect
+  // is COMEDY TEXTURE, not economy (the outcome tier only picks the log line — payout is computed
+  // before resolveCombat): eff-1 gear exists to lose hilariously, at zero economic cost.
+  tattered_shirt:{ id:'tattered_shirt', displayName:'Tattered Shirt', iconId:'tattered_shirt', category:'armor',      basePrice:5,  restockCost:2, startStock:3, maxStock:5, combatEffect:1 },
+  bandages:      { id:'bandages',       displayName:'Bandages',       iconId:'bandages',       category:'consumable', basePrice:6,  restockCost:3, startStock:3, maxStock:5, combatEffect:2 },
+  wooden_shield: { id:'wooden_shield',  displayName:'Wooden Shield',  iconId:'wooden_shield',  category:'armor',      basePrice:8,  restockCost:4, startStock:2, maxStock:5, combatEffect:3 },
+  rusty_key:     { id:'rusty_key',      displayName:'Rusty Key',      iconId:'rusty_key',      category:'consumable', basePrice:10, restockCost:5, startStock:2, maxStock:5, combatEffect:1 },
+                  // (keys are one-use consumables — Daniel's call; chain base for nothing, pure curio)
+
+  // --- Batch 1: the TRUSTED/BELOVED license rung — cheap early licenses between the free shelf
+  // and the 800g Renowned tier, so "affordable-soon" wants exist at every stage (idle research
+  // rule). Chain bases live here: wooden_shield -> Iron Buckler, leather_bracer -> Iron Gauntlet
+  // (batch 2; a chain is just a pricier licensed row — no mechanic).
+  leather_bracer:{ id:'leather_bracer', displayName:'Leather Bracer', iconId:'leather_bracer', category:'armor',      basePrice:14, restockCost:7,  startStock:0, maxStock:5, combatEffect:5,
+                  license: { cost: 150, requiredTier: 2 } },   // Trusted
+  murk_tonic:    { id:'murk_tonic',     displayName:'Murk Tonic',     iconId:'murk_tonic',     category:'consumable', basePrice:13, restockCost:6,  startStock:0, maxStock:5, combatEffect:4,
+                  license: { cost: 150, requiredTier: 2 } },   // Trusted
+  pickaxe:       { id:'pickaxe',        displayName:'Pickaxe',        iconId:'pickaxe',        category:'weapon',     basePrice:16, restockCost:8,  startStock:0, maxStock:5, combatEffect:6,
+                  license: { cost: 200, requiredTier: 2 } },   // Trusted
+  quiver:        { id:'quiver',         displayName:'Quiver of Arrows', iconId:'quiver',       category:'weapon',     basePrice:20, restockCost:10, startStock:0, maxStock:5, combatEffect:7,
+                  license: { cost: 300, requiredTier: 3 } },   // Beloved
+  zip_tonic:     { id:'zip_tonic',      displayName:'Zip Tonic',      iconId:'zip_tonic',      category:'consumable', basePrice:22, restockCost:11, startStock:0, maxStock:5, combatEffect:7,
+                  license: { cost: 300, requiredTier: 3 } },   // Beloved
 };
 
-// Display order for the shelf cards (base row, then the licensed tier-2 row).
-export const ITEM_ORDER = ['club', 'metal_helmet', 'hp_flask', 'iron_sword', 'greater_flask', 'knight_helm'];
+// Display order for the shelf cards (base row, tier-2 row, then batch 1: free four + license rung).
+export const ITEM_ORDER = ['club', 'metal_helmet', 'hp_flask', 'iron_sword', 'greater_flask', 'knight_helm',
+  'tattered_shirt', 'bandages', 'wooden_shield', 'rusty_key',
+  'leather_bracer', 'murk_tonic', 'pickaxe', 'quiver', 'zip_tonic'];
