@@ -67,7 +67,7 @@ body{
 
 /* Current customer (bottom-left) */
 .customer-panel{
-  left:24px;bottom:16px;width:500px;               /* bottom bar, left segment (ends 524; nav left edge lands ~537) */
+  left:24px;bottom:16px;width:430px;               /* bottom bar, left segment (ends 524; nav left edge lands ~537) */
   display:flex;align-items:center;gap:16px;        /* info grows, actions fixed right */
 }
 .customer-info{flex:1;min-width:0;}                /* min-width:0 lets long item names ellipse, not overflow */
@@ -200,8 +200,7 @@ body{
 
 /* Bottom nav — slim bar in the center gap between the corner panels */
 .nav{
-  position:absolute;bottom:16px;right:340px;z-index:6;  /* RIGHT-anchored: edge at 940, 16px clear of the log (956); natural width grows leftward into open floor */
-  display:flex;gap:6px;background:var(--panel-bg);border:2px solid var(--panel-edge);
+  position:absolute;bottom:16px;right:340px;z-index:6;  /* RIGHT-anchored: edge at 940, 16px clear of the log (956); grows LEFTWARD — 5 tabs reach ~470-480, budgeted against the customer panel (ends 454) */  display:flex;gap:6px;background:var(--panel-bg);border:2px solid var(--panel-edge);
   border-radius:14px;padding:5px;box-shadow:0 5px 0 rgba(0,0,0,.4);
 }
 .nav-btn{
