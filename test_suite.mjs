@@ -1517,5 +1517,32 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
 }
 
+// 32. Bob's hire arc — the first-purchase beat: fresh-start gate + the funding invariant ---------
+// The UX arc (drawBob hidden, goal chip) is render/DOM and lives in the browser test plan; what the
+// suite pins is the DESIGN math underneath it: a fresh shop must start Bob unowned (the gate's
+// input), the starting purse must NOT cover the hire (forcing >= 1 manual serve — the tutorial),
+// and 1-2 worst-case manual serves must always close the gap (registry-derived, never hand-typed:
+// worst case income per serve = the cheapest license-free, boot-stocked item's basePrice, since
+// loyalty multipliers only ever raise a payout).
+{
+  const { CONFIG } = await import('./src/config.js');
+  const { ITEMS } = await import('./src/data/items.js');
+  const { workerHireCost } = await import('./src/data/workers.js');
+
+  const s = createInitialState();
+  ok(s.workers.mimic_merchant.owned === false,
+     'hire arc: a fresh save starts Bob unowned (the hidden-until-hired gate reads this)');
+
+  const hire = workerHireCost('mimic_merchant');
+  ok(CONFIG.economy.startingGold < hire,
+     `hire arc: starting gold (${CONFIG.economy.startingGold}) cannot buy Bob outright (${hire}) — the first serve is mandatory`);
+
+  const minServeIncome = Math.min(...Object.values(ITEMS)
+    .filter((it) => !it.license && it.startStock > 0)
+    .map((it) => it.basePrice));
+  ok(CONFIG.economy.startingGold + 2 * minServeIncome >= hire,
+     `hire arc: two worst-case serves fund the hire (${CONFIG.economy.startingGold} + 2x${minServeIncome} >= ${hire})`);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

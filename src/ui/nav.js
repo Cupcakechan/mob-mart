@@ -28,6 +28,14 @@ function applyShopAttention() {
   if (btn) btn.classList.toggle('attention', wantAttention && activeTab !== 'shop');
 }
 
+// Open a specific tab from OUTSIDE the nav (e.g. the hire goal chip). FORCE-OPEN semantics:
+// unlike a nav-button click, calling this with the already-active tab does nothing — external
+// callers mean "show me this panel", never "toggle it" (setTab's collapse is a nav-click gesture).
+export function openTab(tab) {
+  if (!navRoot || tab === activeTab) return;
+  setTab(navRoot, tab);
+}
+
 export function initNav(root) {
   navRoot = root;
   root.innerHTML = TABS.map((t) => {

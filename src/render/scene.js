@@ -387,7 +387,7 @@ export function drawScene(ctx, state, tMs) {
 
   drawWallShelf(ctx, state, tMs);  // goods on the wall (diegetic shelf, C-lite — display only)
   drawCounterShadow(ctx);       // contact shadow FIRST: grounds the desk AND Bob standing behind it
-  drawBob(ctx, tMs);            // before the counter, so the counter front overlaps his lower body
+  drawBob(ctx, state, tMs);     // before the counter, so the counter front overlaps his lower body
   drawCounter(ctx);
   drawPortal(ctx, tMs);
   drawQueue(ctx, state, tMs);
@@ -720,7 +720,17 @@ function drawCelebrants(ctx, tMs) {
   }
 }
 
-function drawBob(ctx, tMs) {
+function drawBob(ctx, state, tMs) {
+  // Bob's hire arc: Bob does NOT exist on stage until hired. The empty counter (plus the DOM goal
+  // chip, panels.js) carries the pseudo-tutorial beat — manual serving first, then the hire makes
+  // him appear. Old saves with owned already true never see the gate. The anim state also resets
+  // here so a stray pre-hire playBobServe (main.js gates the trigger, but belt-and-braces) can't
+  // greet his first frame with a stale mid-one-shot.
+  if (state?.workers?.mimic_merchant?.owned !== true) {
+    bobAnim.name = 'idle'; bobAnim.startMs = null;
+    return;
+  }
+
   const cfg = BOB_ANIMS[bobAnim.name];
   let spr = getSprite(cfg.spriteId);
   let frameCount = cfg.frames;
@@ -741,7 +751,7 @@ function drawBob(ctx, tMs) {
     frame %= frameCount;                            // loop (or a single static frame)
   } else if (frame >= frameCount) {
     bobAnim.name = 'idle'; bobAnim.startMs = tMs;   // one-shot done -> return to idle...
-    drawBob(ctx, tMs); return;                      // ...and draw idle this frame (idle loops, so no re-recursion)
+    drawBob(ctx, state, tMs); return;               // ...and draw idle this frame (idle loops, so no re-recursion)
   }
 
   const fw = spr.naturalWidth / frameCount;         // auto-sliced frame width

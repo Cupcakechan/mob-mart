@@ -1,7 +1,7 @@
 // panels.js — DOM panels: current customer (front), Shelf (restock), Upgrades view, Workers view,
 // battle log. The Shelf / Upgrades / Workers panels share the center slot; the bottom nav toggles
 // which is visible.
-import { setShopAttention } from './nav.js';
+import { setShopAttention, openTab } from './nav.js';
 import { ITEM_BREAKPOINTS, MONSTER_BREAKPOINTS, MONSTER_REP_PER_BREAKPOINT,
   nextBreakpoint, crossedCount, bestiaryCompletion } from '../data/milestones.js';
 import { PERKS, PERK_ORDER, perkCost } from '../data/perks.js';
@@ -151,6 +151,11 @@ export function initPanels(root, h) {
   }).join('');
   root.querySelectorAll('.wrk-buy').forEach((btn) =>
     btn.addEventListener('click', () => handlers.onHireWorker(btn.dataset.worker)));
+
+  // Bob's hire arc: the goal chip over the empty counter routes to the remedy (the Workers tab).
+  // Lives outside this root (a #stage sibling over the diorama) — same document, direct lookup.
+  document.getElementById('hire-goal-chip')
+    ?.addEventListener('click', () => openTab('workers'));
 
   // Bestiary cards (Pass 4a; data-driven — Gobbo will auto-appear from the registry). DISPLAY
   // LAYER ONLY: the Pass-1 loyalty ledger (state.stats.monsterServes) is the single source of
@@ -350,6 +355,17 @@ export function renderPanels(state) {
         buyBtn.innerHTML = `Hire &#9670; ${workerHireCost(id)}`;
       }
     }
+  }
+
+  // --- Bob's hire arc: the goal chip shows while the FIRST merchant is unhired; hiring hides it
+  // (hireWorker sets uiDirty, so it vanishes the same render). Old saves with owned already true
+  // never see it. Cost reads the live worker registry, so a hireCost retune can't drift the label.
+  const hireChip = document.getElementById('hire-goal-chip');
+  if (hireChip) {
+    const bobOwned = isWorkerOwned(state, 'mimic_merchant');
+    hireChip.classList.toggle('hidden', bobOwned);
+    if (!bobOwned) hireChip.innerHTML =
+      `The counter needs a merchant!<br><b>Hire Bob &mdash; &#9670; ${workerHireCost('mimic_merchant')}</b>`;
   }
 
   // --- Bestiary: lifetime serves -> loyalty pips + studied % (display over the Pass-1 ledger) ---

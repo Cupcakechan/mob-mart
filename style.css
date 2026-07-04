@@ -155,6 +155,23 @@ body{
 /* Generic hide helper (used for tab switching) */
 .hidden{display:none;}
 
+/* --- Bob's hire arc: goal chip over the empty counter (panels.js fills + toggles it). Centered
+   where Bob will stand (counter centerX ~730) so the chip literally marks the vacancy; breathes
+   the attention gold — it IS the level-0 goal — and clicks through to the Workers tab. z5 keeps
+   it above the panels (z4) and under the title overlay (z10), so it only shows in-shop. ------- */
+.hire-goal-chip{
+  position:absolute;left:730px;top:330px;transform:translateX(-50%);z-index:5;
+  background:var(--panel-bg);border:2px solid var(--gold);border-radius:12px;
+  padding:10px 16px;color:#e8e0cd;font-family:var(--font);font-size:14px;line-height:1.5;
+  text-align:center;cursor:pointer;
+  animation:attn-breathe 1.2s ease-in-out infinite;  /* box-shadow only — safe with the transform */
+}
+.hire-goal-chip b{color:var(--gold);font-size:15px;}
+.hire-goal-chip:hover{background:rgba(255,207,74,.14);}
+@media (prefers-reduced-motion: reduce){
+  .hire-goal-chip{animation:none;box-shadow:0 0 0 2px var(--gold);}  /* static gold still marks it */
+}
+
 /* Upgrades panel shares the center slot with the Shelf */
 .upgrades-panel{left:40px;top:96px;width:430px;max-height:280px;overflow-y:auto;}
 .upgrade-cards{display:flex;flex-direction:column;gap:7px;}

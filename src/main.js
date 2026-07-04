@@ -126,7 +126,13 @@ initPanels(document.getElementById('shop-ui'), {
   onServe:      () => {                                              // paid -> anims + item float
     const bought = state.queue[0]?.wantedItemId;                     // read BEFORE serve shifts the queue
     const buyer  = state.queue[0]?.monsterId;                        // ditto — the celebrant's identity
-    if (serveCurrent(state)) { playBobServe(); playPortalOpen(); spawnItemFloat(bought); spawnCelebrant(buyer); }
+    if (serveCurrent(state)) {
+      // Bob's hire arc: pre-hire, YOU are the merchant — the serve happens with no Bob on stage,
+      // so his one-shot is gated on ownership (drawBob gates the draw; this gates the trigger).
+      // The customer-side beats (door, float, celebrant) are unconditional — the sale is real.
+      if (state.workers?.mimic_merchant?.owned === true) playBobServe();
+      playPortalOpen(); spawnItemFloat(bought); spawnCelebrant(buyer);
+    }
   },
   onDismiss:    () => dismissCurrent(state),
   onRestock:    (id) => restockItem(state, id),
