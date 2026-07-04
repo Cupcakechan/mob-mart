@@ -5,11 +5,12 @@ const TABS = [
   { id: 'shop',     label: 'Shop' },
   { id: 'upgrades', label: 'Upgrades' },
   { id: 'workers',  label: 'Workers' },
+  { id: 'fame',     label: 'Fame' },
   { id: 'bestiary', label: 'Bestiary' },
 ];
 
 // Which center panel each tab shows. Tabs without an entry here don't swap the center.
-const PANEL_FOR = { shop: 'items-panel', upgrades: 'upgrades-panel', workers: 'workers-panel', bestiary: 'bestiary-panel' };
+const PANEL_FOR = { shop: 'items-panel', upgrades: 'upgrades-panel', workers: 'workers-panel', fame: 'fame-panel', bestiary: 'bestiary-panel' };
 
 let navRoot = null;          // kept for the attention hook below
 let activeTab = 'shop';

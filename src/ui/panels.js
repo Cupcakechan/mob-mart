@@ -5,6 +5,7 @@ import { setShopAttention, openTab } from './nav.js';
 import { ITEM_BREAKPOINTS, MONSTER_BREAKPOINTS, MONSTER_REP_PER_BREAKPOINT,
   nextBreakpoint, crossedCount, bestiaryCompletion } from '../data/milestones.js';
 import { PERKS, PERK_ORDER, perkCost } from '../data/perks.js';
+import { trackByTier, nextTierInfo } from '../data/fametrack.js';
 import { CONFIG } from '../config.js';
 import { ITEMS, ITEM_ORDER } from '../data/items.js';
 import { MONSTERS, MONSTER_IDS } from '../data/monsters.js';
@@ -58,6 +59,11 @@ export function initPanels(root, h) {
     <section id="workers-panel" class="panel workers-panel hidden">
       <h2 class="panel-title">Workers</h2>
       <div id="worker-cards" class="worker-cards"></div>
+    </section>
+
+    <section id="fame-panel" class="panel fame-panel hidden">
+      <h2 class="panel-title">Fame <span class="subtitle-hint" id="fame-standing"></span></h2>
+      <div id="fame-track" class="fame-track"></div>
     </section>
 
     <section id="bestiary-panel" class="panel bestiary-panel hidden">
@@ -156,6 +162,23 @@ export function initPanels(root, h) {
   // Lives outside this root (a #stage sibling over the diorama) — same document, direct lookup.
   document.getElementById('hire-goal-chip')
     ?.addEventListener('click', () => openTab('workers'));
+
+  // Fame track (UX roadmap 2): STATIC structure — the ladder is registry data, so the nodes and
+  // their unlock chips are built once here; only reached/current classes and the header's standing
+  // line change at runtime (renderPanels). Chip detail rides the title attribute (hover).
+  document.getElementById('fame-track').innerHTML = trackByTier().map((n) => `
+    <div class="fame-node" data-tier="${n.index}">
+      <div class="fame-rail"><span class="fame-dot"></span></div>
+      <div class="fame-node-body">
+        <div class="fame-node-head">
+          <span class="fame-node-label">${n.label}</span>
+          <span class="fame-node-min">${n.min > 0 ? `&#9819; ${n.min}` : 'day one'}</span>
+        </div>
+        <div class="fame-unlocks">${n.unlocks.length
+          ? n.unlocks.map((u) => `<span class="fame-chip ${u.kind}" title="${u.detail}">${u.label}</span>`).join('')
+          : '<span class="fame-chip">A milestone of its own</span>'}</div>
+      </div>
+    </div>`).join('');
 
   // Bestiary cards (Pass 4a; data-driven — Gobbo will auto-appear from the registry). DISPLAY
   // LAYER ONLY: the Pass-1 loyalty ledger (state.stats.monsterServes) is the single source of
@@ -366,6 +389,26 @@ export function renderPanels(state) {
     hireChip.classList.toggle('hidden', bobOwned);
     if (!bobOwned) hireChip.innerHTML =
       `The counter needs a merchant!<br><b>Hire Bob &mdash; &#9670; ${workerHireCost('mimic_merchant')}</b>`;
+  }
+
+  // --- Fame track: reached/current node state + the dual-track standing line. The header is the
+  // spendable-vs-lifetime separator the panel owes: the BADGE-driving number (lifetime) and the
+  // WALLET (spendable) side by side, plus the same remainder the HUD carries. ---
+  {
+    const fame = fameOf(state);
+    const tierIdx = reputationTierIndex(state);
+    document.querySelectorAll('.fame-node').forEach((node) => {
+      const i = Number(node.dataset.tier);
+      node.classList.toggle('reached', i < tierIdx);
+      node.classList.toggle('current', i === tierIdx);
+    });
+    const standing = document.getElementById('fame-standing');
+    if (standing) {
+      const next = nextTierInfo(fame);
+      standing.innerHTML =
+        `lifetime <b>&#9819; ${Math.floor(fame)}</b> \u00b7 to spend <b>&#9819; ${Math.floor(state.reputation)}</b>`
+        + (next ? ` \u00b7 ${next.remaining}&#9819; to ${next.label}` : ' \u00b7 top of the ladder');
+    }
   }
 
   // --- Bestiary: lifetime serves -> loyalty pips + studied % (display over the Pass-1 ledger) ---

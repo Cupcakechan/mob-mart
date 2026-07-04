@@ -1544,5 +1544,59 @@ console.log('M4 auto-serve worker — smoke test\n');
      `hire arc: two worst-case serves fund the hire (${CONFIG.economy.startingGold} + 2x${minServeIncome} >= ${hire})`);
 }
 
+// 33. Fame track (UX roadmap 2): registry-scanned nodes + the HUD remainder math ----------------
+// RULE TESTS throughout — every expectation derives from the LIVE registries and the live tier
+// ladder (the batch-1 doctrine: never hand-type a roster-dependent number). The DOM presentation
+// is browser test-plan territory; what's pinned here is the scan's auto-flow contract: everything
+// tier-gated appears on the track, exactly once, on ITS tier's node.
+{
+  const { trackByTier, nextTierInfo } = await import('./src/data/fametrack.js');
+  const { CONFIG } = await import('./src/config.js');
+  const { ITEMS } = await import('./src/data/items.js');
+  const { UPGRADES, UPGRADE_ORDER } = await import('./src/data/upgrades.js');
+  const { PERKS, PERK_ORDER } = await import('./src/data/perks.js');
+
+  const nodes = trackByTier();
+  ok(nodes.length === CONFIG.reputation.tiers.length, 'fame track: one node per live tier');
+  ok(nodes.every((n, i) => n.label === CONFIG.reputation.tiers[i].label
+                        && n.min   === CONFIG.reputation.tiers[i].min),
+     'fame track: node labels + thresholds mirror the tier ladder, ascending');
+
+  // Auto-flow, counted: nothing lost, nothing doubled.
+  const licensed = Object.values(ITEMS).filter((it) => it.license);
+  const budgetLines = nodes.reduce((a, n) => a + n.unlocks.filter((u) => u.kind === 'budget').length, 0);
+  const total = nodes.reduce((a, n) => a + n.unlocks.length, 0);
+  ok(total === UPGRADE_ORDER.length + PERK_ORDER.length + licensed.length + budgetLines,
+     'fame track: unlock count = upgrades + perks + licenses + budget lines');
+
+  // Auto-flow, placed: each gated thing sits on ITS requiredTier node (a new registry row with a
+  // requiredTier lands on the track with zero wiring — the panel's whole promise).
+  ok(licensed.every((it) => nodes[it.license.requiredTier].unlocks
+       .some((u) => u.kind === 'license' && u.label === it.displayName)),
+     'fame track: every license sits on its requiredTier node');
+  ok(UPGRADE_ORDER.every((id) => nodes[UPGRADES[id].requiredTier].unlocks
+       .some((u) => u.kind === 'upgrade' && u.label === UPGRADES[id].displayName)),
+     'fame track: every upgrade sits on its requiredTier node');
+  ok(PERK_ORDER.every((id) => nodes[PERKS[id].requiredTier].unlocks
+       .some((u) => u.kind === 'perk' && u.label === PERKS[id].displayName)),
+     'fame track: every perk sits on its requiredTier node');
+
+  // Budget lines mirror spawnCustomer's dial exactly: tiers ABOVE Beloved (index 3), only while
+  // the CONFIG dial is non-zero.
+  ok(nodes.every((n) => n.unlocks.some((u) => u.kind === 'budget')
+                     === (n.index > 3 && (CONFIG.fame?.budgetPerTierAboveBeloved ?? 0) > 0)),
+     'fame track: budget lines exactly on tiers above Beloved');
+
+  // The remainder ("· 32♛ to Trusted" was the design example): pure math on the lifetime number.
+  ok(nextTierInfo(0)?.label === CONFIG.reputation.tiers[1].label,
+     'remainder: at fame 0 the next tier is tier 1');
+  const t2 = CONFIG.reputation.tiers[2];
+  const r = nextTierInfo(t2.min - 32);
+  ok(r?.label === t2.label && r?.remaining === 32,
+     `remainder: 32 short of ${t2.label} reads exactly 32`);
+  ok(nextTierInfo(CONFIG.reputation.tiers.at(-1).min) === null,
+     'remainder: at the top of the ladder there is no next tier');
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

@@ -375,7 +375,7 @@ body{
   width:640px;max-height:500px;overflow-y:auto;
 }
 .bestiary-panel .panel-title{font-size:20px;}
-.bestiary-panel .panel-title .subtitle-hint{
+.bestiary-panel .panel-title .subtitle-hint, .fame-panel .panel-title .subtitle-hint{
   color:#b6abc9;font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;margin-left:10px;
 }
 .beast-cards{display:flex;flex-direction:column;gap:10px;}
@@ -400,3 +400,49 @@ body{
    soft glow. Rare by pool math, loud by design; the memorability IS the reward. */
 .battle-log li.golden { color: var(--gold); font-weight: 800; text-shadow: 0 0 6px rgba(255, 207, 74, .45); }
 .battle-log li.golden .log-crown { color: var(--gold); }
+
+/* --- Fame track panel (UX roadmap 2): the "unlock tree". Fame is LINEAR, so it's a vertical
+   TRACK — one node per tier on a spine, unlock chips fanned under each, registry-scanned in
+   fametrack.js. Centered 640x500 showcase: the SECOND documented exception to the actor-band
+   layout rule (the Bestiary-v2 pattern — a reading panel, summoned deliberately, dismissed by
+   re-clicking its nav tab). Display only: chips name what a tier unlocks; buying stays in the
+   Shop/Upgrades panels. ------------------------------------------------------------------- */
+.fame-panel{
+  left:50%;top:96px;transform:translateX(-50%);
+  width:640px;max-height:500px;overflow-y:auto;
+}
+.fame-panel .panel-title{font-size:20px;}
+.fame-panel .panel-title .subtitle-hint b{color:var(--gold);font-weight:800;}
+.fame-track{display:flex;flex-direction:column;padding:4px 2px 0;}
+.fame-node{display:flex;gap:14px;}
+.fame-rail{position:relative;width:22px;flex:0 0 22px;}
+.fame-rail::before{           /* the spine: a continuous line; trimmed at the track's two ends */
+  content:'';position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;
+  background:var(--panel-edge);
+}
+.fame-node:first-child .fame-rail::before{top:14px;}
+.fame-node:last-child  .fame-rail::before{bottom:auto;height:14px;}
+.fame-dot{
+  position:absolute;left:50%;top:8px;width:12px;height:12px;margin-left:-6px;border-radius:50%;
+  background:var(--panel-bg);border:2px solid var(--panel-edge);
+}
+.fame-node.reached .fame-dot{background:var(--gold);border-color:var(--gold-deep);}
+.fame-node.current .fame-dot{
+  background:var(--purple);border-color:#b794f6;box-shadow:0 0 8px rgba(139,92,246,.8);
+}
+.fame-node-body{flex:1;padding:2px 0 16px;}
+.fame-node:last-child .fame-node-body{padding-bottom:4px;}
+.fame-node:not(.reached):not(.current) .fame-node-body{opacity:.55;}   /* locked tiers dim */
+.fame-node-head{display:flex;align-items:baseline;gap:10px;}
+.fame-node-label{font-weight:800;font-size:15px;color:#b6abc9;text-transform:uppercase;letter-spacing:1px;}
+.fame-node.reached .fame-node-label{color:var(--gold);}
+.fame-node.current .fame-node-label{color:#e6ddf7;}
+.fame-node-min{font-size:12px;font-weight:700;color:#8a7fa0;}
+.fame-unlocks{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.fame-chip{
+  font-size:12px;font-weight:700;padding:3px 9px;border-radius:8px;cursor:default;
+  background:rgba(255,255,255,.05);border:1px solid var(--panel-edge);color:#c9bfa8;
+}
+.fame-chip.license{border-color:var(--gold-deep);color:var(--gold);}     /* buy with gold */
+.fame-chip.perk{border-color:#6d4fa0;color:#b794f6;}                     /* buy with rep  */
+.fame-chip.budget{border-style:dashed;border-color:#3f6b50;color:#8fd1a8;}  /* passive world change */
