@@ -161,8 +161,8 @@ const WALL_SHELF = {
   barGapY: 6,           // gap between plank band bottom and the bar
   wiggle: {             // Shelf motion (Daniel's pick, Option 2 of 3): items rest still; every
     intervalMs: 4000,   // intervalMs ONE random displayed item plays a brief hop-and-settle.
-    durMs: 450,         // Scarce on purpose — occasional motion draws the eye where a constant
-    hopPx: 3,           // bob numbs it, and resting goods stay ON the plank (the grounding
+    durMs: 800,         // Scarce on purpose — occasional motion draws the eye where a constant
+    hopPx: 4,           // bob numbs it, and resting goods stay ON the plank (the grounding
     squash: 0.12,       // pass's rule extends to set dressing: nothing levitates).
   },
   propId: 'wall_shelf', // optional authored plank sprite (see the art spec / handoff §9)
