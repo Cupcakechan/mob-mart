@@ -42,9 +42,19 @@ export const ITEMS = {
                   license: { cost: 300, requiredTier: 3 } },   // Beloved
   zip_tonic:     { id:'zip_tonic',      displayName:'Zip Tonic',      iconId:'zip_tonic',      category:'consumable', basePrice:22, restockCost:11, startStock:0, maxStock:5, combatEffect:7,
                   license: { cost: 300, requiredTier: 3 } },   // Beloved
+
+  // --- Batch 2 (chain tops, 2026-07-04): an "upgrade chain" is NAMING + PRICING, not a mechanic —
+  // each top is just a pricier licensed row that strictly beats its base on eff AND price (the
+  // chain invariant, suite-pinned). Slotted into the license-cost gap between Beloved 300 and
+  // Renowned 800. (Optional \`upgradeOf\` field deferred until the shop UI ever groups chains.)
+  iron_buckler:  { id:'iron_buckler',   displayName:'Iron Buckler',   iconId:'iron_buckler',   category:'armor',      basePrice:18, restockCost:9,  startStock:0, maxStock:5, combatEffect:6,
+                  license: { cost: 300, requiredTier: 3 } },   // Beloved — chain top of Wooden Shield (8/eff 3)
+  iron_gauntlet: { id:'iron_gauntlet',  displayName:'Iron Gauntlet',  iconId:'iron_gauntlet',  category:'armor',      basePrice:24, restockCost:12, startStock:0, maxStock:5, combatEffect:8,
+                  license: { cost: 500, requiredTier: 4 } },   // Renowned — chain top of Leather Bracer (14/eff 5)
 };
 
-// Display order for the shelf cards (base row, tier-2 row, then batch 1: free four + license rung).
+// Display order for the shelf cards (base row, tier-2 row, batch-1 free four + license rung, batch-2 chain tops).
 export const ITEM_ORDER = ['club', 'metal_helmet', 'hp_flask', 'iron_sword', 'greater_flask', 'knight_helm',
   'tattered_shirt', 'bandages', 'wooden_shield', 'rusty_key',
-  'leather_bracer', 'murk_tonic', 'pickaxe', 'quiver', 'zip_tonic'];
+  'leather_bracer', 'murk_tonic', 'pickaxe', 'quiver', 'zip_tonic',
+  'iron_buckler', 'iron_gauntlet'];

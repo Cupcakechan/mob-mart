@@ -1367,8 +1367,8 @@ console.log('M4 auto-serve worker — smoke test\n');
 
   const batch = ['tattered_shirt', 'bandages', 'wooden_shield', 'rusty_key',
     'leather_bracer', 'murk_tonic', 'pickaxe', 'quiver', 'zip_tonic'];
-  ok(batch.every((id) => ITEMS[id] !== undefined) && ITEM_ORDER.length === 15,
-     'batch 1: all nine rows exist, ITEM_ORDER at 15');
+  ok(batch.every((id) => ITEMS[id] !== undefined) && ITEM_ORDER.length >= 15,
+     'batch 1: all nine rows exist (exact roster total is the NEWEST batch section\'s job)');
   const realCats = new Set(['weapon', 'armor', 'consumable']);
   ok(batch.every((id) => realCats.has(ITEMS[id].category)
        && ITEMS[id].basePrice > ITEMS[id].restockCost && Number.isFinite(ITEMS[id].combatEffect)),
@@ -1418,6 +1418,27 @@ console.log('M4 auto-serve worker — smoke test\n');
     if (lic.includes(spawnCustomer(open).wantedItemId)) sawLicensed = true;
   }
   ok(!lockedLeak && sawLicensed, 'batch 1: license gate holds locked; licensed rows become wantable');
+}
+
+// 30. Content batch 2 — chain tops: the chain INVARIANT (top strictly beats base on eff + price) --
+{
+  const { ITEMS, ITEM_ORDER } = await import('./src/data/items.js');
+  const { CONFIG } = await import('./src/config.js');
+  ok(ITEM_ORDER.length === 17 && ITEMS.iron_buckler && ITEMS.iron_gauntlet,
+     'batch 2: both chain tops exist, ITEM_ORDER at 17');
+  // A chain is naming + pricing, NOT a mechanic — but the pricing RELATION is the content promise:
+  // the top must strictly beat its base on combatEffect AND basePrice, be licensed, share category.
+  const chains = [['iron_buckler', 'wooden_shield'], ['iron_gauntlet', 'leather_bracer']];
+  ok(chains.every(([top, base]) =>
+    ITEMS[top].combatEffect > ITEMS[base].combatEffect
+    && ITEMS[top].basePrice > ITEMS[base].basePrice
+    && ITEMS[top].category === ITEMS[base].category
+    && ITEMS[top].license && ITEMS[top].startStock === 0
+    && (!ITEMS[base].license || ITEMS[top].license.requiredTier > ITEMS[base].license.requiredTier)),
+     'batch 2: chain invariant holds (top > base on eff + price, same category, gated later or from free)');
+  ok(chains.every(([top]) => ITEMS[top].license.requiredTier < CONFIG.reputation.tiers.length
+       && ITEMS[top].basePrice > ITEMS[top].restockCost),
+     'batch 2: chain tops on real tiers with the margin invariant');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
