@@ -421,14 +421,16 @@ console.log('M4 auto-serve worker — smoke test\n');
   ok(!sawSomething, "dismiss lines never render 'no something' (item is passed; 300 draws)");
 
   // Registry-level guards, so a FUTURE line can't reintroduce either hazard:
+  // Templates are string | { text, cats } since the item-aware pass — normalize for string guards.
+  const txt = (tpl) => (typeof tpl === 'string' ? tpl : tpl.text);
   const all = [];
-  for (const arr of Object.values(GENERIC_RESULTS)) all.push(...arr.map((s) => ['generic', s]));
+  for (const arr of Object.values(GENERIC_RESULTS)) all.push(...arr.map((s) => ['generic', txt(s)]));
   for (const tiers of Object.values(MONSTER_RESULTS))
-    for (const [t, arr] of Object.entries(tiers)) all.push(...arr.map((s) => [t, s]));
+    for (const [t, arr] of Object.entries(tiers)) all.push(...arr.map((s) => [t, txt(s)]));
   // (a) leave/dismiss are the only tiers whose call sites might omit item — dismiss now passes it,
   //     but LEAVE does not: no leave template may use {item}.
   const leaveWithItem = (GENERIC_RESULTS.leave ?? []).concat(
-    ...Object.values(MONSTER_RESULTS).map((m) => m.leave ?? [])).filter((s) => s.includes('{item}'));
+    ...Object.values(MONSTER_RESULTS).map((m) => m.leave ?? [])).filter((s) => txt(s).includes('{item}'));
   ok(leaveWithItem.length === 0, 'no leave template uses {item} (leave call site does not pass one)');
   // (b) "a {item}" breaks on vowel-sound items ("a HP Flask") -> always "the {item}" or rephrase.
   const articleHazards = all.filter(([, s]) => /\ba \{item\}/.test(s));
@@ -1271,6 +1273,61 @@ console.log('M4 auto-serve worker — smoke test\n');
     s.stats.everythingTierEarned = 2;
     ok(serializeSave(s).stats.everythingTierEarned === 2, 'B2: the ratchet round-trips through the save');
   }
+}
+
+// 28. Item-aware comedy: category-tagged templates filter by the sold item's category ------------
+{
+  const { logLine } = await import('./src/messages.js');
+  const { GENERIC_RESULTS, MONSTER_RESULTS } = await import('./src/data/results.js');
+  const { ITEMS } = await import('./src/data/items.js');
+
+  // Shape contract: every non-string template carries text + a non-empty cats array of REAL
+  // categories (a typo'd category would silently never fire — this is the guard that catches it).
+  const realCats = new Set(Object.values(ITEMS).map((i) => i.category));
+  const everyTemplate = [];
+  for (const arr of Object.values(GENERIC_RESULTS)) everyTemplate.push(...arr);
+  for (const tiers of Object.values(MONSTER_RESULTS))
+    for (const arr of Object.values(tiers)) everyTemplate.push(...arr);
+  const tagged = everyTemplate.filter((t) => typeof t !== 'string');
+  ok(tagged.length >= 12, `item-aware: tagged templates exist (${tagged.length})`);
+  ok(tagged.every((t) => typeof t.text === 'string' && Array.isArray(t.cats) && t.cats.length > 0
+       && t.cats.every((c) => realCats.has(c))),
+     'item-aware: every tagged template has text + real, non-empty cats');
+  ok(tagged.every((t) => t.text.includes('{item}')),
+     'item-aware: only {item} templates are tagged (a tag on an item-less line is dead weight)');
+
+  // Filtering, negative direction: a consumable serve can NEVER render a weapon-tagged line.
+  // 400 draws of the hottest weapon-shaped text across tiers with tags.
+  const weaponTexts = tagged.filter((t) => t.cats.includes('weapon') && !t.cats.includes('consumable'))
+    .map((t) => t.text.replace('{name}', 'Skele').replace(/\{item\}/g, 'HP Flask'));
+  let leaked = false;
+  for (let i = 0; i < 400; i++) {
+    for (const tier of ['excellent', 'success', 'partial', 'funnyFailure']) {
+      const line = logLine('skeleton', tier, { name: 'Skele', item: 'HP Flask', itemId: 'hp_flask' });
+      if (weaponTexts.includes(line)) leaked = true;
+    }
+  }
+  ok(!leaked, 'item-aware: weapon-tagged lines never fill with a consumable (1600 draws)');
+
+  // Filtering, positive direction: a weapon serve still reaches its weapon lines.
+  let sawWeaponLine = false;
+  for (let i = 0; i < 600 && !sawWeaponLine; i++) {
+    const line = logLine('skeleton', 'excellent', { name: 'Skele', item: 'Club', itemId: 'club' });
+    if (line.includes('swung the Club once')) sawWeaponLine = true;
+  }
+  ok(sawWeaponLine, 'item-aware: weapon serves still draw the weapon jokes (600 draws)');
+
+  // No item in play (leave-shaped call): tagged templates are excluded entirely, so a tagged line
+  // can never render with the 'something' fallback.
+  let sawTaggedWithoutItem = false;
+  const taggedRaw = tagged.map((t) => t.text);
+  for (let i = 0; i < 400; i++) {
+    const line = logLine('bat', 'funnyFailure', { name: 'Batty' });   // no itemId on purpose
+    if (taggedRaw.some((raw) => line === raw.replace(/\{name\}/g, 'Batty').replace(/\{item\}/g, 'something'))) {
+      sawTaggedWithoutItem = true;
+    }
+  }
+  ok(!sawTaggedWithoutItem, 'item-aware: no itemId -> tagged templates never fire (400 draws)');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

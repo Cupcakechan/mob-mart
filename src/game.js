@@ -98,7 +98,7 @@ export function serveCurrent(state) {
   state.lifetimeRep = fameOf(state) + repGain;                  // ...and the tier track (never falls)
 
   const { tier } = resolveCombat(monster, item);               // off-screen fight -> outcome tier
-  const text = logLine(monster.id, tier, { name: monster.displayName, item: item.displayName });
+  const text = logLine(monster.id, tier, { name: monster.displayName, item: item.displayName, itemId: c.wantedItemId });
   // Battle-report timing (Daniel, 2026-07-04): the RESULT line lands when the celebrant ENTERS the
   // battle door — not at the counter. The fight is decided here (same math, same moment) but the
   // report is queued; delivery = the render's door-entry event (main.js wires it) OR the fallback
@@ -146,7 +146,7 @@ export function dismissCurrent(state) {
   // without it logLine's 'something' fallback produced "no something". wantedItemId is always a
   // valid item id (spawn guarantees it since the audit fix), so displayName always resolves.
   const item = ITEMS[c.wantedItemId]?.displayName;
-  pushLog(state, { text: logLine(c.monsterId, 'dismiss', { name, item }), repDelta: 0, tier: 'dismiss', monsterId: c.monsterId });
+  pushLog(state, { text: logLine(c.monsterId, 'dismiss', { name, item, itemId: c.wantedItemId }), repDelta: 0, tier: 'dismiss', monsterId: c.monsterId });
   state.queue.shift();
   state.uiDirty = true;
   return true;

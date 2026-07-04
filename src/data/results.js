@@ -1,5 +1,10 @@
 // results.js — battle/shop log line templates (the Mob Mart "comedy bible", shipped).
 // {name} = the mob, {item} = what they bought (present for sale outcomes; absent for leave/dismiss).
+// TEMPLATE SHAPE (item-aware pass, 2026-07-04): a template is a plain STRING (neutral — fires for
+// every item) or { text, cats: ['weapon'|'armor'|'consumable'] } (fires only when the sold item's
+// category matches; excluded entirely when no item is in play). TAGGING RULE: tag only when a line
+// is NONSENSE outside its categories ('swung the {item}' with a potion); if a mismatch is
+// absurd-in-a-good-way ('tried to eat the {item}'), leave it neutral — that absurdity is voice.
 // Voice: cozy, dry, a little pathetic — we laugh WITH the lovable losers, never at them. PG only.
 // Genre-parody rule: tropes, never trademarks — dungeon-game furniture (natural 1s, side quests,
 // loot, boss music) is fair game; named games, characters, or recognizable quotes are not.
@@ -10,19 +15,21 @@ export const GENERIC_RESULTS = {
   excellent: [
     `{name} won. Nobody is more surprised than {name}.`,
     `The hero fled. {name} is as confused as you are.`,
-    `{name} swung the {item} once. Once was enough.`,
+    { text: `{name} swung the {item} once. Once was enough.`, cats: ['weapon'] },
     `Victory! {name} has requested a moment to lie down.`,
     `{name} defeated a hero and immediately apologized.`,
     `Against all odds, math, and physics: {name} wins.`,
-    `{name} tripped, and the {item} did the rest. Legend.`,
+    { text: `{name} tripped, and the {item} did the rest. Legend.`, cats: ['weapon'] },
     `The hero rage-quit. {name} is the dungeon's problem now.`,
     `{name} won and is already telling everyone. Everyone.`,
     `{name} returns victorious, slightly crunchy, mostly fine.`,
     `{name} rolled a natural twenty at exactly the right time.`,
+    { text: `{name} chugged the {item} mid-fight. Technically legal. Very effective.`, cats: ['consumable'] },
+    { text: `The hero's sword bounced off the {item}. {name} is still processing.`, cats: ['armor'] },
     `The hero heard boss music and left. {name} takes the win.`,
   ],
   success: [
-    `{name} survived! The {item} has some new dents.`,
+    { text: `{name} survived! The {item} has some new dents.`, cats: ['weapon', 'armor'] },
     `{name} lost gracefully but walked home unbruised.`,
     `{name} tapped out early and got orange slices. Worth it.`,
     `The hero got bored. {name} counts that as living.`,
@@ -31,6 +38,7 @@ export const GENERIC_RESULTS = {
     `{name} negotiated a truce over snacks. Everyone's fine.`,
     `{name} lived! The {item} did about half the work.`,
     `{name} respawned at the entrance and called it a win.`,
+    { text: `{name} saved the {item} for later and ran. Strategy!`, cats: ['consumable'] },
     `The hero marked {name} "optional" and moved on. Phew.`,
   ],
   partial: [
@@ -38,17 +46,19 @@ export const GENERIC_RESULTS = {
     `{name} fainted, but the {item} looked amazing doing it.`,
     `Defeated, {name} made a lifelong friend: the hero's dog.`,
     `{name} lost, but found a shiny rock. Priorities intact.`,
-    `{name} went down swinging the {item}. Mostly at air.`,
+    { text: `{name} went down swinging the {item}. Mostly at air.`, cats: ['weapon'] },
     `The hero won but felt bad about it. Small win, {name}.`,
     `{name} lost, yet learned the hero's name. Progress!`,
     `{name} dropped the {item} but kept his dignity. Some of it.`,
     `The hero looted {name} for 3 copper and an apology note.`,
     `{name} lost, but leveled up in something. Probably patience.`,
+    { text: `{name} spilled half the {item}. The floor is thriving.`, cats: ['consumable'] },
   ],
   failure: [
     `{name} charged bravely. The hero yawned. Over fast.`,
     `{name} met a hero. The hero was better at this. Much better.`,
     `The {item} did not save {name}. It rarely does.`,
+    { text: `The {item} held up great. {name}, less so.`, cats: ['armor'] },
     `{name} was defeated in record time. A new record, sadly.`,
     `{name} lost. The hero didn't even set down the sandwich.`,
     `{name} gave it everything. Everything was not enough.`,
@@ -68,7 +78,9 @@ export const GENERIC_RESULTS = {
     `{name} challenged a scarecrow. The scarecrow won on vibes.`,
     `{name} rolled a natural one at existing today.`,
     `{name} was defeated by gravity. Just regular gravity.`,
-    `{name} forgot which end of the {item} to hold. Fatal.`,
+    { text: `{name} forgot which end of the {item} to hold. Fatal.`, cats: ['weapon'] },
+    { text: `{name} drank the {item} too early and burped away the ambush.`, cats: ['consumable'] },
+    { text: `{name} wore the {item} backwards and fought accordingly.`, cats: ['armor'] },
     `{name} is still in the tutorial area. Emotionally.`,
     `{name} accepted a side quest mid-fight. Fatal curiosity.`,
     `{name}'s inventory was full. Of regret, mostly.`,

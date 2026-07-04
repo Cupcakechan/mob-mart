@@ -41,6 +41,18 @@ undercut goes at the END.
 
 ---
 
+## Item-aware tags (2026-07-04)
+
+A line template is a plain STRING (neutral — fires for every item) or, in results.js,
+`{ text, cats: ['weapon'|'armor'|'consumable'] }` — it then fires only when the sold item's
+category matches, and never when no item is in play. **The tagging rule: tag only when a line is
+NONSENSE outside its categories** ('swung the {item}' filling with a potion). If the mismatch is
+absurd-in-a-GOOD-way ('Slimey tried to eat the {item}', 'took the {item} to a sword fight'),
+leave it neutral — that absurdity is the voice, don't scope it away. Tagged in the shipped batch:
+swung-once, tripped-and-it-did-the-rest (weapon); new-dents (weapon+armor); went-down-swinging,
+which-end-to-hold (weapon). New category registers opened: potion-chugging (consumable),
+worn-backwards / held-up-great (armor) — grow these when writing for the item batches.
+
 ## Genre parody — tropes, never trademarks
 
 The mobs live inside a dungeon-fantasy game, so the **shared furniture of the genre** is a second
@@ -113,7 +125,7 @@ line impatient) · **dismiss** (waved away, no sale — manual Send Away OR Bob'
 customer who can't afford their item). `{name}` = mob, `{item}` = what they bought. The picker pools
 the generic lines with the matching character lines, so each mob draws from both.
 
-### EXCELLENT — generic (12)
+### EXCELLENT — generic (14 — incl. 1 consumable-tagged, 1 armor-tagged)
 - {name} won. Nobody is more surprised than {name}.
 - The hero fled. {name} is as confused as you are.
 - {name} swung the {item} once. Once was enough.
@@ -137,7 +149,7 @@ Batty was already champion, weeping.
 and, incredibly, that was enough. · The hero left. Skele takes the win, and his femur, home. · Skele
 won. He'll be finding his ribs for a week.
 
-### SUCCESS — generic (10)
+### SUCCESS — generic (11 — incl. 1 consumable-tagged)
 - {name} survived! The {item} has some new dents.
 - {name} lost gracefully but walked home unbruised.
 - {name} tapped out early and got orange slices. Worth it.
@@ -156,7 +168,7 @@ helmet. Not even his helmet. · Batty made it home! He will not be discussing it
 **Skele:** Skele took a hit, lost an arm, found a better arm. Even trade. · Skele survived; three
 bones are now technically optional. · Skele walked it off. Rattled the whole way, but walked.
 
-### PARTIAL — generic (10)
+### PARTIAL — generic (11 — incl. 1 consumable-tagged)
 - {name} lost the fight but won a coupon. Net positive?
 - {name} fainted, but the {item} looked amazing doing it.
 - Defeated, {name} made a lifelong friend: the hero's dog.
@@ -177,7 +189,7 @@ but his emotional support pebble never left him. *(new — gag ×2)*
 Found most of himself later. · Skele lost, but his skull rolled somewhere with a nice view. · Skele
 lost, and so did his left femur. Again. Somewhere. *(new — gag ×2)*
 
-### FAILURE — generic (11)
+### FAILURE — generic (12 — incl. 1 armor-tagged)
 - {name} charged bravely. The hero yawned. Over fast.
 - {name} met a hero. The hero was better at this. Much better.
 - The {item} did not save {name}. It rarely does.
@@ -197,7 +209,7 @@ before the hero arrived. · Batty fainted at "En garde." The hero felt a little 
 **Skele:** Skele got tapped once and became a tidy little pile. · Skele's {item} outlasted Skele by a
 comfortable margin. · One poke and Skele was a jigsaw puzzle. Again.
 
-### FUNNYFAILURE — generic (13)
+### FUNNYFAILURE — generic (15 — incl. 1 consumable-tagged, 1 armor-tagged)
 - {name} lost a staring contest with a very still statue.
 - {name} was defeated by a door marked PULL. It said PUSH.
 - {name} tripped on the {item} before finding the hero.
