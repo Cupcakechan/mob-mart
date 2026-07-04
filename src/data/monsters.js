@@ -32,14 +32,17 @@ export const MONSTERS = {
   },
   frog: {
     id:'frog', displayName:'Froggo', spriteId:'frog', combatMod:0, budgetRange:[16,30],
+    spriteScale: 1.1,    // content is 76% of frame (MEASURED) — 1.1 puts his visible body ~73px,
+                         // matching Slimey's mass; at 1.0 the roster's big spender read smallest.
+    footPad: 15,         // MEASURED (2026-07-04): transparent rows below the feet in frog.png
+                         // (walk strip pads 13 — 2px variance, same negligible drift as Slimey's).
     // Pass 4b (Option 2 — "the tier-2 customer"): a grump with gold. Wants LEAD with licensed
     // items; pre-license the unlock filter (spawnCustomer) drops them and he buys base goods like
     // everyone else — the moment tier-2 is licensed, its shelf gains a dedicated regular. Budget
     // sits above the trio ([16,30] vs [10..24]) to actually afford those prices; economy note:
     // +~20% avg budget on 25% of spawns — one tuning look owed after feel.
-    // Grounded (no `flying`); no spriteScale/footPad yet — BOTH are set at art integration
-    // (footPad is MEASURED from the real PNG, never guessed; absent fields are guarded ?? in
-    // every consumer, so this row is safe art-less: queue draws the placeholder rect).
+    // Grounded (no `flying`). Art integrated 2026-07-04 (static + walk strip; frog_idle.png
+    // still PENDING at origin — the anim fallback draws the static until it lands).
     anim: { frames: 4, fps: 6 },   // idle: frog_idle.png on the SHARED 4x128 -> 512x128 contract.
                                    // NOTE the walk strip stays `frog_walk_happy.png` by CONVENTION
                                    // but its authored content is a grumpy stomp — Froggo marching
