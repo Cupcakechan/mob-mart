@@ -1,4 +1,9 @@
-// monsters.js — customer (monster) registry. wantWeights bias which item each type asks for.
+// monsters.js — customer (monster) registry.
+// WANTS (A2, items-scaffold pass 2026-07-04): each monster declares CATEGORY affinities
+// (categoryWeights) plus optional per-item multipliers (itemBias, ?? 1). The picker in game.js
+// rolls category first, then an item within it — so a personality share ('Froggo is half potions')
+// holds no matter how large a category grows, and a NEW item is wanted the moment its registry row
+// exists (true auto-flow; the old per-item wantWeights needed every monster touched per item).
 // (Gobbo the goblin was redesigned into Froggo the grumpy FROG before implementation — Daniel,
 // 2026-07-04; id + all PNG naming = `frog`. Rat remains an open call, handoff §13.)
 export const MONSTERS = {
@@ -10,8 +15,7 @@ export const MONSTERS = {
                          // Re-measure if the art is trimmed/re-authored; trimmed art -> set 0.
     anim: { frames: 4, fps: 6 },   // idle wobble: slime_idle.png on the SHARED contract (4x128 ->
                                    // 512x128 strip); strip absent -> static slime.png (graceful)
-    wantWeights:[{value:'hp_flask',weight:3},{value:'club',weight:2},{value:'metal_helmet',weight:1},
-      {value:'greater_flask',weight:2},{value:'iron_sword',weight:1}],  // tier-2: flask fan first
+    categoryWeights: { consumable: 3, weapon: 2, armor: 1 },   // the flask fan, by category
   },
   bat: {
     id:'bat', displayName:'Batty', spriteId:'bat', combatMod:-1, budgetRange:[12,22],
@@ -19,16 +23,14 @@ export const MONSTERS = {
                          // hover ALTITUDE (deliberate), so no footPad here — grounded mobs get both.
     anim: { frames: 4, fps: 6 },   // idle wing-flap: bat_idle.png, 4x128 -> 512x128 strip (optional
                                    // field — absent = static <id>.png, then the placeholder rect)
-    wantWeights:[{value:'metal_helmet',weight:3},{value:'hp_flask',weight:2},{value:'club',weight:1},
-      {value:'knight_helm',weight:2},{value:'greater_flask',weight:1}],  // tier-2: armor lover
+    categoryWeights: { armor: 3, consumable: 2, weapon: 1 },   // the armor lover, by category
   },
   skeleton: {
     id:'skeleton', displayName:'Skele', spriteId:'skeleton', combatMod:1, budgetRange:[12,24],
     spriteScale: 1.15,   // beanpole silhouette (47px wide) carries little mass — same bump as Slimey
     footPad: 12,         // MEASURED (2026-07-03): transparent rows below the feet in skeleton.png
     anim: { frames: 4, fps: 6 },   // idle rattle/sway: skeleton_idle.png, SHARED contract as above
-    wantWeights:[{value:'club',weight:3},{value:'metal_helmet',weight:2},{value:'hp_flask',weight:1},
-      {value:'iron_sword',weight:2},{value:'knight_helm',weight:1}],  // tier-2: biggest budget, biggest sword
+    categoryWeights: { weapon: 3, armor: 2, consumable: 1 },   // sword guy, by category
   },
   frog: {
     id:'frog', displayName:'Froggo', spriteId:'frog', combatMod:0, budgetRange:[16,30],
@@ -47,8 +49,10 @@ export const MONSTERS = {
                                    // NOTE the walk strip stays `frog_walk_happy.png` by CONVENTION
                                    // but its authored content is a grumpy stomp — Froggo marching
                                    // to battle annoyed IS the joke; do not "fix" the mismatch.
-    wantWeights:[{value:'greater_flask',weight:3},{value:'iron_sword',weight:2},
-      {value:'hp_flask',weight:2},{value:'club',weight:1},{value:'knight_helm',weight:1}],
+    categoryWeights: { consumable: 3, weapon: 2, armor: 1 },
+    itemBias: { greater_flask: 3, iron_sword: 2 },   // the tier-2 customer: once licensed, his
+                                                     // signature goods dominate WITHIN the category
+                                                     // (pre-license the unlock filter hides them).
   },
 };
 

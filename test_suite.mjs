@@ -298,13 +298,13 @@ console.log('M4 auto-serve worker — smoke test\n');
   ok(clamped.items.club.stock === 7, 'absurd saved stock clamps to the effective cap (7), not base (5)');
 }
 
-// 12. REGRESSION (audit): spawn fallback for a broken wantWeights must be a real ITEM id ----------
+// 12. REGRESSION (audit): spawn fallback for a broken want config must be a real ITEM id -------
 {
   const { spawnCustomer } = await import('./src/game.js');
   const { MONSTERS } = await import('./src/data/monsters.js');
   const { ITEMS } = await import('./src/data/items.js');
-  const saved = MONSTERS.slime.wantWeights;
-  MONSTERS.slime.wantWeights = [];                 // simulate a registry entry with empty weights
+  const saved = MONSTERS.slime.categoryWeights;
+  MONSTERS.slime.categoryWeights = {};             // simulate a registry entry with no affinities
   let sawSlime = false, allItemsValid = true;
   for (let i = 0; i < 60; i++) {                   // spawnCustomer picks a random monster; sample it
     const c = spawnCustomer();
@@ -313,9 +313,9 @@ console.log('M4 auto-serve worker — smoke test\n');
       if (!ITEMS[c.wantedItemId]) allItemsValid = false;
     }
   }
-  MONSTERS.slime.wantWeights = saved;              // restore the registry for any later cases
+  MONSTERS.slime.categoryWeights = saved;          // restore the registry for any later cases
   ok(sawSlime, 'sample produced at least one slime (probabilistic; 60 draws)');
-  ok(allItemsValid, 'empty wantWeights falls back to a REAL item id (never an unservable want)');
+  ok(allItemsValid, 'empty categoryWeights falls back to a REAL item id (never an unservable want)');
 }
 
 // 13. M5 — offline earnings (pure compute + apply) --------------------------------------------
@@ -1066,10 +1066,12 @@ console.log('M4 auto-serve worker — smoke test\n');
      'frog: Option-2 identity pinned (combatMod 0, budget [16,30])');
   ok(f.flying === undefined && f.footPad === 15 && f.spriteScale === 1.1,
      'frog: grounded; footPad pinned at MEASURED 15, spriteScale 1.1 (art integration 2026-07-04)');
-  ok(f.wantWeights.every((w) => ITEMS[w.value] !== undefined),
-     'frog: every want is a real ITEM id (the no-item front-blocker guard)');
-  ok(f.wantWeights.some((w) => ITEMS[w.value]?.license),
-     'frog: wants LEAD with licensed items (the tier-2 customer)');
+  const realCats = new Set(Object.values(ITEMS).map((i) => i.category));
+  ok(Object.keys(f.categoryWeights).every((c) => realCats.has(c))
+     && Object.keys(f.itemBias).every((id) => ITEMS[id] !== undefined),
+     'frog: category + bias keys are all real (the no-item front-blocker guard)');
+  ok(Object.keys(f.itemBias).some((id) => ITEMS[id]?.license),
+     'frog: itemBias leads with licensed items (the tier-2 customer, A2 shape)');
 
   // Pre-license behavior: a fresh state has NO licenses, so 200 spawns forced to frog must all
   // want license-free items — the Pass-3 filter is what makes the tier-2-leaning row safe day one.
@@ -1191,6 +1193,83 @@ console.log('M4 auto-serve worker — smoke test\n');
     serveCurrent(s);
     ok(!('pendingReports' in serializeSave(s)),
        'pendingReports is transient — never serialized (reload drops the line only, never economy)');
+  }
+}
+
+// 27. Items scaffold (A2 + B2, 2026-07-04): category wants + the everything ratchet ------------
+{
+  const { spawnCustomer, serveCurrent: serve2 } = await import('./src/game.js');
+  const { MONSTERS } = await import('./src/data/monsters.js');
+  const { ITEMS } = await import('./src/data/items.js');
+  const { everythingTier, globalGoldMult, EVERYTHING_TIERS } = await import('./src/data/milestones.js');
+  const { mergeSave, serializeSave } = await import('./src/save.js');
+
+  // A2 — category affinity is absolute: a consumable-only monster never wants anything else.
+  {
+    const saved = MONSTERS.slime.categoryWeights;
+    MONSTERS.slime.categoryWeights = { consumable: 1 };
+    let checked = 0, allConsumable = true;
+    for (let i = 0; i < 600 && checked < 60; i++) {
+      const c = spawnCustomer(shopState());
+      if (c.monsterId !== 'slime') continue;
+      checked++;
+      if (ITEMS[c.wantedItemId].category !== 'consumable') allConsumable = false;
+    }
+    MONSTERS.slime.categoryWeights = saved;
+    ok(checked >= 40 && allConsumable,
+       `A2: consumable-only slime wants only consumables (${checked} sampled)`);
+  }
+
+  // A2 — itemBias steers WITHIN a category once the item is unlocked (the tier-2 customer).
+  {
+    const s = shopState();
+    s.licenses.greater_flask = true;                // frog's bias-3 flask is now in the pool
+    let flaskWants = 0, consumableWants = 0;
+    for (let i = 0; i < 2000 && consumableWants < 150; i++) {
+      const c = spawnCustomer(s);
+      if (c.monsterId !== 'frog') continue;
+      if (ITEMS[c.wantedItemId].category !== 'consumable') continue;
+      consumableWants++;
+      if (c.wantedItemId === 'greater_flask') flaskWants++;
+    }
+    // Expected 3:1 over hp_flask -> ~75%; assert well clear of uniform 50%.
+    ok(consumableWants >= 100 && flaskWants / consumableWants > 0.6,
+       `A2: itemBias dominates within the category (${flaskWants}/${consumableWants} greater_flask)`);
+  }
+
+  // B2 — the ratchet, pure math: earned floor holds when computed drops to 0.
+  {
+    const s = createInitialState();                 // all sales 0 -> computed tier 0
+    s.stats.everythingTierEarned = 2;
+    ok(everythingTier(s) === 2, 'B2: earned tier floors the computed tier');
+    ok(Math.abs(globalGoldMult(s) - 1.5625) < 1e-9, 'B2: gold mult follows the ratcheted tier (1.25^2)');
+    for (const id of Object.keys(s.stats.itemSales)) s.stats.itemSales[id] = 999999;
+    ok(everythingTier(s) === EVERYTHING_TIERS.length, 'B2: computed still wins when it exceeds earned');
+  }
+
+  // B2 — a live crossing WRITES the ratchet (serveCurrent is the single writer).
+  {
+    const s = shopState();
+    for (const id of Object.keys(s.stats.itemSales)) s.stats.itemSales[id] = 50;
+    s.stats.itemSales.club = 49;                    // club is the laggard, one sale from tier 1
+    s.queue = [customer('slime', 'club', 99)];
+    serve2(s);
+    ok(s.stats.everythingTierEarned === 1, 'B2: crossing the everything tier persists it (earned = 1)');
+  }
+
+  // B2 — merge seeds earned from the PINNED legacy basis (pre-ratchet saves keep their tier even
+  // if the update that introduces the ratchet ALSO ships new free items), and clamps garbage.
+  {
+    const legacy = { stats: { itemSales: { club: 60, metal_helmet: 60, hp_flask: 60 }, monsterServes: {} } };
+    const m1 = mergeSave(createInitialState(), legacy);
+    ok(m1.stats.everythingTierEarned === 1, 'B2 migration: 60-each pre-ratchet save seeds earned = 1');
+    const garbage = { stats: { itemSales: {}, monsterServes: {}, everythingTierEarned: 999 } };
+    const m2 = mergeSave(createInitialState(), garbage);
+    ok(m2.stats.everythingTierEarned === EVERYTHING_TIERS.length,
+       'B2 migration: hand-edited 999 clamps to the ladder length');
+    const s = createInitialState();
+    s.stats.everythingTierEarned = 2;
+    ok(serializeSave(s).stats.everythingTierEarned === 2, 'B2: the ratchet round-trips through the save');
   }
 }
 

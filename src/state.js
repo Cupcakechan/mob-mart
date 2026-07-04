@@ -22,7 +22,10 @@ export function createInitialState() {
   // Lifetime ledger (persisted): fuels milestone bonuses now; the bestiary (roadmap Pass 4) and
   // Kongregate badge stats later hang off these same integers. Keyed by current registries so a
   // future item/monster auto-appears at 0.
-  const stats = { itemSales: {}, monsterServes: {} };
+  const stats = { itemSales: {}, monsterServes: {},
+    everythingTierEarned: 0 };   // B2 ratchet: highest "everything" tier ever reached — persisted
+                                 // so a NEW free item (laggard at 0 sales) can never regress an
+                                 // earned tier; it only gates the next one. See milestones.js.
   for (const id of ITEM_ORDER) stats.itemSales[id] = 0;
   for (const id of MONSTER_IDS) stats.monsterServes[id] = 0;
 

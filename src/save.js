@@ -6,6 +6,7 @@ import { UPGRADES, sumEffect } from './data/upgrades.js';
 import { PERKS } from './data/perks.js';
 import { WORKERS } from './data/workers.js';
 import { createInitialState } from './state.js';
+import { LEGACY_EVERYTHING_BASIS, EVERYTHING_TIERS, crossedCount } from './data/milestones.js';
 
 export const SAVE_VERSION = 1;
 export const SAVE_KEY = 'mobmart.save.v1';
@@ -25,6 +26,16 @@ export function mergeSave(fresh, data) {
     for (const id of Object.keys(fresh.stats.monsterServes)) {
       fresh.stats.monsterServes[id] = Math.max(0, Math.floor(numOr(data.stats.monsterServes?.[id], 0)));
     }
+    // B2 ratchet migration: earned tier = max of the saved field AND the tier this save had already
+    // reached under the OLD rules — computed over the PINNED launch-trio basis, NOT the live
+    // BASE_ITEMS. That distinction is the whole fix: if an update ships new free items, a player's
+    // first load computes the live laggard as 0, so only the pinned basis can recover what they'd
+    // earned. Clamped to the ladder's length (a hand-edited 999 must not become gold x1.25^999).
+    const legacyMin = Math.min(...LEGACY_EVERYTHING_BASIS.map((id) => fresh.stats.itemSales[id] ?? 0));
+    fresh.stats.everythingTierEarned = Math.min(EVERYTHING_TIERS.length, Math.max(
+      0,
+      Math.floor(numOr(data.stats.everythingTierEarned, 0)),
+      crossedCount(legacyMin, EVERYTHING_TIERS)));
   }
   fresh.gold = Math.max(0, numOr(data.gold, fresh.gold));
   fresh.reputation = Math.max(0, numOr(data.reputation, fresh.reputation));
@@ -98,6 +109,7 @@ export function serializeSave(state) {
     stats: {
       itemSales: { ...(state.stats?.itemSales ?? {}) },
       monsterServes: { ...(state.stats?.monsterServes ?? {}) },
+      everythingTierEarned: state.stats?.everythingTierEarned ?? 0,   // B2 ratchet (see milestones.js)
     },
     lastSeen: Date.now(),
   };

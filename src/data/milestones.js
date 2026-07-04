@@ -52,10 +52,24 @@ export function bestiaryCompletion(state) {
 // items at 0 sales would drop the laggard to 0), and a ladder stalled behind an unbought license
 // would be a dead want. Tier-2 items still get their own per-item ladders.
 const BASE_ITEMS = ITEM_ORDER.filter((id) => !ITEMS[id]?.license);
+
+// RATCHET (B2, items-scaffold pass 2026-07-04): the tier can also never regress when a NEW
+// license-free item joins BASE_ITEMS (its 0 sales would drop the laggard). The highest tier ever
+// reached persists in state.stats.everythingTierEarned (written by serveCurrent on a live
+// crossing, seeded by mergeSave for older saves); the effective tier is max(computed, earned).
+// Net effect of a new free item: it can never take an earned tier away — it only gates the NEXT
+// one, i.e. it's a fresh goal, not a punishment.
 export function everythingTier(state) {
   const min = Math.min(...BASE_ITEMS.map((id) => itemCount(state, id)));
-  return crossedCount(min, EVERYTHING_TIERS);
+  return Math.max(crossedCount(min, EVERYTHING_TIERS),
+    Math.min(EVERYTHING_TIERS.length, Math.floor(state.stats?.everythingTierEarned ?? 0)));
 }
+
+// SAVE-MIGRATION ONLY — the pre-ratchet laggard basis, PINNED to the launch trio forever (do NOT
+// grow this list when items are added; that's the whole point). mergeSave uses it to compute the
+// tier an old save had already earned under the old rules, so an update that ships new free items
+// can't regress a player who never ran the ratchet code.
+export const LEGACY_EVERYTHING_BASIS = ['club', 'metal_helmet', 'hp_flask'];
 
 export function globalGoldMult(state) {
   return Math.pow(EVERYTHING_GOLD_MULT, everythingTier(state));

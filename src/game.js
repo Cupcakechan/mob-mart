@@ -16,14 +16,30 @@ import { logLine } from './messages.js';
 
 export function spawnCustomer(state) {
   const monster = MONSTERS[pick(MONSTER_IDS)];
-  // Wants are filtered to UNLOCKED items (Pass 3): a locked tier-2 item is invisible to customers,
-  // so adding registry rows can never create permanently-unservable wants. Without state (older
-  // tests), only license-free items count — the safe default.
-  const available = (monster.wantWeights ?? []).filter((w) =>
-    state ? isItemUnlocked(state, w.value) : !ITEMS[w.value]?.license);
-  // Fallback must be an ITEM id (guards a monster shipped with missing/empty wantWeights). A monster
-  // id here made the customer want a nonexistent item -> a permanent 'no-item' front blocker.
-  const wantedItemId = weightedPick(available) ?? ITEM_ORDER[0];
+  // Wants (A2, items-scaffold pass): CATEGORY affinity first, then an item WITHIN it. Two-stage on
+  // purpose — a monster's personality share ("Froggo is half potions") holds no matter how big a
+  // category grows; per-item share dilutes as the catalog does, which is how a real shop feels.
+  // itemBias (?? 1) makes signature loves non-uniform within a category. The Pass-3 unlock filter
+  // is unchanged: locked tier-2 items are invisible to customers; without state (older tests),
+  // only license-free items count — the safe default.
+  const unlockedIds = ITEM_ORDER.filter((id) =>
+    state ? isItemUnlocked(state, id) : !ITEMS[id]?.license);
+  const catEntries = Object.entries(monster.categoryWeights ?? {})
+    .map(([cat, weight]) => ({
+      value: cat, weight,
+      ids: unlockedIds.filter((id) => ITEMS[id].category === cat),
+    }))
+    .filter((e) => e.ids.length > 0 && (e.weight ?? 0) > 0);
+  let wantedItemId = null;
+  if (catEntries.length > 0) {
+    const cat = weightedPick(catEntries);
+    const ids = catEntries.find((e) => e.value === cat)?.ids ?? [];
+    wantedItemId = weightedPick(ids.map((id) => ({ value: id, weight: monster.itemBias?.[id] ?? 1 })));
+  }
+  // Fallback must be an ITEM id (guards a monster shipped with missing/empty categoryWeights). A
+  // monster id here once made the customer want a nonexistent item -> a permanent 'no-item' front
+  // blocker. ITEM_ORDER[0] is always license-free.
+  wantedItemId = wantedItemId ?? ITEM_ORDER[0];
   const [minB, maxB] = monster.budgetRange ?? [10, 20];
   // Fame-scaled budgets: tiers ABOVE Beloved (index 3) attract wealthier mobs — the customer-side
   // answer to tier-2 prices. x1.15 at Renowned, x1.30 at Legendary (CONFIG.fame dial).
@@ -110,6 +126,8 @@ export function serveCurrent(state) {
   }
   const nowEvery = everythingTier(state);
   if (nowEvery > prevEvery) {                                   // this sale's item was the laggard
+    // B2 ratchet: persist the newly earned tier so future roster growth can never take it back.
+    state.stats.everythingTierEarned = Math.max(state.stats.everythingTierEarned ?? 0, nowEvery);
     pushLog(state, { text: milestoneLine('everything', { tier: EVERYTHING_TIERS[nowEvery - 1] }),
       repDelta: 0, tier: 'milestone', monsterId: monster.id });
   }
