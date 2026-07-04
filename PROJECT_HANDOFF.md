@@ -26,12 +26,27 @@ license rung (Leather Bracer / Murk Tonic / Pickaxe @ 150-200, Quiver / Zip Toni
 64×64 icons IN. Shelf panel scrolls 2-row categories (`overflow-y: auto`, provisional — glow-clip
 tradeoff noted in style.css). Suite: **288 assertions, green from repo root**; new doctrine: exact-
 math tests PIN the trio shelf (`pinTrioShelf` fixture), rule tests derive from the LIVE registry.
-**NEXT:** see §12's agreed order (batch 2 chain tops / line-unlock options round / economy tuning
-look). **Option-3 art polish: SCRUBBED** (see §9 — the 128px-frame + MEASURED-footPad convention is
-PERMANENT, do not resurrect).
+**(f) Batch 2 chain tops:** Iron Buckler (Beloved 300, top of Wooden Shield) + Iron Gauntlet
+(Renowned 500, top of Leather Bracer) — roster **17 items**, all icons IN; chain INVARIANT
+suite-pinned (§30: top strictly beats base on eff + price). **(g) Shelf wiggle** (Option 2 of 3):
+items rest still; every intervalMs ONE displayed good does a hop-and-settle — dials in
+`WALL_SHELF.wiggle`, Daniel tuned durMs 800 / hopPx 4. **(h) Line-unlock ladder + GOLDEN lines**
+(Options 1+3 combined): templates carry `minServes` (batches AT the loyalty breakpoints; Bestiary
+pips double as new-material markers; registry-scanned unlock announcements) and each monster has
+exactly ONE `golden: true` line at 100 serves that renders GOLD in the log; logLine returns
+`{ text, golden }` and takes `serves`. Ladder shipped: 2-3 lines/monster @25 + one golden @100
+(Froggo's five-star review is the crown). Suite **309**. **(i) Economy observation session**
+(headless probe on the real modules, 5x40min): timeline HEALTHY (Trusted min 2, first license
+min 5, Legendary min 23, long tail past 40); batch 1 cut early income ~27%/serve (dilution) but
+the fast Trusted rung compensates — Daniel's verdict: early pace FEELS GOOD, no change; waves
+~11.6% (fine); **Knight Helm 30 -> 26** (Daniel's pick, opens Slimey/Batty at Legendary — he
+applies the one-value edit himself; NO suite pin on the price, verified).
+**NEXT: the UX ROADMAP (Daniel's fresh-eyes reset, 2026-07-04)** — see §12's agreed order; ends
+with the Rat. **Option-3 art polish: SCRUBBED** (see §9 — the 128px-frame + MEASURED-footPad
+convention is PERMANENT, do not resurrect).
 **Workflow note: NO DevLog for Mob Mart** — Daniel opted out (2026-07-03). Skip the DevLog draft
 step at feature completion for this project.
-**Last updated:** 2026-07-04 — items phase: Froggo, report timing, A2/B2 scaffold, item-aware comedy, batch 1.
+**Last updated:** 2026-07-04 — items phase closed (batch 2, wiggle, line-unlock/golden, economy session); UX roadmap agreed.
 
 ---
 
@@ -466,18 +481,41 @@ registry — never hand-type a roster-dependent number into a rule test.
 
 ### Next up — the idle-progression roadmap (from MOB_MART_RESEARCH.md)
 
-**Agreed immediate order (next session starts here):**
-1. **Content batch 2 — chain tops** (Iron Buckler <- Wooden Shield, Iron Gauntlet <- Leather
-   Bracer): licensed rows at higher price on the existing pattern — a chain is naming + pricing,
-   NOT a mechanic (optional `upgradeOf` field only if the shop UI ever groups chains). Daniel
-   authors the two 64×64 icons; registry rows auto-flow through A2 wants / shelves / milestones.
-2. **Serve-count line-unlock mechanic** (deferred from the old Pass 4 bundle) — needs its own
-   options round; touches the comedy picker in results/messages.
-3. **Economy tuning look** (owed, feel-driven): Froggo adds ~+20% budget on 25% of spawns and the
-   Trusted rung front-loads licenses — one observation session, then surgical single-lever tweaks
-   per the balance protocol. Not a broad rebalance.
-   *(Pass 4b Froggo, battle-report timing, A2/B2 scaffold, item-aware comedy, and content batch 1 —
-   formerly queued here — ALL SHIPPED 2026-07-04; see build history. Option-3: scrubbed, §9.)*
+**Agreed immediate order — THE UX ROADMAP (Daniel's fresh-eyes full-reset findings, 2026-07-04;
+all shapes below are HIS refinements of the options rounds, decided):**
+1. **Bob's hire arc (pseudo-tutorial).** Bob is NOT visible until hired (drawBob + serve anims
+   gate on `workers.mimic_merchant.owned`); the empty counter carries a persistent goal chip
+   ("The counter needs a merchant! Hire Bob — 50◆", DOM, click -> Workers tab); on hire Bob
+   appears. Teaches manual serve THEN automation, and keeps the first-purchase beat.
+   startingGold 40 vs hireCost 50 = 1-2 manual serves fund it (deliberate). Old saves
+   (owned: true) see nothing. Suite: M4 sections assume unowned start — already compatible.
+2. **Fame track panel ("unlock tree" — Daniel's twist on Option 3).** Fame is LINEAR, so the tree
+   is a vertical TRACK: one node per tier (Newcomer..Legendary), each node fanning out what it
+   unlocks — REGISTRY-SCANNED (licenses' + perks' requiredTier auto-populate; new content
+   auto-appears). Centered showcase presentation (the Bestiary-v2 pattern; documented actor-band
+   exception). Plus a one-line HUD remainder ("· 32♛ to Trusted"). NOT a branching spend-tree —
+   that would be a new system; display only. Must visually separate spendable ♛ vs lifetime Fame.
+3. **License alerts via BOB'S SPEECH BUBBLE (Daniel's twist on Option 2).** On a tier crossing
+   with newly eligible licenses, Bob gets his own bubble (drawBubble variant anchored at Bob):
+   queued announcements ~6s each, PLUS a gentle recurring reminder (~30s dial) while any eligible
+   license sits unbought, PLUS the milestone log line as the permanent record. NOT clickable
+   (canvas has zero click handling — by design); if click-to-shop ever matters, a DOM chip is the
+   fallback. Trigger = TIER ELIGIBILITY, never affordability (gold fluctuates -> spam).
+4. **The Restocker (second worker).** SMALLER than Bob, a FLYING something (art undecided —
+   flyer conventions apply: `flying: true`-style hover, altitude padding). Passive slow
+   auto-restock trickle + the "Restock now" clickable DOM chip over the diorama for active play
+   ("Club out — Restock 6◆" -> restockItem). Upgrade specifics deferred to the pass (mini options
+   round at build: chip stacking, affordability graying, trickle rate). Hire cost ~100-150 = the
+   second-purchase beat. Registry row auto-appears on the Workers tab.
+5. **Menus — Option 3, future-proof.** Title screen (menu screen state over dimmed diorama:
+   Play/Continue, Credits, Kongregate sign-in status) + pause overlay (Esc / button; update()
+   already gates on `state.screen`) + a SETTINGS section seeded only with REAL toggles (wiggle
+   on/off is a candidate) — no placeholder rows. Kongregate sign-in per the platform reference
+   (load references/kongregate.md at build). Credits section required for Kong.
+6. **The RAT (fifth customer).** Registry row + full comedy voice (fifth distinct lever — the
+   real cost) + @25 ladder batch + one golden @100 + 3 PNGs (128-frame convention, footPad
+   MEASURED at integration). Everything else auto-flows (A2 wants, spawns -> 20% each, bestiary
+   reveal, milestones).
 
 The problem it solves: the game has ONE growth axis (gold -> 4 upgrades -> done at ~10.6k). The
 research's answer is a lattice of small bolt-on layers on existing hooks, staged so every pass
@@ -875,6 +913,40 @@ set. Add "bumpy" x2 spikes at 25/50-style breakpoints. Never add decay/backward 
   End-to-end payoffs asserted: a pre-batch save keeps its earned everything tier over four new free
   items; new items enter the want pool with zero wiring. All nine 64×64 icons IN (dimension-
   verified). Suite 288 (4x-stable).
+- **Batch 2 — chain tops (2026-07-04):** Iron Buckler (armor 18/9 eff6, Beloved 300) + Iron
+  Gauntlet (armor 24/12 eff8, Renowned 500), slotted into the 300->800 license-cost gap. Chain =
+  naming + pricing, NO mechanic; the pricing RELATION is suite-pinned (§30 chain invariant).
+  Daniel caught his own `iron_gaunlet.png` typo (renamed at origin — the gremlin lives). ALSO:
+  §29's own day-old `ITEM_ORDER.length === 15` broke — the hand-typed-total lesson recurring
+  IN-SUITE within a day; rule now WRITTEN: exact roster totals belong ONLY to the newest batch's
+  section. Suite 291.
+- **Shelf wiggle (2026-07-04, Daniel picked Option 2 of 3):** goods rest still; every intervalMs
+  ONE displayed slot plays a bottom-anchored hop-and-settle (airborne 70% / landing squash 30% —
+  the celebrant hop's language at shelf scale; idle math reduces to the exact old blit). Scarce on
+  purpose: occasional motion draws the eye, constant bob numbs it AND levitates (the grounding
+  rule extends to set dressing). Dials in `WALL_SHELF.wiggle`; Daniel tuned durMs 450->800,
+  hopPx 3->4. Scheduler tolerates stale picks by design. Suite unchanged 291.
+- **Line-unlock ladder + golden lines (2026-07-04, Daniel combined Options 1+3; line-trust, no
+  review):** templates gain `minServes` (?? 0) filtered beside `cats`; logLine takes `serves`
+  (serve-site passes count INCLUDING the current one) and returns `{ text, golden }`; golden
+  entries outrank tier classes in the log render (gold + glow). Batches AT the loyalty breakpoints
+  (Bestiary pips = new-material markers); registry-scanned unlock announcement (no false hype on
+  batchless breakpoints). Shipped: 2-3 gated lines/monster @25 (in-voice escalations: Slimey's
+  eat-gag matures, Froggo hits two stars) + ONE golden @100 each, written TIMELESS (they keep
+  firing) — Froggo's five-star review is the crown; his gag chain is COMPLETE (bible tracker).
+  Build catches worth keeping: a partial scripted batch left game.js referencing an unimported
+  symbol (caught by the verify pass); and a FAIL-grep masked a mid-suite CRASH — always read the
+  run's TAIL, a grep for failures is not a completion check. Suite 309 (3x-stable).
+- **Economy observation session (2026-07-04):** scratch probe (`probe_economy.mjs`, NOT
+  committed/gitignored — DELETE before any `git add .` or add a `probe_*.mjs` ignore line) simmed
+  5x40min active play on the REAL modules + registry-math tables. Findings: timeline HEALTHY
+  (Trusted ~min 2, first license ~5, Beloved ~6, Renowned ~12, Legendary ~23, 800g pair ~36-40,
+  Knight Helm beyond 40 — a real long tail); batch 1 diluted early income ~27%/serve (15.0 ->
+  10.89 analytic), compensated by the fast Trusted rung — Daniel's verdict: FEELS GOOD, no change
+  and no honest single lever anyway; cant-afford waves ~11.6% observed (the 43% analytic is a
+  base-budget worst case that fame scaling erases); Knight Helm was a permanent two-buyer good
+  (Skele+Froggo only, even at x1.3) — **Daniel: 30 -> 26** (opens Slimey at exactly Legendary max,
+  Batty comfortably; verified NO suite pin on the price; Daniel applies the edit himself).
 
 ---
 
@@ -884,10 +956,19 @@ set. Add "bumpy" x2 spikes at 25/50-style breakpoints. Never add decay/backward 
   distinct comedy voice, everything else is one registry row + 3 PNGs.
 - **Line-unlock mechanic design** — deferred from the old Pass 4 bundle; needs its own options
   round (gating comedy pools by serve count touches the no-repeat picker).
+- **Knight Helm 26 — Daniel's edit, verify landed:** next session, confirm `basePrice: 26` is at
+  HEAD (items.js line ~18; restockCost stays 15 — margin holds; no suite change needed).
+- **probe_economy.mjs is scratch and NOT gitignored** — if Daniel ran it locally, it must be
+  deleted before `git add .` (or add `probe_*.mjs` to .gitignore).
+- **Restocker build-time mini round owed:** chip stacking (list vs one-at-a-time), affordability
+  graying, passive trickle rate + upgrade shape. Art is a small FLYER, undecided — placeholder-
+  first per the standing pattern.
+- **@50 line batches** whenever Daniel wants more comedy content (Batty's pebble escalation is
+  teed up in the bible tracker).
 - **Shelf-panel scroll tradeoff (provisional):** `overflow-y: auto` clips the attention-pulse glow
   at the panel edge — confirm on feel or adjust the dials named in style.css.
-- **Economy tuning look (owed):** Froggo's budgets + the Trusted license rung ease the early
-  economy — one observation session, then single-lever tweaks only.
+- **Feel verdicts logged 2026-07-04:** early pace GOOD (no dilution lever); wiggle tuned 800/4;
+  golden styling unconfirmed on feel (ships, revisit only if it reads wrong).
 - **Potion display names locked:** Murk Tonic, Zip Tonic (Daniel approved 2026-07-04).
 - **itch.io dual-publish: yes or Kongregate-only?** Decides whether the `butler` deploy path is added.
 - **Repo:** `github.com/Cupcakechan/mob-mart` (local folder `mob-mart`).
