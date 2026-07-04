@@ -15,7 +15,7 @@ export const ITEMS = {
                   license: { cost: 800,  requiredTier: 4 } },   // Renowned
   greater_flask:{ id:'greater_flask',displayName:'Greater Flask',iconId:'greater_flask',category:'consumable', basePrice:27, restockCost:13, startStock:0, maxStock:5, combatEffect:8,
                   license: { cost: 800,  requiredTier: 4 } },   // Renowned
-  knight_helm:  { id:'knight_helm',  displayName:'Knight Helm',  iconId:'knight_helm',  category:'armor',      basePrice:30, restockCost:15, startStock:0, maxStock:5, combatEffect:9,
+  knight_helm:  { id:'knight_helm',  displayName:'Knight Helm',  iconId:'knight_helm',  category:'armor',      basePrice:26, restockCost:15, startStock:0, maxStock:5, combatEffect:9,
                   license: { cost: 1200, requiredTier: 5 } },   // Legendary — the top-shelf goal
 
   // --- Batch 1 (items phase, 2026-07-04): FREE TIER. Priced <= the roster's MINIMUM budget roll
