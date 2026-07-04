@@ -159,6 +159,12 @@ const WALL_SHELF = {
   crossfadeMs: 300,     // per-slot swap fade; 0 = instant
   barW: 48, barH: 4,    // stock bar under the plank band (tracks iconSize)
   barGapY: 6,           // gap between plank band bottom and the bar
+  wiggle: {             // Shelf motion (Daniel's pick, Option 2 of 3): items rest still; every
+    intervalMs: 4000,   // intervalMs ONE random displayed item plays a brief hop-and-settle.
+    durMs: 450,         // Scarce on purpose — occasional motion draws the eye where a constant
+    hopPx: 3,           // bob numbs it, and resting goods stay ON the plank (the grounding
+    squash: 0.12,       // pass's rule extends to set dressing: nothing levitates).
+  },
   propId: 'wall_shelf', // optional authored plank sprite (see the art spec / handoff §9)
   plank: '#5b3a24', plankEdge: '#3a2415',
   barFill: '#ffcf4a', barEmpty: '#b3402e', glow: '#ffcf4a',
@@ -205,6 +211,9 @@ function dressShelf(shelfIdx, ids, tMs) {
 function currentIds(shelfIdx) {
   return shelfDress.slots[shelfIdx].map((sl) => sl.itemId).filter((id) => id !== null);
 }
+
+// Shelf-wiggle state (ephemeral): which slot is mid-hop, and when the next one fires.
+const shelfWiggle = { shelf: -1, slot: -1, startMs: 0, nextAtMs: 0 };
 
 function drawWallShelf(ctx, state, tMs) {
   const nShelves = WALL_SHELF.shelves.length;
@@ -254,6 +263,20 @@ function drawWallShelf(ctx, state, tMs) {
   }
   const pulse = 0.5 + 0.5 * Math.sin(tMs / 500);
 
+  // Wiggle scheduler: one displayed slot at a time, re-picked every intervalMs. Stale indices are
+  // harmless (rotation may swap the item mid-wiggle — whatever is there now wiggles; a slot gone
+  // empty simply skips the transform). Ephemeral render state, never saved.
+  if (tMs >= shelfWiggle.nextAtMs) {
+    const candidates = [];
+    shelfDress.slots.forEach((row, ri) =>
+      row.forEach((sl, si) => { if (sl.itemId !== null) candidates.push([ri, si]); }));
+    if (candidates.length > 0) {
+      const [ri, si] = candidates[Math.floor(Math.random() * candidates.length)];
+      shelfWiggle.shelf = ri; shelfWiggle.slot = si; shelfWiggle.startMs = tMs;
+    }
+    shelfWiggle.nextAtMs = tMs + WALL_SHELF.wiggle.intervalMs;
+  }
+
   ctx.save();
   for (let i = 0; i < nShelves; i++) {
     const sh = WALL_SHELF.shelves[i];
@@ -299,7 +322,25 @@ function drawWallShelf(ctx, state, tMs) {
         const spr = getSprite(slot.itemId);
         if (spr) {
           ctx.globalAlpha = t;
-          ctx.drawImage(spr, x, sh.y, WALL_SHELF.iconSize, WALL_SHELF.iconSize);
+          // Wiggle transform: airborne through 70% of the clip, landing squash (width compensates)
+          // through the last 30% — the celebrant hop's language at shelf scale. Bottom-ANCHORED so
+          // the item visibly leaves and returns to the plank; when idle (sx=sy=1, lift=0) this
+          // reduces to exactly the old top-left blit.
+          let lift = 0, sx = 1, sy = 1;
+          if (i === shelfWiggle.shelf && s === shelfWiggle.slot) {
+            const p = (tMs - shelfWiggle.startMs) / WALL_SHELF.wiggle.durMs;
+            if (p >= 0 && p < 1) {
+              if (p < 0.7) {
+                lift = Math.sin(Math.PI * (p / 0.7)) * WALL_SHELF.wiggle.hopPx;
+              } else {
+                const k = Math.sin(Math.PI * ((p - 0.7) / 0.3)) * WALL_SHELF.wiggle.squash;
+                sy = 1 - k; sx = 1 + k * 0.7;
+              }
+            }
+          }
+          const w = WALL_SHELF.iconSize * sx, hgt = WALL_SHELF.iconSize * sy;
+          ctx.drawImage(spr, x + (WALL_SHELF.iconSize - w) / 2,
+            sh.y + (WALL_SHELF.iconSize - hgt) - lift, w, hgt);
           ctx.globalAlpha = 1;
         }
         ctx.restore();
