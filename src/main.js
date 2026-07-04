@@ -70,6 +70,11 @@ loadSprite('wall_shelf', 'assets/sprites/wall_shelf.png');        // wall-shelf 
 loadSprite('slime_walk_happy', 'assets/sprites/slime_walk_happy.png');        // celebrate pass: happy-walk strips,
 loadSprite('bat_walk_happy', 'assets/sprites/bat_walk_happy.png');            //   4 equal frames each; absent ->
 loadSprite('skeleton_walk_happy', 'assets/sprites/skeleton_walk_happy.png');  //   idle strip / static march fallback
+loadSprite('frog', 'assets/sprites/frog.png');                    // Pass 4b — Froggo (128x128 per the permanent
+loadSprite('frog_idle', 'assets/sprites/frog_idle.png');          //   convention; registered BEFORE the art exists,
+loadSprite('frog_walk_happy', 'assets/sprites/frog_walk_happy.png'); // the wall_shelf lesson; absent -> rect/static.
+                                                                  //   "_walk_happy" name kept by convention; the
+                                                                  //   authored content will be a grumpy stomp.
 
 function resize() {
   const s = Math.min(window.innerWidth / CONFIG.stage.width, window.innerHeight / CONFIG.stage.height);

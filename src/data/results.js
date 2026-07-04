@@ -221,4 +221,45 @@ export const MONSTER_RESULTS = {
       `Bob waved. Skele saluted with the wrong arm. His, though.`,
     ],
   },
+  // Froggo (grumpy frog, Pass 4b). Comic lever: PROFESSIONAL DISSATISFACTION — every event, win
+  // or lose, is a substandard service experience to be reviewed poorly. Grumbly, never mean;
+  // we laugh WITH the grump. Running gag seeded: the scathing review / one-star rating.
+  frog: {
+    excellent: [
+      `Froggo won, checked his receipt, and grumbled home. Champion.`,
+      `The hero apologized for wasting Froggo's time. Wise. Victory!`,
+      `Froggo croaked once. The hero surrendered on instinct.`,
+      `Froggo won and rated the whole experience "fine, I suppose."`,
+    ],
+    success: [
+      `Froggo survived and complained the dungeon wasn't damp enough.`,
+      `Froggo tapped out early. He had a lily pad to get back to.`,
+      `The hero got tired of the glaring. Froggo calls it a draw.`,
+    ],
+    partial: [
+      `Froggo lost, but his scowl never wavered. Consistency.`,
+      `Froggo lost and demanded a refund from the hero. Almost got one.`,
+      `Defeated, Froggo left a scathing review of the entire dungeon.`,
+    ],
+    failure: [
+      `Froggo lost fast. His mood, already at the bottom, held steady.`,
+      `The hero won. Froggo blamed the {item}, the floor, and Tuesdays.`,
+      `Froggo was defeated mid-grumble. He finished the grumble anyway.`,
+    ],
+    funnyFailure: [
+      `Froggo's tongue stuck to the {item}. The hero waited politely, then won.`,
+      `Froggo paused to complain about the arena's acoustics. Fatal.`,
+      `Froggo glared at the hero so long he forgot to fight. Classic.`,
+      `Froggo hopped into battle, hated the landing, left. Technically a loss.`,
+    ],
+    leave: [
+      `Froggo checked the wait time, croaked "no," and hopped off.`,
+      `Froggo left a one-star review of the queue and hopped away.`,
+    ],
+    dismiss: [
+      `You wave Froggo off. He was leaving anyway, he insists.`,
+      `"Next!" Froggo grumbles off, already drafting the complaint.`,
+      `Bob waved him off warmly. Froggo hated that. He'll be back.`,
+    ],
+  },
 };

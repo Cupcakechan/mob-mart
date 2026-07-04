@@ -1,5 +1,6 @@
 // monsters.js — customer (monster) registry. wantWeights bias which item each type asks for.
-// Goblin (Gobbo) and Rat join later as the first content additions.
+// (Gobbo the goblin was redesigned into Froggo the grumpy FROG before implementation — Daniel,
+// 2026-07-04; id + all PNG naming = `frog`. Rat remains an open call, handoff §13.)
 export const MONSTERS = {
   slime: {
     id:'slime', displayName:'Slimey', spriteId:'slime', combatMod:-2, budgetRange:[10,20],
@@ -29,6 +30,23 @@ export const MONSTERS = {
     wantWeights:[{value:'club',weight:3},{value:'metal_helmet',weight:2},{value:'hp_flask',weight:1},
       {value:'iron_sword',weight:2},{value:'knight_helm',weight:1}],  // tier-2: biggest budget, biggest sword
   },
+  frog: {
+    id:'frog', displayName:'Froggo', spriteId:'frog', combatMod:0, budgetRange:[16,30],
+    // Pass 4b (Option 2 — "the tier-2 customer"): a grump with gold. Wants LEAD with licensed
+    // items; pre-license the unlock filter (spawnCustomer) drops them and he buys base goods like
+    // everyone else — the moment tier-2 is licensed, its shelf gains a dedicated regular. Budget
+    // sits above the trio ([16,30] vs [10..24]) to actually afford those prices; economy note:
+    // +~20% avg budget on 25% of spawns — one tuning look owed after feel.
+    // Grounded (no `flying`); no spriteScale/footPad yet — BOTH are set at art integration
+    // (footPad is MEASURED from the real PNG, never guessed; absent fields are guarded ?? in
+    // every consumer, so this row is safe art-less: queue draws the placeholder rect).
+    anim: { frames: 4, fps: 6 },   // idle: frog_idle.png on the SHARED 4x128 -> 512x128 contract.
+                                   // NOTE the walk strip stays `frog_walk_happy.png` by CONVENTION
+                                   // but its authored content is a grumpy stomp — Froggo marching
+                                   // to battle annoyed IS the joke; do not "fix" the mismatch.
+    wantWeights:[{value:'greater_flask',weight:3},{value:'iron_sword',weight:2},
+      {value:'hp_flask',weight:2},{value:'club',weight:1},{value:'knight_helm',weight:1}],
+  },
 };
 
-export const MONSTER_IDS = ['slime', 'bat', 'skeleton'];
+export const MONSTER_IDS = ['slime', 'bat', 'skeleton', 'frog'];

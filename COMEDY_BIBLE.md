@@ -62,7 +62,7 @@ comedy vein: the wink for players who know RPGs. The rule that keeps it safe and
 
 ---
 
-## The three cast voices (each gets one comic lever)
+## The four cast voices (each gets one comic lever)
 
 - **Slimey** (dim, sweet slime) → **innocent literalism.** Simple words, literal misunderstandings,
   sunny obliviousness. Splits, jiggles, absorbs things by accident. Never sad about it.
@@ -70,6 +70,11 @@ comedy vein: the wink for players who know RPGs. The rule that keeps it safe and
   apologizes. Often defeats himself before the hero even shows up.
 - **Skele** (brittle, rattly skeleton) → **deadpan + structural fragility.** Dry delivery; literally
   falls apart and reassembles. Bone puns kept light and rare.
+- **Froggo** (grumpy frog, Pass 4b — the tier-2 big spender) → **professional dissatisfaction.**
+  Every event, win or lose, is a substandard service experience to be reviewed poorly: receipts
+  checked, refunds demanded, one-star reviews filed. Grumbly, never mean — we laugh WITH the
+  grump; he keeps coming back, and hates that he does. His walk strip is named `_walk_happy` by
+  convention but authored as a grumpy stomp — the mismatch IS the joke.
 
 Test: cover the name and you should still know who it is.
 
@@ -89,6 +94,9 @@ Plant a few and escalate them across updates (the 3rd appearance gets the bigges
 - **Skele's missing left femur** — SEEDED ×3 (excellent, partial, funnyFailure).
 - **The coupon nobody ever honors** — SEEDED ×2 (partial generic, dismiss generic/Bob).
 - **Slimey trying to eat his own gear** — SEEDED ×2 (funnyFailure ×2, "third time this week").
+- **Froggo's scathing review** — SEEDED ×3 in his debut batch (partial "scathing review", leave
+  "one-star review of the queue", dismiss "drafting the complaint"). Escalate one batch later in a
+  different tier per the rule below.
 - **The off-screen hero ("the kid with the sword")** — NOT yet seeded by that phrase; the anonymous
   "the hero" carries it for now. Introduce the phrase when a batch needs a fresh angle.
 

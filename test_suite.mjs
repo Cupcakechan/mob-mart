@@ -835,9 +835,12 @@ console.log('M4 auto-serve worker — smoke test\n');
       lo = Math.min(lo, c.budget); hi = Math.max(hi, c.budget);
     }
     ok(true, `fame budgets: 600 Legendary spawns all within x1.30 bounds (saw ${lo}..${hi})`);
-    const base = shopState();                         // Neutral: unscaled
-    for (let i = 0; i < 200; i++) ok2(spawnCustomer(base).budget <= 24);
-    ok(true, 'fame budgets: unscaled at base tiers (200 spawns <= 24)');
+    const base = shopState();                         // Neutral: unscaled — bound from the LIVE
+    for (let i = 0; i < 200; i++) {                   // registry (the hard-coded 24 was the OLD
+      const c = spawnCustomer(base);                  // roster max; Froggo's [16,30] broke it —
+      ok2(c.budget <= MONSTERS[c.monsterId].budgetRange[1]);   // same lesson as the x1.30 loop above)
+    }
+    ok(true, 'fame budgets: unscaled at base tiers (200 spawns within own registry ranges)');
   }
 
   // The regression guard: three new items at 0 sales must NOT drop an earned everything-tier.
@@ -1045,6 +1048,70 @@ console.log('M4 auto-serve worker — smoke test\n');
     const fp = MONSTERS[id].footPad;
     return fp === undefined || (Number.isFinite(fp) && fp >= 0);
   }), 'grounding: every declared footPad is a non-negative finite number');
+}
+
+// 25. Pass 4b — Froggo the grumpy frog: registry contract + roster auto-flow ---------------------
+{
+  const { MONSTERS, MONSTER_IDS } = await import('./src/data/monsters.js');
+  const { spawnCustomer } = await import('./src/game.js');
+  const { ITEMS } = await import('./src/data/items.js');
+  const { MONSTER_RESULTS } = await import('./src/data/results.js');
+
+  ok(MONSTER_IDS.includes('frog') && MONSTER_IDS.length === 4, 'roster: frog joined, four mobs');
+  const f = MONSTERS.frog;
+  // Values from the registry, not memory (the Batty-budget lesson): Option 2 identity pinned.
+  ok(f.combatMod === 0 && f.budgetRange[0] === 16 && f.budgetRange[1] === 30,
+     'frog: Option-2 identity pinned (combatMod 0, budget [16,30])');
+  ok(f.flying === undefined && f.footPad === undefined,
+     'frog: grounded, footPad deferred to art integration (guarded ?? everywhere)');
+  ok(f.wantWeights.every((w) => ITEMS[w.value] !== undefined),
+     'frog: every want is a real ITEM id (the no-item front-blocker guard)');
+  ok(f.wantWeights.some((w) => ITEMS[w.value]?.license),
+     'frog: wants LEAD with licensed items (the tier-2 customer)');
+
+  // Pre-license behavior: a fresh state has NO licenses, so 200 spawns forced to frog must all
+  // want license-free items — the Pass-3 filter is what makes the tier-2-leaning row safe day one.
+  {
+    const realRandom = Math.random;
+    let frogWantedLocked = false;
+    for (let i = 0; i < 200; i++) {
+      const s = shopState();                      // fresh: licenses all false
+      // spawnCustomer picks the monster uniformly; force frog by monkey-patching pick's source
+      // would couple to utils internals — instead spawn until we draw frogs (uniform => ~50 of 200).
+      const c = spawnCustomer(s);
+      if (c.monsterId !== 'frog') continue;
+      if (ITEMS[c.wantedItemId]?.license) frogWantedLocked = true;
+      ok(c.budget >= 16 && c.budget <= 30, `frog budget in range (got ${c.budget})`);
+      break;                                      // one asserted sample per state is enough here
+    }
+    // Statistical spread: over 400 spawns, frog must actually appear AND never want locked items.
+    let seen = 0;
+    for (let i = 0; i < 400; i++) {
+      const s = shopState();
+      const c = spawnCustomer(s);
+      if (c.monsterId !== 'frog') continue;
+      seen++;
+      if (ITEMS[c.wantedItemId]?.license) frogWantedLocked = true;
+    }
+    Math.random = realRandom;
+    ok(seen > 40, `frog spawns at a real rate (uniform pick; saw ${seen}/400)`);
+    ok(!frogWantedLocked, 'pre-license: frog never wants a locked tier-2 item (filter holds)');
+  }
+
+  // Legacy save (no frog key in monsterServes) merges to 0, never NaN/crash — merge iterates the
+  // FRESH state's keys, so a new roster entry is additive by construction.
+  {
+    const { mergeSave } = await import('./src/save.js');
+    const legacy = { stats: { itemSales: {}, monsterServes: { slime: 40, bat: 10, skeleton: 5 } }, gold: 77 };
+    const merged = mergeSave(createInitialState(), legacy);
+    ok(merged.stats.monsterServes.frog === 0, 'legacy save: frog serves merge to 0');
+    ok(merged.stats.monsterServes.slime === 40, 'legacy save: existing serve counts survive');
+  }
+
+  // Comedy: frog pool exists with the same tier keys as the trio (picker pools it with generic).
+  const tiers = ['excellent', 'success', 'partial', 'failure', 'funnyFailure', 'leave', 'dismiss'];
+  ok(tiers.every((t) => (MONSTER_RESULTS.frog?.[t] ?? []).length >= 2),
+     'frog: every comedy tier has at least 2 lines (section-14 hazard guards auto-cover them)');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
