@@ -138,18 +138,26 @@ export function playPortalOpen() {
 // Optional art hook: drop assets/sprites/wall_shelf.png and BOTH planks use it (drawn into the
 // plankBoxH band under the icons); absent, the code-drawn plank remains the fallback.
 const WALL_SHELF = {
-  shelves: [            // one entry per plank; staggered x so the wall reads dressed, not gridded.
-    { x: 84,  y: 168 }, // y = icon TOP. Band budget: below the HUD, above bubble airspace (~328);
-    { x: 128, y: 244 }, // shelf B's lowest pixel lands at y≈312 with the values below.
+  shelves: [            // Shelf v3 (Daniel's pick): THREE rows on one common axis — a centered
+    { x: 78, y: 38 },   // shelving UNIT, replacing v2's two staggered planks. x is the icon left
+    { x: 78, y: 134 },  // (plank extends plankPad past it: plank spans x60..372); y is the icon TOP.
+    { x: 78, y: 230 },  // Band math: row height = 48+2+30+6+4 = 90, 6px between rows -> bottoms at
+                        // 128 / 224 / 320. Ceiling is the speech bubble's box top, MEASURED from
+                        // drawBubble: tip 407-18-4(bob) - tail 11 - body 51 = y322 worst case over
+                        // x270..450 — the unit clears it by 2px. Queue heads (~y394) sit below.
   ],
-  slotsPerShelf: 4,     // display capacity per plank — the sample size, NOT the catalog size
-  slotStep: 60,         // horizontal spacing between slots
-  iconSize: 32,         // 64px art at clean 2:1, matching the cards
-  plankPad: 16,         // plank extends this far past the outer icons on each side (plank w = 244)
-  plankBoxH: 24,        // vertical band reserved for the plank — art OR code-drawn fills it
-  rotateSec: 45,        // one shelf re-rolls its sample this often (shelves alternate)
+  slotsPerShelf: 4,     // display capacity per plank — the sample size, NOT the catalog size.
+                        // NOTE: 12 slots vs today's 3-6 item catalog = repeats across rows
+                        // (shared-pool dilution, expected for set dressing; variety returns as
+                        // the catalog grows).
+  slotStep: 76,         // horizontal spacing between slots (keeps the 28px visual gap at 48px icons)
+  iconSize: 48,         // 64px art at x0.75 — non-integer, minor crunch accepted post-crisp-canvas
+                        // (Option 3 of the crispness plan — native-size re-export — removes it)
+  plankPad: 18,         // plank extends this far past the outer icons each side (plank w = 312)
+  plankBoxH: 30,        // vertical band reserved for the plank — art OR code-drawn fills it
+  rotateSec: 45,        // one shelf re-rolls its sample this often (shelves take turns)
   crossfadeMs: 300,     // per-slot swap fade; 0 = instant
-  barW: 32, barH: 4,    // stock bar under the plank band
+  barW: 48, barH: 4,    // stock bar under the plank band (tracks iconSize)
   barGapY: 6,           // gap between plank band bottom and the bar
   propId: 'wall_shelf', // optional authored plank sprite (see the art spec / handoff §9)
   plank: '#5b3a24', plankEdge: '#3a2415',
@@ -383,7 +391,10 @@ function drawBubble(ctx, state, tMs) {
 
   const w = Math.ceil(textW) + BUBBLE.padX * 2;
   const h = BUBBLE.padY * 2 + 15 + BUBBLE.lineGap + 13;
-  const bob = Math.sin(tMs / 300 + QUEUE.frontX) * 4;            // same phase as the front mob
+  // Grounding cleanup: the bubble bobs IN PHASE with the front mob — which, since the grounding
+  // pass, only bobs when `flying`. Same gate here, or the bubble hovers over a stationary Slimey.
+  const flying = MONSTERS[c.monsterId]?.flying ?? false;
+  const bob = flying ? Math.sin(tMs / 300 + QUEUE.frontX) * 4 : 0;   // same phase as drawMob's front slot
   const cx = QUEUE.frontX + QUEUE.size / 2;
   const tipY = QUEUE.y - BUBBLE.tipGapY + bob;
   const x = Math.max(8, Math.min(W - w - 8, cx - w / 2));        // clamp inside the stage
