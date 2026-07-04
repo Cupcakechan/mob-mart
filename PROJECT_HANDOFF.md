@@ -23,13 +23,14 @@ the `WALL_SHELF` comment; the speech bubble's bob is gated to flyers like the mo
 an updated skeleton static; strip padding re-MEASURED and consistent with the statics — the pinned
 footPads stay correct). Suite: **236 assertions, committed, green from repo root**
 (`node test_suite.mjs`).
-**NEXT, in order:** **(1) Option-3 art polish — SPEC'd, code half pending** (see §9 for the
-re-export spec and the STRICT art+code-together sequence); **(2) Pass 4b — Gobbo (+ rat?** — Daniel
-owes the in-or-out call**)**; **(3) the deferred serve-count line-unlock mechanic** (own options
-round; touches the comedy picker).
+**NEXT, in order:** **(1) Pass 4b — Gobbo, now a GRUMPY FROG** (Daniel's redesign 2026-07-04; id +
+PNG naming = `frog`; rat remains an open call, see §13); **(2) the deferred serve-count line-unlock
+mechanic** (own options round; touches the comedy picker). **Option-3 art polish: SCRUBBED**
+(Daniel's call 2026-07-04 — see §9; the 128px-frame + MEASURED-footPad convention is PERMANENT, do
+not resurrect the re-export plan).
 **Workflow note: NO DevLog for Mob Mart** — Daniel opted out (2026-07-03). Skip the DevLog draft
 step at feature completion for this project.
-**Last updated:** 2026-07-04 — Bestiary / grounding / crisp-canvas / shelf-v3 session.
+**Last updated:** 2026-07-04 — Option-3 scrubbed; Gobbo redesigned as the grumpy frog.
 
 ---
 
@@ -329,46 +330,29 @@ animation = `<id>_<anim>.png`.
 seam at **y=462**, not the originally spec'd 446 — `FLOOR_Y` in scene.js is 462 and all floor-contact
 anchoring keys off it. Author the backdrop with the seam at 462 (wall 0→462, floor 462→720).
 
-**Option-3 art polish — SPEC'd 2026-07-04, code half PENDING.** Mob frames re-export at their
-FINAL on-screen size so the runtime draw is 1:1 logical (the remaining resample is the crisp-canvas
-device scale, unavoidable in scale-to-fit). Honest framing: this *bakes* the old 128→drawn resample
-once at author time — where ugly pixels can be hand-fixed in Aseprite — and deletes the whole
-`footPad` mechanism. Targets preserve today's tuned VISIBLE sizes exactly (derivation: drawn box
-88×1.15 = 101.2; visible = 101.2 × contentRows/128):
-
-| Family (3 files each: static, `_idle`, `_walk_happy`) | Final frame HEIGHT | Trim rule |
-|---|---|---|
-| `slime*` | **87px** | feet at the bottom edge — ZERO bottom padding |
-| `skeleton*` | **92px** | feet at the bottom edge — ZERO bottom padding |
-| `bat*` | **88px** | scale the whole 128 frame down; KEEP the bottom padding (it's the hover altitude, ~10px at 88) |
-
-Widths preserve aspect; strips stay 4 equal frames side by side (total width = 4 × frame width);
-PNG-32, same filenames. Aseprite resample OR PixelLab regeneration at target size both work
-(regeneration spends credits — Daniel's call, never initiated by Claude).
-**STRICT SEQUENCE — neither half ships alone:** (1) Daniel's Aseprite sitting → (2) upload the 9
-PNGs to the session BEFORE dropping them into the repo → (3) Claude alpha-scans (feet-at-edge
-verify — there is no `footPad` dial left to absorb a missed row) and delivers the code flip
-(drawMob + drawCelebrants take `h` = natural frame height; `spriteScale` + `footPad` registry
-fields REMOVED; `QUEUE.spriteScale` kept as the global emergency dial; suite §24 rewritten to the
-new contract) → (4) art + code drop together, ONE commit. Intermediate states are visibly broken
-by design: new art + old code sinks Slimey ~21px into the floor; new code + old art draws 128px
-giants. **New-mob convention from then on (Gobbo):** author at final on-screen height, feet at the
-bottom edge; flyers may carry deliberate altitude padding.
-**Item icons stay 64px (batch-B analysis, decided 2026-07-04):** the icon files serve THREE
-consumers — shelf slots 48px (v3), purchase float 32px, DOM cards 32px. A 48px re-export fixes one
-consumer and turns both clean ×0.5 consumers into crunchy ×0.667. The 64px master stays; the
-shelf's ×0.75 is the accepted residual.
+**Option-3 art polish — SCRUBBED (Daniel's call, 2026-07-04).** A full re-export spec (native-size
+frames, feet-at-edge, strict art+code-together sequence) was drafted, then dropped before any work:
+the crisp-canvas pass had already captured most of the visible win, and nine re-exports plus a
+draw-convention flip wasn't worth the marginal "bake and polish" gain. **The PERMANENT mob-art
+convention is therefore the current one — do not resurrect the re-export plan:** frames authored at
+**128×128** (strips 4 × 128 → 512×128), drawn at `QUEUE.size` × per-monster `spriteScale`, with
+bottom padding compensated by a **MEASURED `footPad`** registry field (pngjs alpha-scan at
+integration; guarded `?? 0`) — flyers skip `footPad` and may carry deliberate altitude padding.
+**New mobs (the frog) follow this same convention.** The one piece of the analysis that stands:
+**item icons stay 64px** — the icon files serve THREE consumers (shelf slots 48px, purchase float
+32px, DOM cards 32px); a 48px re-export fixes one and turns both clean ×0.5 consumers into crunchy
+×0.667. The shelf's ×0.75 is the accepted residual.
 
 | Asset | Target size (authoring) | Animations | Filename(s) | Status |
 |---|---|---|---|---|
-| Slimey / Batty / Skele (customers) | 128×128/frame TODAY (Option-3 spec above re-targets: 87/92/88) | shared 4-frame idle strips (6fps) | statics `slime.png` etc. + `slime_idle.png` etc. | **ALL IN** (statics + all three idle strips, 2026-07-03); drawn 88px (`QUEUE.size`), Slimey/Skele `spriteScale` 1.15, `footPad` MEASURED slime 18 / skeleton 12 (grounding pass), Batty `flying: true` (padding = hover altitude) |
+| Slimey / Batty / Skele (customers) | 128×128/frame (PERMANENT convention — see the Option-3 scrub note above) | shared 4-frame idle strips (6fps) | statics `slime.png` etc. + `slime_idle.png` etc. | **ALL IN** (statics + all three idle strips, 2026-07-03); drawn 88px (`QUEUE.size`), Slimey/Skele `spriteScale` 1.15, `footPad` MEASURED slime 18 / skeleton 12 (grounding pass), Batty `flying: true` (padding = hover altitude) |
 | Bob (mimic merchant) | 128×128 or 160×160/frame | idle 6f · serve 6f (one-shot) | `mimic_merchant.png` (static fallback), `bob_idle.png`, `bob_serve.png` (6-frame strips) | **IN** — 240px on-screen (`BOB.height`), feet anchored to `COUNTER.baseY` − 50 |
 | Counter / desk | ~480px wide (author 2× ≈ 960 for crisp) | static | `counter.png` | **IN** — 480px (`COUNTER.width`), base at H*0.74 (~533) + contact shadow |
 | Battle door (ex-portal) | **160×160/frame**, 4 frames → **640×160 strip**; frame 0 CLOSED → 3 OPEN; **frame 0 must be pixel-identical across variants** | one-shot open/hold/close on paid serve; destination re-rolled per opening | `portal_glow.png` (base/void), `portal_glow_mountain/_forest/_dungeon.png` (destination variants — a new biome = one strip + one `DOOR_VARIANTS` entry), `portal.png` (static fallback) | **IN** — 320px on-screen (2×); bottom = `FLOOR_Y + 6` (art has 3px bottom padding ×2 scale) |
 | Shop backdrop | 1280×720, **seam at y=462** | optional torch flicker later | `shop_bg.png` | **IN (WIP)** — iterating |
 | Item icons (all six: Club / Metal Helmet / HP Flask / Iron Sword / Greater Flask / Knight Helm) | 64×64 — **STAYS 64** (batch-B decision above) | static | `club.png`, `metal_helmet.png`, `hp_flask.png`, `iron_sword.png`, `greater_flask.png`, `knight_helm.png` | **IN** (all six) — shelf-v3 wall slots at **48px** (×0.75), DOM cards + canvas purchase float at 32px (×0.5; float rises 46px, fades 900ms) |
 | Wall-shelf plank prop | authored **486×37 (MEASURED)**; Shelf v3 stretches it to **312×30** per row (`plankBoxH` dial) | static | `wall_shelf.png` | **IN** — all THREE v3 rows reuse it; absent → code-drawn plank |
-| Happy-walk strips (celebration pass) | 4 equal frames, 128×128/frame (512×128 strip) TODAY — Option-3 spec re-targets | 4-frame loop @ 8fps (`CELEBRATE.walkAnim`; per-monster `walkHappy` override, guarded) | `slime_walk_happy.png`, `bat_walk_happy.png`, `skeleton_walk_happy.png`, **RIGHTWARD-facing** (the march is left→right; code doesn't mirror) | **ALL IN** (2026-07-03) — pads re-MEASURED consistent with statics (slime walk 20 vs 18: 1.6px on screen, negligible); fallback chain walk strip → idle strip → static → rect |
+| Happy-walk strips (celebration pass) | 4 equal frames, 128×128/frame (512×128 strip — PERMANENT convention) | 4-frame loop @ 8fps (`CELEBRATE.walkAnim`; per-monster `walkHappy` override, guarded) | `slime_walk_happy.png`, `bat_walk_happy.png`, `skeleton_walk_happy.png`, **RIGHTWARD-facing** (the march is left→right; code doesn't mirror) | **ALL IN** (2026-07-03) — pads re-MEASURED consistent with statics (slime walk 20 vs 18: 1.6px on screen, negligible); fallback chain walk strip → idle strip → static → rect |
 | UI icons (gold, rep crown, scrap-reserved) | 32×32 | static | `icon_gold.png`, `icon_rep.png`, `icon_scrap.png` | **NOT YET USED** — HUD uses text glyphs |
 | Panel / button chrome | — | — | — | CSS-styled (DOM), few image assets needed |
 
@@ -387,8 +371,8 @@ All diorama sprites are wired with graceful fallback under `assets/sprites/`: `s
 **WIP**), `mimic_merchant` / `bob_idle` / `bob_serve`, `slime` / `bat` / `skeleton`, `counter`,
 `portal`. Tunable size/position blocks at the top of `scene.js` (`QUEUE`, `BOB`, `COUNTER`, `PORTAL`,
 `WALL_SHELF`, `FLOOR_Y` = y=**462**, MEASURED — see the seam note above). Authoring sizes: backdrop
-1280×720 (wall 0→462, floor 462→720); counter ~480px wide; mobs per the Option-3 spec above (128px
-frames today, drawn 88–101; re-target 87/92/88 pending); door to the 160×160/frame strip spec.
+1280×720 (wall 0→462, floor 462→720); counter ~480px wide; mobs 128×128 frames drawn 88–101
+(PERMANENT — see the Option-3 scrub note); door to the 160×160/frame strip spec.
 
 ---
 
@@ -475,17 +459,16 @@ COMMITTED at repo root, 236 assertions green** — a fresh clone self-verifies w
 ### Next up — the idle-progression roadmap (from MOB_MART_RESEARCH.md)
 
 **Agreed immediate order (next session starts here):**
-1. **Option-3 art polish — code half.** The re-export SPEC + the STRICT art+code-together sequence
-   live in §9. Short form: Daniel re-exports 9 mob PNGs (87/92/88px frame heights, feet at edge,
-   bat keeps altitude padding) → uploads them to the session BEFORE dropping into the repo →
-   Claude alpha-scans, then delivers the code flip (natural-height draws; `spriteScale` + `footPad`
-   removed; suite §24 rewritten) → both land together in ONE commit. Neither half alone.
-2. **Pass 4b — Gobbo (+ rat?).** Daniel owes the "is Rat in?" call (two new voices ≈ double the
-   comedy-writing surface). New mobs follow the new authoring convention (final size, feet at
-   edge). Registry-driven: milestones / loyalty / spawns / celebration / bestiary all auto-flow —
-   the Bestiary's ??? silhouette makes the debut a reveal.
-3. **Serve-count line-unlock mechanic** (deferred from the old Pass 4 bundle) — needs its own
+1. **Pass 4b — Gobbo, redesigned as a GRUMPY FROG (Daniel, 2026-07-04).** Registry id + all PNG
+   naming = **`frog`** (`frog.png`, `frog_idle.png`, `frog_walk_happy.png` — register all three
+   BEFORE the art exists, the wall_shelf lesson; 128×128 frames per the permanent convention;
+   `footPad` MEASURED at art integration). Grounded (`flying` absent). Registry-driven: milestones /
+   loyalty / spawns (uniform pick → 25% each) / celebration / bestiary all auto-flow — the
+   Bestiary's ??? silhouette makes the debut a reveal. Includes the grumpy comedy pools
+   (results.js + COMEDY_BIBLE sync) and a save-merge check for the new `monsterServes` key.
+2. **Serve-count line-unlock mechanic** (deferred from the old Pass 4 bundle) — needs its own
    options round; touches the comedy picker in results/messages.
+   *(Option-3 art polish — formerly item 1 here — SCRUBBED 2026-07-04; see §9.)*
 
 The problem it solves: the game has ONE growth axis (gold -> 4 upgrades -> done at ~10.6k). The
 research's answer is a lattice of small bolt-on layers on existing hooks, staged so every pass
@@ -831,13 +814,20 @@ set. Add "bumpy" x2 spikes at 25/50-style breakpoints. Never add decay/backward 
   across rows (shared-pool dilution, noted in config; `slotsPerShelf: 3` is the one-value out).
   Same commit: `drawBubble`'s bob gated to the front mob's `flying` (finishes the grounding pass —
   the bubble no longer hovers over a stationary Slimey).
+- **Option-3 art polish SCRUBBED (Daniel, 2026-07-04):** a full spec (native-size re-exports at
+  87/92/88px, feet-at-edge, strict art+code-together sequence) shipped into this doc, then Daniel
+  weighed the Aseprite workload against the marginal gain — the crisp-canvas pass had already
+  captured most of the visible win — and scrubbed it before any work started. The 128px-frame +
+  MEASURED-`footPad` convention is now PERMANENT (§9). The batch-B icon analysis (64px master
+  stays; three consumers at 48/32/32) remains valid and recorded. In the same message: **Gobbo
+  redesigned as a GRUMPY FROG**, id/PNG naming `frog`; rat still an open call (§13).
 
 ---
 
 ## 13. Open questions / pending decisions
 
-- **Is Rat in Pass 4b, or Gobbo alone?** Two new voices ≈ double the comedy-writing surface —
-  Daniel's call, owed before 4b starts.
+- **Is Rat still on the roster at all?** Pass 4b proceeds as the frog alone (Daniel, 2026-07-04);
+  whether Rat joins in a later content pass is open.
 - **Line-unlock mechanic design** — deferred from the old Pass 4 bundle; needs its own options
   round (gating comedy pools by serve count touches the no-repeat picker).
 - **itch.io dual-publish: yes or Kongregate-only?** Decides whether the `butler` deploy path is added.
