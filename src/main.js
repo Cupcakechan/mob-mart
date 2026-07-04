@@ -74,6 +74,27 @@ loadSprite('skeleton_walk_happy', 'assets/sprites/skeleton_walk_happy.png');  //
 function resize() {
   const s = Math.min(window.innerWidth / CONFIG.stage.width, window.innerHeight / CONFIG.stage.height);
   stage.style.transform = `scale(${s})`;
+
+  // Crisp-canvas pass: size the canvas BACKING STORE to the real device pixels the stage occupies
+  // (devicePixelRatio x fit scale) while its CSS size stays 1280x720 (style.css pins #scene), and
+  // bridge with setTransform so every existing draw call keeps using logical 1280x720 coords —
+  // scene.js is untouched. Result: the browser's final scale of the canvas is 1:1 with device
+  // pixels, so it never resamples the frame; sprites are nearest-neighbor sampled ONCE at their
+  // true on-screen size. (Before this, the frame was rendered at 1280x720 and then stretched by
+  // transform+DPR — a non-integer resample that softened everything, sprites and text alike.)
+  const k = Math.min(3, (window.devicePixelRatio || 1) * s);   // cap ~3x: a 4K-and-zoomed combo
+                                                               // shouldn't balloon fill cost
+  const bw = Math.max(1, Math.round(CONFIG.stage.width * k));
+  const bh = Math.max(1, Math.round(CONFIG.stage.height * k));
+  if (canvas.width !== bw || canvas.height !== bh) {
+    canvas.width = bw;                             // NOTE: assigning width/height WIPES the canvas
+    canvas.height = bh;                            // and RESETS all context state (the gotcha) ...
+  }
+  // ... so the transform and smoothing flag are re-applied on EVERY resize, unconditionally.
+  // Exact bw/1280 (not k) so rounding can't leave a sliver of unmapped backing at the edges.
+  ctx.setTransform(bw / CONFIG.stage.width, 0, 0, bh / CONFIG.stage.height, 0, 0);
+  ctx.imageSmoothingEnabled = false;               // missing this = the whole scene silently goes
+                                                   // bilinear-soft on the first window resize
 }
 window.addEventListener('resize', resize);
 resize();
