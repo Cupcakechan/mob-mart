@@ -4,51 +4,32 @@
 session before doing any work. Update it as decisions change. Kept self-contained so a fresh
 Claude or ChatGPT can parse it cold.*
 
-**Status (current):** **M1–M6 MVP COMPLETE; idle-progression roadmap Passes 1–3 + 3.5 SHIPPED**,
-plus spawn director, mob idle animations (Batty flaps), and — this session — **Shelf decoration v2
-(SHIPPED, browser-confirmed):** the C-lite wall shelf replaced by two staggered SET-DRESSING planks
-showing a random rotating sample of the unlocked pool (45s alternating re-rolls, anti-repeat,
-300ms crossfade), slot squares and locked-teases removed, stock bars + starved-glow kept (the
-starved front-want force-swaps into shelf A slot 0), optional `wall_shelf.png` prop art **IN**
-(authored 486×37 **MEASURED**, drawn 244×24 — `plankBoxH` dial; set 18 for exact 2:1). Files
-changed: `src/render/scene.js` (v2 block) + `src/main.js` (one `loadSprite('wall_shelf')` line —
-the pass's one shipped bug: the prop-hook consumer landed without its registry line; graceful
-fallback masked it silently. Full write-up in `LESSONS.md`, new this session). Suite: **COMMITTED
-as `test_suite.mjs` at 223 assertions** (housekeeping pass 2026-07-03: renamed from the formerly
-gitignored `test_m4.mjs`, `!test_suite.mjs` negation added, new section 0b sprite-registry pairing
-guard — literal `getSprite('…')` ids PLUS config-carried `propId:`/`spriteId:` ids across `src/`
-checked against `loadSprite` registrations in main.js; the config shape is the one the wall_shelf
-bug wore, negative-tested: removing the registration fails exactly one assertion naming the
-culprit file). A fresh clone can now verify itself: `node test_suite.mjs`. New export:
-`sampleShelf` (pure, suite-facing).
-**ALSO SHIPPED 2026-07-03 (later the same day):** **(a) Suite-location fix** — the housekeeping
-commit had landed the suite at `src/test_suite.mjs` (inside the SHIP folder, and unrunnable there:
-its imports resolve from repo root); one `git mv` moved it to root. **(b) Serve-celebration pass**
-(react, happy-only — Daniel picked Option 2 of 3, then evolved it across three confirmed feel
-iterations): a paid serve spawns a render-side celebrant ghost (game state untouched — ZERO economy
-impact; `queue.shift()` unchanged) that runs THREE PHASES: **HOP** (700ms double-hop with
-squash-and-stretch at the old front slot, +70px sidestep so the next-in-line's snap never overlaps),
-**WALK** (~1.0s march right IN FRONT of the desk — feet ease onto the counter's floor-contact plane
-`COUNTER.baseY` over `sinkMs` 250; earlier planes read as "on the counter" / "on a ledge"), **ENTER**
-(450ms: x locks at door center, feet climb counter plane → `PORTAL.baseY`, shrink to `depthScale`
-0.85 — legitimate here, the mob genuinely recedes — fading from 40% in via `enterFadeFrom`). The
-door's hold phase LATCHES open until the last celebrant finishes entering (+150ms buffer; latched so
-a despawn can't snap the close animation). All dials in the `CELEBRATE` block (scene.js). Triggers:
-`spawnCelebrant(monsterId)` called at BOTH serve sites in main.js (manual + worker, pre-shift
-capture). Art hooks registered: `<id>_walk_happy.png` strips ×3 (4 frames, 128×128/frame, RIGHTWARD-
-facing; fallback chain walk strip → idle strip → static → rect, so it plays TODAY with zero art).
-Scratch probe `test_react.mjs` (spawn guard, full three-phase frame sweep, overlapping serves vs the
-hold latch, cap spam). Suite unchanged at **223**.
-**NEXT, in order:** **(1) Pass B — Slimey/Skele idle wiring — SHIPPED 2026-07-03** (this commit):
-shared 4-frame idle declared for slime + skeleton in `monsters.js`; `slime_idle`/`skeleton_idle`
-registered (strips absent → static, drop-in when authored); suite assertion "statics declare
-nothing" replaced by the shared-contract assertion; suite now **225** and RELOCATED to repo root
-(the stale `src/` copy was removed in a small follow-up commit — the delete step was lost to the same client rendering drops).
-No visual change today by design. **(2) Pass 4 —
-Bestiary + Gobbo** (roadmap resumes).
+**Status (current):** **M1–M6 MVP COMPLETE; idle roadmap Passes 1–3 + 3.5 SHIPPED**, plus spawn
+director, serve celebration, shelf decoration, and — this session (2026-07-03/04, all
+browser-confirmed + committed): **(a) Pass 4a — Bestiary panel** (tab enabled; field-guide cards
+over the Pass-1 serve ledger; "N% studied" via pure `bestiaryCompletion`; undiscovered mobs
+silhouette as ??? so a new monster debuts as a reveal), then **Bestiary v2** (centered 640×≤500
+showcase, 72px portraits — a deliberate, documented exception to the actor-band rule while open).
+**(b) Grounding pass:** the idle ±4px hover bob is now a FLYER behavior (`flying: true` on Batty);
+grounded mobs get a MEASURED `footPad` (slime 18 / skeleton 12, pngjs alpha-scan) dropping their
+real feet onto the shadow line, in drawMob AND the celebrant march; the serve hop is untouched.
+**(c) Crisp canvas:** backing store = 1280×720 × min(3, devicePixelRatio × fitScale) with a
+setTransform bridge (scene.js untouched) — the browser never resamples the frame; ctx state
+(smoothing OFF) is re-applied on EVERY resize because a canvas resize silently resets it.
+**(d) Shelf v3 + bubble gate:** 48px goods (Option 2 of 3), THREE rows on one center axis
+(replacing the v2 stagger), band math + the MEASURED bubble ceiling (y322 worst case) documented in
+the `WALL_SHELF` comment; the speech bubble's bob is gated to flyers like the mobs it tracks.
+**ALL mob art is now IN** (Daniel: `slime_idle`/`skeleton_idle` + all three `_walk_happy` strips +
+an updated skeleton static; strip padding re-MEASURED and consistent with the statics — the pinned
+footPads stay correct). Suite: **236 assertions, committed, green from repo root**
+(`node test_suite.mjs`).
+**NEXT, in order:** **(1) Option-3 art polish — SPEC'd, code half pending** (see §9 for the
+re-export spec and the STRICT art+code-together sequence); **(2) Pass 4b — Gobbo (+ rat?** — Daniel
+owes the in-or-out call**)**; **(3) the deferred serve-count line-unlock mechanic** (own options
+round; touches the comedy picker).
 **Workflow note: NO DevLog for Mob Mart** — Daniel opted out (2026-07-03). Skip the DevLog draft
 step at feature completion for this project.
-**Last updated:** 2026-07-03 — Shelf decoration v2 session.
+**Last updated:** 2026-07-04 — Bestiary / grounding / crisp-canvas / shelf-v3 session.
 
 ---
 
@@ -305,7 +286,7 @@ Each milestone is a **single-purpose, individually tested, individually committe
 - **Scrap (third resource)** — defer; reserve a data slot.
 - **Punishing fail economy** — no rent/debt/hard-fail; a bad visit costs a sale + minor rep.
 - **"Today's Goal" daily-quest hook** — later.
-- **Bestiary panel** — nav stub only; content post-MVP.
+- **Bestiary panel** — nav stub through the MVP; **SHIPPED post-MVP as intended** (Pass 4a + v2, 2026-07-03) — the guardrail held.
 - **Worker leveling** ("Lv 2, +25%") — hire first, level later. (M4 hires; no leveling.)
 - **Second / restock worker** — the `restock` role is reserved in the registry and the auto-serve loop
   skips non-serve roles, but no restock worker exists yet. A restocker also needs a visual-home
@@ -348,16 +329,46 @@ animation = `<id>_<anim>.png`.
 seam at **y=462**, not the originally spec'd 446 — `FLOOR_Y` in scene.js is 462 and all floor-contact
 anchoring keys off it. Author the backdrop with the seam at 462 (wall 0→462, floor 462→720).
 
+**Option-3 art polish — SPEC'd 2026-07-04, code half PENDING.** Mob frames re-export at their
+FINAL on-screen size so the runtime draw is 1:1 logical (the remaining resample is the crisp-canvas
+device scale, unavoidable in scale-to-fit). Honest framing: this *bakes* the old 128→drawn resample
+once at author time — where ugly pixels can be hand-fixed in Aseprite — and deletes the whole
+`footPad` mechanism. Targets preserve today's tuned VISIBLE sizes exactly (derivation: drawn box
+88×1.15 = 101.2; visible = 101.2 × contentRows/128):
+
+| Family (3 files each: static, `_idle`, `_walk_happy`) | Final frame HEIGHT | Trim rule |
+|---|---|---|
+| `slime*` | **87px** | feet at the bottom edge — ZERO bottom padding |
+| `skeleton*` | **92px** | feet at the bottom edge — ZERO bottom padding |
+| `bat*` | **88px** | scale the whole 128 frame down; KEEP the bottom padding (it's the hover altitude, ~10px at 88) |
+
+Widths preserve aspect; strips stay 4 equal frames side by side (total width = 4 × frame width);
+PNG-32, same filenames. Aseprite resample OR PixelLab regeneration at target size both work
+(regeneration spends credits — Daniel's call, never initiated by Claude).
+**STRICT SEQUENCE — neither half ships alone:** (1) Daniel's Aseprite sitting → (2) upload the 9
+PNGs to the session BEFORE dropping them into the repo → (3) Claude alpha-scans (feet-at-edge
+verify — there is no `footPad` dial left to absorb a missed row) and delivers the code flip
+(drawMob + drawCelebrants take `h` = natural frame height; `spriteScale` + `footPad` registry
+fields REMOVED; `QUEUE.spriteScale` kept as the global emergency dial; suite §24 rewritten to the
+new contract) → (4) art + code drop together, ONE commit. Intermediate states are visibly broken
+by design: new art + old code sinks Slimey ~21px into the floor; new code + old art draws 128px
+giants. **New-mob convention from then on (Gobbo):** author at final on-screen height, feet at the
+bottom edge; flyers may carry deliberate altitude padding.
+**Item icons stay 64px (batch-B analysis, decided 2026-07-04):** the icon files serve THREE
+consumers — shelf slots 48px (v3), purchase float 32px, DOM cards 32px. A 48px re-export fixes one
+consumer and turns both clean ×0.5 consumers into crunchy ×0.667. The 64px master stays; the
+shelf's ×0.75 is the accepted residual.
+
 | Asset | Target size (authoring) | Animations | Filename(s) | Status |
 |---|---|---|---|---|
-| Slimey / Batty / Skele (customers) | 128×128/frame | idle 2–4 · shuffle 4–6 · react 3–4 (strips) | `slime.png` (static) or `slime_idle.png` etc.; same for `bat_`, `skeleton_` | **IN** (static art for all three + `bat_idle.png` strip — inferred from the sprites-folder screenshot 2026-07-03); drawn at 88px (`QUEUE.size`), Slimey/Skele `spriteScale` 1.15 |
+| Slimey / Batty / Skele (customers) | 128×128/frame TODAY (Option-3 spec above re-targets: 87/92/88) | shared 4-frame idle strips (6fps) | statics `slime.png` etc. + `slime_idle.png` etc. | **ALL IN** (statics + all three idle strips, 2026-07-03); drawn 88px (`QUEUE.size`), Slimey/Skele `spriteScale` 1.15, `footPad` MEASURED slime 18 / skeleton 12 (grounding pass), Batty `flying: true` (padding = hover altitude) |
 | Bob (mimic merchant) | 128×128 or 160×160/frame | idle 6f · serve 6f (one-shot) | `mimic_merchant.png` (static fallback), `bob_idle.png`, `bob_serve.png` (6-frame strips) | **IN** — 240px on-screen (`BOB.height`), feet anchored to `COUNTER.baseY` − 50 |
 | Counter / desk | ~480px wide (author 2× ≈ 960 for crisp) | static | `counter.png` | **IN** — 480px (`COUNTER.width`), base at H*0.74 (~533) + contact shadow |
 | Battle door (ex-portal) | **160×160/frame**, 4 frames → **640×160 strip**; frame 0 CLOSED → 3 OPEN; **frame 0 must be pixel-identical across variants** | one-shot open/hold/close on paid serve; destination re-rolled per opening | `portal_glow.png` (base/void), `portal_glow_mountain/_forest/_dungeon.png` (destination variants — a new biome = one strip + one `DOOR_VARIANTS` entry), `portal.png` (static fallback) | **IN** — 320px on-screen (2×); bottom = `FLOOR_Y + 6` (art has 3px bottom padding ×2 scale) |
 | Shop backdrop | 1280×720, **seam at y=462** | optional torch flicker later | `shop_bg.png` | **IN (WIP)** — iterating |
-| Item icons (all six: Club / Metal Helmet / HP Flask / Iron Sword / Greater Flask / Knight Helm) | 64×64 | static | `club.png`, `metal_helmet.png`, `hp_flask.png`, `iron_sword.png`, `greater_flask.png`, `knight_helm.png` | **IN** (all six — inferred from the sprites-folder screenshot 2026-07-03) — shelf cards at 32px (2:1) + canvas purchase float (32px, rises 46px, fades 900ms) + wall-shelf slots |
-| Wall-shelf plank prop (Shelf v2) | authored **486×37 (MEASURED**; spec asked 488×48 — fine); drawn stretched to 244×24 (`plankBoxH` dial — set 18 for exact 2:1 of this art) | static | `wall_shelf.png` | **IN** — both planks reuse it; absent → code-drawn plank |
-| Happy-walk strips (celebration pass) | 4 equal frames, 128×128/frame (512×128 strip), **RIGHTWARD-facing** (the march is left→right; code doesn't mirror) | 4-frame loop @ 8fps (`CELEBRATE.walkAnim`; per-monster `walkHappy` override, guarded) | `slime_walk_happy.png`, `bat_walk_happy.png` (**IN** — shipped with the celebration commit), `skeleton_walk_happy.png` | **Batty IN; Slimey/Skele WIRED, art pending** — registered in main.js; fallback chain: walk strip → idle strip → static → rect |
+| Item icons (all six: Club / Metal Helmet / HP Flask / Iron Sword / Greater Flask / Knight Helm) | 64×64 — **STAYS 64** (batch-B decision above) | static | `club.png`, `metal_helmet.png`, `hp_flask.png`, `iron_sword.png`, `greater_flask.png`, `knight_helm.png` | **IN** (all six) — shelf-v3 wall slots at **48px** (×0.75), DOM cards + canvas purchase float at 32px (×0.5; float rises 46px, fades 900ms) |
+| Wall-shelf plank prop | authored **486×37 (MEASURED)**; Shelf v3 stretches it to **312×30** per row (`plankBoxH` dial) | static | `wall_shelf.png` | **IN** — all THREE v3 rows reuse it; absent → code-drawn plank |
+| Happy-walk strips (celebration pass) | 4 equal frames, 128×128/frame (512×128 strip) TODAY — Option-3 spec re-targets | 4-frame loop @ 8fps (`CELEBRATE.walkAnim`; per-monster `walkHappy` override, guarded) | `slime_walk_happy.png`, `bat_walk_happy.png`, `skeleton_walk_happy.png`, **RIGHTWARD-facing** (the march is left→right; code doesn't mirror) | **ALL IN** (2026-07-03) — pads re-MEASURED consistent with statics (slime walk 20 vs 18: 1.6px on screen, negligible); fallback chain walk strip → idle strip → static → rect |
 | UI icons (gold, rep crown, scrap-reserved) | 32×32 | static | `icon_gold.png`, `icon_rep.png`, `icon_scrap.png` | **NOT YET USED** — HUD uses text glyphs |
 | Panel / button chrome | — | — | — | CSS-styled (DOM), few image assets needed |
 
@@ -375,8 +386,9 @@ shopkeeper sprite/animation.
 All diorama sprites are wired with graceful fallback under `assets/sprites/`: `shop_bg` (1280×720,
 **WIP**), `mimic_merchant` / `bob_idle` / `bob_serve`, `slime` / `bat` / `skeleton`, `counter`,
 `portal`. Tunable size/position blocks at the top of `scene.js` (`QUEUE`, `BOB`, `COUNTER`, `PORTAL`,
-`FLOOR_Y` = y=446). Authoring sizes: backdrop 1280×720 (wall 0→446, floor 446→720); counter ~480px
-wide; mobs ~128×128 drawn at 88px; portal to the ~141×245 box.
+`WALL_SHELF`, `FLOOR_Y` = y=**462**, MEASURED — see the seam note above). Authoring sizes: backdrop
+1280×720 (wall 0→462, floor 462→720); counter ~480px wide; mobs per the Option-3 spec above (128px
+frames today, drawn 88–101; re-target 87/92/88 pending); door to the 160×160/frame strip spec.
 
 ---
 
@@ -449,32 +461,31 @@ persistence keys; default missing save fields on load. No secrets on the client.
 
 ### Current state (read first)
 
-Playable end-to-end: open the shop → mobs queue (capped FIFO, patience) → Serve the front one (brief
-"Serving…" cooldown, then they leave to battle) → a funny result lands → gold + rep come in → restock,
-buy upgrades. **All three upgrades live + rep-gated.** **M4 (auto-serve, committed): hire Bob from the
-Workers tab for 50 gold; once hired he auto-serves the front of the line ~every 6s, using the same
-serve path (payout / rep / log / cooldown / animation), sped up by Faster Counter — and rep-neutrally
-waves off unaffordable front customers after 2s so they can't stall the line.** Comedy v2 is shipped
-(148 lines; expanded dismiss/leave, Bob voice, genre tropes, seeded gags) with a **no-repeat picker**
-(never the same line twice in a row per monster/tier pool). An **audit pass** fixed two real issues:
-the save loader now clamps stock to the **effective** cap (upgrades merged before items — reloads no
-longer eat Extra-Shelf stock), and the spawn fallback for a broken `wantWeights` is a real item id.
-Progress auto-saves (`mobmart.save.v1`), survives reload; Reset clears it. Bob is animated (idle +
-serving) with a WIP `shop_bg.png`; mob/portal sprites are still placeholders (art WIP). `node --check`
-clean on every module; a **61-assertion** headless smoke test (`test_m4.mjs`, scratch — gitignored,
-not shipped) passes, including regressions for both audit fixes.
+Playable end-to-end with the full idle lattice live: mobs queue → Serve (manual or Bob's
+auto-serve) → celebration hop + march through the battle door → comedy result + gold/rep →
+restock/upgrades/perks/licenses. Loyalty (Pass 1), dual-track Fame + perks (Pass 2), tier-2 licensed
+stock (Pass 3), Restock All (3.5), spawn director, offline earnings, Kongregate no-op bridge — all
+shipped. **This session's additions:** Bestiary panel (4a) + centered showcase (v2); grounding
+(flyer-gated bob + MEASURED footPads); crisp canvas (DPR×fit backing store); Shelf v3 (48px goods,
+three center-aligned rows) + bubble bob gate. **All mob art is IN** (statics, idle strips ×3, walk
+strips ×3). Save `mobmart.save.v1`, additive schema, clamped merges. Suite: **`test_suite.mjs`
+COMMITTED at repo root, 236 assertions green** — a fresh clone self-verifies with
+`node test_suite.mjs`.
 
 ### Next up — the idle-progression roadmap (from MOB_MART_RESEARCH.md)
 
 **Agreed immediate order (next session starts here):**
-1. **Pass B — Slimey/Skele idle animation wiring:** contract CONFIRMED — all monsters share the
-   4-frame idle (Batty's convention: 128×128/frame, 512×128 strip, 6fps). Wiring = `anim` entries
-   for slime + skeleton in `src/data/monsters.js`, `loadSprite` registrations for `slime_idle` /
-   `skeleton_idle` (registered BEFORE the art exists — the wall_shelf lesson; missing PNG degrades
-   to static), and updating the one suite assertion that pins "statics declare nothing."
-2. **Pass 4 — Bestiary + Gobbo** (roadmap resumes).
-   (Shelf decoration v2, the suite housekeeping + location fix, and the serve-celebration pass —
-   formerly items here — all SHIPPED 2026-07-03; see build history and the status header.)
+1. **Option-3 art polish — code half.** The re-export SPEC + the STRICT art+code-together sequence
+   live in §9. Short form: Daniel re-exports 9 mob PNGs (87/92/88px frame heights, feet at edge,
+   bat keeps altitude padding) → uploads them to the session BEFORE dropping into the repo →
+   Claude alpha-scans, then delivers the code flip (natural-height draws; `spriteScale` + `footPad`
+   removed; suite §24 rewritten) → both land together in ONE commit. Neither half alone.
+2. **Pass 4b — Gobbo (+ rat?).** Daniel owes the "is Rat in?" call (two new voices ≈ double the
+   comedy-writing surface). New mobs follow the new authoring convention (final size, feet at
+   edge). Registry-driven: milestones / loyalty / spawns / celebration / bestiary all auto-flow —
+   the Bestiary's ??? silhouette makes the debut a reveal.
+3. **Serve-count line-unlock mechanic** (deferred from the old Pass 4 bundle) — needs its own
+   options round; touches the comedy picker in results/messages.
 
 The problem it solves: the game has ONE growth axis (gold -> 4 upgrades -> done at ~10.6k). The
 research's answer is a lattice of small bolt-on layers on existing hooks, staged so every pass
@@ -607,7 +618,7 @@ set. Add "bumpy" x2 spikes at 25/50-style breakpoints. Never add decay/backward 
 - **M3 pass 1:** bottom nav + data-driven Upgrades view; Extra Shelf wired (`effectiveMaxStock`).
 - **M3 pass 2:** Faster Counter (serve cooldown via `serveSpeed`) + Better Signage (rep/sale via
   `repMult`); compact upgrade rows.
-- **Background hook:** `scene.js` draws `shop_bg.png` with flat-color fallback at `FLOOR_Y` y=446.
+- **Background hook:** `scene.js` draws `shop_bg.png` with flat-color fallback at `FLOOR_Y` y=462 (MEASURED — see §9).
 - **M3 pass 3 (M3 COMPLETE):** rep-tier gating — `isUpgradeUnlocked`; Extra Shelf → Neutral, Faster
   Counter → Friendly, Better Signage → Trusted; locked cards dimmed "Reach &lt;Tier&gt;".
 - **M4 (DONE, committed `6748ef5`):** first mimic worker / auto-serve. New
@@ -779,11 +790,56 @@ set. Add "bumpy" x2 spikes at 25/50-style breakpoints. Never add decay/backward 
   strip → idle strip → static → placeholder rect — the full arc plays TODAY with zero art (code
   hop + static march). Scratch probe `test_react.mjs`: spawn guard, three-phase frame sweep,
   overlapping serves vs the hold latch, cap spam, late idle. Suite unchanged at 223.
+- **Pass 4a — Bestiary panel (2026-07-03):** tab enabled (stub retired); one parchment card per
+  `MONSTER_IDS` entry — portrait, `Served N · +X0% rep`, five gold breakpoint pips (25/50/100/250/
+  500), `next M`/`maxed`; header "N% studied" via new PURE `bestiaryCompletion` (milestones.js) —
+  registry-driven, so the % DROPS when a new mob joins (deliberate field-guide feel, commented so
+  a later pass doesn't "fix" it). Never-served mobs render as ??? silhouettes (Gobbo debuts as a
+  reveal). DISPLAY LAYER ONLY over the Pass-1 `state.stats.monsterServes` ledger — no new counting,
+  no save change. Suite **231** (+6, §23: roster-scaled totals, exact crossings, floor-not-round,
+  legacy no-stats shape).
+- **Bestiary v2 (same session, Daniel's ask "a fun little place to check out the mobs"):** centered
+  showcase — 640 wide × ≤500 @ top:96 (`left:50% + translateX`), 72px portraits, bigger type/pips.
+  A DELIBERATE documented exception to the actor-band rule while open (collapse-on-reclick restores
+  the diorama). CSS-only.
+- **Grounding pass (2026-07-03):** two float sources fixed. (1) The ±4px idle sine bob is now a
+  FLYER behavior — registry `flying: true` on Batty only; grounded mobs sit still (their motion is
+  the idle strips). (2) New registry `footPad` (?? 0): MEASURED bottom transparent rows (pngjs
+  alpha-scan — slime 18, skeleton 12; bat none, its 15px IS the hover altitude) shift the draw down
+  so real feet meet the shadow, in drawMob AND the celebrant march. Serve hop/squash untouched.
+  Suite **236** (+5, §24: values PINNED so a later pass can't "correct" a measurement from memory —
+  the Batty-budget lesson; plus a non-negative-finite contract guard for future mobs).
+- **Crisp-canvas pass (2026-07-03, Option 2 of 3):** backing store = 1280×720 × min(3,
+  devicePixelRatio × fitScale); CSS size stays pinned; `setTransform(bw/1280, …)` bridges so ALL
+  draw code keeps logical coords — scene.js untouched, no canvas input mapping existed. THE GOTCHA,
+  handled: assigning canvas width/height RESETS context state, so smoothing-off + transform are
+  re-applied on EVERY resize. Result: the browser never resamples the frame. Residual ×0.79 art
+  crunch left for Option 3 (below). Diagnosis note: smoothing was already off — the softness was
+  the final-frame resample plus non-integer art ratios.
+- **Art drop (Daniel, 2026-07-03):** `slime_idle`, `skeleton_idle`, `slime_walk_happy`,
+  `skeleton_walk_happy` + an updated skeleton static. Re-MEASURED before further work: idle pads
+  match the statics (18/12 — footPads stay correct); slime walk 20 vs 18 = ~1.6px on screen,
+  accepted.
+- **Shelf v3 + bubble gate (2026-07-04, Daniel picked Option 2 of 3 for size, then added the third
+  row + centering):** 48px goods (`slotStep` 76, `plankPad` 18, `plankBoxH` 30, `barW` 48); THREE
+  rows on one common center axis (x:78, y:38/134/230; row height 90; bottoms 128/224/320) replacing
+  v2's stagger. Ceiling derivation now MEASURED and documented in the `WALL_SHELF` comment: bubble
+  box top = tip(407−18−4bob) − tail 11 − body 51 = **y322 worst case** over x270–450 — cleared by
+  2px; queue heads ~y394 pass below; the HUD chip (x≈490–790) never overlaps. Dressing code
+  verified shelf-count-agnostic BEFORE the row was added (init maps `shelves`, rotation `%
+  nShelves`, short samples pad to empty). Known visual: 12 slots vs the 3–6 item catalog = repeats
+  across rows (shared-pool dilution, noted in config; `slotsPerShelf: 3` is the one-value out).
+  Same commit: `drawBubble`'s bob gated to the front mob's `flying` (finishes the grounding pass —
+  the bubble no longer hovers over a stationary Slimey).
 
 ---
 
 ## 13. Open questions / pending decisions
 
+- **Is Rat in Pass 4b, or Gobbo alone?** Two new voices ≈ double the comedy-writing surface —
+  Daniel's call, owed before 4b starts.
+- **Line-unlock mechanic design** — deferred from the old Pass 4 bundle; needs its own options
+  round (gating comedy pools by serve count touches the no-repeat picker).
 - **itch.io dual-publish: yes or Kongregate-only?** Decides whether the `butler` deploy path is added.
 - **Repo:** `github.com/Cupcakechan/mob-mart` (local folder `mob-mart`).
 - **Offline earning model — DECIDED (M5):** worker-only, no drip. Bob is hireable within minutes, so
