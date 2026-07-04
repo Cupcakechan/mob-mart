@@ -378,3 +378,8 @@ body{
 .beast-next{font-size:12px;font-weight:700;opacity:.6;}
 .beast-card.undiscovered{opacity:.85;}
 .beast-card.undiscovered .beast-portrait{filter:brightness(0);opacity:.45;}
+
+/* Golden lines (line-unlock pass): the 100-serve payoff renders unmistakably — gold text with a
+   soft glow. Rare by pool math, loud by design; the memorability IS the reward. */
+.battle-log li.golden { color: var(--gold); font-weight: 800; text-shadow: 0 0 6px rgba(255, 207, 74, .45); }
+.battle-log li.golden .log-crown { color: var(--gold); }

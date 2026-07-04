@@ -16,23 +16,30 @@ const lastPicked = new Map();
 // itemId is given (leave path), tagged templates are excluded entirely — they're item-specific by
 // definition. Then fill placeholders. Fallbacks guard every step so an unknown tier/monster/item
 // degrades to a line, never a crash.
-export function logLine(monsterId, tier, { name = 'Someone', item = 'something', itemId = null } = {}) {
+// RETURN SHAPE (line-unlock pass, 2026-07-04): { text, golden }. golden lines render gold in the
+// log — the 100-serve payoff Daniel wanted memorable. `serves` = the monster's lifetime serve
+// count INCLUDING the current one; templates tagged minServes (?? 0) only fire at/after it, so
+// loyalty pays out in comedy and the Bestiary pips double as new-material markers.
+export function logLine(monsterId, tier, { name = 'Someone', item = 'something', itemId = null, serves = 0 } = {}) {
   const cat = ITEMS[itemId]?.category ?? null;
   const pool = (GENERIC_RESULTS[tier] ?? []).concat(MONSTER_RESULTS[monsterId]?.[tier] ?? [])
     .filter((t) => {
       const cats = typeof t === 'string' ? null : t.cats;
-      return !cats?.length || (cat !== null && cats.includes(cat));
+      const min = typeof t === 'string' ? 0 : (t.minServes ?? 0);
+      return (!cats?.length || (cat !== null && cats.includes(cat))) && min <= serves;
     })
-    .map((t) => (typeof t === 'string' ? t : t.text));   // normalize BEFORE anti-repeat compares
+    .map((t) => (typeof t === 'string'
+      ? { text: t, golden: false }
+      : { text: t.text, golden: t.golden === true }));   // normalize BEFORE anti-repeat compares
   const key = `${monsterId}|${tier}`;
 
-  let template = pool.length ? pick(pool) : '{name} did a thing.';
+  let choice = pool.length ? pick(pool) : { text: '{name} did a thing.', golden: false };
   // Anti-repeat: one re-draw from the alternatives if we dealt this exact line last time (only
   // when the pool has an alternative). Filtering guarantees the re-draw can't repeat either.
-  if (pool.length > 1 && template === lastPicked.get(key)) {
-    template = pick(pool.filter((t) => t !== template));
+  if (pool.length > 1 && choice.text === lastPicked.get(key)) {
+    choice = pick(pool.filter((c) => c.text !== choice.text));
   }
-  lastPicked.set(key, template);
+  lastPicked.set(key, choice.text);
 
-  return template.replace(/\{name\}/g, name).replace(/\{item\}/g, item);
+  return { text: choice.text.replace(/\{name\}/g, name).replace(/\{item\}/g, item), golden: choice.golden };
 }

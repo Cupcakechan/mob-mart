@@ -11,6 +11,7 @@ import { randInt, pick, weightedPick } from './utils.js';
 import { resolveCombat } from './combat.js';
 import { reputationTier } from './reputation.js';
 import { logLine } from './messages.js';
+import { MONSTER_RESULTS } from './data/results.js';   // line-unlock: scan for minServes batches at crossings (leaf registry, no cycle)
 
 // --- Customer spawning -------------------------------------------------------
 
@@ -98,7 +99,10 @@ export function serveCurrent(state) {
   state.lifetimeRep = fameOf(state) + repGain;                  // ...and the tier track (never falls)
 
   const { tier } = resolveCombat(monster, item);               // off-screen fight -> outcome tier
-  const text = logLine(monster.id, tier, { name: monster.displayName, item: item.displayName, itemId: c.wantedItemId });
+  // serves INCLUDES this one (the ledger increments below): the 25th serve draws from the 25-batch.
+  const { text, golden } = logLine(monster.id, tier, { name: monster.displayName,
+    item: item.displayName, itemId: c.wantedItemId,
+    serves: (state.stats.monsterServes[c.monsterId] ?? 0) + 1 });
   // Battle-report timing (Daniel, 2026-07-04): the RESULT line lands when the celebrant ENTERS the
   // battle door — not at the counter. The fight is decided here (same math, same moment) but the
   // report is queued; delivery = the render's door-entry event (main.js wires it) OR the fallback
@@ -106,7 +110,7 @@ export function serveCurrent(state) {
   // news travels slow. Milestone lines below stay INSTANT — they're shop-side voice ("Sale #N!"),
   // which happens at the sale. Net log order: milestone at serve, result ~2s later on top of it.
   (state.pendingReports ??= []).push({
-    entry: { text, repDelta: repGain, tier, monsterId: monster.id },
+    entry: { text, golden, repDelta: repGain, tier, monsterId: monster.id },
     fallback: CONFIG.log?.reportFallbackSec ?? 3.0,
   });
 
@@ -123,6 +127,15 @@ export function serveCurrent(state) {
   if (MONSTER_BREAKPOINTS.includes(servedNow)) {
     pushLog(state, { text: milestoneLine('monster', { count: servedNow, name: monster.displayName }),
       repDelta: 0, tier: 'milestone', monsterId: monster.id });
+    // Line-unlock ladder: if this crossing unlocks authored material (any template tagged
+    // minServes === servedNow), say so — discoverability for the comedy payoff, and the Bestiary
+    // pip that just filled doubles as the marker. Registry-scanned, so future batches auto-announce.
+    const unlocks = Object.values(MONSTER_RESULTS[monster.id] ?? {})
+      .some((arr) => arr.some((t) => typeof t !== 'string' && t.minServes === servedNow));
+    if (unlocks) {
+      pushLog(state, { text: milestoneLine('lines', { name: monster.displayName }),
+        repDelta: 0, tier: 'milestone', monsterId: monster.id });
+    }
   }
   const nowEvery = everythingTier(state);
   if (nowEvery > prevEvery) {                                   // this sale's item was the laggard
@@ -146,7 +159,8 @@ export function dismissCurrent(state) {
   // without it logLine's 'something' fallback produced "no something". wantedItemId is always a
   // valid item id (spawn guarantees it since the audit fix), so displayName always resolves.
   const item = ITEMS[c.wantedItemId]?.displayName;
-  pushLog(state, { text: logLine(c.monsterId, 'dismiss', { name, item, itemId: c.wantedItemId }), repDelta: 0, tier: 'dismiss', monsterId: c.monsterId });
+  pushLog(state, { ...logLine(c.monsterId, 'dismiss', { name, item, itemId: c.wantedItemId,
+    serves: state.stats.monsterServes[c.monsterId] ?? 0 }), repDelta: 0, tier: 'dismiss', monsterId: c.monsterId });
   state.queue.shift();
   state.uiDirty = true;
   return true;
@@ -401,7 +415,8 @@ export function update(state, dt) {
       if (c.patienceRemaining > 0) { stillWaiting.push(c); continue; }
       const name = MONSTERS[c.monsterId]?.displayName ?? 'Someone';
       state.reputation = Math.max(0, state.reputation - CONFIG.reputation.leavePenalty);
-      pushLog(state, { text: logLine(c.monsterId, 'leave', { name }), repDelta: -CONFIG.reputation.leavePenalty, tier: 'leave', monsterId: c.monsterId });
+      pushLog(state, { ...logLine(c.monsterId, 'leave', { name,
+        serves: state.stats.monsterServes[c.monsterId] ?? 0 }), repDelta: -CONFIG.reputation.leavePenalty, tier: 'leave', monsterId: c.monsterId });
     }
     if (stillWaiting.length !== state.queue.length) {
       state.queue = stillWaiting;

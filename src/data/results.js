@@ -5,6 +5,10 @@
 // category matches; excluded entirely when no item is in play). TAGGING RULE: tag only when a line
 // is NONSENSE outside its categories ('swung the {item}' with a potion); if a mismatch is
 // absurd-in-a-good-way ('tried to eat the {item}'), leave it neutral — that absurdity is voice.
+// LINE-UNLOCK LADDER (2026-07-04): templates may also carry minServes (?? 0) — the line only fires
+// once that monster's lifetime serves reach it. Batches are authored AT the loyalty breakpoints
+// (25/50/100/250/500) so the Bestiary pips double as new-material markers; golden: true renders
+// the line GOLD in the log (the 100-serve payoff — one per monster, keep these the best in class).
 // Voice: cozy, dry, a little pathetic — we laugh WITH the lovable losers, never at them. PG only.
 // Genre-parody rule: tropes, never trademarks — dungeon-game furniture (natural 1s, side quests,
 // loot, boss music) is fair game; named games, characters, or recognizable quotes are not.
@@ -123,6 +127,9 @@ export const MONSTER_RESULTS = {
       `Slimey won by being too squishy to lose. Science weeps.`,
       `The hero slipped on Slimey and just... gave up. Win!`,
       `Slimey jiggled menacingly. It somehow worked.`,
+      { text: `Slimey won! He's been practicing. Nobody knows on what.`, minServes: 25 },
+      { text: `The heroes have a name for Slimey now. He thinks it's a compliment. It is.`,
+        minServes: 100, golden: true },
     ],
     success: [
       `Slimey bounced off the hero and rolled safely home. Nice.`,
@@ -144,6 +151,7 @@ export const MONSTER_RESULTS = {
       `Slimey got stuck to the floor and called it a nap.`,
       `Slimey fought his own reflection. A draw, then a loss.`,
       `Slimey tried to eat the {item} again. Third time this week.`,
+      { text: `Slimey tried to eat the {item} again. It's tradition at this point.`, minServes: 25 },
     ],
     leave: [
       `Slimey forgot why he came in and slowly oozed away.`,
@@ -166,6 +174,7 @@ export const MONSTER_RESULTS = {
       `Batty fled successfully, which for Batty is a triumph.`,
       `Batty survived by hiding in a helmet. Not even his helmet.`,
       `Batty made it home! He will not be discussing it.`,
+      { text: `Batty's nerves are improving. He only apologized twice today.`, minServes: 25 },
     ],
     partial: [
       `Batty lost, but flew home before dark. Silver lining!`,
@@ -183,6 +192,9 @@ export const MONSTER_RESULTS = {
       `Batty got startled by his own echo and surrendered to it.`,
       `Batty hid in a chest and fought it from the inside.`,
       `Batty dropped his emotional support pebble. Fight over.`,
+      { text: `Batty brought a backup plan. The backup plan also panicked.`, minServes: 25 },
+      { text: `Batty, veteran of a hundred panics, fled with unmistakable style. A legend.`,
+        minServes: 100, golden: true },
     ],
     leave: [
       `Batty got nervous about the wait and fluttered off.`,
@@ -200,11 +212,15 @@ export const MONSTER_RESULTS = {
       `Skele rattled ominously and, incredibly, that was enough.`,
       `The hero left. Skele takes the win, and his femur, home.`,
       `Skele won. He'll be finding his ribs for a week.`,
+      { text: `Skele won without losing a single bone. Career first.`, minServes: 25 },
     ],
     success: [
       `Skele took a hit, lost an arm, found a better arm. Even trade.`,
       `Skele survived; three bones are now technically optional.`,
       `Skele walked it off. Rattled the whole way, but walked.`,
+      { text: `Skele left an arm behind as a warning. He has spares now.`, minServes: 25 },
+      { text: `Skele reassembled before he even hit the floor. The hero applauded. A legend.`,
+        minServes: 100, golden: true },
     ],
     partial: [
       `Skele lost a fight and a kneecap, but gained a funny walk.`,
@@ -242,6 +258,9 @@ export const MONSTER_RESULTS = {
       `The hero apologized for wasting Froggo's time. Wise. Victory!`,
       `Froggo croaked once. The hero surrendered on instinct.`,
       `Froggo won and rated the whole experience "fine, I suppose."`,
+      { text: `Froggo upgraded his review to two stars. The staff celebrated.`, minServes: 25 },
+      { text: `Froggo left a five-star review. Nobody knows what happened in there. A legend.`,
+        minServes: 100, golden: true },
     ],
     success: [
       `Froggo survived and complained the dungeon wasn't damp enough.`,
@@ -271,6 +290,7 @@ export const MONSTER_RESULTS = {
     dismiss: [
       `You wave Froggo off. He was leaving anyway, he insists.`,
       `"Next!" Froggo grumbles off, already drafting the complaint.`,
+      { text: `Froggo grumbles off, loyal despite his own reviews. He'll deny it.`, minServes: 25 },
       `Bob waved him off warmly. Froggo hated that. He'll be back.`,
     ],
   },

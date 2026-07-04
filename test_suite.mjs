@@ -1314,23 +1314,29 @@ console.log('M4 auto-serve worker — smoke test\n');
   for (const arr of Object.values(GENERIC_RESULTS)) everyTemplate.push(...arr);
   for (const tiers of Object.values(MONSTER_RESULTS))
     for (const arr of Object.values(tiers)) everyTemplate.push(...arr);
+  // Two tag kinds since the line-unlock pass: cats (item-aware) and minServes (loyalty ladder);
+  // a template may carry either or both. Guards per kind.
   const tagged = everyTemplate.filter((t) => typeof t !== 'string');
-  ok(tagged.length >= 12, `item-aware: tagged templates exist (${tagged.length})`);
-  ok(tagged.every((t) => typeof t.text === 'string' && Array.isArray(t.cats) && t.cats.length > 0
+  ok(tagged.every((t) => typeof t.text === 'string'
+       && (Array.isArray(t.cats) || Number.isInteger(t.minServes))),
+     'templates: every object template has text + at least one tag (cats | minServes)');
+  const catTagged = tagged.filter((t) => t.cats !== undefined);
+  ok(catTagged.length >= 12, `item-aware: cats-tagged templates exist (${catTagged.length})`);
+  ok(catTagged.every((t) => Array.isArray(t.cats) && t.cats.length > 0
        && t.cats.every((c) => realCats.has(c))),
-     'item-aware: every tagged template has text + real, non-empty cats');
-  ok(tagged.every((t) => t.text.includes('{item}')),
-     'item-aware: only {item} templates are tagged (a tag on an item-less line is dead weight)');
+     'item-aware: every cats tag is real and non-empty');
+  ok(catTagged.every((t) => t.text.includes('{item}')),
+     'item-aware: only {item} templates carry cats (a cats tag on an item-less line is dead weight)');
 
   // Filtering, negative direction: a consumable serve can NEVER render a weapon-tagged line.
   // 400 draws of the hottest weapon-shaped text across tiers with tags.
-  const weaponTexts = tagged.filter((t) => t.cats.includes('weapon') && !t.cats.includes('consumable'))
+  const weaponTexts = tagged.filter((t) => t.cats?.includes('weapon') && !t.cats?.includes('consumable'))
     .map((t) => t.text.replace('{name}', 'Skele').replace(/\{item\}/g, 'HP Flask'));
   let leaked = false;
   for (let i = 0; i < 400; i++) {
     for (const tier of ['excellent', 'success', 'partial', 'funnyFailure']) {
       const line = logLine('skeleton', tier, { name: 'Skele', item: 'HP Flask', itemId: 'hp_flask' });
-      if (weaponTexts.includes(line)) leaked = true;
+      if (weaponTexts.includes(line.text)) leaked = true;
     }
   }
   ok(!leaked, 'item-aware: weapon-tagged lines never fill with a consumable (1600 draws)');
@@ -1339,7 +1345,7 @@ console.log('M4 auto-serve worker — smoke test\n');
   let sawWeaponLine = false;
   for (let i = 0; i < 600 && !sawWeaponLine; i++) {
     const line = logLine('skeleton', 'excellent', { name: 'Skele', item: 'Club', itemId: 'club' });
-    if (line.includes('swung the Club once')) sawWeaponLine = true;
+    if (line.text.includes('swung the Club once')) sawWeaponLine = true;
   }
   ok(sawWeaponLine, 'item-aware: weapon serves still draw the weapon jokes (600 draws)');
 
@@ -1349,7 +1355,7 @@ console.log('M4 auto-serve worker — smoke test\n');
   const taggedRaw = tagged.map((t) => t.text);
   for (let i = 0; i < 400; i++) {
     const line = logLine('bat', 'funnyFailure', { name: 'Batty' });   // no itemId on purpose
-    if (taggedRaw.some((raw) => line === raw.replace(/\{name\}/g, 'Batty').replace(/\{item\}/g, 'something'))) {
+    if (taggedRaw.some((raw) => line.text === raw.replace(/\{name\}/g, 'Batty').replace(/\{item\}/g, 'something'))) {
       sawTaggedWithoutItem = true;
     }
   }
@@ -1439,6 +1445,76 @@ console.log('M4 auto-serve worker — smoke test\n');
   ok(chains.every(([top]) => ITEMS[top].license.requiredTier < CONFIG.reputation.tiers.length
        && ITEMS[top].basePrice > ITEMS[top].restockCost),
      'batch 2: chain tops on real tiers with the margin invariant');
+}
+
+// 31. Line-unlock ladder + golden lines: loyalty pays out in comedy -----------------------------
+{
+  const { logLine } = await import('./src/messages.js');
+  const { MONSTER_RESULTS } = await import('./src/data/results.js');
+  const { MONSTER_IDS } = await import('./src/data/monsters.js');
+  const { MONSTER_BREAKPOINTS } = await import('./src/data/milestones.js');
+
+  // Contract: every monster has a ladder (>=1 minServes line) AND exactly one golden line; goldens
+  // sit at the 100-serve breakpoint (the memorable payoff Daniel asked for) and every minServes
+  // value is a real loyalty breakpoint, so the Bestiary pips always mark real material.
+  for (const id of MONSTER_IDS) {
+    const all = Object.values(MONSTER_RESULTS[id] ?? {}).flat().filter((t) => typeof t !== 'string');
+    const laddered = all.filter((t) => Number.isInteger(t.minServes));
+    const goldens = all.filter((t) => t.golden === true);
+    ok(laddered.length >= 2, `${id}: has a line-unlock ladder (${laddered.length} gated lines)`);
+    ok(goldens.length === 1 && goldens[0].minServes === 100,
+       `${id}: exactly one golden line, gated at 100 serves`);
+    ok(laddered.every((t) => MONSTER_BREAKPOINTS.includes(t.minServes)),
+       `${id}: every minServes sits on a real loyalty breakpoint`);
+  }
+
+  // Gating, negative: a fresh monster (0 serves) can never draw a gated line — 600 draws across
+  // the tiers that carry them.
+  const gatedTexts = Object.values(MONSTER_RESULTS).flatMap((tiers) =>
+    Object.values(tiers).flat().filter((t) => typeof t !== 'string' && Number.isInteger(t.minServes))
+      .map((t) => t.text));
+  let leak = false;
+  for (let i = 0; i < 150; i++) {
+    for (const tier of ['excellent', 'success', 'funnyFailure', 'dismiss']) {
+      for (const id of MONSTER_IDS) {
+        const line = logLine(id, tier, { name: 'X', item: 'Club', itemId: 'club', serves: 0 });
+        if (gatedTexts.some((raw) => line.text === raw.replace(/\{name\}/g, 'X').replace(/\{item\}/g, 'Club'))) leak = true;
+      }
+    }
+  }
+  ok(!leak, 'ladder: 0 serves never draws a gated line (2400 draws)');
+
+  // Gating, positive: at 100+ serves the golden line is reachable, and it comes back golden.
+  let sawGolden = false;
+  for (let i = 0; i < 800 && !sawGolden; i++) {
+    const line = logLine('frog', 'excellent', { name: 'Froggo', item: 'Club', itemId: 'club', serves: 100 });
+    if (line.golden === true && line.text.includes('five-star review')) sawGolden = true;
+  }
+  ok(sawGolden, 'ladder: at 100 serves the golden line fires, flagged golden (800 draws)');
+
+  // Ungated lines are never golden-flagged.
+  const plain = logLine('slime', 'leave', { name: 'Slimey', serves: 0 });
+  ok(plain.golden === false && typeof plain.text === 'string',
+     'return shape: { text, golden } with golden false on ungated pools');
+
+  // Unlock announcement: crossing a breakpoint WITH a batch pushes the extra milestone line;
+  // crossing one WITHOUT (250 — no batch authored there yet) does not.
+  {
+    const s = shopState();
+    s.stats.monsterServes.slime = 24;                // the 25th serve crosses the batch threshold
+    s.queue = [customer('slime', 'club', 99)];
+    serveCurrent(s);
+    ok(s.log.filter((e) => e.tier === 'milestone').length === 2,
+       'unlock: crossing 25 announces the monster milestone AND the new-stories line');
+  }
+  {
+    const s = shopState();
+    s.stats.monsterServes.slime = 249;               // 250 is a breakpoint but carries NO batch
+    s.queue = [customer('slime', 'club', 99)];
+    serveCurrent(s);
+    ok(s.log.filter((e) => e.tier === 'milestone').length === 1,
+       'unlock: a batchless crossing announces the milestone only (registry-scanned, no false hype)');
+  }
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

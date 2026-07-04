@@ -53,6 +53,19 @@ swung-once, tripped-and-it-did-the-rest (weapon); new-dents (weapon+armor); went
 which-end-to-hold (weapon). New category registers opened: potion-chugging (consumable),
 worn-backwards / held-up-great (armor) — grow these when writing for the item batches.
 
+## The line-unlock ladder & golden lines (2026-07-04)
+
+Loyalty pays out in comedy: a template may carry `minServes: N` — it only fires once that
+monster's lifetime serves reach N. **Batches are authored AT the loyalty breakpoints**
+(25/50/100/250/500) so the Bestiary pips double as new-material markers; a registry-scanned
+announcement fires on any crossing that actually unlocks lines (no false hype on batchless
+breakpoints). **Golden lines** (`golden: true`, rendered gold in the log): exactly ONE per
+monster, gated at 100 serves — the memorable payoff. Rules: goldens are legend-status lines, the
+best in that monster's class; they must read timeless (no counters — they keep firing after 100);
+gag ESCALATIONS live naturally on this ladder (an escalation is just a minServes-tagged line —
+Froggo's review gag runs one star -> two stars @25 -> the five-star golden @100). Shipped batch:
+2-3 gated lines per monster @25 + one golden @100 each.
+
 ## Genre parody — tropes, never trademarks
 
 The mobs live inside a dungeon-fantasy game, so the **shared furniture of the genre** is a second
@@ -106,9 +119,11 @@ Plant a few and escalate them across updates (the 3rd appearance gets the bigges
 - **Skele's missing left femur** — SEEDED ×3 (excellent, partial, funnyFailure).
 - **The coupon nobody ever honors** — SEEDED ×2 (partial generic, dismiss generic/Bob).
 - **Slimey trying to eat his own gear** — SEEDED ×2 (funnyFailure ×2, "third time this week").
-- **Froggo's scathing review** — SEEDED ×3 in his debut batch (partial "scathing review", leave
-  "one-star review of the queue", dismiss "drafting the complaint"). Escalate one batch later in a
-  different tier per the rule below.
+- **Froggo's scathing review** — SEEDED ×3 in his debut batch, ESCALATED @25 ("two stars. The
+  staff celebrated."), PAID OFF golden @100 ("a five-star review. Nobody knows what happened in
+  there."). The chain is complete; retire from active escalation.
+- **Slimey's eat-gag** — escalated @25 ("It's tradition at this point.") on the unlock ladder.
+- **Batty's emotional support pebble** — escalation candidate for the next @50 batch.
 - **The off-screen hero ("the kid with the sword")** — NOT yet seeded by that phrase; the anonymous
   "the hero" carries it for now. Introduce the phrase when a batch needs a fresh angle.
 

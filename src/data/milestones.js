@@ -96,6 +96,10 @@ export const MILESTONE_LINES = {
     "Every item past {tier} sales! Bob rang the big bell. Everything pays more now.",
     "Full-shelf milestone: {tier}+ of each. Mob Mart is officially an institution.",
   ],
+  lines: [   // line-unlock ladder: fired when a loyalty crossing unlocks authored material
+    "New {name} stories unlocked! The regulars have history now.",
+    "{name} is a true regular — Bob's heard things. Fresh tales in the log.",
+  ],
 };
 
 // Fill + pick. Milestones are rare events, so a plain random pick is fine (no anti-repeat memory).
