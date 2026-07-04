@@ -2,7 +2,7 @@
 import { CONFIG } from './config.js';
 import { PERKS, PERK_ORDER, perkLevel, perkCost, isPerkMaxed, sumPerkEffect } from './data/perks.js';
 import { itemGoldMult, monsterRepMult, globalGoldMult, everythingTier,
-  ITEM_BREAKPOINTS, MONSTER_BREAKPOINTS, EVERYTHING_TIERS, milestoneLine } from './data/milestones.js';
+  ITEM_BREAKPOINTS, MONSTER_BREAKPOINTS, EVERYTHING_TIERS, milestoneLine, licenseBubbleLine } from './data/milestones.js';
 import { MONSTERS, MONSTER_IDS } from './data/monsters.js';
 import { ITEMS, ITEM_ORDER } from './data/items.js';
 import { UPGRADES, upgradeLevel, upgradeCost, isMaxed, sumEffect } from './data/upgrades.js';
@@ -95,8 +95,32 @@ export function serveCurrent(state) {
   const goldGain = Math.round(item.basePrice * itemGoldMult(state, c.wantedItemId) * globalGoldMult(state));
   state.items[c.wantedItemId].stock -= 1;                       // hand over the item
   state.gold += goldGain;                                       // take payment (base + loyalty on top)
+  const prevTierIdx = reputationTier(fameOf(state)).index;      // tier BEFORE this sale's fame lands —
+  // captured before EITHER rep write: fameOf falls back to state.reputation when lifetimeRep is
+  // absent (a pre-Fame save's first serve), and that fallback must not already include this gain.
   state.reputation += repGain;                                  // spendable balance...
   state.lifetimeRep = fameOf(state) + repGain;                  // ...and the tier track (never falls)
+
+  // License alerts (UX roadmap 3): a FAME TIER CROSSING that brings newly eligible licenses gets
+  // the permanent milestone line here, plus queued speech for BOB'S bubble (transient, like
+  // pendingReports — never serialized; a reload mid-announcement drops the bubble, never the log
+  // line). Trigger is TIER ELIGIBILITY, never affordability. The range check (prev < req <= now)
+  // keeps a multi-tier jump honest, and already-owned licenses never re-announce.
+  const nowTierIdx = reputationTier(fameOf(state)).index;
+  if (nowTierIdx > prevTierIdx) {
+    const newly = ITEM_ORDER.filter((id) => {
+      const req = ITEMS[id].license?.requiredTier;
+      return req !== undefined && state.licenses?.[id] !== true
+        && req > prevTierIdx && req <= nowTierIdx;
+    });
+    if (newly.length) {
+      pushLog(state, { text: milestoneLine('fame',
+        { items: newly.map((id) => ITEMS[id].displayName).join(', ') }),
+        repDelta: 0, tier: 'milestone', monsterId: monster.id });
+      const bs = (state.bobSpeech ??= { queue: [], current: null });
+      for (const id of newly) bs.queue.push(licenseBubbleLine('announce', { item: ITEMS[id].displayName }));
+    }
+  }
 
   const { tier } = resolveCombat(monster, item);               // off-screen fight -> outcome tier
   // serves INCLUDES this one (the ledger increments below): the 25th serve draws from the 25-batch.
@@ -189,6 +213,18 @@ export function canBuyLicense(state, itemId) {
   if (!lic || isItemUnlocked(state, itemId)) return false;
   if (reputationTier(fameOf(state)).index < (lic.requiredTier ?? 0)) return false;
   return state.gold >= lic.cost;
+}
+
+// License alerts (UX roadmap 3): every license the shop's FAME already qualifies for but hasn't
+// bought. Deliberately ignores gold — the alert trigger is eligibility, never affordability
+// (canBuyLicense above is the purchase gate; this is the nag gate). Registry-scanned, so new
+// licensed rows join the reminder pool with zero wiring.
+export function eligibleUnboughtLicenses(state) {
+  const tierIdx = reputationTier(fameOf(state)).index;
+  return ITEM_ORDER.filter((id) => {
+    const req = ITEMS[id].license?.requiredTier;
+    return req !== undefined && state.licenses?.[id] !== true && req <= tierIdx;
+  });
 }
 
 export function buyLicense(state, itemId) {
@@ -394,6 +430,35 @@ export function update(state, dt) {
   if (state.serveCooldown > 0) {                    // count down the post-sale counter cooldown
     state.serveCooldown = Math.max(0, state.serveCooldown - dt);
     if (state.serveCooldown === 0) state.uiDirty = true;  // re-enable the Serve button
+  }
+
+  // Bob's bubble (license alerts): tick the current line, promote the next from the queue. All
+  // transient (never serialized) — the milestone log line is the permanent record, so a reload
+  // mid-announcement loses only the bubble. Ticks even while Bob is unhired (the bubble simply
+  // doesn't DRAW without its anchor — scene.js gates on ownership); the reminder below re-raises
+  // anything that expired unseen, so nothing is lost, and in practice licenses start at Trusted,
+  // long after the 50-gold hire.
+  const bs = state.bobSpeech;
+  if (bs) {
+    if (bs.current && (bs.current.remaining -= dt) <= 0) bs.current = null;
+    if (!bs.current && bs.queue.length) {
+      bs.current = { text: bs.queue.shift(),
+                     remaining: CONFIG.licenseAlerts?.announceSec ?? 6 };
+    }
+  }
+  // The gentle recurring reminder: a free-running countdown (transient — boot restarts it, which
+  // is also how a tier crossed OFFLINE gets announced ~30s into the next session). On expiry, if
+  // any eligible license sits unbought AND the bubble is idle (never talk over the crossing
+  // announcements), nudge about the first one. Trigger is eligibility, never gold.
+  state.licenseReminderIn = (state.licenseReminderIn ?? CONFIG.licenseAlerts?.reminderSec ?? 30) - dt;
+  if (state.licenseReminderIn <= 0) {
+    state.licenseReminderIn = CONFIG.licenseAlerts?.reminderSec ?? 30;
+    const unbought = eligibleUnboughtLicenses(state);
+    if (unbought.length && !(state.bobSpeech?.current) && !(state.bobSpeech?.queue?.length)) {
+      const bs2 = (state.bobSpeech ??= { queue: [], current: null });
+      bs2.current = { text: licenseBubbleLine('reminder', { item: ITEMS[unbought[0]].displayName }),
+                      remaining: CONFIG.licenseAlerts?.announceSec ?? 6 };
+    }
   }
 
   state.spawnTimer -= dt;

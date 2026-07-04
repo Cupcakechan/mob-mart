@@ -1598,5 +1598,110 @@ console.log('M4 auto-serve worker — smoke test\n');
      'remainder: at the top of the ladder there is no next tier');
 }
 
+// 34. License alerts via Bob's bubble (UX roadmap 3): crossing detection + queue + reminder ------
+// The bubble's DRAW (anchored at Bob, ownership-gated) is browser test-plan territory; what's
+// pinned here is the game-side contract: a fame-tier crossing that brings NEW licenses logs the
+// permanent milestone line and queues one announcement per license; the trigger is ELIGIBILITY,
+// never gold; update() runs the 6s/30s dials; and none of it serializes.
+{
+  const { eligibleUnboughtLicenses } = await import('./src/game.js');
+  const { CONFIG } = await import('./src/config.js');
+  const { ITEMS } = await import('./src/data/items.js');
+  const { LICENSE_BUBBLE_LINES } = await import('./src/data/milestones.js');
+
+  // Live-registry fixtures: the licenses gated at tier 2 (Trusted) and the tier-2 threshold.
+  const t2 = CONFIG.reputation.tiers[2];
+  const tier2Licenses = Object.values(ITEMS).filter((it) => it.license?.requiredTier === 2);
+  ok(tier2Licenses.length > 0, 'license alerts: the registry has tier-2 licenses to announce (fixture sanity)');
+
+  // A serve that CROSSES into Trusted: milestone 'fame' line + one bubble entry per new license —
+  // at ZERO gold (eligibility, never affordability).
+  {
+    const s = shopState();
+    s.gold = 0;
+    s.reputation = t2.min - 1; s.lifetimeRep = t2.min - 1;      // 1 rep short of the crossing
+    s.queue = [customer('skeleton', 'club', 99)];
+    serveCurrent(s);                                            // perSale rep >= 1 -> crossing
+    ok(s.log.some((e) => e.tier === 'milestone' && tier2Licenses.every((it) => e.text.includes(it.displayName))),
+       'crossing: the permanent fame line names every newly eligible license, at 0 gold');
+    ok(s.bobSpeech?.queue?.length === tier2Licenses.length,
+       'crossing: one bubble announcement queued per newly eligible license');
+    // The queue drains on the announce dial: first promote, then expire, then promote the next.
+    update(s, 0.001);
+    ok(s.bobSpeech.current !== null && s.bobSpeech.queue.length === tier2Licenses.length - 1,
+       'ticking: update() promotes the first announcement into the bubble');
+    const held = s.bobSpeech.current.text;
+    update(s, (CONFIG.licenseAlerts.announceSec ?? 6) + 0.01);
+    ok(s.bobSpeech.current !== null && s.bobSpeech.current.text !== held,
+       'ticking: after announceSec the next queued announcement takes over');
+  }
+
+  // No-false-hype: crossing into Friendly (tier 1 — no licenses there) announces nothing.
+  {
+    const s = shopState();
+    const t1 = CONFIG.reputation.tiers[1];
+    s.reputation = t1.min - 1; s.lifetimeRep = t1.min - 1;
+    s.queue = [customer('slime', 'club', 99)];
+    serveCurrent(s);
+    ok(!s.log.some((e) => e.tier === 'milestone') && !s.bobSpeech,
+       'crossing: a tier with no new licenses stays silent (no line, no bubble)');
+  }
+
+  // Already-owned licenses never re-announce: own one tier-2 license, cross into Trusted.
+  {
+    const s = shopState();
+    const owned = tier2Licenses[0].id;
+    s.licenses[owned] = true;
+    s.reputation = t2.min - 1; s.lifetimeRep = t2.min - 1;
+    s.queue = [customer('skeleton', 'club', 99)];
+    serveCurrent(s);
+    ok(s.bobSpeech?.queue?.length === tier2Licenses.length - 1
+       && s.log.some((e) => e.tier === 'milestone' && !e.text.includes(ITEMS[owned].displayName)),
+       'crossing: an already-owned license is excluded from line and bubble');
+  }
+
+  // Eligibility helper: registry-scanned, gold-blind.
+  {
+    const s = shopState();
+    s.gold = 0;
+    s.lifetimeRep = t2.min;                                     // Trusted, flat broke
+    const elig = eligibleUnboughtLicenses(s);
+    ok(elig.length === tier2Licenses.length
+       && elig.every((id) => ITEMS[id].license.requiredTier <= 2),
+       'eligibility: all tier-2 licenses eligible at Trusted with 0 gold, higher tiers excluded');
+  }
+
+  // The recurring reminder: at Trusted with unbought licenses, the 30s dial raises a reminder line
+  // in an idle bubble; with everything bought, it stays quiet.
+  {
+    const s = shopState();
+    s.lifetimeRep = t2.min;
+    s.queue = [];                                               // idle shop; no announcements queued
+    update(s, (CONFIG.licenseAlerts.reminderSec ?? 30) + 0.01);
+    const reminders = LICENSE_BUBBLE_LINES.reminder.map((t) => t.split('{item}'));
+    ok(s.bobSpeech?.current
+       && reminders.some((parts) => parts.every((p) => s.bobSpeech.current.text.includes(p))),
+       'reminder: after reminderSec an idle bubble nags about an unbought eligible license');
+  }
+  {
+    const s = shopState();
+    s.lifetimeRep = t2.min;
+    for (const it of Object.values(ITEMS)) if (it.license) s.licenses[it.id] = true;
+    s.queue = [];
+    update(s, (CONFIG.licenseAlerts.reminderSec ?? 30) + 0.01);
+    ok(!s.bobSpeech?.current, 'reminder: with every eligible license bought, the dial stays quiet');
+  }
+
+  // Transience: neither the speech queue nor the reminder timer survives a save round-trip.
+  {
+    const s = shopState();
+    s.bobSpeech = { queue: ['x'], current: { text: 'y', remaining: 3 } };
+    s.licenseReminderIn = 7;
+    const data = serializeSave(s);
+    ok(!('bobSpeech' in data) && !('licenseReminderIn' in data),
+       'transience: bobSpeech and the reminder timer are never serialized');
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

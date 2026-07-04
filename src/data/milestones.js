@@ -100,7 +100,36 @@ export const MILESTONE_LINES = {
     "New {name} stories unlocked! The regulars have history now.",
     "{name} is a true regular — Bob's heard things. Fresh tales in the log.",
   ],
+  // License alerts (UX roadmap 3): the PERMANENT RECORD half of the feature — Bob's bubble is
+  // transient, this line stays in the log. Fires only when a tier crossing brings NEW licenses
+  // (the no-false-hype rule: a crossing with nothing to sell announces nothing here).
+  fame: [
+    "Word reached the suppliers: new licenses on offer — {items}!",
+    "Fame pays off. The supplier catalog just grew: {items}.",
+  ],
 };
+
+// Bob's speech-bubble lines for license alerts (system voice, same rules as milestone lines —
+// shop-side Bob, PG, and SHORT: the canvas bubble is one line, ~40 chars of {item} headroom).
+// announce fires per newly eligible license on a tier crossing; reminder fires on the ~30s dial
+// while any eligible license sits unbought. Mirrored in COMEDY_BIBLE.md § Milestone announcements.
+export const LICENSE_BUBBLE_LINES = {
+  announce: [
+    "New supplier license: {item}!",
+    "The {item} license just opened up!",
+  ],
+  reminder: [
+    "That {item} license won't buy itself...",
+    "Still no {item} license? Bob keeps hinting.",
+  ],
+};
+
+// Same fill contract as milestoneLine, for the bubble pools.
+export function licenseBubbleLine(kind, params) {
+  const pool = LICENSE_BUBBLE_LINES[kind] ?? [];
+  const template = pool[Math.floor(Math.random() * pool.length)] ?? '';
+  return template.replace(/\{item\}/g, params.item ?? 'supplier');
+}
 
 // Fill + pick. Milestones are rare events, so a plain random pick is fine (no anti-repeat memory).
 export function milestoneLine(kind, params) {
@@ -108,6 +137,7 @@ export function milestoneLine(kind, params) {
   const template = pool[Math.floor(Math.random() * pool.length)] ?? '';
   return template
     .replace(/\{count\}/g, String(params.count ?? ''))
+    .replace(/\{items\}/g, params.items ?? 'new stock')   // fame kind: joined license names
     .replace(/\{item\}/g, params.item ?? 'item')
     .replace(/\{name\}/g, params.name ?? 'Someone')
     .replace(/\{tier\}/g, String(params.tier ?? ''));

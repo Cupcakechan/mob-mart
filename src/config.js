@@ -84,6 +84,13 @@ export const CONFIG = {
     reportFallbackSec: 3.0 },  // battle-report safety valve: a pending report older than this is
                                // delivered by update() even if its celebrant never fires the
                                // door-entry event (dropped by the cap, tab hidden, art edge case).
+
+  licenseAlerts: {
+    // License alerts via BOB'S bubble (UX roadmap 3). Trigger is TIER ELIGIBILITY, never
+    // affordability — gold fluctuates every serve and would spam the bubble.
+    announceSec: 6,            // each crossing announcement holds the bubble this long
+    reminderSec: 30,           // gentle recurring nudge while ANY eligible license sits unbought
+  },
                                // Celebration runs ~2.15s (hop 700 + march ~1000 + enter 450), so
                                // 3.0 only ever fires when the visual didn't.
 };

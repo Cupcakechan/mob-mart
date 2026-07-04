@@ -331,3 +331,20 @@ Article rule applies: "the {item}" / "{item}s", never "a {item}".
 **Everything tiers ({tier}):**
 - Every item past {tier} sales! Bob rang the big bell. Everything pays more now.
 - Full-shelf milestone: {tier}+ of each. Mob Mart is officially an institution.
+
+**Fame crossings with new licenses ({items} = joined display names; fires ONLY when a crossing
+brings newly eligible licenses — the no-false-hype rule):**
+- Word reached the suppliers: new licenses on offer — {items}!
+- Fame pays off. The supplier catalog just grew: {items}.
+
+**Bob's bubble — license alerts ({item}; lives in `milestones.js` as `LICENSE_BUBBLE_LINES`).
+CANVAS-WIDTH RULE: one line, short — the bubble renders a single measured line over Bob's head,
+so keep templates under ~40 chars plus the {item}. Trigger is tier eligibility, never gold.**
+
+*Announce (per newly eligible license, on the crossing):*
+- New supplier license: {item}!
+- The {item} license just opened up!
+
+*Reminder (~30s dial while any eligible license sits unbought — gentle, never desperate):*
+- That {item} license won't buy itself...
+- Still no {item} license? Bob keeps hinting.
