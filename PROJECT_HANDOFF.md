@@ -4,33 +4,34 @@
 session before doing any work. Update it as decisions change. Kept self-contained so a fresh
 Claude or ChatGPT can parse it cold.*
 
-**Status (current):** **M1–M6 MVP COMPLETE; idle roadmap Passes 1–3 + 3.5 SHIPPED**, plus spawn
-director, serve celebration, shelf decoration, and — this session (2026-07-03/04, all
-browser-confirmed + committed): **(a) Pass 4a — Bestiary panel** (tab enabled; field-guide cards
-over the Pass-1 serve ledger; "N% studied" via pure `bestiaryCompletion`; undiscovered mobs
-silhouette as ??? so a new monster debuts as a reveal), then **Bestiary v2** (centered 640×≤500
-showcase, 72px portraits — a deliberate, documented exception to the actor-band rule while open).
-**(b) Grounding pass:** the idle ±4px hover bob is now a FLYER behavior (`flying: true` on Batty);
-grounded mobs get a MEASURED `footPad` (slime 18 / skeleton 12, pngjs alpha-scan) dropping their
-real feet onto the shadow line, in drawMob AND the celebrant march; the serve hop is untouched.
-**(c) Crisp canvas:** backing store = 1280×720 × min(3, devicePixelRatio × fitScale) with a
-setTransform bridge (scene.js untouched) — the browser never resamples the frame; ctx state
-(smoothing OFF) is re-applied on EVERY resize because a canvas resize silently resets it.
-**(d) Shelf v3 + bubble gate:** 48px goods (Option 2 of 3), THREE rows on one center axis
-(replacing the v2 stagger), band math + the MEASURED bubble ceiling (y322 worst case) documented in
-the `WALL_SHELF` comment; the speech bubble's bob is gated to flyers like the mobs it tracks.
-**ALL mob art is now IN** (Daniel: `slime_idle`/`skeleton_idle` + all three `_walk_happy` strips +
-an updated skeleton static; strip padding re-MEASURED and consistent with the statics — the pinned
-footPads stay correct). Suite: **236 assertions, committed, green from repo root**
-(`node test_suite.mjs`).
-**NEXT, in order:** **(1) Pass 4b — Gobbo, now a GRUMPY FROG** (Daniel's redesign 2026-07-04; id +
-PNG naming = `frog`; rat remains an open call, see §13); **(2) the deferred serve-count line-unlock
-mechanic** (own options round; touches the comedy picker). **Option-3 art polish: SCRUBBED**
-(Daniel's call 2026-07-04 — see §9; the 128px-frame + MEASURED-footPad convention is PERMANENT, do
-not resurrect the re-export plan).
+**Status (current):** **M1–M6 MVP COMPLETE; idle roadmap Passes 1–4b SHIPPED**, plus spawn
+director, serve celebration, shelf v3, Bestiary (4a + v2 showcase), grounding, crisp canvas —
+and the ITEMS PHASE (2026-07-04, all browser-confirmed + committed): **(a) Pass 4b — Froggo the
+grumpy frog** (fourth customer, Option-2 identity: combatMod 0, budget [16,30], tier-2-leaning
+wants; comedy lever = professional dissatisfaction; art fully IN with footPad 15 MEASURED /
+spriteScale 1.1; the `_walk_happy` strip is authored as a grumpy stomp — the naming mismatch IS
+the joke, don't fix it). **(b) Battle-report timing (Option 2, render-synced):** the result line
+lands when the celebrant ENTERS the door — `state.pendingReports` (transient, never saved) +
+`deliverBattleReport`, fired by scene.js's door-entry callback with a fallback timer in update()
+(`CONFIG.log.reportFallbackSec` 3.0); economy stays at serve; milestone lines stay instant.
+**(c) Items scaffold:** A2 category-affinity wants (`categoryWeights` + optional `itemBias`,
+two-stage picker — personality share holds as the catalog grows; `wantWeights` fully retired) and
+B2 everything-tier RATCHET (`stats.everythingTierEarned`, written on live crossings, merge-seeded
+from the PINNED `LEGACY_EVERYTHING_BASIS` so new free items can never regress an earned tier).
+**(d) Item-aware comedy:** templates are string | { text, cats } — category tags scope
+weapon-shaped jokes; tagging rule: tag only NONSENSE mismatches, never good absurdity (bible §
+"Item-aware tags"). **(e) Content batch 1:** roster 6 → **15 items** — free four (Tattered Shirt /
+Bandages / Wooden Shield / Rusty Key, all priced <= the min budget roll 10) + the Trusted/Beloved
+license rung (Leather Bracer / Murk Tonic / Pickaxe @ 150-200, Quiver / Zip Tonic @ 300); ALL nine
+64×64 icons IN. Shelf panel scrolls 2-row categories (`overflow-y: auto`, provisional — glow-clip
+tradeoff noted in style.css). Suite: **288 assertions, green from repo root**; new doctrine: exact-
+math tests PIN the trio shelf (`pinTrioShelf` fixture), rule tests derive from the LIVE registry.
+**NEXT:** see §12's agreed order (batch 2 chain tops / line-unlock options round / economy tuning
+look). **Option-3 art polish: SCRUBBED** (see §9 — the 128px-frame + MEASURED-footPad convention is
+PERMANENT, do not resurrect).
 **Workflow note: NO DevLog for Mob Mart** — Daniel opted out (2026-07-03). Skip the DevLog draft
 step at feature completion for this project.
-**Last updated:** 2026-07-04 — Option-3 scrubbed; Gobbo redesigned as the grumpy frog.
+**Last updated:** 2026-07-04 — items phase: Froggo, report timing, A2/B2 scaffold, item-aware comedy, batch 1.
 
 ---
 
@@ -121,7 +122,10 @@ monster/item/upgrade/worker auto-flows through spawns, menus, and icons with no 
 filenames match the `id` (lowercase). Every optional field is read with a fallback (`?? default`).
 
 **Monster registry** (`src/data/monsters.js`): `id` · `displayName` · `spriteId` · `budgetRange`
-[min,max] · `patience` · `wantWeights` · `combatMod` · `baseRep` (optional).
+[min,max] · `patience` · `categoryWeights` (A2 — category affinity map; replaced `wantWeights`
+2026-07-04) · `itemBias` (optional per-item multiplier within a category) · `combatMod` ·
+`baseRep` (optional) · `flying` (optional — keeps the idle hover bob) · `footPad` (optional,
+MEASURED) · `spriteScale` (optional) · `anim` (shared 4-frame idle contract).
 
 **Customer instance** (runtime): `monsterId` · `wantedItemId` · `budget` · `patienceRemaining` ·
 `state`. Held in `state.queue`, a capped FIFO array; `queue[0]` is the front the Serve / Send Away
@@ -345,12 +349,13 @@ integration; guarded `?? 0`) — flyers skip `footPad` and may carry deliberate 
 
 | Asset | Target size (authoring) | Animations | Filename(s) | Status |
 |---|---|---|---|---|
+| Froggo (4th customer, Pass 4b) | 128×128/frame (permanent convention) | shared 4-frame idle @6fps + walk strip | `frog.png`, `frog_idle.png`, `frog_walk_happy.png` (the walk is authored as a GRUMPY STOMP — naming kept by convention, mismatch intended) | **ALL IN** (2026-07-04) — `footPad` 15 MEASURED, `spriteScale` 1.1 (content 76% of frame) |
 | Slimey / Batty / Skele (customers) | 128×128/frame (PERMANENT convention — see the Option-3 scrub note above) | shared 4-frame idle strips (6fps) | statics `slime.png` etc. + `slime_idle.png` etc. | **ALL IN** (statics + all three idle strips, 2026-07-03); drawn 88px (`QUEUE.size`), Slimey/Skele `spriteScale` 1.15, `footPad` MEASURED slime 18 / skeleton 12 (grounding pass), Batty `flying: true` (padding = hover altitude) |
 | Bob (mimic merchant) | 128×128 or 160×160/frame | idle 6f · serve 6f (one-shot) | `mimic_merchant.png` (static fallback), `bob_idle.png`, `bob_serve.png` (6-frame strips) | **IN** — 240px on-screen (`BOB.height`), feet anchored to `COUNTER.baseY` − 50 |
 | Counter / desk | ~480px wide (author 2× ≈ 960 for crisp) | static | `counter.png` | **IN** — 480px (`COUNTER.width`), base at H*0.74 (~533) + contact shadow |
 | Battle door (ex-portal) | **160×160/frame**, 4 frames → **640×160 strip**; frame 0 CLOSED → 3 OPEN; **frame 0 must be pixel-identical across variants** | one-shot open/hold/close on paid serve; destination re-rolled per opening | `portal_glow.png` (base/void), `portal_glow_mountain/_forest/_dungeon.png` (destination variants — a new biome = one strip + one `DOOR_VARIANTS` entry), `portal.png` (static fallback) | **IN** — 320px on-screen (2×); bottom = `FLOOR_Y + 6` (art has 3px bottom padding ×2 scale) |
 | Shop backdrop | 1280×720, **seam at y=462** | optional torch flicker later | `shop_bg.png` | **IN (WIP)** — iterating |
-| Item icons (all six: Club / Metal Helmet / HP Flask / Iron Sword / Greater Flask / Knight Helm) | 64×64 — **STAYS 64** (batch-B decision above) | static | `club.png`, `metal_helmet.png`, `hp_flask.png`, `iron_sword.png`, `greater_flask.png`, `knight_helm.png` | **IN** (all six) — shelf-v3 wall slots at **48px** (×0.75), DOM cards + canvas purchase float at 32px (×0.5; float rises 46px, fades 900ms) |
+| Item icons (all FIFTEEN — base trio, tier-2 three, batch-1 nine) | 64×64 — **STAYS 64** (batch-B decision above) | static | `<item_id>.png` for every ITEM_ORDER id (e.g. `club.png`, `murk_tonic.png`, `quiver.png`) | **IN — ALL FIFTEEN** (batch-1 nine landed 2026-07-04, dimension-verified 64×64) — shelf-v3 wall slots at **48px** (×0.75), DOM cards + canvas purchase float at 32px (×0.5; float rises 46px, fades 900ms) |
 | Wall-shelf plank prop | authored **486×37 (MEASURED)**; Shelf v3 stretches it to **312×30** per row (`plankBoxH` dial) | static | `wall_shelf.png` | **IN** — all THREE v3 rows reuse it; absent → code-drawn plank |
 | Happy-walk strips (celebration pass) | 4 equal frames, 128×128/frame (512×128 strip — PERMANENT convention) | 4-frame loop @ 8fps (`CELEBRATE.walkAnim`; per-monster `walkHappy` override, guarded) | `slime_walk_happy.png`, `bat_walk_happy.png`, `skeleton_walk_happy.png`, **RIGHTWARD-facing** (the march is left→right; code doesn't mirror) | **ALL IN** (2026-07-03) — pads re-MEASURED consistent with statics (slime walk 20 vs 18: 1.6px on screen, negligible); fallback chain walk strip → idle strip → static → rect |
 | UI icons (gold, rep crown, scrap-reserved) | 32×32 | static | `icon_gold.png`, `icon_rep.png`, `icon_scrap.png` | **NOT YET USED** — HUD uses text glyphs |
@@ -449,26 +454,30 @@ Playable end-to-end with the full idle lattice live: mobs queue → Serve (manua
 auto-serve) → celebration hop + march through the battle door → comedy result + gold/rep →
 restock/upgrades/perks/licenses. Loyalty (Pass 1), dual-track Fame + perks (Pass 2), tier-2 licensed
 stock (Pass 3), Restock All (3.5), spawn director, offline earnings, Kongregate no-op bridge — all
-shipped. **This session's additions:** Bestiary panel (4a) + centered showcase (v2); grounding
-(flyer-gated bob + MEASURED footPads); crisp canvas (DPR×fit backing store); Shelf v3 (48px goods,
-three center-aligned rows) + bubble bob gate. **All mob art is IN** (statics, idle strips ×3, walk
-strips ×3). Save `mobmart.save.v1`, additive schema, clamped merges. Suite: **`test_suite.mjs`
-COMMITTED at repo root, 236 assertions green** — a fresh clone self-verifies with
-`node test_suite.mjs`.
+shipped. **Roster: FOUR customers** (Slimey / Batty / Skele / **Froggo**, all art IN) and
+**FIFTEEN items** (base trio + tier-2 three + batch-1 nine, all icons IN). Battle results land at
+DOOR ENTRY (render-synced + fallback). Wants are A2 category-affinity; the everything tier is B2
+ratcheted; comedy is item-aware (category-tagged templates). Save `mobmart.save.v1`, additive
+schema, clamped merges (ratchet merge-seeded from the pinned legacy basis). Suite:
+**`test_suite.mjs` at repo root, 288 assertions green** — a fresh clone self-verifies with
+`node test_suite.mjs`. Suite doctrine (batch-1 lesson, 19 fixtures broke at once): EXACT-MATH
+tests pin the trio shelf via `pinTrioShelf`; RULE tests derive expectations from the live
+registry — never hand-type a roster-dependent number into a rule test.
 
 ### Next up — the idle-progression roadmap (from MOB_MART_RESEARCH.md)
 
 **Agreed immediate order (next session starts here):**
-1. **Pass 4b — Gobbo, redesigned as a GRUMPY FROG (Daniel, 2026-07-04).** Registry id + all PNG
-   naming = **`frog`** (`frog.png`, `frog_idle.png`, `frog_walk_happy.png` — register all three
-   BEFORE the art exists, the wall_shelf lesson; 128×128 frames per the permanent convention;
-   `footPad` MEASURED at art integration). Grounded (`flying` absent). Registry-driven: milestones /
-   loyalty / spawns (uniform pick → 25% each) / celebration / bestiary all auto-flow — the
-   Bestiary's ??? silhouette makes the debut a reveal. Includes the grumpy comedy pools
-   (results.js + COMEDY_BIBLE sync) and a save-merge check for the new `monsterServes` key.
+1. **Content batch 2 — chain tops** (Iron Buckler <- Wooden Shield, Iron Gauntlet <- Leather
+   Bracer): licensed rows at higher price on the existing pattern — a chain is naming + pricing,
+   NOT a mechanic (optional `upgradeOf` field only if the shop UI ever groups chains). Daniel
+   authors the two 64×64 icons; registry rows auto-flow through A2 wants / shelves / milestones.
 2. **Serve-count line-unlock mechanic** (deferred from the old Pass 4 bundle) — needs its own
    options round; touches the comedy picker in results/messages.
-   *(Option-3 art polish — formerly item 1 here — SCRUBBED 2026-07-04; see §9.)*
+3. **Economy tuning look** (owed, feel-driven): Froggo adds ~+20% budget on 25% of spawns and the
+   Trusted rung front-loads licenses — one observation session, then surgical single-lever tweaks
+   per the balance protocol. Not a broad rebalance.
+   *(Pass 4b Froggo, battle-report timing, A2/B2 scaffold, item-aware comedy, and content batch 1 —
+   formerly queued here — ALL SHIPPED 2026-07-04; see build history. Option-3: scrubbed, §9.)*
 
 The problem it solves: the game has ONE growth axis (gold -> 4 upgrades -> done at ~10.6k). The
 research's answer is a lattice of small bolt-on layers on existing hooks, staged so every pass
@@ -821,15 +830,65 @@ set. Add "bumpy" x2 spikes at 25/50-style breakpoints. Never add decay/backward 
   MEASURED-`footPad` convention is now PERMANENT (§9). The batch-B icon analysis (64px master
   stays; three consumers at 48/32/32) remains valid and recorded. In the same message: **Gobbo
   redesigned as a GRUMPY FROG**, id/PNG naming `frog`; rat still an open call (§13).
+- **Pass 4b — Froggo the grumpy frog (2026-07-04):** fourth customer, Option-2 identity (combatMod
+  0, budget [16,30], wants leading with licensed items — pre-license the unlock filter hides them).
+  Comedy lever: PROFESSIONAL DISSATISFACTION (review gag seeded ×3). Sprites registered before art
+  (wall_shelf lesson); ??? Bestiary reveal worked as designed. Flushed a REAL pre-existing suite
+  bug: section 19's base-tier budget bound was hard-coded 24 (old roster max) — now reads the live
+  registry per spawn. Art landed same day: static + walk, then idle (pads 15/13/15 — consistent);
+  `footPad: 15` + `spriteScale: 1.1` (content 76% of frame; 1.1 matches Slimey's visible mass).
+  NOTE the art-integration micro-pass initially FAILED TO LAND on Daniel's machine (suite pin
+  caught it: 1 fail at his HEAD) — re-cut from current HEAD, not the stale zip. Suite 249.
+- **Battle-report timing (2026-07-04, Daniel picked Option 2 — render-synced):** the result line
+  lands the frame the celebrant finishes ENTERING the door. `serveCurrent` queues
+  `state.pendingReports` (TRANSIENT like uiDirty — never serialized; reload inside the ~2s window
+  drops the LINE only, never economy); `deliverBattleReport` is the single delivery path, fired by
+  scene.js's door-entry callback (`setCelebrantEnteredCallback`, wired in main.js — render->game
+  stays callback-only) with a HEAD-only fallback tick in update() (`CONFIG.log.reportFallbackSec`
+  3.0 vs the ~2.15s celebration). Deliberately ID-LESS FIFO: a cap-dropped ghost's report rides the
+  next arrival, one slot late, visually indistinguishable. Economy stays at serve; milestone lines
+  stay instant (battle line stacks on top ~2s later). Known nuance: HUD rep ticks ~2s before the
+  crown on the line. Suite 265 (+16 §26; one M4 assertion migrated).
+- **Items scaffold — A2 + B2 (2026-07-04, one approved pass):** (A2) `categoryWeights` +
+  optional `itemBias` replace `wantWeights` everywhere; two-stage picker (category by weight ->
+  item within, bias-weighted) so personality SHARE holds as the catalog grows; same unlock filter,
+  same real-id fallback. (B2) `everythingTier = max(computed, stats.everythingTierEarned)`;
+  written ONLY in serveCurrent on a live crossing; serialized + clamped; mergeSave seeds from the
+  PINNED `LEGACY_EVERYTHING_BASIS` (launch trio, never grows) so an update shipping new free items
+  can't regress a pre-ratchet save on first load. Suite 274 (+9 §27, 3x-stable statistical runs).
+- **Item-aware comedy (2026-07-04, Option 2 — line-trust granted, no review):** templates are
+  string | { text, cats }; logLine takes itemId, filters the pool by the item's category BEFORE the
+  anti-repeat pick; no-item calls exclude tagged templates entirely. Audit: 24 {item} templates ->
+  only 5 genuinely category-shaped (tagged); good-absurdity mismatches deliberately left neutral
+  (the tagging rule, bible § 'Item-aware tags'). +7 new category lines (potion/armor registers).
+  A scripted-edit SILENT NO-OP was caught by the in-file count check (10 vs 12) and re-landed —
+  the landing-zone rule earning its keep. Suite 280 (+6 §28).
+- **Content batch 1 (2026-07-04):** roster 6 -> 15. Free four (Tattered Shirt 5/2 eff1, Bandages
+  6/3, Wooden Shield 8/4, Rusty Key 10/5 — INVARIANT: free price <= min budget roll, suite-pinned
+  from the live registry) + Trusted/Beloved license rung (Bracer/Murk 150, Pickaxe 200 @ tier 2;
+  Quiver/Zip 300 @ tier 3). Chain bases noted for batch 2. Shelf panel: categories are now 2 grid
+  rows -> `overflow-y: auto` at 224 (PROVISIONAL: attention-pulse glow clips at the panel edge;
+  dials named in style.css). THE SUITE MIGRATION: 19 hand-computed fixtures broke at once ->
+  doctrine split: exact-math tests pin the trio shelf (`pinTrioShelf` helper — offline robin skips
+  empties so old sequences hold), rule tests derive from the live registry (backroom reserve
+  conjures per UNLOCKED item and cannot be pinned; §27's bias threshold now registry-derived).
+  End-to-end payoffs asserted: a pre-batch save keeps its earned everything tier over four new free
+  items; new items enter the want pool with zero wiring. All nine 64×64 icons IN (dimension-
+  verified). Suite 288 (4x-stable).
 
 ---
 
 ## 13. Open questions / pending decisions
 
-- **Is Rat still on the roster at all?** Pass 4b proceeds as the frog alone (Daniel, 2026-07-04);
-  whether Rat joins in a later content pass is open.
+- **Rat: coming, but later** (Daniel, 2026-07-04) — a future content pass; the cost is a fifth
+  distinct comedy voice, everything else is one registry row + 3 PNGs.
 - **Line-unlock mechanic design** — deferred from the old Pass 4 bundle; needs its own options
   round (gating comedy pools by serve count touches the no-repeat picker).
+- **Shelf-panel scroll tradeoff (provisional):** `overflow-y: auto` clips the attention-pulse glow
+  at the panel edge — confirm on feel or adjust the dials named in style.css.
+- **Economy tuning look (owed):** Froggo's budgets + the Trusted license rung ease the early
+  economy — one observation session, then single-lever tweaks only.
+- **Potion display names locked:** Murk Tonic, Zip Tonic (Daniel approved 2026-07-04).
 - **itch.io dual-publish: yes or Kongregate-only?** Decides whether the `butler` deploy path is added.
 - **Repo:** `github.com/Cupcakechan/mob-mart` (local folder `mob-mart`).
 - **Offline earning model — DECIDED (M5):** worker-only, no drip. Bob is hireable within minutes, so
