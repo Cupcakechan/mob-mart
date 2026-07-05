@@ -273,11 +273,14 @@ export function renderPanels(state) {
     if (lic && restockBtn && licenseBtn) {
       const unlocked = isItemUnlocked(state, id);
       const tierReached = reputationTierIndex(state) >= (lic.requiredTier ?? 0);
+      const affordable = canBuyLicense(state, id);   // tier + unowned + GOLD
       card.classList.toggle('locked', !unlocked);
-      // License alerts (noticeability pass, Daniel's call): the READY state lives on the CARD —
-      // a blinking bright-gold frame that also lifts the locked-dim filter, because "locked" says
-      // not-yet while ready says buy-me-now, and the two treatments fight on the same card.
-      card.classList.toggle('license-ready', !unlocked && tierReached);
+      // License indicator, two-stage (Daniel's call, 2026-07-04): the blinking bright-gold card
+      // frame means BUY ME NOW — eligible AND affordable. Eligible-but-broke keeps only the
+      // subtle gold breathe on the button below ("this exists for you, save up"). Note the split:
+      // Bob's bubble still triggers on eligibility alone; only the BLINK is gold-gated, so it
+      // switches on/off live as gold crosses the license cost.
+      card.classList.toggle('license-ready', !unlocked && affordable);
       restockBtn.classList.toggle('hidden', !unlocked);
       licenseBtn.classList.toggle('hidden', unlocked);
       if (!unlocked) {
