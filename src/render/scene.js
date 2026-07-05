@@ -465,9 +465,12 @@ function drawBubble(ctx, state, tMs) {
 // padding above the counter. Draw gates on ownership, exactly like Bob's hire-arc gate.
 const RESTOCKER = {
   centerX: 570,        // left of Bob (Bob's body spans ~646-814); clear of his bubble's clamp zone
-  hoverY:  330,        // TOP of the body at hover altitude — bottom ~426 floats over the counter top
-  height:  96,         // SMALLER than Bob (240) by design
-  placeholderColor: '#4a6a7a',   // slate-blue: reads "not Bob" at a glance until real art lands
+  hoverY:  330,        // TOP of the body at hover altitude — bottom ~442 floats over the counter top
+  height:  112,        // NATIVE frame size (greg.png is 112x112, content 101x93 measured via pngjs).
+                       // 1:1 on purpose: pixel art only scales clean at integers — the earlier 96
+                       // would have been a 0.857x downscale and muddied every pixel. Still well
+                       // under Bob's 240.
+  placeholderColor: '#4a6a7a',   // slate-blue: reads "not Greg" at a glance if the PNG is absent
 };
 
 function drawRestocker(ctx, state, tMs) {

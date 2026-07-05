@@ -15,9 +15,9 @@ export const WORKERS = {
   },
   restocker: {
     id: 'restocker',
-    displayName: 'Restocker',
-    spriteId: 'restocker',        // art pending (small FLYER) — registered in main.js, placeholder
-                                  // until the PNG lands (drop-a-png convention, same as Bob's anims)
+    displayName: 'Greg',          // the Restocker's name (Daniel, 2026-07-04) — a small gargoyle
+    spriteId: 'restocker',        // static frame (greg.png -> restocker.png, 112x112); the flight
+                                  // strip lands as greg_fly.png (112px frames, count auto-sliced)
     role: 'restock',
     flying: true,                 // flyer conventions: hover bob + altitude padding (scene.js reads this)
     baseInterval: 8,              // <-- TUNABLE: seconds per trickle unit (mini round C1: shadows
