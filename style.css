@@ -497,3 +497,26 @@ body{
     border-color: #ffe680; box-shadow: 0 0 14px 4px rgba(255,214,94,.55);
   }
 }
+
+/* --- "Restock now" chip (UX roadmap 4, A1/B1). AIRSPACE MATH (the bottom-bar lesson, applied
+   up top): left margin strip x8..~210 is open — the wall shelf ends at y320 above it, the
+   customer bubble's documented worst-case LEFT edge is ~220 (clamped around the front mob at
+   ~x370), and the queue mobs' boxes start at y407. The chip lives at center x110, y345..~400:
+   below the shelf, left of the bubble, above the mobs. TWO-LINE label on purpose — one line
+   ("Greater Flask out — Restock 13") would exceed the strip's width and clip the bubble zone.
+   States: .affordable pulses (attn-breathe — the chip language, blink stays license-only);
+   disabled = the B1 gray, visible so the cost teaches while the player saves. -------------- */
+.restock-chip{
+  position:absolute;left:110px;top:345px;transform:translateX(-50%);z-index:5;
+  max-width:195px;background:var(--panel-bg);border:2px solid var(--panel-edge);border-radius:12px;
+  padding:8px 14px;color:#c9bfa8;font-family:var(--font);font-size:13px;line-height:1.45;
+  text-align:center;cursor:pointer;
+}
+.restock-chip b{color:#8f86a3;font-size:14px;}                /* muted until affordable */
+.restock-chip.affordable{border-color:var(--gold);animation:attn-breathe 1.2s ease-in-out infinite;}
+.restock-chip.affordable b{color:var(--gold);}
+.restock-chip.affordable:hover{background:rgba(255,207,74,.12);}
+.restock-chip:disabled{cursor:default;opacity:.8;}
+@media (prefers-reduced-motion: reduce){
+  .restock-chip.affordable{animation:none;box-shadow:0 0 0 2px var(--gold);}
+}

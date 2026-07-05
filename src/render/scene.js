@@ -388,6 +388,7 @@ export function drawScene(ctx, state, tMs) {
   drawWallShelf(ctx, state, tMs);  // goods on the wall (diegetic shelf, C-lite — display only)
   drawCounterShadow(ctx);       // contact shadow FIRST: grounds the desk AND Bob standing behind it
   drawBob(ctx, state, tMs);     // before the counter, so the counter front overlaps his lower body
+  drawRestocker(ctx, state, tMs); // the flyer hovers left of Bob — same layer, same counter overlap
   drawCounter(ctx);
   drawPortal(ctx, tMs);
   drawQueue(ctx, state, tMs);
@@ -456,6 +457,34 @@ function drawBubble(ctx, state, tMs) {
   ctx.font = BUBBLE.lineFont; ctx.fillStyle = BUBBLE.text;
   ctx.fillText(want, x + BUBBLE.padX, y + BUBBLE.padY + 15 + BUBBLE.lineGap);
   ctx.restore();
+}
+
+// --- The Restocker (UX roadmap 4): the second worker, a SMALL FLYER hovering left of Bob. Art is
+// pending — placeholder-first per the standing pattern (Bob's placeholder language: body rect +
+// darker band). Flyer conventions: hover bob like the flying mobs (same sine period), altitude
+// padding above the counter. Draw gates on ownership, exactly like Bob's hire-arc gate.
+const RESTOCKER = {
+  centerX: 570,        // left of Bob (Bob's body spans ~646-814); clear of his bubble's clamp zone
+  hoverY:  330,        // TOP of the body at hover altitude — bottom ~426 floats over the counter top
+  height:  96,         // SMALLER than Bob (240) by design
+  placeholderColor: '#4a6a7a',   // slate-blue: reads "not Bob" at a glance until real art lands
+};
+
+function drawRestocker(ctx, state, tMs) {
+  if (state?.workers?.restocker?.owned !== true) return;        // no hire, no flyer
+  const bob = Math.sin(tMs / 300 + RESTOCKER.centerX) * 5;      // flying-mob hover, own phase
+  const spr = getSprite('restocker');
+  const h = RESTOCKER.height;
+  if (spr) {
+    const w = h * (spr.width / spr.height);                     // single frame for now; anims when
+    ctx.drawImage(spr, RESTOCKER.centerX - w / 2, RESTOCKER.hoverY + bob, w, h);  // the art lands
+    return;
+  }
+  const w = h * 0.7;                                            // Bob's placeholder proportions, small
+  ctx.fillStyle = RESTOCKER.placeholderColor;
+  ctx.fillRect(RESTOCKER.centerX - w / 2, RESTOCKER.hoverY + bob, w, h);
+  ctx.fillStyle = '#00000055';
+  ctx.fillRect(RESTOCKER.centerX - w / 2, RESTOCKER.hoverY + bob + h * 0.55, w, 4);
 }
 
 // Rise-and-fade the queued purchase icons above the front-of-queue spot.

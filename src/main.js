@@ -55,6 +55,9 @@ loadSprite('slime',    'assets/sprites/slime.png');
 loadSprite('bat',      'assets/sprites/bat.png');
 loadSprite('skeleton', 'assets/sprites/skeleton.png');
 loadSprite('counter',  'assets/sprites/counter.png');
+loadSprite('restocker','assets/sprites/restocker.png');  // art pending (small flyer) — 404s
+                                                          // gracefully to the placeholder until
+                                                          // Daniel's PNG lands (drop-a-png convention)
 loadSprite('portal',   'assets/sprites/portal.png');
 loadSprite('portal_glow', 'assets/sprites/portal_glow.png');  // 4-frame swirl strip (640x160); absent -> static portal
 loadSprite('portal_glow_mountain', 'assets/sprites/portal_glow_mountain.png');  // door destinations:

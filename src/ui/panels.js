@@ -176,6 +176,13 @@ export function initPanels(root, h) {
     if (cat) setShelfCategory(cat);
   });
 
+  // "Restock now" chip: click = restock the named item, straight through the same handler the
+  // shelf buttons use (game-side canRestock guards double-fire; the render re-picks the next
+  // most-urgent item on the resulting dirty pass).
+  document.getElementById('restock-chip')?.addEventListener('click', function () {
+    if (this.dataset.item) handlers.onRestock(this.dataset.item);
+  });
+
   // Fame track (UX roadmap 2): STATIC structure — the ladder is registry data, so the nodes and
   // their unlock chips are built once here; only reached/current classes and the header's standing
   // line change at runtime (renderPanels). Chip detail rides the title attribute (hover).
@@ -393,7 +400,9 @@ export function renderPanels(state) {
     if (owned) {
       if (descEl) {
         const secs = effectiveWorkerInterval(state, id);
-        descEl.textContent = `Auto-serves the front \u00b7 ~${secs.toFixed(1)}s`;
+        descEl.textContent = WORKERS[id].role === 'serve'
+          ? `Auto-serves the front \u00b7 ~${secs.toFixed(1)}s`
+          : `Restocks 1 unit \u00b7 ~${secs.toFixed(1)}s`;    // trickle pace (no speed upgrades yet)
       }
       if (buyBtn) { buyBtn.disabled = true; buyBtn.textContent = 'Active'; }
     } else {
@@ -414,6 +423,26 @@ export function renderPanels(state) {
     hireChip.classList.toggle('hidden', bobOwned);
     if (!bobOwned) hireChip.innerHTML =
       `The counter needs a merchant!<br><b>Hire Bob &mdash; &#9670; ${workerHireCost('mimic_merchant')}</b>`;
+  }
+
+  // --- "Restock now" chip (mini round A1/B1): ONE most-urgent OUT-of-stock item — the front
+  // customer's blocked want first (unblocks the live queue), else registry order. Gray + disabled
+  // while the restock is unaffordable (the two-stage language: visible = the goal, pulsing =
+  // actionable). Hidden when nothing unlocked is out.
+  const restockChip = document.getElementById('restock-chip');
+  if (restockChip) {
+    const isOut = (id) => isItemUnlocked(state, id) && state.items[id].stock === 0;
+    const front = state.queue[0]?.wantedItemId;
+    const target = (front && isOut(front)) ? front : ITEM_ORDER.find(isOut) ?? null;
+    restockChip.classList.toggle('hidden', !target);
+    if (target) {
+      const affordable = canRestock(state, target);
+      restockChip.disabled = !affordable;
+      restockChip.classList.toggle('affordable', affordable);
+      restockChip.dataset.item = target;
+      restockChip.innerHTML =
+        `${ITEMS[target].displayName} out!<br><b>Restock &#9670; ${effectiveRestockCost(state, target)}</b>`;
+    }
   }
 
   // --- Bob's license bubble (DOM): show state.bobSpeech.current over Bob's head — but only once

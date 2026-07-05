@@ -264,6 +264,25 @@ export function restockItem(state, itemId) {
 // cost); the action fills as much as gold allows, ROUND-ROBIN one unit per item per pass — the
 // same fairness loop the offline sim uses — so a short purse spreads evenly across the shelf
 // instead of topping up the first card and starving the last. ----------------------------------
+// The Restocker's brain (mini round C1): pick ONE item to trickle a unit into. Priority: the front
+// customer's wanted item if it's OUT (unblocks the actual queue), else the most-starved unlocked
+// item (lowest stock-to-cap ratio; registry order breaks ties). Affordability is part of the pick —
+// canRestock covers gold + cap — so a broke shop returns null and the worker idles, never overdrafts.
+// Pure and exported: the suite pins the priority contract here, not in the tick loop.
+export function trickleTarget(state) {
+  const front = state.queue[0]?.wantedItemId;
+  if (front && isItemUnlocked(state, front)
+      && state.items[front].stock === 0 && canRestock(state, front)) return front;
+
+  let best = null, bestRatio = 1;                    // ratio 1 = full; only below-cap items beat it
+  for (const id of ITEM_ORDER) {
+    if (!isItemUnlocked(state, id) || !canRestock(state, id)) continue;
+    const ratio = state.items[id].stock / Math.max(1, effectiveMaxStock(state, id));
+    if (ratio < bestRatio) { bestRatio = ratio; best = id; }
+  }
+  return best;
+}
+
 export function restockAllCost(state) {
   let total = 0;
   for (const id of ITEM_ORDER) {
@@ -350,6 +369,9 @@ export function buyUpgrade(state, id) {
 // the counter cooldown — so counter upgrades speed automation too. Asymptotic; never reaches zero.
 export function effectiveWorkerInterval(state, id) {
   const base = WORKERS[id]?.baseInterval ?? Infinity;
+  // serveSpeed upgrades (Faster Counter) speed the COUNTER — they apply to the serve role only.
+  // Without this scope, buying counter upgrades would silently speed the restock trickle too.
+  if (WORKERS[id]?.role !== 'serve') return base;
   return base / (1 + sumEffect(state, 'serveSpeed'));
 }
 
@@ -375,19 +397,40 @@ export function hireWorker(state, id) {
 function updateWorkers(state, dt) {
   for (const id of WORKER_ORDER) {
     const w = state.workers[id];
-    if (!w.owned || WORKERS[id].role !== 'serve') continue;    // future restock role is skipped here
-    w.timer -= dt;
-    if (w.timer > 0) continue;
-    // Greet gate (feel fix): the front customer must have been VISIBLE at the counter for greetSec
-    // before a worker may serve them — at max Faster Counter, serves had become invisible teleports
-    // straight to the battle log. Worker stays ready and fires the moment the greet elapses.
-    // Manual serving is deliberately NOT gated (clicking = looking; active play stays faster).
-    if ((state.queue[0]?.frontWait ?? 0) < (CONFIG.workers?.greetSec ?? 0)) { w.timer = 0; continue; }
-    if (serveCurrent(state)) {                                 // sold one -> pace the next by the interval
-      w.timer = effectiveWorkerInterval(state, id);
-      state.workerServed = true;                               // signal main.js to play Bob's serve anim
-    } else {
-      w.timer = 0;                                             // blocked -> stay ready, retry next frame
+    if (!w.owned) continue;
+    const role = WORKERS[id].role;
+
+    if (role === 'serve') {
+      w.timer -= dt;
+      if (w.timer > 0) continue;
+      // Greet gate (feel fix): the front customer must have been VISIBLE at the counter for greetSec
+      // before a worker may serve them — at max Faster Counter, serves had become invisible teleports
+      // straight to the battle log. Worker stays ready and fires the moment the greet elapses.
+      // Manual serving is deliberately NOT gated (clicking = looking; active play stays faster).
+      if ((state.queue[0]?.frontWait ?? 0) < (CONFIG.workers?.greetSec ?? 0)) { w.timer = 0; continue; }
+      if (serveCurrent(state)) {                                 // sold one -> pace the next by the interval
+        w.timer = effectiveWorkerInterval(state, id);
+        state.workerServed = true;                               // signal main.js to play Bob's serve anim
+      } else {
+        w.timer = 0;                                             // blocked -> stay ready, retry next frame
+      }
+      continue;
+    }
+
+    if (role === 'restock') {
+      w.timer -= dt;
+      if (w.timer > 0) continue;
+      // The trickle: one unit into trickleTarget's pick, paying the normal restock cost via
+      // restockItem (no free stock — the "restocks always cost >= 1" economy invariant holds for
+      // workers too). Blocked (all full, or broke) -> re-check in 1s rather than every frame:
+      // unlike a blocked serve, nothing the player does clears this within a frame, and a full
+      // shelf would otherwise registry-scan 60x/sec forever.
+      const target = trickleTarget(state);
+      if (target && restockItem(state, target)) {
+        w.timer = effectiveWorkerInterval(state, id);            // = baseInterval (serveSpeed is serve-scoped)
+      } else {
+        w.timer = 1;
+      }
     }
   }
 }

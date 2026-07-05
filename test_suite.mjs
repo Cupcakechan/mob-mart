@@ -1742,5 +1742,83 @@ console.log('M4 auto-serve worker — smoke test\n');
      'click route: the reminder targets the first unbought eligible license');
 }
 
+// 36. The Restocker (UX roadmap 4): trickle contract + target priority + role isolation ---------
+// The chip and flyer are browser test-plan territory; pinned here: trickleTarget's priority rules,
+// the paid-trickle economics (a worker restock spends gold like a click does), role isolation
+// (serveSpeed never touches the restock pace; the serve branch is untouched), and save/migration.
+{
+  const { trickleTarget, hireWorker, effectiveWorkerInterval } = await import('./src/game.js');
+  const { WORKERS } = await import('./src/data/workers.js');
+  const { ITEMS, ITEM_ORDER } = await import('./src/data/items.js');
+
+  const hired = () => { const s = shopState(); s.workers.restocker.owned = true;
+                        s.workers.restocker.timer = 0.5; s.queue = []; return s; };
+  const iv = WORKERS.restocker.baseInterval;
+
+  // Priority 1: the front customer's OUT want wins, even over emptier items.
+  {
+    const s = hired(); s.gold = 999;
+    const [a, b] = ITEM_ORDER.filter((id) => !ITEMS[id].license);   // two boot-unlocked items
+    s.items[a].stock = 0;
+    s.items[b].stock = 0;
+    s.queue = [customer('slime', b, 99)];                           // front wants b; a is also out
+    ok(trickleTarget(s) === b, 'trickle: the front customer\u2019s out-of-stock want outranks registry order');
+  }
+  // Priority 2: no blocked front -> most-starved by stock-to-cap ratio.
+  {
+    const s = hired(); s.gold = 999;
+    const [a, b] = ITEM_ORDER.filter((id) => !ITEMS[id].license);
+    for (const id of Object.keys(s.items)) s.items[id].stock = Math.max(1, s.items[id].stock);
+    s.items[a].stock = 1; s.items[b].stock = 0;                     // b is the starved one
+    ok(trickleTarget(s) === b, 'trickle: with no blocked front, the lowest stock-to-cap item wins');
+  }
+  // Broke -> null (a worker restock is PAID; it can never overdraft).
+  {
+    const s = hired(); s.gold = 0;
+    s.items[ITEM_ORDER[0]].stock = 0;
+    ok(trickleTarget(s) === null, 'trickle: a broke shop has no target (paid restocks only)');
+  }
+  // The tick: after baseInterval, one unit lands and the restock cost leaves the purse.
+  {
+    const s = hired(); s.gold = 999;
+    const [a] = ITEM_ORDER.filter((id) => !ITEMS[id].license);
+    for (const id of Object.keys(s.items)) s.items[id].stock = 5;
+    s.items[a].stock = 0;
+    const goldBefore = s.gold;
+    update(s, iv + 0.01);
+    ok(s.items[a].stock === 1 && s.gold === goldBefore - ITEMS[a].restockCost,
+       'trickle tick: one unit restocked, normal cost paid');
+  }
+  // Full shelf -> nothing happens, and the worker idles on the 1s recheck (no thrash, no spend).
+  {
+    const s = hired(); s.gold = 999;
+    for (const id of Object.keys(s.items)) s.items[id].stock = 99;  // above any cap
+    const goldBefore = s.gold;
+    update(s, iv + 0.01);
+    ok(s.gold === goldBefore && s.workers.restocker.timer > 0,
+       'trickle tick: a full shelf spends nothing and re-checks on a timer');
+  }
+  // Role isolation: serveSpeed upgrades never speed the restocker.
+  {
+    const s = shopState();
+    s.upgrades.faster_counter = 99;                                 // absurd serveSpeed stack
+    ok(effectiveWorkerInterval(s, 'restocker') === iv,
+       'role isolation: serveSpeed leaves the restock interval untouched');
+    ok(effectiveWorkerInterval(s, 'mimic_merchant') < WORKERS.mimic_merchant.baseInterval,
+       'role isolation: the same upgrades DO speed the serve worker');
+  }
+  // Hire + persistence + migration: the registry row auto-flows end to end.
+  {
+    const s = shopState(); s.gold = WORKERS.restocker.hireCost;
+    ok(hireWorker(s, 'restocker') && s.workers.restocker.owned === true && s.gold === 0,
+       'hire: the restocker hires at exactly hireCost through the generic path');
+    const restored = mergeSave(createInitialState(), serializeSave(s));
+    ok(restored.workers.restocker.owned === true, 'save: restocker ownership round-trips');
+    const legacy = mergeSave(createInitialState(), { workers: { mimic_merchant: { owned: true } } });
+    ok(legacy.workers.restocker.owned === false,
+       'migration: a pre-Restocker save seeds the new row unowned');
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
