@@ -56,9 +56,10 @@ loadSprite('bat',      'assets/sprites/bat.png');
 loadSprite('skeleton', 'assets/sprites/skeleton.png');
 loadSprite('counter',  'assets/sprites/counter.png');
 loadSprite('restocker','assets/sprites/restocker.png');  // Greg's static frame (112x112)
-loadSprite('greg_fly', 'assets/sprites/greg_fly.png');   // Greg's 6-frame flight strip — 404s
-                                                          // gracefully to the static frame until
-                                                          // Daniel drops it (drop-a-png convention)
+loadSprite('greg_fly', 'assets/sprites/greg_fly.png');   // Greg's 6-frame flight strip (west-facing)
+loadSprite('greg_fly_n','assets/sprites/greg_fly_n.png');// Greg's north strip (back view, shelf work)
+                                                          // — 404s gracefully to the west strip
+                                                          // until Daniel drops it
 loadSprite('portal',   'assets/sprites/portal.png');
 loadSprite('portal_glow', 'assets/sprites/portal_glow.png');  // 4-frame swirl strip (640x160); absent -> static portal
 loadSprite('portal_glow_mountain', 'assets/sprites/portal_glow_mountain.png');  // door destinations:

@@ -479,7 +479,9 @@ const RESTOCKER = {
 // static restocker.png, then the placeholder. He never lands, so ONE loop is his whole existence:
 // the altitude bob below is code-side, the strip only flaps.
 const GREG_ANIMS = {
-  fly: { spriteId: 'greg_fly', frames: 6, fps: 8, loop: true },  // fps: livelier than Bob's breathe (6)
+  fly:  { spriteId: 'greg_fly',   frames: 6, fps: 8, loop: true },  // west-facing flight (mirrored for east)
+  flyN: { spriteId: 'greg_fly_n', frames: 6, fps: 8, loop: true },  // back view — shelf work (Daniel,
+                                                                    // 2026-07-05); absent -> fly covers
 };
 
 // The errand (Option 1, Daniel 2026-07-05; feel passes same day): every trickle restock sends
@@ -520,9 +522,12 @@ function drawRestocker(ctx, state, tMs) {
   const smooth = (t) => t * t * (3 - 2 * t);
   const hop = (t) => Math.sin(t * Math.PI) * GREG_ERRAND.turnHop;   // rise-and-fall bump, apex at t=0.5
 
-  // Errand position + facing. face is +1 (natural — the art faces WEST, toward the shop) or -1
-  // (mirrored, flying east). It swaps exactly twice, always at a hop apex.
-  let cx = RESTOCKER.centerX, cy = RESTOCKER.hoverY, face = 1;
+  // Errand position + pose. Poses: 'west' (natural — the art faces the shop), 'east' (mirrored),
+  // 'north' (the back-view strip, shelf work — Daniel 2026-07-05; falls back to west while the
+  // strip isn't in). With the north dwell, BOTH facing changes get natural masks: west->north
+  // lands exactly where the out leg's smoothstep decelerates to zero, and north->east swaps at
+  // the departure hop's apex.
+  let cx = RESTOCKER.centerX, cy = RESTOCKER.hoverY, pose = 'west';
   if (gregErrand !== null) {
     const E = GREG_ERRAND;
     const p = (tMs - gregErrand.t0) / E.durationMs;
@@ -538,25 +543,32 @@ function drawRestocker(ctx, state, tMs) {
     } else if (p < bDwell) {
       const a = ((p - bOut) / E.legDwell) * Math.PI * 2;        // the collecting dwell: a lazy
       cx = gregErrand.x + Math.cos(a) * E.driftR;               // drift circle around the spot,
-      cy = gregErrand.y + Math.sin(a) * E.driftR * 0.5;         // still facing the shelves
+      cy = gregErrand.y + Math.sin(a) * E.driftR * 0.5;         // FACING THE SHELVES
+      pose = 'north';
     } else if (p < bTurn) {
-      const t = (p - bDwell) / E.legTurn;                       // the turn hop: straight up and
-      cx = perchX;                                              // down at the perch — no horizontal
-      cy = gregErrand.y - hop(t);                               // motion, so the instant swap at
-      face = t < 0.5 ? 1 : -1;                                  // the apex reads as the turn
+      const t = (p - bDwell) / E.legTurn;                       // the departure hop: straight up
+      cx = perchX;                                              // and down at the perch — the
+      cy = gregErrand.y - hop(t);                               // north->east swap rides the apex
+      pose = t < 0.5 ? 'north' : 'east';
     } else if (p < bHome) {
       const t = smooth((p - bTurn) / E.legHome);                // homebound — mirrored (flying east)
       cx = perchX + (RESTOCKER.centerX - perchX) * t;
       cy = gregErrand.y + (RESTOCKER.hoverY - gregErrand.y) * t;
-      face = -1;
+      pose = 'east';
     } else {
       const t = (p - bHome) / E.legSettle;                      // the settling hop at home: same
-      cx = RESTOCKER.centerX;                                   // move, same apex swap back to
-      cy = RESTOCKER.hoverY - hop(t);                           // facing the shop — his signature
-      face = t < 0.5 ? -1 : 1;                                  // turn, both ends of the trip
+      cx = RESTOCKER.centerX;                                   // move, apex swap back to facing
+      cy = RESTOCKER.hoverY - hop(t);                           // the shop
+      pose = t < 0.5 ? 'east' : 'west';
     }
   }
   cy += hover;
+
+  // Resolve pose -> sheet + mirror. North uses the back-view strip when present; without it, the
+  // dwell degrades to today's west-facing behavior (never a placeholder mix).
+  const northSheet = getSprite(GREG_ANIMS.flyN.spriteId);
+  const useNorth = pose === 'north' && !!northSheet;
+  const face = pose === 'east' ? -1 : 1;
 
   const h = RESTOCKER.height;
   const drawFrame = (img, sx, sy, sw, sh, w) => {
@@ -566,8 +578,8 @@ function drawRestocker(ctx, state, tMs) {
     ctx.restore();
   };
 
-  const cfg = GREG_ANIMS.fly;
-  const sheet = getSprite(cfg.spriteId);
+  const cfg = useNorth ? GREG_ANIMS.flyN : GREG_ANIMS.fly;
+  const sheet = useNorth ? northSheet : getSprite(GREG_ANIMS.fly.spriteId);
   if (sheet) {
     const frame = Math.floor(tMs / (1000 / cfg.fps)) % cfg.frames;
     const sw = sheet.width / cfg.frames;                        // auto-slice: no pixel sizes to enter
