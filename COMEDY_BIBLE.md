@@ -109,6 +109,15 @@ finality** — the gentlest possible "no" delivered like a five-star concierge. 
 since the auto-wave (M4): Bob now dismisses broke customers himself, so "Bob waved…" lines make the
 automation visible and charming. Battle tiers stay mob-POV; Bob never appears in the dungeon.
 
+**Greg (the Restocker, hired staff — voice debut 2026-07-05) → zero customer service.** The
+anti-Bob: blunt statements of fact with no padding, delivered like inventory reports. Where Bob
+waves warmly, Greg points at the door. Calibration of his "mean" (Daniel's word): his grumpiness
+targets the SITUATION and his own job satisfaction — **never the customer's worth** (the cozy law
+holds; he's the shop's worst employee and we love him for it). Mechanics: his lines carry
+`{ greg: true }` in results.js and only exist once he's hired; shop-side tiers only (dismiss,
+leave, the hire moment); rationed to a lesser presence than Bob by design. The Bob/Greg CONTRAST
+is the joke engine — a Greg line lands harder when a Bob line is nearby.
+
 ---
 
 ## Running gags to grow over time
@@ -320,6 +329,29 @@ three closer). Exact totals are pinned in suite section 40 (the newest batch own
 
 **Generic leave (ungated):**
 - {name} left, still holding the coupon. Still folded. Still hopeful. *(the coupon's third appearance — chain complete)*
+
+### Greg's voice debut (2026-07-05) — hire-gated staff lines
+
+All `{ greg: true }` (generic pools, fire only once he's hired) except the hire flavor, which
+lives in `WORKER_HIRE_LINES` (results.js). BUBBLE-WIDTH RULE for quips: ~40 chars max, one line.
+
+**Dismiss (shoos):**
+- Greg pointed at the door. {name} respected the efficiency.
+- "No gold, no goods." Greg's whole speech. {name} left moved.
+- Greg shooed {name} with the clipboard. He owns no clipboard.
+
+**Leave (remarks):**
+- {name} left. Greg waved. Technically it was a shrug.
+- Greg watched {name} go. "Saves me a restock." Employee of the month.
+
+**Hire moment — log (gold, one fires):**
+- Greg is hired! He counted the shelves, sighed, and got to work.
+- Greg joined the crew. His interview was one long shrug. Hired anyway.
+
+**Hire moment — bubble quip (one fires, one window):**
+- New guy. Don't touch the shelves.
+- I count. You sell. We're fine.
+- The shelves are MY problem now.
 
 ## Growing the batch later
 

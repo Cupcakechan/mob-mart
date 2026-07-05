@@ -1314,12 +1314,12 @@ console.log('M4 auto-serve worker — smoke test\n');
   for (const arr of Object.values(GENERIC_RESULTS)) everyTemplate.push(...arr);
   for (const tiers of Object.values(MONSTER_RESULTS))
     for (const arr of Object.values(tiers)) everyTemplate.push(...arr);
-  // Two tag kinds since the line-unlock pass: cats (item-aware) and minServes (loyalty ladder);
-  // a template may carry either or both. Guards per kind.
+  // Three tag kinds since the Greg voice pass: cats (item-aware), minServes (loyalty ladder),
+  // and greg (hire-gated staff voice); a template may carry any combination. Guards per kind.
   const tagged = everyTemplate.filter((t) => typeof t !== 'string');
   ok(tagged.every((t) => typeof t.text === 'string'
-       && (Array.isArray(t.cats) || Number.isInteger(t.minServes))),
-     'templates: every object template has text + at least one tag (cats | minServes)');
+       && (Array.isArray(t.cats) || Number.isInteger(t.minServes) || t.greg === true)),
+     'templates: every object template has text + at least one tag (cats | minServes | greg)');
   const catTagged = tagged.filter((t) => t.cats !== undefined);
   ok(catTagged.length >= 12, `item-aware: cats-tagged templates exist (${catTagged.length})`);
   ok(catTagged.every((t) => Array.isArray(t.cats) && t.cats.length > 0
@@ -2058,6 +2058,59 @@ console.log('M4 auto-serve worker — smoke test\n');
   // The coupon's third appearance: closed out in generic leave (rule of three, new tier).
   ok(GENERIC_RESULTS.leave.some((t) => (typeof t === 'string' ? t : t.text).includes('coupon')),
      'batch @50: the coupon gag has its leave-tier closer');
+}
+
+// 41. Greg's voice (Option 2, 2026-07-05): hire-gated staff lines + the hire beat ----------------
+// The newest voice batch owns its exact totals: 3 greg-tagged dismiss + 2 leave (generic pools),
+// 2 hire log lines + 3 bubble quips. Pinned: the gate both ways (his lines literally don't exist
+// pre-hire), the gold hire line, the quip's one-window lifecycle, and char budgets.
+{
+  const { logLine } = await import('./src/messages.js');
+  const { GENERIC_RESULTS, WORKER_HIRE_LINES } = await import('./src/data/results.js');
+  const { WORKERS } = await import('./src/data/workers.js');
+  const { CONFIG } = await import('./src/config.js');
+  const { hireWorker } = await import('./src/game.js');
+
+  const gregOf = (arr) => arr.filter((t) => typeof t !== 'string' && t.greg === true);
+  const gregDismiss = gregOf(GENERIC_RESULTS.dismiss), gregLeave = gregOf(GENERIC_RESULTS.leave);
+  ok(gregDismiss.length === 3 && gregLeave.length === 2,
+     'greg voice: 3 dismiss shoos + 2 leave remarks (exact totals, newest batch section)');
+  ok(gregDismiss.concat(gregLeave).every((t) => t.text.length <= 80)
+     && WORKER_HIRE_LINES.restocker.log.every((t) => t.length <= 80)
+     && WORKER_HIRE_LINES.restocker.bubble.every((t) => t.length <= 40),
+     'greg voice: log lines fit the 80-char budget, bubble quips the ~40-char bubble');
+
+  // The gate, both ways: unhired never draws his lines; hired can reach them.
+  const gregTexts = new Set(gregDismiss.concat(gregLeave).map((t) => t.text));
+  const fills = (raw) => raw.replace(/\{name\}/g, 'X').replace(/\{item\}/g, 'Club');
+  let leak = false, reached = false;
+  for (let i = 0; i < 300; i++) {
+    for (const tier of ['dismiss', 'leave']) {
+      const off = logLine('slime', tier, { name: 'X', item: 'Club', itemId: 'club', gregHired: false });
+      if ([...gregTexts].some((raw) => off.text === fills(raw))) leak = true;
+      const on = logLine('slime', tier, { name: 'X', item: 'Club', itemId: 'club', gregHired: true });
+      if ([...gregTexts].some((raw) => on.text === fills(raw))) reached = true;
+    }
+  }
+  ok(!leak, 'greg voice: unhired, his lines never fire (1200 draws)');
+  ok(reached, 'greg voice: hired, his lines are reachable');
+
+  // The hire beat: a gold milestone log line from the pool + the bubble quip for one window.
+  {
+    const s = shopState();
+    s.lifetimeRep = CONFIG.reputation.tiers[WORKERS.restocker.requiredTier].min;
+    s.gold = WORKERS.restocker.hireCost;
+    ok(hireWorker(s, 'restocker'), 'greg voice: hire fixture sanity');
+    ok(s.log.some((e) => e.tier === 'milestone'
+         && WORKER_HIRE_LINES.restocker.log.includes(e.text)),
+       'greg voice: hiring logs a GOLD intro line from the authored pool');
+    ok(WORKER_HIRE_LINES.restocker.bubble.includes(s.gregBubble?.quip)
+         && s.gregBubble.showFor === (CONFIG.gregBubble?.showSec ?? 10),
+       'greg voice: the bubble quip is set for exactly one showFor window');
+    update(s, (CONFIG.gregBubble?.showSec ?? 10) + 0.01);
+    ok(s.gregBubble.quip === null && s.gregBubble.showFor === 0,
+       'greg voice: the quip clears when its window expires — a one-time beat');
+  }
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

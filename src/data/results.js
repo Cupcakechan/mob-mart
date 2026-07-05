@@ -101,6 +101,8 @@ export const GENERIC_RESULTS = {
     `{name} left a one-star review in his heart, then the shop.`,
     `{name} gave up his spot in line. His greatest sacrifice yet.`,
     `{name} left, still holding the coupon. Still folded. Still hopeful.`,
+    { text: `{name} left. Greg waved. Technically it was a shrug.`, greg: true },
+    { text: `Greg watched {name} go. "Saves me a restock." Employee of the month.`, greg: true },
   ],
   dismiss: [
     `You waved {name} along. {name} took it surprisingly well.`,
@@ -117,6 +119,11 @@ export const GENERIC_RESULTS = {
     `{name} got a firm, friendly no and a free peppermint.`,
     `Bob pointed at the door with genuine warmth. {name} obliged.`,
     `Bob cited store policy: no coin, no {item}. {name} nodded sagely.`,
+    // Greg-voiced shoos (voice pass, 2026-07-05): { greg: true } lines fire only once Greg is
+    // hired — the anti-Bob register: blunt, zero padding, never about the customer's worth.
+    { text: `Greg pointed at the door. {name} respected the efficiency.`, greg: true },
+    { text: `"No gold, no goods." Greg's whole speech. {name} left moved.`, greg: true },
+    { text: `Greg shooed {name} with the clipboard. He owns no clipboard.`, greg: true },
   ],
 };
 
@@ -305,6 +312,25 @@ export const MONSTER_RESULTS = {
       `"Next!" Froggo grumbles off, already drafting the complaint.`,
       { text: `Froggo grumbles off, loyal despite his own reviews. He'll deny it.`, minServes: 25 },
       `Bob waved him off warmly. Froggo hated that. He'll be back.`,
+    ],
+  },
+};
+
+// Hire flavor (Greg's voice pass, 2026-07-05): what a worker "says" the moment they're hired —
+// log lines land GOLD (tier 'milestone': a 600-gold beat deserves the treatment) and bubble quips
+// ride the worker's own speech bubble for one showFor window. Keyed by worker id so a future hire
+// with an entry here gets the same beat with zero game.js wiring. Voice: see the bible's cast
+// section — Greg is the anti-Bob (blunt, zero padding, never cruel).
+export const WORKER_HIRE_LINES = {
+  restocker: {
+    log: [
+      `Greg is hired! He counted the shelves, sighed, and got to work.`,
+      `Greg joined the crew. His interview was one long shrug. Hired anyway.`,
+    ],
+    bubble: [
+      `New guy. Don't touch the shelves.`,
+      `I count. You sell. We're fine.`,
+      `The shelves are MY problem now.`,
     ],
   },
 };

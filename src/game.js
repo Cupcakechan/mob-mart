@@ -8,6 +8,7 @@ import { ITEMS, ITEM_ORDER } from './data/items.js';
 import { UPGRADES, upgradeLevel, upgradeCost, isMaxed, sumEffect } from './data/upgrades.js';
 import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost } from './data/workers.js';
 import { randInt, pick, weightedPick } from './utils.js';
+import { WORKER_HIRE_LINES } from './data/results.js';
 import { resolveCombat } from './combat.js';
 import { reputationTier } from './reputation.js';
 import { logLine } from './messages.js';
@@ -186,7 +187,9 @@ export function dismissCurrent(state) {
   // valid item id (spawn guarantees it since the audit fix), so displayName always resolves.
   const item = ITEMS[c.wantedItemId]?.displayName;
   pushLog(state, { ...logLine(c.monsterId, 'dismiss', { name, item, itemId: c.wantedItemId,
-    serves: state.stats.monsterServes[c.monsterId] ?? 0 }), repDelta: 0, tier: 'dismiss', monsterId: c.monsterId });
+    serves: state.stats.monsterServes[c.monsterId] ?? 0,
+    gregHired: state.workers?.restocker?.owned === true }),   // Greg's shoo lines exist once he does
+    repDelta: 0, tier: 'dismiss', monsterId: c.monsterId });
   state.queue.shift();
   state.uiDirty = true;
   return true;
@@ -391,6 +394,17 @@ export function hireWorker(state, id) {
   state.gold -= workerHireCost(id);                            // pay the one-time hire cost
   state.workers[id].owned = true;
   state.workers[id].timer = effectiveWorkerInterval(state, id); // wait one interval before the first serve
+  // Hire flavor (Greg's voice pass, 2026-07-05): a worker with authored WORKER_HIRE_LINES gets a
+  // GOLD log line (tier 'milestone' — a 600-gold beat deserves the treatment), and Greg's intro
+  // quip rides his own bubble for one normal showFor window (panels.js shows quip over report).
+  // Registry-driven: a future worker with an entry here gets the same beat with zero new wiring.
+  const flavor = WORKER_HIRE_LINES[id];
+  if (flavor?.log?.length) pushLog(state, { text: pick(flavor.log), repDelta: 0, tier: 'milestone' });
+  if (id === 'restocker' && flavor?.bubble?.length) {
+    state.gregBubble = { cycleIn: CONFIG.gregBubble?.cycleSec ?? 45,
+                         showFor: CONFIG.gregBubble?.showSec ?? 10,
+                         quip: pick(flavor.bubble) };
+  }
   state.uiDirty = true;
   return true;
 }
@@ -531,7 +545,10 @@ export function update(state, dt) {
   // restarts the cycle). renderPanels shows it only while showFor > 0 and re-derives the TARGET
   // per render — a mid-show restock retargets to the next out item or hides it early.
   const gb = (state.gregBubble ??= { cycleIn: CONFIG.gregBubble?.cycleSec ?? 45, showFor: 0 });
-  if (gb.showFor > 0 && (gb.showFor -= dt) <= 0) { gb.showFor = 0; state.uiDirty = true; }
+  if (gb.showFor > 0 && (gb.showFor -= dt) <= 0) {
+    gb.showFor = 0; gb.quip = null;                 // the hire quip is a one-window beat
+    state.uiDirty = true;
+  }
   gb.cycleIn -= dt;
   if (gb.cycleIn <= 0) {
     gb.cycleIn = CONFIG.gregBubble?.cycleSec ?? 45;
@@ -563,7 +580,9 @@ export function update(state, dt) {
       const name = MONSTERS[c.monsterId]?.displayName ?? 'Someone';
       state.reputation = Math.max(0, state.reputation - CONFIG.reputation.leavePenalty);
       pushLog(state, { ...logLine(c.monsterId, 'leave', { name,
-        serves: state.stats.monsterServes[c.monsterId] ?? 0 }), repDelta: -CONFIG.reputation.leavePenalty, tier: 'leave', monsterId: c.monsterId });
+        serves: state.stats.monsterServes[c.monsterId] ?? 0,
+        gregHired: state.workers?.restocker?.owned === true }),  // Greg's leave remarks, hire-gated
+        repDelta: -CONFIG.reputation.leavePenalty, tier: 'leave', monsterId: c.monsterId });
     }
     if (stillWaiting.length !== state.queue.length) {
       state.queue = stillWaiting;

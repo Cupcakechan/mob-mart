@@ -20,13 +20,16 @@ const lastPicked = new Map();
 // log — the 100-serve payoff Daniel wanted memorable. `serves` = the monster's lifetime serve
 // count INCLUDING the current one; templates tagged minServes (?? 0) only fire at/after it, so
 // loyalty pays out in comedy and the Bestiary pips double as new-material markers.
-export function logLine(monsterId, tier, { name = 'Someone', item = 'something', itemId = null, serves = 0 } = {}) {
+export function logLine(monsterId, tier, { name = 'Someone', item = 'something', itemId = null, serves = 0, gregHired = false } = {}) {
   const cat = ITEMS[itemId]?.category ?? null;
   const pool = (GENERIC_RESULTS[tier] ?? []).concat(MONSTER_RESULTS[monsterId]?.[tier] ?? [])
     .filter((t) => {
       const cats = typeof t === 'string' ? null : t.cats;
       const min = typeof t === 'string' ? 0 : (t.minServes ?? 0);
-      return (!cats?.length || (cat !== null && cats.includes(cat))) && min <= serves;
+      // Greg-voiced templates ({ greg: true }) exist only once he's hired — pre-hire, the shop's
+      // worst employee hasn't been employed yet (voice pass, 2026-07-05).
+      const greg = typeof t === 'string' ? false : (t.greg === true);
+      return (!cats?.length || (cat !== null && cats.includes(cat))) && min <= serves && (!greg || gregHired);
     })
     .map((t) => (typeof t === 'string'
       ? { text: t, golden: false }

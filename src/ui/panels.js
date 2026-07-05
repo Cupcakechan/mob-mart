@@ -438,19 +438,29 @@ export function renderPanels(state) {
   // he may be mid-errand under an active bubble; that's his post reporting, and it's brief.
   const gregBubble = document.getElementById('greg-bubble');
   if (gregBubble) {
-    const isOut = (id) => isItemUnlocked(state, id) && state.items[id].stock === 0;
-    const front = state.queue[0]?.wantedItemId;
-    const target = (isWorkerOwned(state, 'restocker') && (state.gregBubble?.showFor ?? 0) > 0)
-      ? ((front && isOut(front)) ? front : ITEM_ORDER.find(isOut) ?? null)
-      : null;
-    gregBubble.classList.toggle('hidden', !target);
-    if (target) {
-      const affordable = canRestock(state, target);
-      gregBubble.disabled = !affordable;
-      gregBubble.classList.toggle('affordable', affordable);
-      gregBubble.dataset.item = target;
-      gregBubble.innerHTML =
-        `${ITEMS[target].displayName} out &mdash; <b>Restock &#9670; ${effectiveRestockCost(state, target)}</b>`;
+    const showing = (state.gregBubble?.showFor ?? 0) > 0 && isWorkerOwned(state, 'restocker');
+    const quip = showing ? state.gregBubble?.quip : null;
+    if (quip) {
+      // The hire quip: pure flavor for one window — no target, no affordability, not clickable.
+      gregBubble.classList.remove('hidden', 'affordable');
+      gregBubble.disabled = true;
+      gregBubble.dataset.item = '';
+      gregBubble.textContent = quip;
+    } else {
+      const isOut = (id) => isItemUnlocked(state, id) && state.items[id].stock === 0;
+      const front = state.queue[0]?.wantedItemId;
+      const target = showing
+        ? ((front && isOut(front)) ? front : ITEM_ORDER.find(isOut) ?? null)
+        : null;
+      gregBubble.classList.toggle('hidden', !target);
+      if (target) {
+        const affordable = canRestock(state, target);
+        gregBubble.disabled = !affordable;
+        gregBubble.classList.toggle('affordable', affordable);
+        gregBubble.dataset.item = target;
+        gregBubble.innerHTML =
+          `${ITEMS[target].displayName} out &mdash; <b>Restock &#9670; ${effectiveRestockCost(state, target)}</b>`;
+      }
     }
   }
 
