@@ -482,14 +482,18 @@ const GREG_ANIMS = {
   fly: { spriteId: 'greg_fly', frames: 6, fps: 8, loop: true },  // fps: livelier than Bob's breathe (6)
 };
 
-// The errand (Option 1, Daniel 2026-07-05; feel pass same day): every trickle restock sends Greg
-// on a visible run — home -> a RANDOM spot in the shelf area -> a dwell with a small collecting
-// drift -> a smooth turn -> home -> a smooth settle. PURELY VISUAL: the stock landed on the game
-// tick that triggered this (main.js consumes state.gregRestocked and calls playGregErrand); the
-// errand is the tick's echo, so economy timing and the suite never depend on it.
-// TURNS are squash-flips (width tweens through zero, the standard 2D sprite turn) — Daniel's
-// feel report: the instant mirror at the leg boundary read rigid, and the homecoming had the
-// same rigidity waiting to be noticed, so both ends get the tween.
+// The errand (Option 1, Daniel 2026-07-05; feel passes same day): every trickle restock sends
+// Greg on a visible run — home -> a RANDOM spot in the shelf area -> a dwell with a small
+// collecting drift -> a turn HOP -> home -> a settling turn hop. PURELY VISUAL: the stock landed
+// on the game tick that triggered this (main.js consumes state.gregRestocked and calls
+// playGregErrand); the errand is the tick's echo, so economy timing and the suite never depend
+// on it.
+// TURNS: the earlier squash-flip (width through zero) read as a paper-card artifact on Greg's
+// asymmetric detail (Daniel's second feel report), so turns are now INSTANT mirrors masked by
+// motion — during each turn leg he hops straight up ~24px and the facing swaps at the APEX, the
+// moment of zero horizontal velocity, where the eye expects the silhouette to change (the classic
+// 16-bit sprite turn). Same hop at the shelf and at the homecoming settle, so the beat reads as
+// his signature move rather than two different tricks.
 const GREG_ERRAND = {
   durationMs: 4400,    // full round trip, still comfortably under the 8s trickle spacing (errands
                        // only fire on SUCCESSFUL trickles, which reset the 8s timer — so runs can
@@ -498,8 +502,9 @@ const GREG_ERRAND = {
   // in these cx/cy ranges — margins keep his 112px body over the unit (slight plank overhang ok).
   destX: [120, 330], destY: [50, 200],
   driftR: 22,          // the collecting drift radius around the picked spot
-  // Leg fractions (sum 1.0): out / dwell / turn / home / settle-turn.
-  legOut: 0.25, legDwell: 0.34, legTurn: 0.07, legHome: 0.28, legSettle: 0.06,
+  turnHop: 24,         // the turn hop's rise in px — the mask that sells the instant flip
+  // Leg fractions (sum 1.0): out / dwell / turn-hop / home / settle-hop.
+  legOut: 0.24, legDwell: 0.32, legTurn: 0.10, legHome: 0.24, legSettle: 0.10,
 };
 let gregErrand = null;                     // { t0, x, y } — destination rolled per errand
 export function playGregErrand() {
@@ -513,19 +518,21 @@ function drawRestocker(ctx, state, tMs) {
   if (state?.workers?.restocker?.owned !== true) return;        // no hire, no flyer
   const hover = Math.sin(tMs / 300 + RESTOCKER.centerX) * 5;    // flying-mob hover, own phase
   const smooth = (t) => t * t * (3 - 2 * t);
+  const hop = (t) => Math.sin(t * Math.PI) * GREG_ERRAND.turnHop;   // rise-and-fall bump, apex at t=0.5
 
-  // Errand position + facing: defaults to home, facing natural (art faces LEFT, toward the shop).
-  // face is a SCALAR: +1 natural, -1 mirrored, tweened through 0 during the two turn legs.
+  // Errand position + facing. face is +1 (natural — the art faces WEST, toward the shop) or -1
+  // (mirrored, flying east). It swaps exactly twice, always at a hop apex.
   let cx = RESTOCKER.centerX, cy = RESTOCKER.hoverY, face = 1;
   if (gregErrand !== null) {
     const E = GREG_ERRAND;
     const p = (tMs - gregErrand.t0) / E.durationMs;
     const bOut = E.legOut, bDwell = bOut + E.legDwell, bTurn = bDwell + E.legTurn,
           bHome = bTurn + E.legHome;                            // leg boundaries (settle runs to 1)
+    const perchX = gregErrand.x + E.driftR;                     // where the drift ends (cos(2pi)=1)
     if (p >= 1 || p < 0) {
       gregErrand = null;                                        // (p<0 guards a clock hiccup)
     } else if (p < bOut) {
-      const t = smooth(p / E.legOut);                           // outbound — faces left (natural)
+      const t = smooth(p / E.legOut);                           // outbound — faces west (natural)
       cx = RESTOCKER.centerX + (gregErrand.x - RESTOCKER.centerX) * t;
       cy = RESTOCKER.hoverY  + (gregErrand.y - RESTOCKER.hoverY)  * t;
     } else if (p < bDwell) {
@@ -533,17 +540,20 @@ function drawRestocker(ctx, state, tMs) {
       cx = gregErrand.x + Math.cos(a) * E.driftR;               // drift circle around the spot,
       cy = gregErrand.y + Math.sin(a) * E.driftR * 0.5;         // still facing the shelves
     } else if (p < bTurn) {
-      cx = gregErrand.x + E.driftR;                             // the turn: parked where the drift
-      cy = gregErrand.y;                                        // ends (cos(2pi)=1), width through 0
-      face = Math.cos(((p - bDwell) / E.legTurn) * Math.PI);    // +1 -> -1, smooth
+      const t = (p - bDwell) / E.legTurn;                       // the turn hop: straight up and
+      cx = perchX;                                              // down at the perch — no horizontal
+      cy = gregErrand.y - hop(t);                               // motion, so the instant swap at
+      face = t < 0.5 ? 1 : -1;                                  // the apex reads as the turn
     } else if (p < bHome) {
-      const t = smooth((p - bTurn) / E.legHome);                // homebound — mirrored (flying right)
-      cx = (gregErrand.x + E.driftR) + (RESTOCKER.centerX - gregErrand.x - E.driftR) * t;
+      const t = smooth((p - bTurn) / E.legHome);                // homebound — mirrored (flying east)
+      cx = perchX + (RESTOCKER.centerX - perchX) * t;
       cy = gregErrand.y + (RESTOCKER.hoverY - gregErrand.y) * t;
       face = -1;
     } else {
-      cx = RESTOCKER.centerX; cy = RESTOCKER.hoverY;            // settled: turn back to the shop
-      face = -Math.cos(((p - bHome) / E.legSettle) * Math.PI);  // -1 -> +1, same tween
+      const t = (p - bHome) / E.legSettle;                      // the settling hop at home: same
+      cx = RESTOCKER.centerX;                                   // move, same apex swap back to
+      cy = RESTOCKER.hoverY - hop(t);                           // facing the shop — his signature
+      face = t < 0.5 ? -1 : 1;                                  // turn, both ends of the trip
     }
   }
   cy += hover;
@@ -551,9 +561,7 @@ function drawRestocker(ctx, state, tMs) {
   const h = RESTOCKER.height;
   const drawFrame = (img, sx, sy, sw, sh, w) => {
     ctx.save();
-    if (face !== 1) {                                           // mirror/squash about cx
-      ctx.translate(cx, 0); ctx.scale(face === 0 ? 0.001 : face, 1); ctx.translate(-cx, 0);
-    }
+    if (face === -1) { ctx.translate(cx, 0); ctx.scale(-1, 1); ctx.translate(-cx, 0); }  // mirror about cx
     ctx.drawImage(img, sx, sy, sw, sh, cx - w / 2, cy, w, h);
     ctx.restore();
   };
