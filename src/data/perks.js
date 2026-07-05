@@ -37,9 +37,32 @@ export const PERKS = {
     maxLevel: 2,
     requiredTier: 4,     // Renowned — the new tier's first purchase
   },
+  // --- Greg's growth arc (Pass B Option 2, Daniel 2026-07-05): two perks, staged across tiers,
+  // instead of opening the deferred worker-leveling system. Both effects are read ONLY by the
+  // restock branch — Greg-flavored by construction, no interaction with counter or economy math.
+  swift_wings: {
+    id: 'swift_wings',
+    displayName: 'Swift Wings',
+    description: "Faster errands (Greg's trickle -20%)",
+    effect: { type: 'trickleSpeed', perLevel: 0.25 },  // interval / (1+sum): 8s -> 6.4 -> ~5.3
+    baseCost: 250,
+    costGrowth: 1.6,     // 250 -> 400 rep
+    maxLevel: 2,
+    requiredTier: 3,     // Beloved
+  },
+  bulk_satchel: {
+    id: 'bulk_satchel',
+    displayName: 'Bulk Satchel',
+    description: 'Greg restocks 2 units per run',
+    effect: { type: 'trickleUnits', perLevel: 1 },     // extra units per trickle, each fully paid
+    baseCost: 400,
+    costGrowth: 1.6,
+    maxLevel: 1,
+    requiredTier: 4,     // Renowned
+  },
 };
 
-export const PERK_ORDER = ['haggler_charm', 'velvet_rope', 'warm_welcome'];
+export const PERK_ORDER = ['haggler_charm', 'velvet_rope', 'warm_welcome', 'swift_wings', 'bulk_satchel'];
 
 export function perkLevel(state, id) {
   return state.perks?.[id] ?? 0;

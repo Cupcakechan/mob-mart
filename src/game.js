@@ -371,7 +371,9 @@ export function effectiveWorkerInterval(state, id) {
   const base = WORKERS[id]?.baseInterval ?? Infinity;
   // serveSpeed upgrades (Faster Counter) speed the COUNTER — they apply to the serve role only.
   // Without this scope, buying counter upgrades would silently speed the restock trickle too.
-  if (WORKERS[id]?.role !== 'serve') return base;
+  // The restock role has its own dial: Swift Wings' trickleSpeed, same divisor form as serveSpeed
+  // (0.25/level -> interval x0.8/x0.667 — the honest player-facing number is -20%/-33%).
+  if (WORKERS[id]?.role !== 'serve') return base / (1 + sumPerkEffect(state, 'trickleSpeed'));
   return base / (1 + sumEffect(state, 'serveSpeed'));
 }
 
@@ -423,19 +425,24 @@ function updateWorkers(state, dt) {
     if (role === 'restock') {
       w.timer -= dt;
       if (w.timer > 0) continue;
-      // The trickle: one unit into trickleTarget's pick, paying the normal restock cost via
-      // restockItem (no free stock — the "restocks always cost >= 1" economy invariant holds for
-      // workers too). Blocked (all full, or broke) -> re-check in 1s rather than every frame:
-      // unlike a blocked serve, nothing the player does clears this within a frame, and a full
-      // shelf would otherwise registry-scan 60x/sec forever.
-      const target = trickleTarget(state);
-      if (target && restockItem(state, target)) {
-        w.timer = effectiveWorkerInterval(state, id);            // = baseInterval (serveSpeed is serve-scoped)
+      // The trickle: units per run = 1 + Bulk Satchel (trickleUnits). Each unit RE-TARGETS and
+      // pays through restockItem individually — so the second unit follows the priority rules
+      // afresh (it may top a different item), respects caps, and a purse that covers one unit
+      // buys exactly one (no free stock, no overdraft — the economy invariants hold per unit).
+      const units = 1 + sumPerkEffect(state, 'trickleUnits');
+      let landed = 0;
+      for (let u = 0; u < units; u++) {
+        const target = trickleTarget(state);
+        if (!target || !restockItem(state, target)) break;
+        landed++;
+      }
+      if (landed > 0) {
+        w.timer = effectiveWorkerInterval(state, id);            // Swift Wings shortens this dial
         state.gregRestocked = true;                              // render signal, consumed by main.js
-                                                                 // -> Greg flies his shelf errand
-                                                                 // (visual echo only; stock already landed)
+                                                                 // -> ONE errand per run, however
+                                                                 // many units the satchel carried
       } else {
-        w.timer = 1;
+        w.timer = 1;                                             // blocked (all full / broke) -> 1s recheck
       }
     }
   }

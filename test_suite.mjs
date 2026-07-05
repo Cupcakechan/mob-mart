@@ -1888,5 +1888,67 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
 }
 
+// 38. Greg's Fame perks (Pass B Option 2, 2026-07-05): Swift Wings + Bulk Satchel ---------------
+// Both rows already auto-flowed onto the perks panel and the fame track (section 33's totals
+// derive from PERK_ORDER — they absorbed the rows with zero edits). Pinned here: the interval
+// math, the satchel's per-unit economics (re-target, per-unit pay, cap and purse respected), and
+// effect scoping (trickleSpeed never touches Bob).
+{
+  const { PERKS } = await import('./src/data/perks.js');
+  const { WORKERS } = await import('./src/data/workers.js');
+  const { effectiveWorkerInterval } = await import('./src/game.js');
+  const { ITEMS, ITEM_ORDER } = await import('./src/data/items.js');
+  const iv = WORKERS.restocker.baseInterval;
+  const per = PERKS.swift_wings.effect.perLevel;
+  const hired = () => { const s = shopState(); s.workers.restocker.owned = true;
+                        s.workers.restocker.timer = 0.5; s.queue = []; s.gold = 999; return s; };
+
+  // Swift Wings: the divisor form, per level, restock-scoped.
+  {
+    const s = hired();
+    s.perks.swift_wings = 2;
+    ok(Math.abs(effectiveWorkerInterval(s, 'restocker') - iv / (1 + per * 2)) < 1e-9,
+       'swift wings: interval = base / (1 + perLevel x level)');
+    ok(effectiveWorkerInterval(s, 'mimic_merchant') === WORKERS.mimic_merchant.baseInterval,
+       'swift wings: trickleSpeed never touches the serve worker');
+  }
+  // Bulk Satchel: two units, two payments, one errand signal.
+  {
+    const s = hired();
+    s.perks.bulk_satchel = 1;
+    const [a] = ITEM_ORDER.filter((id) => !ITEMS[id].license);
+    for (const id of Object.keys(s.items)) s.items[id].stock = 99;
+    s.items[a].stock = 0;
+    const goldBefore = s.gold;
+    update(s, iv + 0.01);
+    ok(s.items[a].stock === 2 && s.gold === goldBefore - 2 * ITEMS[a].restockCost,
+       'bulk satchel: one run lands 2 units and pays for both');
+    ok(s.gregRestocked === true, 'bulk satchel: one errand signal per run, not per unit');
+  }
+  // Per-unit purse: gold for exactly one unit buys exactly one.
+  {
+    const s = hired();
+    s.perks.bulk_satchel = 1;
+    const [a] = ITEM_ORDER.filter((id) => !ITEMS[id].license);
+    for (const id of Object.keys(s.items)) s.items[id].stock = 99;
+    s.items[a].stock = 0;
+    s.gold = ITEMS[a].restockCost;                              // one unit's worth, exactly
+    update(s, iv + 0.01);
+    ok(s.items[a].stock === 1 && s.gold === 0,
+       'bulk satchel: a one-unit purse lands one unit — never an overdraft');
+  }
+  // Per-unit re-target: the second unit follows the priority rules afresh.
+  {
+    const s = hired();
+    s.perks.bulk_satchel = 1;
+    const [a, b] = ITEM_ORDER.filter((id) => !ITEMS[id].license);
+    for (const id of Object.keys(s.items)) s.items[id].stock = 99;
+    s.items[a].stock = 0; s.items[b].stock = 0;                 // two starved items
+    update(s, iv + 0.01);
+    ok(s.items[a].stock === 1 && s.items[b].stock === 1,
+       'bulk satchel: units re-target — two starved items get one each, not one item both');
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
