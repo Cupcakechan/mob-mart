@@ -472,6 +472,11 @@ const RESTOCKER = {
                        // 1:1 on purpose: pixel art only scales clean at integers — the earlier 96
                        // would have been a 0.857x downscale and muddied every pixel. Still well
                        // under Bob's 240.
+  shadowY: 472,        // PROVISIONAL (feel): the counter surface his shadow lands on — ~30px
+                       // below his hovering feet (442), far enough to read "airborne"
+  shadowFade: 150,     // px of errand travel over which the shadow lifts away (no meaningful
+                       // ground under the shelf wall, so it leaves WITH him instead of painting
+                       // a floor ellipse 300px below)
   placeholderColor: '#4a6a7a',   // slate-blue: reads "not Greg" at a glance if the PNG is absent
 };
 // Greg's flight loop (Daniel: 6 frames, 2026-07-04). Same auto-slice convention as BOB_ANIMS —
@@ -564,6 +569,23 @@ function drawRestocker(ctx, state, tMs) {
   }
   cy += hover;
 
+  // Greg's ground shadow (Daniel, 2026-07-05): flyers get the detached ellipse. It sits on the
+  // counter surface under him — NOT tracking the hover bob (the grounding rule: the shadow is
+  // what sells the air) — and alpha-ramps out over the first shadowFade px of an errand.
+  {
+    const dHome = Math.hypot(cx - RESTOCKER.centerX, (cy - hover) - RESTOCKER.hoverY);
+    const a = Math.max(0, 1 - dHome / RESTOCKER.shadowFade);
+    if (a > 0) {
+      ctx.save();
+      ctx.globalAlpha = a;
+      ctx.fillStyle = COL.shadow;
+      ctx.beginPath();
+      ctx.ellipse(cx, RESTOCKER.shadowY, 40, 9, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
   // Resolve pose -> sheet + mirror. North uses the back-view strip when present; without it, the
   // dwell degrades to today's west-facing behavior (never a placeholder mix).
   const northSheet = getSprite(GREG_ANIMS.flyN.spriteId);
@@ -653,10 +675,15 @@ function drawMob(ctx, x, y, size, monsterId, tMs, isFront) {
   const bob = flying ? Math.sin(tMs / 300 + x) * 4 : 0;   // +x so flyers don't bob in lockstep
   const groundY = y + size - 4;                     // shadow stays on the ground while the mob hops
 
-  ctx.fillStyle = COL.shadow;
-  ctx.beginPath();
-  ctx.ellipse(x + size / 2, groundY, size * 0.42, 10, 0, 0, Math.PI * 2);
-  ctx.fill();
+  // Shadow: FLYERS ONLY (Daniel, 2026-07-05). The detached ellipse is the altitude cue under a
+  // hovering body; grounded sprites sit ON the floor and their art carries its own contact, so
+  // the drawn ellipse under them read as a double shadow.
+  if (flying) {
+    ctx.fillStyle = COL.shadow;
+    ctx.beginPath();
+    ctx.ellipse(x + size / 2, groundY, size * 0.42, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
   // Sprite chain (all registry-driven, all optional): <id>_idle.png strip if the monster declares
   // an `anim` field AND the strip loaded -> static <id>.png -> colored placeholder rect. Strips are
@@ -809,12 +836,15 @@ function drawCelebrants(ctx, tMs) {
     ctx.save();
     ctx.globalAlpha = alpha;
 
-    // Shadow first, ON THE GROUND — it squashes with the depth scale but never lifts with the hop
-    // (same grounding rule as drawMob: the shadow is what sells the air).
-    ctx.fillStyle = COL.shadow;
-    ctx.beginPath();
-    ctx.ellipse(x + size / 2, feetY - 4, size * 0.42 * scale, 10 * scale, 0, 0, Math.PI * 2);
-    ctx.fill();
+    // Shadow: same FLYERS-ONLY rule as drawMob (uniformly, so a Froggo isn't shadowless in the
+    // queue but shadowed mid-march — judgment call, 2026-07-05: the hop still reads through the
+    // squash-and-stretch below; reverse per-site if the march loses its grounding).
+    if (MONSTERS[c.monsterId]?.flying ?? false) {
+      ctx.fillStyle = COL.shadow;
+      ctx.beginPath();
+      ctx.ellipse(x + size / 2, feetY - 4, size * 0.42 * scale, 10 * scale, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     // Sprite chain, squash-and-stretch applied about the feet anchor so it reads ground-planted.
     const m = MONSTERS[c.monsterId];
