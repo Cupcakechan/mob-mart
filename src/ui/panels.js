@@ -272,19 +272,21 @@ export function renderPanels(state) {
     const lic = ITEMS[id].license;
     if (lic && restockBtn && licenseBtn) {
       const unlocked = isItemUnlocked(state, id);
+      const tierReached = reputationTierIndex(state) >= (lic.requiredTier ?? 0);
       card.classList.toggle('locked', !unlocked);
+      // License alerts (noticeability pass, Daniel's call): the READY state lives on the CARD —
+      // a blinking bright-gold frame that also lifts the locked-dim filter, because "locked" says
+      // not-yet while ready says buy-me-now, and the two treatments fight on the same card.
+      card.classList.toggle('license-ready', !unlocked && tierReached);
       restockBtn.classList.toggle('hidden', !unlocked);
       licenseBtn.classList.toggle('hidden', unlocked);
       if (!unlocked) {
-        const tierIdx = lic.requiredTier ?? 0;
-        const tierLabel = CONFIG.reputation.tiers[tierIdx]?.label ?? '???';
-        const tierReached = reputationTierIndex(state) >= tierIdx;
+        const tierLabel = CONFIG.reputation.tiers[lic.requiredTier ?? 0]?.label ?? '???';
         licenseBtn.textContent = tierReached ? `License ◆${lic.cost}` : `Reach ${tierLabel}`;
         licenseBtn.disabled = !canBuyLicense(state, id);
-        // License alerts: STANDING gold pulse on every fame-eligible unbought license — stateless
-        // (recomputed per render), so it survives reloads and guides players who never click the
-        // bubble. Eligibility, never affordability: it pulses even while broke (matching the
-        // bubble's trigger), because "save up for this" IS the guidance.
+        // Standing gold on the button rides the card's blink (CSS keys off .license-ready);
+        // eligibility, never affordability — it pulses even while broke, because "save up for
+        // this" IS the guidance.
         licenseBtn.classList.toggle('attention', tierReached);
       } else {
         licenseBtn.classList.remove('attention');

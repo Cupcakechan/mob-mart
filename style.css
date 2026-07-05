@@ -476,3 +476,24 @@ body{
   .bob-bubble{animation:none;}
   .license-btn.attention{animation:none;border-color:#ffcf4a;color:#ffcf4a;}
 }
+
+/* --- License-ready blink (noticeability pass, Daniel's call: "brighter gold frame, blinking").
+   A TRUE blink, not the soft attention breathe: the card frame flashes bright gold at ~1.2Hz
+   (ease-in-out, well under the ~3Hz photosensitivity band), the license button flashes in sync,
+   and the locked-dim filter is LIFTED — a ready license is locked-but-actionable, and flashing
+   through a desaturation filter was exactly why the first pass read weak. -------------------- */
+@keyframes attn-blink {
+  0%, 100% { border-color: #ffe680; box-shadow: 0 0 0 2px #ffe680, 0 0 18px 5px rgba(255,214,94,.85); }
+  50%      { border-color: #a8842a; box-shadow: 0 0 0 0 rgba(255,214,94,0), 0 0 4px 1px rgba(255,214,94,.15); }
+}
+.item-card.license-ready { animation: attn-blink .85s ease-in-out infinite; border-color: #ffe680; }
+.item-card.locked.license-ready { opacity: 1; filter: none; }   /* buy-me-now beats not-yet dim */
+.item-card.license-ready .license-btn.attention {
+  animation: attn-blink .85s ease-in-out infinite; border-color: #ffe680; color: #ffe680;
+}
+@media (prefers-reduced-motion: reduce) {
+  .item-card.license-ready, .item-card.license-ready .license-btn.attention {
+    animation: none;                                /* static BRIGHT frame still marks the target */
+    border-color: #ffe680; box-shadow: 0 0 14px 4px rgba(255,214,94,.55);
+  }
+}
