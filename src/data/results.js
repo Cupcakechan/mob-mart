@@ -100,6 +100,7 @@ export const GENERIC_RESULTS = {
     `{name} muttered about respawn timers and shuffled out.`,
     `{name} left a one-star review in his heart, then the shop.`,
     `{name} gave up his spot in line. His greatest sacrifice yet.`,
+    `{name} left, still holding the coupon. Still folded. Still hopeful.`,
   ],
   dismiss: [
     `You waved {name} along. {name} took it surprisingly well.`,
@@ -130,16 +131,19 @@ export const MONSTER_RESULTS = {
       { text: `Slimey won! He's been practicing. Nobody knows on what.`, minServes: 25 },
       { text: `The heroes have a name for Slimey now. He thinks it's a compliment. It is.`,
         minServes: 100, golden: true },
+      { text: `Slimey was told to give it his all. He gave it. It's in a jar.`, minServes: 50 },
     ],
     success: [
       `Slimey bounced off the hero and rolled safely home. Nice.`,
       `Slimey survived, mistaken for a decorative puddle.`,
       `The {item} slid right off Slimey. So did the hero.`,
+      { text: `Slimey won and celebrated by eating the {item}. Full circle.`, minServes: 50 },
     ],
     partial: [
       `Slimey lost but absorbed a sandwich mid-fight. Tasty defeat.`,
       `Slimey split in two. Now there are two losers! Aw.`,
       `Slimey lost, but the puddle he left was very pretty.`,
+      { text: `Slimey came home half his usual size. He kept the good half.`, minServes: 50 },
     ],
     failure: [
       `Slimey was defeated. He's still smiling. Doesn't know yet.`,
@@ -169,12 +173,14 @@ export const MONSTER_RESULTS = {
       `Batty flew in a circle. The hero got dizzy and left.`,
       `Batty won and fainted from the stress of winning.`,
       `The hero blinked. Batty was already champion, weeping.`,
+      { text: `Batty won! He gave all the credit to his pebble. The pebble stayed humble.`, minServes: 50 },
     ],
     success: [
       `Batty fled successfully, which for Batty is a triumph.`,
       `Batty survived by hiding in a helmet. Not even his helmet.`,
       `Batty made it home! He will not be discussing it.`,
       { text: `Batty's nerves are improving. He only apologized twice today.`, minServes: 25 },
+      { text: `Batty screamed the entire time. Technically, it worked.`, minServes: 50 },
     ],
     partial: [
       `Batty lost, but flew home before dark. Silver lining!`,
@@ -199,6 +205,7 @@ export const MONSTER_RESULTS = {
     leave: [
       `Batty got nervous about the wait and fluttered off.`,
       `Batty left after imagining nine ways this could go wrong.`,
+      { text: `Batty heard the kid with the sword was inside. Batty, promptly, was not.`, minServes: 50 },
     ],
     dismiss: [
       `You shoo Batty out before the panic sets in. He's grateful.`,
@@ -221,6 +228,7 @@ export const MONSTER_RESULTS = {
       { text: `Skele left an arm behind as a warning. He has spares now.`, minServes: 25 },
       { text: `Skele reassembled before he even hit the floor. The hero applauded. A legend.`,
         minServes: 100, golden: true },
+      { text: `Skele won, and someone returned his left femur. Suspiciously polished.`, minServes: 50 },
     ],
     partial: [
       `Skele lost a fight and a kneecap, but gained a funny walk.`,
@@ -238,6 +246,7 @@ export const MONSTER_RESULTS = {
       `Skele's knees popped. He got distracted. He lost. Classic.`,
       `Skele tried to high-five the hero. Lost the hand and the fight.`,
       `Skele paused to look for his left femur. The hero waited. Then won.`,
+      { text: `Skele held a heroic pose. The pose held longer than Skele.`, minServes: 50 },
     ],
     leave: [
       `Skele tapped his foot till it fell off, then rattled away.`,
@@ -247,6 +256,7 @@ export const MONSTER_RESULTS = {
       `You wave Skele off. He rattles a goodbye. A rib falls.`,
       `"Not now, Skele." He salutes, drops an arm, heads out.`,
       `Bob waved. Skele saluted with the wrong arm. His, though.`,
+      { text: `Skele took the news with grace. His jaw did not.`, minServes: 50 },
     ],
   },
   // Froggo (grumpy frog, Pass 4b). Comic lever: PROFESSIONAL DISSATISFACTION — every event, win
@@ -261,6 +271,7 @@ export const MONSTER_RESULTS = {
       { text: `Froggo upgraded his review to two stars. The staff celebrated.`, minServes: 25 },
       { text: `Froggo left a five-star review. Nobody knows what happened in there. A legend.`,
         minServes: 100, golden: true },
+      { text: `Froggo won. He looked around for a suggestion box anyway.`, minServes: 50 },
     ],
     success: [
       `Froggo survived and complained the dungeon wasn't damp enough.`,
@@ -271,6 +282,7 @@ export const MONSTER_RESULTS = {
       `Froggo lost, but his scowl never wavered. Consistency.`,
       `Froggo lost and demanded a refund from the hero. Almost got one.`,
       `Defeated, Froggo left a scathing review of the entire dungeon.`,
+      { text: `Froggo survived, and wants to speak to whoever manages dungeons.`, minServes: 50 },
     ],
     failure: [
       `Froggo lost fast. His mood, already at the bottom, held steady.`,
@@ -282,6 +294,7 @@ export const MONSTER_RESULTS = {
       `Froggo paused to complain about the arena's acoustics. Fatal.`,
       `Froggo glared at the hero so long he forgot to fight. Classic.`,
       `Froggo hopped into battle, hated the landing, left. Technically a loss.`,
+      { text: `Froggo lost, then filed a complaint about the floor. In triplicate.`, minServes: 50 },
     ],
     leave: [
       `Froggo checked the wait time, croaked "no," and hopped off.`,

@@ -115,17 +115,16 @@ automation visible and charming. Battle tiers stay mob-POV; Bob never appears in
 
 Plant a few and escalate them across updates (the 3rd appearance gets the biggest laugh). Status:
 
-- **Batty's emotional-support pebble** — SEEDED ×3 (partial ×2, funnyFailure ×1). Growing nicely.
-- **Skele's missing left femur** — SEEDED ×3 (excellent, partial, funnyFailure).
-- **The coupon nobody ever honors** — SEEDED ×2 (partial generic, dismiss generic/Bob).
+- **Batty's emotional-support pebble** — SEEDED ×3, ESCALATED @50 (excellent: the pebble gets the credit and "stays humble" — it is a character now). Next beat: the pebble gets its own tiny milestone, @250 batch or later.
+- **Skele's missing left femur** — SEEDED ×3, ESCALATED @50 (success: it comes back "suspiciously polished" — where has it BEEN?). Next beat: the femur has clearly been living a better life.
+- **The coupon nobody ever honors** — ×3 COMPLETE @50 (leave generic: "still folded, still hopeful"). Chain closed; retire from active escalation. May cameo, never escalate.
 - **Slimey trying to eat his own gear** — SEEDED ×2 (funnyFailure ×2, "third time this week").
 - **Froggo's scathing review** — SEEDED ×3 in his debut batch, ESCALATED @25 ("two stars. The
   staff celebrated."), PAID OFF golden @100 ("a five-star review. Nobody knows what happened in
   there."). The chain is complete; retire from active escalation.
 - **Slimey's eat-gag** — escalated @25 ("It's tradition at this point.") on the unlock ladder.
-- **Batty's emotional support pebble** — escalation candidate for the next @50 batch.
-- **The off-screen hero ("the kid with the sword")** — NOT yet seeded by that phrase; the anonymous
-  "the hero" carries it for now. Introduce the phrase when a batch needs a fresh angle.
+- ~~Batty's emotional support pebble — escalation candidate for the next @50 batch.~~ DONE (see above).
+- **The off-screen hero ("the kid with the sword")** — SEEDED @50 (Batty, leave tier). The phrase is live; next appearances build the legend without ever showing the kid.
 
 Rule of thumb: a gag earns its next appearance one batch later, slightly escalated, in a
 *different* tier than last time.
@@ -292,6 +291,35 @@ apologizes for existing, then leaves. · Bob waved him off gently. Batty thanked
 drops an arm, heads out. · Bob waved. Skele saluted with the wrong arm. His, though. *(new)*
 
 ---
+
+### The @50 batch (2026-07-05) — 12 gated lines + the coupon closer
+
+Second rung of the unlock ladder: **3 lines per monster at `minServes: 50`**, escalations placed in
+DIFFERENT tiers than their seeds per the gag rules. Plus one ungated generic (the coupon's rule-of-
+three closer). Exact totals are pinned in suite section 40 (the newest batch owns them).
+
+**Slimey (@50):**
+- Slimey was told to give it his all. He gave it. It's in a jar. *(excellent — literalism)*
+- Slimey won and celebrated by eating the {item}. Full circle. *(success — eat-gag, 3rd escalation, new tier)*
+- Slimey came home half his usual size. He kept the good half. *(partial — sunny dignity)*
+
+**Batty (@50):**
+- Batty won! He gave all the credit to his pebble. The pebble stayed humble. *(excellent — PEBBLE escalation, new tier: the pebble is a character now)*
+- Batty screamed the entire time. Technically, it worked. *(success)*
+- Batty heard the kid with the sword was inside. Batty, promptly, was not. *(leave — INTRODUCES "the kid with the sword")*
+
+**Skele (@50):**
+- Skele won, and someone returned his left femur. Suspiciously polished. *(success — FEMUR escalation, new tier: it comes back... changed)*
+- Skele held a heroic pose. The pose held longer than Skele. *(funnyFailure)*
+- Skele took the news with grace. His jaw did not. *(dismiss)*
+
+**Froggo (@50)** — review chain stays retired; fresh professional-dissatisfaction angles:
+- Froggo won. He looked around for a suggestion box anyway. *(excellent)*
+- Froggo survived, and wants to speak to whoever manages dungeons. *(partial)*
+- Froggo lost, then filed a complaint about the floor. In triplicate. *(funnyFailure)*
+
+**Generic leave (ungated):**
+- {name} left, still holding the coupon. Still folded. Still hopeful. *(the coupon's third appearance — chain complete)*
 
 ## Growing the batch later
 

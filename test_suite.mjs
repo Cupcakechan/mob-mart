@@ -2009,5 +2009,56 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
 }
 
+// 40. Line batch @50 (2026-07-05): the second rung of the unlock ladder --------------------------
+// Batch-N doctrine: EXACT totals live here, in the NEWEST batch's section (older sections derive).
+// This batch: 3 gated lines per monster (12 total) at minServes 50 — pebble and femur escalations,
+// the kid-with-the-sword seed — plus the coupon's ungated rule-of-three closer in generic leave.
+{
+  const { logLine } = await import('./src/messages.js');
+  const { GENERIC_RESULTS, MONSTER_RESULTS } = await import('./src/data/results.js');
+  const { MONSTER_IDS } = await import('./src/data/monsters.js');
+
+  const at50 = (id) => Object.values(MONSTER_RESULTS[id] ?? {}).flat()
+    .filter((t) => typeof t !== 'string' && t.minServes === 50);
+  ok(MONSTER_IDS.every((id) => at50(id).length === 3)
+     && MONSTER_IDS.reduce((a, id) => a + at50(id).length, 0) === 12,
+     'batch @50: exactly 3 gated lines per monster, 12 total');
+  ok(MONSTER_IDS.flatMap(at50).every((t) => t.text.length <= 80 && t.golden !== true),
+     'batch @50: every line respects the 80-char log budget; goldens stay a 100-serve privilege');
+
+  // Gating both ways, sampled: 49 serves never draws an @50 line; 50 reaches one (per monster).
+  const texts50 = new Set(MONSTER_IDS.flatMap(at50).map((t) => t.text));
+  const fills = (raw) => raw.replace(/\{name\}/g, 'X').replace(/\{item\}/g, 'Club');
+  let leak = false;
+  const seen = new Set();
+  for (let i = 0; i < 400; i++) {
+    for (const id of MONSTER_IDS) {
+      for (const tier of ['excellent', 'success', 'partial', 'funnyFailure', 'leave', 'dismiss']) {
+        const low = logLine(id, tier, { name: 'X', item: 'Club', itemId: 'club', serves: 49 });
+        if ([...texts50].some((raw) => low.text === fills(raw))) leak = true;
+        const hi = logLine(id, tier, { name: 'X', item: 'Club', itemId: 'club', serves: 50 });
+        const hit = [...texts50].find((raw) => hi.text === fills(raw));
+        if (hit) seen.add(id);
+      }
+    }
+  }
+  ok(!leak, 'batch @50: 49 serves never draws a gated-50 line (9600 draws)');
+  ok(MONSTER_IDS.every((id) => seen.has(id)),
+     'batch @50: at 50 serves every monster can reach its new material');
+
+  // The 50 crossing now announces (the registry scan sees a real batch there — no false hype).
+  {
+    const s = shopState();
+    s.stats.monsterServes.slime = 49;
+    s.queue = [customer('slime', 'club', 99)];
+    serveCurrent(s);
+    ok(s.log.filter((e) => e.tier === 'milestone').length === 2,
+       'batch @50: crossing 50 announces the monster milestone AND the new-stories line');
+  }
+  // The coupon's third appearance: closed out in generic leave (rule of three, new tier).
+  ok(GENERIC_RESULTS.leave.some((t) => (typeof t === 'string' ? t : t.text).includes('coupon')),
+     'batch @50: the coupon gag has its leave-tier closer');
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
