@@ -482,47 +482,68 @@ const GREG_ANIMS = {
   fly: { spriteId: 'greg_fly', frames: 6, fps: 8, loop: true },  // fps: livelier than Bob's breathe (6)
 };
 
-// The errand (Option 1, Daniel 2026-07-05): every trickle restock sends Greg on a visible run —
-// home -> the wall-shelf unit -> a small "collecting" orbit -> home. PURELY VISUAL: the stock
-// landed on the game tick that triggered this (main.js consumes state.gregRestocked and calls
-// playGregErrand); the errand is the tick's echo, so economy timing and the suite never depend
-// on it. Legs are smoothstepped; the hover sine rides on top throughout.
+// The errand (Option 1, Daniel 2026-07-05; feel pass same day): every trickle restock sends Greg
+// on a visible run — home -> a RANDOM spot in the shelf area -> a dwell with a small collecting
+// drift -> a smooth turn -> home -> a smooth settle. PURELY VISUAL: the stock landed on the game
+// tick that triggered this (main.js consumes state.gregRestocked and calls playGregErrand); the
+// errand is the tick's echo, so economy timing and the suite never depend on it.
+// TURNS are squash-flips (width tweens through zero, the standard 2D sprite turn) — Daniel's
+// feel report: the instant mirror at the leg boundary read rigid, and the homecoming had the
+// same rigidity waiting to be noticed, so both ends get the tween.
 const GREG_ERRAND = {
-  durationMs: 3600,    // full round trip — under half the 8s trickle, so back-to-back ticks still
-                       // read as separate runs
-  shelfX: 330,         // right end of the wall-shelf unit (plank spans 60..372): he visits the
-  shelfY: 180,         // shelves without covering their icons (rows at y38/134/230)
-  orbitR: 26,          // the "around the shelves" drift radius during the collecting beat
-  legOut: 0.30, legOrbit: 0.28,   // time fractions: out / orbit / (rest =) home
+  durationMs: 4400,    // full round trip, still comfortably under the 8s trickle spacing (errands
+                       // only fire on SUCCESSFUL trickles, which reset the 8s timer — so runs can
+                       // never overlap and playGregErrand needs no re-entrancy guard)
+  // The shelf AREA (plank spans x60..372, rows y38..320): each errand picks a random hover spot
+  // in these cx/cy ranges — margins keep his 112px body over the unit (slight plank overhang ok).
+  destX: [120, 330], destY: [50, 200],
+  driftR: 22,          // the collecting drift radius around the picked spot
+  // Leg fractions (sum 1.0): out / dwell / turn / home / settle-turn.
+  legOut: 0.25, legDwell: 0.34, legTurn: 0.07, legHome: 0.28, legSettle: 0.06,
 };
-let gregErrandT0 = null;
-export function playGregErrand() { gregErrandT0 = performance.now(); }
+let gregErrand = null;                     // { t0, x, y } — destination rolled per errand
+export function playGregErrand() {
+  const [x0, x1] = GREG_ERRAND.destX, [y0, y1] = GREG_ERRAND.destY;
+  gregErrand = { t0: performance.now(),
+                 x: x0 + Math.random() * (x1 - x0),
+                 y: y0 + Math.random() * (y1 - y0) };
+}
 
 function drawRestocker(ctx, state, tMs) {
   if (state?.workers?.restocker?.owned !== true) return;        // no hire, no flyer
   const hover = Math.sin(tMs / 300 + RESTOCKER.centerX) * 5;    // flying-mob hover, own phase
   const smooth = (t) => t * t * (3 - 2 * t);
 
-  // Errand position: defaults to home; mid-errand, interpolate the three legs.
-  let cx = RESTOCKER.centerX, cy = RESTOCKER.hoverY, flip = false;
-  if (gregErrandT0 !== null) {
-    const p = (tMs - gregErrandT0) / GREG_ERRAND.durationMs;
+  // Errand position + facing: defaults to home, facing natural (art faces LEFT, toward the shop).
+  // face is a SCALAR: +1 natural, -1 mirrored, tweened through 0 during the two turn legs.
+  let cx = RESTOCKER.centerX, cy = RESTOCKER.hoverY, face = 1;
+  if (gregErrand !== null) {
+    const E = GREG_ERRAND;
+    const p = (tMs - gregErrand.t0) / E.durationMs;
+    const bOut = E.legOut, bDwell = bOut + E.legDwell, bTurn = bDwell + E.legTurn,
+          bHome = bTurn + E.legHome;                            // leg boundaries (settle runs to 1)
     if (p >= 1 || p < 0) {
-      gregErrandT0 = null;                                      // (p<0 guards a clock hiccup)
-    } else if (p < GREG_ERRAND.legOut) {
-      const t = smooth(p / GREG_ERRAND.legOut);                 // outbound — faces left (natural)
-      cx = RESTOCKER.centerX + (GREG_ERRAND.shelfX - RESTOCKER.centerX) * t;
-      cy = RESTOCKER.hoverY  + (GREG_ERRAND.shelfY - RESTOCKER.hoverY)  * t;
-    } else if (p < GREG_ERRAND.legOut + GREG_ERRAND.legOrbit) {
-      const a = ((p - GREG_ERRAND.legOut) / GREG_ERRAND.legOrbit) * Math.PI * 2;
-      cx = GREG_ERRAND.shelfX + Math.cos(a) * GREG_ERRAND.orbitR;   // the collecting orbit —
-      cy = GREG_ERRAND.shelfY + Math.sin(a) * GREG_ERRAND.orbitR * 0.5;  // facing stays natural:
-    } else {                                                    // flip-flicker on a 26px circle reads worse
-      const t = smooth((p - GREG_ERRAND.legOut - GREG_ERRAND.legOrbit)
-                       / (1 - GREG_ERRAND.legOut - GREG_ERRAND.legOrbit));
-      cx = GREG_ERRAND.shelfX + (RESTOCKER.centerX - GREG_ERRAND.shelfX) * t;
-      cy = GREG_ERRAND.shelfY + (RESTOCKER.hoverY  - GREG_ERRAND.shelfY) * t;
-      flip = true;                                              // homebound — flying right, so mirror
+      gregErrand = null;                                        // (p<0 guards a clock hiccup)
+    } else if (p < bOut) {
+      const t = smooth(p / E.legOut);                           // outbound — faces left (natural)
+      cx = RESTOCKER.centerX + (gregErrand.x - RESTOCKER.centerX) * t;
+      cy = RESTOCKER.hoverY  + (gregErrand.y - RESTOCKER.hoverY)  * t;
+    } else if (p < bDwell) {
+      const a = ((p - bOut) / E.legDwell) * Math.PI * 2;        // the collecting dwell: a lazy
+      cx = gregErrand.x + Math.cos(a) * E.driftR;               // drift circle around the spot,
+      cy = gregErrand.y + Math.sin(a) * E.driftR * 0.5;         // still facing the shelves
+    } else if (p < bTurn) {
+      cx = gregErrand.x + E.driftR;                             // the turn: parked where the drift
+      cy = gregErrand.y;                                        // ends (cos(2pi)=1), width through 0
+      face = Math.cos(((p - bDwell) / E.legTurn) * Math.PI);    // +1 -> -1, smooth
+    } else if (p < bHome) {
+      const t = smooth((p - bTurn) / E.legHome);                // homebound — mirrored (flying right)
+      cx = (gregErrand.x + E.driftR) + (RESTOCKER.centerX - gregErrand.x - E.driftR) * t;
+      cy = gregErrand.y + (RESTOCKER.hoverY - gregErrand.y) * t;
+      face = -1;
+    } else {
+      cx = RESTOCKER.centerX; cy = RESTOCKER.hoverY;            // settled: turn back to the shop
+      face = -Math.cos(((p - bHome) / E.legSettle) * Math.PI);  // -1 -> +1, same tween
     }
   }
   cy += hover;
@@ -530,7 +551,9 @@ function drawRestocker(ctx, state, tMs) {
   const h = RESTOCKER.height;
   const drawFrame = (img, sx, sy, sw, sh, w) => {
     ctx.save();
-    if (flip) { ctx.translate(cx, 0); ctx.scale(-1, 1); ctx.translate(-cx, 0); }  // mirror about cx
+    if (face !== 1) {                                           // mirror/squash about cx
+      ctx.translate(cx, 0); ctx.scale(face === 0 ? 0.001 : face, 1); ctx.translate(-cx, 0);
+    }
     ctx.drawImage(img, sx, sy, sw, sh, cx - w / 2, cy, w, h);
     ctx.restore();
   };
