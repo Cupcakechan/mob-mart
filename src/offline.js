@@ -13,6 +13,7 @@ import { CONFIG } from './config.js';
 import { ITEMS, ITEM_ORDER } from './data/items.js';
 import { WORKERS, WORKER_ORDER, isWorkerOwned } from './data/workers.js';
 import { sumEffect } from './data/upgrades.js';
+import { perkLevel } from './data/perks.js';
 import { itemGoldMult, globalGoldMult } from './data/milestones.js';
 import { effectiveWorkerInterval, effectiveRepPerSale, effectiveMaxStock } from './game.js';
 
@@ -27,7 +28,7 @@ export function computeOffline(state, nowMs) {
   // inventory, not hours).
   const capHours = (CONFIG.offline?.capHours ?? 0) + sumEffect(state, 'offlineCap');
   const cappedSec = Math.min(awaySec, capHours * 3600);
-  const zero = { awaySec, cappedSec, sales: 0, gold: 0, rep: 0, consumed: {}, reserveUsed: 0, soldByItem: {} };
+  const zero = { awaySec, cappedSec, sales: 0, gold: 0, rep: 0, consumed: {}, reserveUsed: 0, soldByItem: {}, gregRefills: 0 };
 
   // First owned serve-worker sets the pace (just Bob for now; a second serve-worker would need a
   // combined-throughput pass — deliberately out of scope until one exists).
@@ -45,7 +46,17 @@ export function computeOffline(state, nowMs) {
   // Bob sells the live shelf first, then restocks from the backroom — a reserve unit pays
   // basePrice MINUS restockCost (Bob buys the restock out of the margin), so it's always profitable
   // (every item's basePrice > restockCost) but active play still out-earns it per unit.
-  const reservePerItem = sumEffect(state, 'offlineReserve');                 // full refills per item
+  //
+  // Greg's contribution (offline review Option 2, Daniel 2026-07-05): a hired restock-worker
+  // grants ONE bonus refill per item for the absence — the exact mechanism above, same margin
+  // math, same guards — and Bulk Satchel grants a second. Deliberately NOT time-derived: a
+  // time-scaled pool (12h / 8s = ~5,400 units) would flip the model's core safety property
+  // (STOCK binds long before time) into a time-bound economy. Swift Wings stays live-only by the
+  // same logic — speed has no meaning in a bounded-refill model. The satchel refill requires the
+  // worker: a perk without its fetcher fetches nothing.
+  const gregOwned = WORKER_ORDER.some((id) => WORKERS[id].role === 'restock' && isWorkerOwned(state, id));
+  const gregRefills = gregOwned ? 1 + (perkLevel(state, 'bulk_satchel') > 0 ? 1 : 0) : 0;
+  const reservePerItem = sumEffect(state, 'offlineReserve') + gregRefills;   // full refills per item
   const stocks = {}, reserves = {}, goldPer = {};
   // Milestone multipliers apply offline too (loyal regulars keep tipping) but are FROZEN at the
   // absence's start: counts crossed mid-absence don't compound within the same absence —
@@ -87,7 +98,7 @@ export function computeOffline(state, nowMs) {
   const rep = sales * effectiveRepPerSale(state);                            // Better Signage applies offline too
   // (Monster rep-milestones are NOT applied offline: the sim sells items, it doesn't simulate WHO
   // bought them — monster counts stay live-only, flagged in the handoff.)
-  return { awaySec, cappedSec, sales, gold, rep, consumed, reserveUsed, soldByItem };
+  return { awaySec, cappedSec, sales, gold, rep, consumed, reserveUsed, soldByItem, gregRefills };
 }
 
 // Bank a computed result into state. Safe to call with a zero result (no-op, returns false).

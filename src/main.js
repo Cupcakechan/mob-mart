@@ -41,6 +41,10 @@ if (offline.sales > 0 && offline.awaySec >= CONFIG.offline.minAwaySec) {
   setText('offline-sales', offline.sales);
   setText('offline-gold',  offline.gold);
   setText('offline-rep',   offline.rep);
+  // Greg's credit line: only when his refills existed AND the reserve was actually tapped —
+  // a full shelf that never needed the backroom earns Bob the credit alone.
+  document.getElementById('offline-greg')
+    ?.classList.toggle('hidden', !(offline.gregRefills > 0 && offline.reserveUsed > 0));
   document.getElementById('offline-modal')?.classList.remove('hidden');
 }
 document.getElementById('offline-collect-btn')?.addEventListener('click', () => {

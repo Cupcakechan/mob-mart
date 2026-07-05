@@ -1950,5 +1950,64 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
 }
 
+// 39. Greg offline (review Option 2, 2026-07-05): bounded refills into the existing reserve ------
+// The decision under test: a hired restock-worker grants +1 full shelf-refill per item for the
+// absence (+1 more with Bulk Satchel), through the SAME margin-paying reserve mechanism as
+// Backroom Storage — deliberately bounded, never time-derived, so the model's safety property
+// (stock binds long before time) survives. Exact math on the trio fixture, all registry-derived.
+{
+  const { computeOffline } = await import('./src/offline.js');
+  const { ITEMS } = await import('./src/data/items.js');
+  const { effectiveMaxStock } = await import('./src/game.js');
+  const HOUR = 3600 * 1000;
+  const now = Date.now();
+  const trioBoot = (greg, satchel) => {
+    const s = createInitialState();
+    s.workers.mimic_merchant.owned = true;
+    s.workers.restocker.owned = greg;
+    if (satchel) s.perks.bulk_satchel = 1;
+    pinTrioShelf(s);
+    s.lastSeen = now - HOUR;                       // time is ample; stock/reserve is the binder
+    return s;
+  };
+  const base = computeOffline(trioBoot(false, false), now);     // Bob alone: the 9-unit shelf
+  // Refill math derives over EVERY unlocked item — the reserve tops the whole license-free roster
+  // (pinTrioShelf zeroes other stocks but doesn't lock anything), exactly like Backroom Storage.
+  const unlockedIds = (s) => Object.keys(ITEMS).filter((id) => !ITEMS[id].license || s.licenses?.[id] === true);
+  const refillUnits = (s) => unlockedIds(s).reduce((a, id) => a + effectiveMaxStock(s, id), 0);
+  const refillMargin = (s) => unlockedIds(s).reduce((a, id) =>
+    a + effectiveMaxStock(s, id) * (ITEMS[id].basePrice - ITEMS[id].restockCost), 0);
+  // Greg owned: exactly one full refill set on top — units and margin both registry-derived.
+  {
+    const s = trioBoot(true, false);
+    const r = computeOffline(s, now);
+    ok(r.sales === base.sales + refillUnits(s),
+       'greg offline: +1 refill per item — sales grow by exactly one full shelf set');
+    ok(r.gold === base.gold + refillMargin(s),
+       'greg offline: refill units pay basePrice minus restockCost (the reserve margin math)');
+    ok(r.gregRefills === 1, 'greg offline: the result reports his refill count for the modal');
+  }
+  // Bulk Satchel doubles the bonus — but only WITH Greg (a perk without its fetcher fetches nothing).
+  {
+    const s = trioBoot(true, true);
+    const r = computeOffline(s, now);
+    ok(r.sales === base.sales + 2 * refillUnits(s) && r.gregRefills === 2,
+       'greg offline: Bulk Satchel grants the second refill set');
+  }
+  {
+    const s = trioBoot(false, true);
+    const r = computeOffline(s, now);
+    ok(r.sales === base.sales && r.gregRefills === 0,
+       'greg offline: the satchel perk alone (no Greg) changes nothing');
+  }
+  // Determinism holds on the new path: recompute is identical (nothing to farm by reloading).
+  {
+    const s = trioBoot(true, true);
+    const r1 = computeOffline(s, now), r2 = computeOffline(s, now);
+    ok(r1.sales === r2.sales && r1.gold === r2.gold && r1.reserveUsed === r2.reserveUsed,
+       'greg offline: recompute is deterministic');
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
