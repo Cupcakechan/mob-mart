@@ -431,6 +431,9 @@ function updateWorkers(state, dt) {
       const target = trickleTarget(state);
       if (target && restockItem(state, target)) {
         w.timer = effectiveWorkerInterval(state, id);            // = baseInterval (serveSpeed is serve-scoped)
+        state.gregRestocked = true;                              // render signal, consumed by main.js
+                                                                 // -> Greg flies his shelf errand
+                                                                 // (visual echo only; stock already landed)
       } else {
         w.timer = 1;
       }
@@ -511,6 +514,24 @@ export function update(state, dt) {
       bs2.current = { text: licenseBubbleLine('reminder', { item: ITEMS[unbought[0]].displayName }),
                       itemId: unbought[0],
                       remaining: CONFIG.licenseAlerts?.announceSec ?? 6 };
+      state.uiDirty = true;
+    }
+  }
+
+  // Greg's restock report (Option 1 duty cycle, Daniel 2026-07-05): "a way to restock, not the
+  // main way" — while Greg is hired and something unlocked sits OUT, the bubble pops for showSec
+  // once per cycleSec instead of standing permanently. Transient like the license reminder (boot
+  // restarts the cycle). renderPanels shows it only while showFor > 0 and re-derives the TARGET
+  // per render — a mid-show restock retargets to the next out item or hides it early.
+  const gb = (state.gregBubble ??= { cycleIn: CONFIG.gregBubble?.cycleSec ?? 45, showFor: 0 });
+  if (gb.showFor > 0 && (gb.showFor -= dt) <= 0) { gb.showFor = 0; state.uiDirty = true; }
+  gb.cycleIn -= dt;
+  if (gb.cycleIn <= 0) {
+    gb.cycleIn = CONFIG.gregBubble?.cycleSec ?? 45;
+    const anyOut = state.workers?.restocker?.owned === true
+      && ITEM_ORDER.some((id) => isItemUnlocked(state, id) && state.items[id].stock === 0);
+    if (anyOut && gb.showFor <= 0) {
+      gb.showFor = CONFIG.gregBubble?.showSec ?? 10;
       state.uiDirty = true;
     }
   }

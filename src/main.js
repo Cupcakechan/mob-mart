@@ -4,7 +4,7 @@ import { clamp } from './utils.js';
 import { update, serveCurrent, dismissCurrent, restockItem, restockAll, buyUpgrade, buyPerk, buyLicense, hireWorker, deliverBattleReport } from './game.js';
 import { loadState, saveState, clearSave } from './save.js';
 import { computeOffline, applyOffline, formatAway } from './offline.js';
-import { drawScene, playBobServe, playPortalOpen, spawnItemFloat, spawnCelebrant, setCelebrantEnteredCallback } from './render/scene.js';
+import { drawScene, playBobServe, playPortalOpen, spawnItemFloat, spawnCelebrant, setCelebrantEnteredCallback, playGregErrand } from './render/scene.js';
 import { loadSprite } from './render/sprites.js';
 import { initHud, renderHud } from './ui/hud.js';
 import { initPanels, renderPanels } from './ui/panels.js';
@@ -184,6 +184,10 @@ function frame(now) {
   if (state.workerServed) {
     playBobServe(); playPortalOpen(); spawnItemFloat(preFrontItem); spawnCelebrant(preFrontMob);
     state.workerServed = false;
+  }
+  if (state.gregRestocked) {                      // trickle landed this tick -> Greg's shelf errand
+    playGregErrand();                             // (visual echo only; the stock already moved)
+    state.gregRestocked = false;
   }
   drawScene(ctx, state, now);
 

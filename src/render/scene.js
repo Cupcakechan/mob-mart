@@ -464,7 +464,9 @@ function drawBubble(ctx, state, tMs) {
 // darker band). Flyer conventions: hover bob like the flying mobs (same sine period), altitude
 // padding above the counter. Draw gates on ownership, exactly like Bob's hire-arc gate.
 const RESTOCKER = {
-  centerX: 570,        // left of Bob (Bob's body spans ~646-814); clear of his bubble's clamp zone
+  centerX: 490,        // HOME: tucked at Bob's left shoulder (Daniel's screenshot position) —
+                       // body spans 434-546: 30px clear of the front mob's box (right edge 404),
+                       // 100px clear of Bob (left edge ~646)
   hoverY:  330,        // TOP of the body at hover altitude — bottom ~442 floats over the counter top
   height:  112,        // NATIVE frame size (greg.png is 112x112, content 101x93 measured via pngjs).
                        // 1:1 on purpose: pixel art only scales clean at integers — the earlier 96
@@ -480,31 +482,74 @@ const GREG_ANIMS = {
   fly: { spriteId: 'greg_fly', frames: 6, fps: 8, loop: true },  // fps: livelier than Bob's breathe (6)
 };
 
+// The errand (Option 1, Daniel 2026-07-05): every trickle restock sends Greg on a visible run —
+// home -> the wall-shelf unit -> a small "collecting" orbit -> home. PURELY VISUAL: the stock
+// landed on the game tick that triggered this (main.js consumes state.gregRestocked and calls
+// playGregErrand); the errand is the tick's echo, so economy timing and the suite never depend
+// on it. Legs are smoothstepped; the hover sine rides on top throughout.
+const GREG_ERRAND = {
+  durationMs: 3600,    // full round trip — under half the 8s trickle, so back-to-back ticks still
+                       // read as separate runs
+  shelfX: 330,         // right end of the wall-shelf unit (plank spans 60..372): he visits the
+  shelfY: 180,         // shelves without covering their icons (rows at y38/134/230)
+  orbitR: 26,          // the "around the shelves" drift radius during the collecting beat
+  legOut: 0.30, legOrbit: 0.28,   // time fractions: out / orbit / (rest =) home
+};
+let gregErrandT0 = null;
+export function playGregErrand() { gregErrandT0 = performance.now(); }
+
 function drawRestocker(ctx, state, tMs) {
   if (state?.workers?.restocker?.owned !== true) return;        // no hire, no flyer
-  const bob = Math.sin(tMs / 300 + RESTOCKER.centerX) * 5;      // flying-mob hover, own phase
+  const hover = Math.sin(tMs / 300 + RESTOCKER.centerX) * 5;    // flying-mob hover, own phase
+  const smooth = (t) => t * t * (3 - 2 * t);
+
+  // Errand position: defaults to home; mid-errand, interpolate the three legs.
+  let cx = RESTOCKER.centerX, cy = RESTOCKER.hoverY, flip = false;
+  if (gregErrandT0 !== null) {
+    const p = (tMs - gregErrandT0) / GREG_ERRAND.durationMs;
+    if (p >= 1 || p < 0) {
+      gregErrandT0 = null;                                      // (p<0 guards a clock hiccup)
+    } else if (p < GREG_ERRAND.legOut) {
+      const t = smooth(p / GREG_ERRAND.legOut);                 // outbound — faces left (natural)
+      cx = RESTOCKER.centerX + (GREG_ERRAND.shelfX - RESTOCKER.centerX) * t;
+      cy = RESTOCKER.hoverY  + (GREG_ERRAND.shelfY - RESTOCKER.hoverY)  * t;
+    } else if (p < GREG_ERRAND.legOut + GREG_ERRAND.legOrbit) {
+      const a = ((p - GREG_ERRAND.legOut) / GREG_ERRAND.legOrbit) * Math.PI * 2;
+      cx = GREG_ERRAND.shelfX + Math.cos(a) * GREG_ERRAND.orbitR;   // the collecting orbit —
+      cy = GREG_ERRAND.shelfY + Math.sin(a) * GREG_ERRAND.orbitR * 0.5;  // facing stays natural:
+    } else {                                                    // flip-flicker on a 26px circle reads worse
+      const t = smooth((p - GREG_ERRAND.legOut - GREG_ERRAND.legOrbit)
+                       / (1 - GREG_ERRAND.legOut - GREG_ERRAND.legOrbit));
+      cx = GREG_ERRAND.shelfX + (RESTOCKER.centerX - GREG_ERRAND.shelfX) * t;
+      cy = GREG_ERRAND.shelfY + (RESTOCKER.hoverY  - GREG_ERRAND.shelfY) * t;
+      flip = true;                                              // homebound — flying right, so mirror
+    }
+  }
+  cy += hover;
+
   const h = RESTOCKER.height;
+  const drawFrame = (img, sx, sy, sw, sh, w) => {
+    ctx.save();
+    if (flip) { ctx.translate(cx, 0); ctx.scale(-1, 1); ctx.translate(-cx, 0); }  // mirror about cx
+    ctx.drawImage(img, sx, sy, sw, sh, cx - w / 2, cy, w, h);
+    ctx.restore();
+  };
+
   const cfg = GREG_ANIMS.fly;
   const sheet = getSprite(cfg.spriteId);
   if (sheet) {
     const frame = Math.floor(tMs / (1000 / cfg.fps)) % cfg.frames;
     const sw = sheet.width / cfg.frames;                        // auto-slice: no pixel sizes to enter
-    const w = h * (sw / sheet.height);
-    ctx.drawImage(sheet, frame * sw, 0, sw, sheet.height,
-                  RESTOCKER.centerX - w / 2, RESTOCKER.hoverY + bob, w, h);
+    drawFrame(sheet, frame * sw, 0, sw, sheet.height, h * (sw / sheet.height));
     return;
   }
   const spr = getSprite('restocker');                           // static frame (pre-strip fallback)
-  if (spr) {
-    const w = h * (spr.width / spr.height);
-    ctx.drawImage(spr, RESTOCKER.centerX - w / 2, RESTOCKER.hoverY + bob, w, h);
-    return;
-  }
+  if (spr) { drawFrame(spr, 0, 0, spr.width, spr.height, h * (spr.width / spr.height)); return; }
   const w = h * 0.7;                                            // Bob's placeholder proportions, small
   ctx.fillStyle = RESTOCKER.placeholderColor;
-  ctx.fillRect(RESTOCKER.centerX - w / 2, RESTOCKER.hoverY + bob, w, h);
+  ctx.fillRect(cx - w / 2, cy, w, h);
   ctx.fillStyle = '#00000055';
-  ctx.fillRect(RESTOCKER.centerX - w / 2, RESTOCKER.hoverY + bob + h * 0.55, w, 4);
+  ctx.fillRect(cx - w / 2, cy + h * 0.55, w, 4);
 }
 
 // Rise-and-fade the queued purchase icons above the front-of-queue spot.

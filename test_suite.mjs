@@ -1830,5 +1830,63 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
 }
 
+// 37. Greg's errand + bubble duty cycle (Option 1, 2026-07-05): the game-side contract -----------
+// The flight path itself is render-only (main.js consumes gregRestocked -> playGregErrand; browser
+// test plan). Pinned here: the trickle raises the errand signal; the bubble runs its duty cycle
+// (pops for showSec once per cycleSec) and stays silent when unowned / nothing out; transience.
+{
+  const { CONFIG } = await import('./src/config.js');
+  const { ITEMS, ITEM_ORDER } = await import('./src/data/items.js');
+  const { WORKERS } = await import('./src/data/workers.js');
+  const cycle = CONFIG.gregBubble.cycleSec, show = CONFIG.gregBubble.showSec;
+  const boot = (owned, out) => {
+    const s = shopState(); s.gold = 999; s.queue = [];
+    s.workers.restocker.owned = owned;
+    s.workers.restocker.timer = 1e9;                            // park the trickle; test the cycle alone
+    if (out) s.items[ITEM_ORDER.find((id) => !ITEMS[id].license)].stock = 0;
+    return s;
+  };
+
+  // The cycle raises a report, holds it showSec, and re-raises next cycle while still out.
+  {
+    const s = boot(true, true);
+    update(s, cycle + 0.01);
+    ok(s.gregBubble.showFor > 0, 'duty cycle: with Greg hired and an item out, the cycle raises a report');
+    s.uiDirty = false;
+    update(s, show + 0.01);
+    ok(s.gregBubble.showFor === 0 && s.uiDirty === true,
+       'duty cycle: the report retires after showSec and marks uiDirty for the DOM');
+    update(s, cycle + 0.01);
+    ok(s.gregBubble.showFor > 0, 'duty cycle: still out next cycle -> it re-raises (a way, not the way)');
+  }
+  // Gates: unhired Greg never reports; a stocked shelf never reports.
+  {
+    const s = boot(false, true);
+    update(s, cycle * 2 + 0.1);
+    ok((s.gregBubble?.showFor ?? 0) === 0, 'duty cycle: no Greg, no report');
+  }
+  {
+    const s = boot(true, false);
+    update(s, cycle * 2 + 0.1);
+    ok((s.gregBubble?.showFor ?? 0) === 0, 'duty cycle: fully stocked, no report');
+  }
+  // The errand signal: a successful trickle raises gregRestocked for main.js to consume.
+  {
+    const s = boot(true, true);
+    s.workers.restocker.timer = 0.5;
+    update(s, WORKERS.restocker.baseInterval + 0.01);
+    ok(s.gregRestocked === true, 'errand: a landed trickle raises the render signal');
+  }
+  // Transience: neither the cycle nor the signal survives a save round-trip.
+  {
+    const s = boot(true, true);
+    s.gregRestocked = true;
+    update(s, cycle + 0.01);
+    const data = serializeSave(s);
+    ok(!('gregBubble' in data) && !('gregRestocked' in data),
+       'transience: gregBubble and gregRestocked are never serialized');
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

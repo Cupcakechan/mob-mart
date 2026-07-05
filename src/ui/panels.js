@@ -431,16 +431,16 @@ export function renderPanels(state) {
       `The counter needs a merchant!<br><b>Hire Bob &mdash; &#9670; ${workerHireCost('mimic_merchant')}</b>`;
   }
 
-  // --- Greg's restock bubble (Option 1, replaces the standing chip): shows only when GREG IS
-  // HIRED and something unlocked is OUT — quiet on a stocked shelf, invisible pre-hire (the
-  // starved-attention trail covers that era, and the absence quietly sells the hire). Target
-  // logic unchanged: the front customer's blocked want first, else registry order. B1 carries
-  // over: gray + disabled while the restock is unaffordable, pulsing gold when actionable.
+  // --- Greg's restock bubble (Option 1 + duty cycle, 2026-07-05): shows only while the game-side
+  // cycle says so (state.gregBubble.showFor > 0 — pops ~10s per ~45s while something's out) AND
+  // Greg is hired AND something unlocked is out. The target re-derives per render: a mid-show
+  // restock retargets to the next out item or hides early. Anchored at Greg's HOME (fixed CSS) —
+  // he may be mid-errand under an active bubble; that's his post reporting, and it's brief.
   const gregBubble = document.getElementById('greg-bubble');
   if (gregBubble) {
     const isOut = (id) => isItemUnlocked(state, id) && state.items[id].stock === 0;
     const front = state.queue[0]?.wantedItemId;
-    const target = isWorkerOwned(state, 'restocker')
+    const target = (isWorkerOwned(state, 'restocker') && (state.gregBubble?.showFor ?? 0) > 0)
       ? ((front && isOut(front)) ? front : ITEM_ORDER.find(isOut) ?? null)
       : null;
     gregBubble.classList.toggle('hidden', !target);

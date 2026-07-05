@@ -91,6 +91,13 @@ export const CONFIG = {
     announceSec: 6,            // each crossing announcement holds the bubble this long
     reminderSec: 30,           // gentle recurring nudge while ANY eligible license sits unbought
   },
+
+  gregBubble: {
+    // Greg's restock report (Option 1 duty cycle, Daniel 2026-07-05): the bubble is A way to
+    // restock, not THE way — while something is out it pops periodically instead of standing.
+    showSec: 10,               // how long each report stays up
+    cycleSec: 45,              // time between reports while something remains out
+  },
                                // Celebration runs ~2.15s (hop 700 + march ~1000 + enter 450), so
                                // 3.0 only ever fires when the visual didn't.
 };

@@ -499,24 +499,23 @@ body{
   }
 }
 
-/* --- Greg's restock bubble (Option 1, 2026-07-04 — replaces the standing restock chip). The
-   bob-bubble's shape language at GREG'S anchor. POSITION MATH (logical px): Greg's frame top is
-   hoverY 330, his visible head starts +10 (greg.png content top padding, pngjs-measured) = y340;
-   tail tip 4px above = y336, tail 10px -> body bottom y326 -> bottom: 720-336 = 384px for the
-   tail tip, body sits above it. AIRSPACE: one line ~220px centered x570 spans ~460-680, band
-   y~282-336 — clear of Bob's bubble (y~216-260), the customer bubble (ceiling 322, x<=~466), and
-   Greg himself (tops at 330+hover). Hover bob is NOT mirrored here on purpose: a bobbing button
-   is an aim annoyance; the 6px static gap absorbs his +-5px sine. States: .affordable pulses
-   (attn-breathe); disabled = the B1 gray, visible so the cost teaches while the player saves. */
+/* --- Greg's restock bubble (Option 1 + duty cycle, 2026-07-05). POSITION MATH (logical px):
+   Greg's HOME is (490, 330) beside Bob; visible head at 330+10 (measured content padding) = y340,
+   +-5 hover sine. Tail tip y336, tail 10px -> body bottom y326 -> bottom: 720-326 = 394px. The
+   body is LEFT-anchored at 472 (NOT centered on Greg): the front mob's bubble worst-case right
+   edge is ~468 (cx 360 + half of a ~215px measured line), so centering a ~220px body on 490
+   would collide — instead the body sits right of that edge and the TAIL is off-center at 18px
+   from the body's left, pointing down to Greg's head at x490. Duty cycle is game-side
+   (state.gregBubble); this only styles. States: .affordable pulses; disabled = the B1 gray. */
 .greg-bubble{
-  position:absolute;left:570px;bottom:394px;transform:translateX(-50%);z-index:5;
+  position:absolute;left:472px;bottom:394px;z-index:5;
   background:rgba(31,23,43,0.93);border:2px solid var(--panel-edge);border-radius:9px;
   padding:8px 12px;color:#c9bfa8;font-family:var(--font);font-size:13px;font-weight:600;
   white-space:nowrap;cursor:pointer;
 }
 .greg-bubble b{color:#8f86a3;}                                /* muted until affordable */
 .greg-bubble::before,.greg-bubble::after{                     /* the tail: border triangle + fill inset */
-  content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  content:'';position:absolute;top:100%;left:18px;transform:translateX(-50%);
   border-style:solid;border-color:transparent;
 }
 .greg-bubble::before{border-width:10px 8px 0 8px;border-top-color:var(--panel-edge);}
