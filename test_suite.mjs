@@ -2113,5 +2113,29 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
 }
 
+// 42. Line hygiene rules (revision pass, 2026-07-05): attribution + roster-safe verbs -----------
+// Two rules born from Daniel's audit, pinned so they hold for every FUTURE batch:
+// (a) No second-person in pool templates — shop-side actors are Bob or Greg now (the "you" era
+//     predates the hire arc). Whitelisted: the "you'd" idiom (audience figure of speech, not an
+//     actor). Greg's bubble quip "You sell" is in-fiction dialogue and lives outside the pools.
+// (b) Consumable-tagged lines must work for the WHOLE consumable roster — the Rusty Key is
+//     category 'consumable' (single-use; the shelf has three buckets), so liquid-only verbs
+//     (drank/chugged/sipped/gulped) are banned in tagged texts; swallow-verbs are the register.
+{
+  const { GENERIC_RESULTS, MONSTER_RESULTS } = await import('./src/data/results.js');
+  const all = [];
+  for (const arr of Object.values(GENERIC_RESULTS)) all.push(...arr);
+  for (const tiers of Object.values(MONSTER_RESULTS)) for (const arr of Object.values(tiers)) all.push(...arr);
+  const texts = all.map((t) => (typeof t === 'string' ? t : t.text));
+
+  const secondPerson = texts.filter((t) => /\byou\b/i.test(t.replace(/you'd/gi, '')));
+  ok(secondPerson.length === 0,
+     `hygiene: no second-person outside the you'd idiom (found ${secondPerson.length})`);
+
+  const tagged = all.filter((t) => typeof t !== 'string' && t.cats?.includes('consumable'));
+  ok(tagged.every((t) => !/\b(drank|drink|chug|chugged|sipped|gulped)\b/i.test(t.text)),
+     'hygiene: consumable-tagged lines carry no liquid-only verbs (keys are consumables too)');
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
