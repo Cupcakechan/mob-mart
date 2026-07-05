@@ -22,6 +22,15 @@ const reputationTierIndex = (state) => reputationTier(fameOf(state)).index;
 let handlers = { onServe: () => {}, onDismiss: () => {}, onRestock: () => {}, onRestockAll: () => {}, onBuyUpgrade: () => {}, onBuyPerk: () => {}, onBuyLicense: () => {}, onHireWorker: () => {}, onDirty: () => {} };
 let activeCategory = 'weapon';   // shelf sub-tab (not persisted; category comes from the item registry)
 
+// Switch the shelf's category sub-tab. Shared by the tab buttons and Bob's license bubble (which
+// routes straight to the target license's category), so tab state can never drift between the two.
+function setShelfCategory(cat) {
+  activeCategory = cat;
+  document.querySelectorAll('.shelf-tab').forEach((b) =>
+    b.classList.toggle('active', b.dataset.cat === activeCategory));
+  handlers.onDirty();                              // re-render so the card filter applies now
+}
+
 export function initPanels(root, h) {
   handlers = h;
   root.innerHTML = `
@@ -94,12 +103,7 @@ export function initPanels(root, h) {
       </div>`;
   }).join('');
   document.querySelectorAll('.shelf-tab').forEach((btn) =>
-    btn.addEventListener('click', () => {
-      activeCategory = btn.dataset.cat;
-      document.querySelectorAll('.shelf-tab').forEach((b) =>
-        b.classList.toggle('active', b.dataset.cat === activeCategory));
-      handlers.onDirty();                          // re-render so the card filter applies now
-    }));
+    btn.addEventListener('click', () => setShelfCategory(btn.dataset.cat)));
   document.getElementById('restock-all-btn')
     .addEventListener('click', () => handlers.onRestockAll());
 
@@ -162,6 +166,15 @@ export function initPanels(root, h) {
   // Lives outside this root (a #stage sibling over the diorama) — same document, direct lookup.
   document.getElementById('hire-goal-chip')
     ?.addEventListener('click', () => openTab('workers'));
+
+  // Bob's license bubble: click = take me to that license. Shop tab + the item's category — the
+  // pulsing gold license button (renderPanels) finishes the trail. dataset.item is stamped by the
+  // render from bobSpeech.current.itemId, so the route always matches the line being shown.
+  document.getElementById('bob-bubble')?.addEventListener('click', function () {
+    openTab('shop');
+    const cat = ITEMS[this.dataset.item]?.category;
+    if (cat) setShelfCategory(cat);
+  });
 
   // Fame track (UX roadmap 2): STATIC structure — the ladder is registry data, so the nodes and
   // their unlock chips are built once here; only reached/current classes and the header's standing
@@ -268,6 +281,13 @@ export function renderPanels(state) {
         const tierReached = reputationTierIndex(state) >= tierIdx;
         licenseBtn.textContent = tierReached ? `License ◆${lic.cost}` : `Reach ${tierLabel}`;
         licenseBtn.disabled = !canBuyLicense(state, id);
+        // License alerts: STANDING gold pulse on every fame-eligible unbought license — stateless
+        // (recomputed per render), so it survives reloads and guides players who never click the
+        // bubble. Eligibility, never affordability: it pulses even while broke (matching the
+        // bubble's trigger), because "save up for this" IS the guidance.
+        licenseBtn.classList.toggle('attention', tierReached);
+      } else {
+        licenseBtn.classList.remove('attention');
       }
     }
   }
@@ -389,6 +409,20 @@ export function renderPanels(state) {
     hireChip.classList.toggle('hidden', bobOwned);
     if (!bobOwned) hireChip.innerHTML =
       `The counter needs a merchant!<br><b>Hire Bob &mdash; &#9670; ${workerHireCost('mimic_merchant')}</b>`;
+  }
+
+  // --- Bob's license bubble (DOM): show state.bobSpeech.current over Bob's head — but only once
+  // Bob EXISTS (hire arc: no Bob, no anchor; game.js keeps ticking and the reminder re-raises, so
+  // an early crossing is never lost). dataset.item carries the click route's target.
+  const bobBubble = document.getElementById('bob-bubble');
+  if (bobBubble) {
+    const cur = state.bobSpeech?.current;
+    const show = !!cur && isWorkerOwned(state, 'mimic_merchant');
+    bobBubble.classList.toggle('hidden', !show);
+    if (show) {
+      bobBubble.textContent = cur.text;
+      bobBubble.dataset.item = cur.itemId ?? '';
+    }
   }
 
   // --- Fame track: reached/current node state + the dual-track standing line. The header is the

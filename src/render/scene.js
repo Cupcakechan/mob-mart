@@ -393,7 +393,6 @@ export function drawScene(ctx, state, tMs) {
   drawQueue(ctx, state, tMs);
   drawCelebrants(ctx, tMs);     // served-mob ghosts: hop at the counter, then march into the door
   drawBubble(ctx, state, tMs);  // front customer's ask, pinned to the asker (hybrid stage 2)
-  drawBobBubble(ctx, state);    // Bob's license alerts — his own bubble, over his own head
   drawFloaters(ctx, tMs);       // purchase floats on top of everything — they're the payoff beat
 }
 
@@ -456,47 +455,6 @@ function drawBubble(ctx, state, tMs) {
   ctx.fillText(name, x + BUBBLE.padX, y + BUBBLE.padY);
   ctx.font = BUBBLE.lineFont; ctx.fillStyle = BUBBLE.text;
   ctx.fillText(want, x + BUBBLE.padX, y + BUBBLE.padY + 15 + BUBBLE.lineGap);
-  ctx.restore();
-}
-
-// --- Bob's bubble (license alerts, UX roadmap 3): the customer bubble's language, anchored over
-// Bob's head. Reads state.bobSpeech.current (game.js owns the queue, durations, and the reminder
-// dial — this only DRAWS). Gated on ownership: pre-hire there's no anchor, so nothing renders
-// (game-side, the reminder re-raises anything that expires unseen). NOT clickable by design — the
-// canvas has zero click handling; the Shop tab is where licenses are bought.
-const BOB_BUBBLE = {
-  tipGapY: 6,          // gap between Bob's head (BOB.feetY - BOB.height) and the tail tip
-  padX: 12, padY: 8, radius: 9, tailW: 16, tailH: 11,
-  font: BUBBLE.lineFont,                             // one line, same voice-weight as the ask line
-  bg: BUBBLE.bg, border: '#c99a2e', text: '#ffe9ad', // gold-tinted: it's a call-to-action, not chat
-};
-
-function drawBobBubble(ctx, state) {
-  if (state?.workers?.mimic_merchant?.owned !== true) return;   // no Bob, no anchor (hire arc)
-  const line = state.bobSpeech?.current?.text;
-  if (!line) return;
-
-  ctx.save();
-  ctx.font = BOB_BUBBLE.font;
-  const w = Math.ceil(ctx.measureText(line).width) + BOB_BUBBLE.padX * 2;
-  const h = BOB_BUBBLE.padY * 2 + 13;
-  const cx = BOB.centerX;
-  const tipY = (BOB.feetY - BOB.height) - BOB_BUBBLE.tipGapY;   // Bob idles in place — no bob phase
-  const x = Math.max(8, Math.min(W - w - 8, cx - w / 2));       // clamp inside the stage
-  const y = tipY - BOB_BUBBLE.tailH - h;
-
-  ctx.beginPath();                                              // rounded body + tail, one path
-  ctx.roundRect(x, y, w, h, BOB_BUBBLE.radius);
-  ctx.moveTo(cx - BOB_BUBBLE.tailW / 2, tipY - BOB_BUBBLE.tailH);
-  ctx.lineTo(cx, tipY);
-  ctx.lineTo(cx + BOB_BUBBLE.tailW / 2, tipY - BOB_BUBBLE.tailH);
-  ctx.closePath();
-  ctx.fillStyle = BOB_BUBBLE.bg;     ctx.fill();
-  ctx.strokeStyle = BOB_BUBBLE.border; ctx.lineWidth = 2; ctx.stroke();
-
-  ctx.textBaseline = 'top';
-  ctx.font = BOB_BUBBLE.font; ctx.fillStyle = BOB_BUBBLE.text;
-  ctx.fillText(line, x + BOB_BUBBLE.padX, y + BOB_BUBBLE.padY);
   ctx.restore();
 }
 

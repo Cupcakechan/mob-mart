@@ -118,7 +118,9 @@ export function serveCurrent(state) {
         { items: newly.map((id) => ITEMS[id].displayName).join(', ') }),
         repDelta: 0, tier: 'milestone', monsterId: monster.id });
       const bs = (state.bobSpeech ??= { queue: [], current: null });
-      for (const id of newly) bs.queue.push(licenseBubbleLine('announce', { item: ITEMS[id].displayName }));
+      // Each entry carries its license's itemId — the DOM bubble (panels.js) is CLICKABLE and
+      // routes to exactly this license on the shelf.
+      for (const id of newly) bs.queue.push({ text: licenseBubbleLine('announce', { item: ITEMS[id].displayName }), itemId: id });
     }
   }
 
@@ -435,15 +437,19 @@ export function update(state, dt) {
   // Bob's bubble (license alerts): tick the current line, promote the next from the queue. All
   // transient (never serialized) — the milestone log line is the permanent record, so a reload
   // mid-announcement loses only the bubble. Ticks even while Bob is unhired (the bubble simply
-  // doesn't DRAW without its anchor — scene.js gates on ownership); the reminder below re-raises
+  // doesn't SHOW without its anchor — panels.js gates on ownership); the reminder below re-raises
   // anything that expired unseen, so nothing is lost, and in practice licenses start at Trusted,
-  // long after the 50-gold hire.
+  // long after the 50-gold hire. Every transition marks uiDirty: the bubble is a DOM element
+  // rendered by renderPanels (Daniel's clickable pick, 2026-07-04), so show/hide/text changes
+  // ride the dirty-render path.
   const bs = state.bobSpeech;
   if (bs) {
-    if (bs.current && (bs.current.remaining -= dt) <= 0) bs.current = null;
+    if (bs.current && (bs.current.remaining -= dt) <= 0) { bs.current = null; state.uiDirty = true; }
     if (!bs.current && bs.queue.length) {
-      bs.current = { text: bs.queue.shift(),
+      const next = bs.queue.shift();
+      bs.current = { text: next.text, itemId: next.itemId,
                      remaining: CONFIG.licenseAlerts?.announceSec ?? 6 };
+      state.uiDirty = true;
     }
   }
   // The gentle recurring reminder: a free-running countdown (transient — boot restarts it, which
@@ -457,7 +463,9 @@ export function update(state, dt) {
     if (unbought.length && !(state.bobSpeech?.current) && !(state.bobSpeech?.queue?.length)) {
       const bs2 = (state.bobSpeech ??= { queue: [], current: null });
       bs2.current = { text: licenseBubbleLine('reminder', { item: ITEMS[unbought[0]].displayName }),
+                      itemId: unbought[0],
                       remaining: CONFIG.licenseAlerts?.announceSec ?? 6 };
+      state.uiDirty = true;
     }
   }
 

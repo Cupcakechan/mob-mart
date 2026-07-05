@@ -1703,5 +1703,44 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
 }
 
+// 35. Bob's bubble, DOM/clickable variant (Daniel's pick over the canvas draw): the game-side
+// contract the DOM depends on — every speech entry carries the license itemId it should route to,
+// and every bubble transition marks uiDirty (the DOM only updates on dirty renders, so a missed
+// flag means a bubble that lingers or never shows).
+{
+  const { CONFIG } = await import('./src/config.js');
+  const { ITEMS } = await import('./src/data/items.js');
+  const t2 = CONFIG.reputation.tiers[2];
+  const tier2Ids = Object.keys(ITEMS).filter((id) => ITEMS[id].license?.requiredTier === 2);
+
+  // Crossing announcements carry their license ids, registry order.
+  const s = shopState();
+  s.reputation = t2.min - 1; s.lifetimeRep = t2.min - 1;
+  s.queue = [customer('skeleton', 'club', 99)];
+  serveCurrent(s);
+  ok(s.bobSpeech.queue.every((e, i) => e.itemId === tier2Ids[i]),
+     'click route: each queued announcement carries its license itemId, registry order');
+
+  // Promotion marks uiDirty and surfaces the id.
+  s.uiDirty = false;
+  update(s, 0.001);
+  ok(s.uiDirty === true && s.bobSpeech.current.itemId === tier2Ids[0],
+     'click route: promotion sets uiDirty and the current entry keeps its itemId');
+
+  // Expiry (with an empty queue) marks uiDirty too — the DOM must hide the bubble.
+  s.bobSpeech.queue = [];
+  s.uiDirty = false;
+  update(s, (CONFIG.licenseAlerts.announceSec ?? 6) + 0.01);
+  ok(s.uiDirty === true && s.bobSpeech.current === null,
+     'click route: expiry clears the bubble and sets uiDirty');
+
+  // The reminder carries the FIRST unbought eligible license as its target.
+  const s2 = shopState();
+  s2.lifetimeRep = t2.min; s2.queue = [];
+  update(s2, (CONFIG.licenseAlerts.reminderSec ?? 30) + 0.01);
+  ok(s2.bobSpeech?.current?.itemId === tier2Ids[0],
+     'click route: the reminder targets the first unbought eligible license');
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

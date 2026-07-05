@@ -445,3 +445,34 @@ body{
 .fame-chip.license{border-color:var(--gold-deep);color:var(--gold);}     /* buy with gold */
 .fame-chip.perk{border-color:#6d4fa0;color:#b794f6;}                     /* buy with rep  */
 .fame-chip.budget{border-style:dashed;border-color:#3f6b50;color:#8fd1a8;}  /* passive world change */
+
+/* --- Bob's license-alert bubble (DOM variant — Daniel's clickable pick, 2026-07-04). The canvas
+   bubble's shape language rebuilt in CSS so it stays visually one family with the customer ask.
+   POSITION MATH (all logical stage px): Bob's visible head top = feetY(483) - height(240) +
+   headPad 14/160-frame-rows x 1.5 draw scale = y264 (headPad MEASURED via pngjs across both
+   strips: idle min row 14, serve 15 -> 14 governs). Tail tip sits 4px above the head (y260),
+   tail is 10px tall, so the body bottom is y250 -> bottom: 720-250 = 470px. Bob never moves, so
+   this is a constant — no per-frame sync. Clickable: routes to the named license (panels.js). */
+.bob-bubble{
+  position:absolute;left:730px;bottom:470px;transform:translateX(-50%);z-index:5;
+  background:rgba(31,23,43,0.93);border:2px solid #c99a2e;border-radius:9px;
+  padding:8px 12px;color:#ffe9ad;font-family:var(--font);font-size:13px;font-weight:600;
+  white-space:nowrap;cursor:pointer;
+  animation:attn-breathe 1.2s ease-in-out infinite;   /* it's a call-to-action, not chat */
+}
+.bob-bubble:hover{background:rgba(56,40,74,0.96);color:#ffd75e;}
+.bob-bubble::before,.bob-bubble::after{               /* the tail: border triangle + fill inset */
+  content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border-style:solid;border-color:transparent;
+}
+.bob-bubble::before{border-width:10px 8px 0 8px;border-top-color:#c99a2e;}
+.bob-bubble::after{border-width:7px 5px 0 5px;border-top-color:rgba(31,23,43,0.98);}
+.bob-bubble:hover::after{border-top-color:rgba(56,40,74,0.96);}
+
+/* License alerts: the STANDING indicator — every fame-eligible unbought license pulses gold
+   (same attention family as starved restocks / nav nudges), until bought. */
+.license-btn.attention{animation:attn-breathe 1.2s ease-in-out infinite;border-color:#ffcf4a;color:#ffcf4a;}
+@media (prefers-reduced-motion: reduce){
+  .bob-bubble{animation:none;}
+  .license-btn.attention{animation:none;border-color:#ffcf4a;color:#ffcf4a;}
+}

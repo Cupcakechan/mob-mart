@@ -21,6 +21,12 @@
          click routes to the Workers tab. Sits under the title overlay, so it only shows in-shop. -->
     <button id="hire-goal-chip" class="hire-goal-chip hidden"></button>
 
+    <!-- Bob's license-alert bubble (UX roadmap 3, DOM variant — Daniel's clickable pick): filled
+         and toggled by panels.js from state.bobSpeech; game.js owns the queue/durations. Bob is
+         stationary, so its position is a fixed CSS coordinate over his measured head. Click
+         routes to the named license on the shelf (Shop tab + its category). -->
+    <button id="bob-bubble" class="bob-bubble hidden"></button>
+
     <!-- Minimal title screen (dismissed on Open Shop) -->
     <div id="title" class="title-overlay">
       <h1 class="title-logo">MOB MART</h1>
