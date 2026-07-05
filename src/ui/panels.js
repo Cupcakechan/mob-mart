@@ -176,10 +176,10 @@ export function initPanels(root, h) {
     if (cat) setShelfCategory(cat);
   });
 
-  // "Restock now" chip: click = restock the named item, straight through the same handler the
+  // Greg's restock bubble: click = restock the named item, straight through the same handler the
   // shelf buttons use (game-side canRestock guards double-fire; the render re-picks the next
   // most-urgent item on the resulting dirty pass).
-  document.getElementById('restock-chip')?.addEventListener('click', function () {
+  document.getElementById('greg-bubble')?.addEventListener('click', function () {
     if (this.dataset.item) handlers.onRestock(this.dataset.item);
   });
 
@@ -408,8 +408,14 @@ export function renderPanels(state) {
     } else {
       if (descEl) descEl.textContent = w.role === 'serve' ? 'Serves customers automatically' : 'Restocks automatically';
       if (buyBtn) {
+        // Fame-gated hires (Greg): below the tier, the button names the gate instead of the price —
+        // the license-button pattern. ?? 0 keeps ungated workers (Bob) on the price path.
+        const tierIdx = w.requiredTier ?? 0;
+        const tierReached = reputationTierIndex(state) >= tierIdx;
         buyBtn.disabled = !canHireWorker(state, id);
-        buyBtn.innerHTML = `Hire &#9670; ${workerHireCost(id)}`;
+        buyBtn.innerHTML = tierReached
+          ? `Hire &#9670; ${workerHireCost(id)}`
+          : `Reach ${CONFIG.reputation.tiers[tierIdx]?.label ?? '???'}`;
       }
     }
   }
@@ -425,23 +431,26 @@ export function renderPanels(state) {
       `The counter needs a merchant!<br><b>Hire Bob &mdash; &#9670; ${workerHireCost('mimic_merchant')}</b>`;
   }
 
-  // --- "Restock now" chip (mini round A1/B1): ONE most-urgent OUT-of-stock item — the front
-  // customer's blocked want first (unblocks the live queue), else registry order. Gray + disabled
-  // while the restock is unaffordable (the two-stage language: visible = the goal, pulsing =
-  // actionable). Hidden when nothing unlocked is out.
-  const restockChip = document.getElementById('restock-chip');
-  if (restockChip) {
+  // --- Greg's restock bubble (Option 1, replaces the standing chip): shows only when GREG IS
+  // HIRED and something unlocked is OUT — quiet on a stocked shelf, invisible pre-hire (the
+  // starved-attention trail covers that era, and the absence quietly sells the hire). Target
+  // logic unchanged: the front customer's blocked want first, else registry order. B1 carries
+  // over: gray + disabled while the restock is unaffordable, pulsing gold when actionable.
+  const gregBubble = document.getElementById('greg-bubble');
+  if (gregBubble) {
     const isOut = (id) => isItemUnlocked(state, id) && state.items[id].stock === 0;
     const front = state.queue[0]?.wantedItemId;
-    const target = (front && isOut(front)) ? front : ITEM_ORDER.find(isOut) ?? null;
-    restockChip.classList.toggle('hidden', !target);
+    const target = isWorkerOwned(state, 'restocker')
+      ? ((front && isOut(front)) ? front : ITEM_ORDER.find(isOut) ?? null)
+      : null;
+    gregBubble.classList.toggle('hidden', !target);
     if (target) {
       const affordable = canRestock(state, target);
-      restockChip.disabled = !affordable;
-      restockChip.classList.toggle('affordable', affordable);
-      restockChip.dataset.item = target;
-      restockChip.innerHTML =
-        `${ITEMS[target].displayName} out!<br><b>Restock &#9670; ${effectiveRestockCost(state, target)}</b>`;
+      gregBubble.disabled = !affordable;
+      gregBubble.classList.toggle('affordable', affordable);
+      gregBubble.dataset.item = target;
+      gregBubble.innerHTML =
+        `${ITEMS[target].displayName} out &mdash; <b>Restock &#9670; ${effectiveRestockCost(state, target)}</b>`;
     }
   }
 

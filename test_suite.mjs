@@ -1564,10 +1564,15 @@ console.log('M4 auto-serve worker — smoke test\n');
 
   // Auto-flow, counted: nothing lost, nothing doubled.
   const licensed = Object.values(ITEMS).filter((it) => it.license);
+  const { WORKERS: TRACK_WORKERS } = await import('./src/data/workers.js');
+  const gatedWorkers = Object.values(TRACK_WORKERS).filter((w) => w.requiredTier !== undefined);
   const budgetLines = nodes.reduce((a, n) => a + n.unlocks.filter((u) => u.kind === 'budget').length, 0);
   const total = nodes.reduce((a, n) => a + n.unlocks.length, 0);
-  ok(total === UPGRADE_ORDER.length + PERK_ORDER.length + licensed.length + budgetLines,
-     'fame track: unlock count = upgrades + perks + licenses + budget lines');
+  ok(total === UPGRADE_ORDER.length + PERK_ORDER.length + licensed.length + gatedWorkers.length + budgetLines,
+     'fame track: unlock count = upgrades + perks + licenses + gated hires + budget lines');
+  ok(gatedWorkers.every((w) => nodes[w.requiredTier].unlocks
+       .some((u) => u.kind === 'worker' && u.label === w.displayName)),
+     'fame track: every tier-gated worker sits on its requiredTier node (ungated staff stay off)');
 
   // Auto-flow, placed: each gated thing sits on ITS requiredTier node (a new registry row with a
   // requiredTier lands on the track with zero wiring — the panel's whole promise).
@@ -1807,11 +1812,16 @@ console.log('M4 auto-serve worker — smoke test\n');
     ok(effectiveWorkerInterval(s, 'mimic_merchant') < WORKERS.mimic_merchant.baseInterval,
        'role isolation: the same upgrades DO speed the serve worker');
   }
-  // Hire + persistence + migration: the registry row auto-flows end to end.
+  // Hire + the fame gate + persistence + migration: the registry row auto-flows end to end.
   {
+    const { CONFIG } = await import('./src/config.js');
+    const trustedMin = CONFIG.reputation.tiers[WORKERS.restocker.requiredTier].min;
     const s = shopState(); s.gold = WORKERS.restocker.hireCost;
+    ok(!hireWorker(s, 'restocker'),
+       'fame gate: full purse below the tier cannot hire Greg (gold is not the gate)');
+    s.lifetimeRep = trustedMin;                                     // reach the tier — wallet untouched
     ok(hireWorker(s, 'restocker') && s.workers.restocker.owned === true && s.gold === 0,
-       'hire: the restocker hires at exactly hireCost through the generic path');
+       'hire: at the tier, Greg hires at exactly hireCost through the generic path');
     const restored = mergeSave(createInitialState(), serializeSave(s));
     ok(restored.workers.restocker.owned === true, 'save: restocker ownership round-trips');
     const legacy = mergeSave(createInitialState(), { workers: { mimic_merchant: { owned: true } } });

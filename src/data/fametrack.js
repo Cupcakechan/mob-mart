@@ -9,9 +9,10 @@ import { CONFIG } from '../config.js';
 import { ITEMS, ITEM_ORDER } from './items.js';
 import { UPGRADES, UPGRADE_ORDER } from './upgrades.js';
 import { PERKS, PERK_ORDER } from './perks.js';
+import { WORKERS, WORKER_ORDER } from './workers.js';
 
 // One node per tier, ascending: { index, label, min, unlocks: [{ kind, label, detail }] }.
-// kinds: 'upgrade' | 'perk' | 'license' | 'budget' — panels.js colors chips by kind.
+// kinds: 'upgrade' | 'perk' | 'license' | 'worker' | 'budget' — panels.js colors chips by kind.
 export function trackByTier() {
   const tiers = CONFIG.reputation.tiers ?? [];
   const nodes = tiers.map((t, i) => ({ index: i, label: t.label, min: t.min, unlocks: [] }));
@@ -33,6 +34,16 @@ export function trackByTier() {
     if (!it.license) continue;                     // license-free items are never tier-gated
     at(it.license.requiredTier).unlocks.push({
       kind: 'license', label: it.displayName, detail: `license \u25c6 ${it.license.cost}`,
+    });
+  }
+  // Tier-gated HIRES (Greg, 2026-07-04): workers with a requiredTier join their node — the same
+  // auto-flow promise. Ungated workers (Bob, requiredTier absent) are day-one staff, not unlocks,
+  // so they stay off the track.
+  for (const id of WORKER_ORDER) {
+    const w = WORKERS[id];
+    if (w.requiredTier === undefined) continue;
+    at(w.requiredTier).unlocks.push({
+      kind: 'worker', label: w.displayName, detail: `hire \u25c6 ${w.hireCost}`,
     });
   }
 

@@ -378,6 +378,9 @@ export function effectiveWorkerInterval(state, id) {
 export function canHireWorker(state, id) {
   if (!WORKERS[id]) return false;
   if (isWorkerOwned(state, id)) return false;                  // already hired — no repeat purchase
+  // Fame gate (Greg, 2026-07-04): same shape as licenses — LIFETIME tier, never the wallet.
+  // ?? 0 keeps ungated workers (Bob) hireable from day one.
+  if (reputationTier(fameOf(state)).index < (WORKERS[id].requiredTier ?? 0)) return false;
   return state.gold >= workerHireCost(id);
 }
 

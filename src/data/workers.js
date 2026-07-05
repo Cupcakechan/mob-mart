@@ -20,6 +20,11 @@ export const WORKERS = {
                                   // strip lands as greg_fly.png (112px frames, count auto-sliced)
     role: 'restock',
     flying: true,                 // flyer conventions: hover bob + altitude padding (scene.js reads this)
+    requiredTier: 2,              // <-- TUNABLE (Daniel, 2026-07-04): hire gated behind Trusted —
+                                  //     fame-gated like licenses (canHireWorker checks it, the
+                                  //     Workers card shows "Reach Trusted", and the Fame track
+                                  //     auto-lists him on the Trusted node). Bob has no
+                                  //     requiredTier: every read site guards with ?? 0.
     baseInterval: 8,              // <-- TUNABLE: seconds per trickle unit (mini round C1: shadows
                                   //     base-Bob's ~6s drain on ONE item; can't top a whole shelf —
                                   //     assists active play, never replaces it). No speed upgrades

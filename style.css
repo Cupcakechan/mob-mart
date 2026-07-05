@@ -443,6 +443,7 @@ body{
   background:rgba(255,255,255,.05);border:1px solid var(--panel-edge);color:#c9bfa8;
 }
 .fame-chip.license{border-color:var(--gold-deep);color:var(--gold);}     /* buy with gold */
+.fame-chip.worker{border-color:#4a6a7a;color:#9fc4d4;}                   /* tier-gated hire (Greg) */
 .fame-chip.perk{border-color:#6d4fa0;color:#b794f6;}                     /* buy with rep  */
 .fame-chip.budget{border-style:dashed;border-color:#3f6b50;color:#8fd1a8;}  /* passive world change */
 
@@ -498,25 +499,33 @@ body{
   }
 }
 
-/* --- "Restock now" chip (UX roadmap 4, A1/B1). AIRSPACE MATH (the bottom-bar lesson, applied
-   up top): left margin strip x8..~210 is open — the wall shelf ends at y320 above it, the
-   customer bubble's documented worst-case LEFT edge is ~220 (clamped around the front mob at
-   ~x370), and the queue mobs' boxes start at y407. The chip lives at center x110, y345..~400:
-   below the shelf, left of the bubble, above the mobs. TWO-LINE label on purpose — one line
-   ("Greater Flask out — Restock 13") would exceed the strip's width and clip the bubble zone.
-   States: .affordable pulses (attn-breathe — the chip language, blink stays license-only);
-   disabled = the B1 gray, visible so the cost teaches while the player saves. -------------- */
-.restock-chip{
-  position:absolute;left:110px;top:345px;transform:translateX(-50%);z-index:5;
-  max-width:195px;background:var(--panel-bg);border:2px solid var(--panel-edge);border-radius:12px;
-  padding:8px 14px;color:#c9bfa8;font-family:var(--font);font-size:13px;line-height:1.45;
-  text-align:center;cursor:pointer;
+/* --- Greg's restock bubble (Option 1, 2026-07-04 — replaces the standing restock chip). The
+   bob-bubble's shape language at GREG'S anchor. POSITION MATH (logical px): Greg's frame top is
+   hoverY 330, his visible head starts +10 (greg.png content top padding, pngjs-measured) = y340;
+   tail tip 4px above = y336, tail 10px -> body bottom y326 -> bottom: 720-336 = 384px for the
+   tail tip, body sits above it. AIRSPACE: one line ~220px centered x570 spans ~460-680, band
+   y~282-336 — clear of Bob's bubble (y~216-260), the customer bubble (ceiling 322, x<=~466), and
+   Greg himself (tops at 330+hover). Hover bob is NOT mirrored here on purpose: a bobbing button
+   is an aim annoyance; the 6px static gap absorbs his +-5px sine. States: .affordable pulses
+   (attn-breathe); disabled = the B1 gray, visible so the cost teaches while the player saves. */
+.greg-bubble{
+  position:absolute;left:570px;bottom:394px;transform:translateX(-50%);z-index:5;
+  background:rgba(31,23,43,0.93);border:2px solid var(--panel-edge);border-radius:9px;
+  padding:8px 12px;color:#c9bfa8;font-family:var(--font);font-size:13px;font-weight:600;
+  white-space:nowrap;cursor:pointer;
 }
-.restock-chip b{color:#8f86a3;font-size:14px;}                /* muted until affordable */
-.restock-chip.affordable{border-color:var(--gold);animation:attn-breathe 1.2s ease-in-out infinite;}
-.restock-chip.affordable b{color:var(--gold);}
-.restock-chip.affordable:hover{background:rgba(255,207,74,.12);}
-.restock-chip:disabled{cursor:default;opacity:.8;}
+.greg-bubble b{color:#8f86a3;}                                /* muted until affordable */
+.greg-bubble::before,.greg-bubble::after{                     /* the tail: border triangle + fill inset */
+  content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border-style:solid;border-color:transparent;
+}
+.greg-bubble::before{border-width:10px 8px 0 8px;border-top-color:var(--panel-edge);}
+.greg-bubble::after{border-width:7px 5px 0 5px;border-top-color:rgba(31,23,43,0.98);}
+.greg-bubble.affordable{border-color:var(--gold);animation:attn-breathe 1.2s ease-in-out infinite;}
+.greg-bubble.affordable::before{border-top-color:var(--gold);}
+.greg-bubble.affordable b{color:var(--gold);}
+.greg-bubble.affordable:hover{background:rgba(255,207,74,.12);}
+.greg-bubble:disabled{cursor:default;opacity:.85;}
 @media (prefers-reduced-motion: reduce){
-  .restock-chip.affordable{animation:none;box-shadow:0 0 0 2px var(--gold);}
+  .greg-bubble.affordable{animation:none;box-shadow:0 0 0 2px var(--gold);}
 }

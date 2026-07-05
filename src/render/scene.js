@@ -472,15 +472,32 @@ const RESTOCKER = {
                        // under Bob's 240.
   placeholderColor: '#4a6a7a',   // slate-blue: reads "not Greg" at a glance if the PNG is absent
 };
+// Greg's flight loop (Daniel: 6 frames, 2026-07-04). Same auto-slice convention as BOB_ANIMS —
+// drop greg_fly.png (horizontal strip, 112px frames) and it plays; absent, Greg falls back to the
+// static restocker.png, then the placeholder. He never lands, so ONE loop is his whole existence:
+// the altitude bob below is code-side, the strip only flaps.
+const GREG_ANIMS = {
+  fly: { spriteId: 'greg_fly', frames: 6, fps: 8, loop: true },  // fps: livelier than Bob's breathe (6)
+};
 
 function drawRestocker(ctx, state, tMs) {
   if (state?.workers?.restocker?.owned !== true) return;        // no hire, no flyer
   const bob = Math.sin(tMs / 300 + RESTOCKER.centerX) * 5;      // flying-mob hover, own phase
-  const spr = getSprite('restocker');
   const h = RESTOCKER.height;
+  const cfg = GREG_ANIMS.fly;
+  const sheet = getSprite(cfg.spriteId);
+  if (sheet) {
+    const frame = Math.floor(tMs / (1000 / cfg.fps)) % cfg.frames;
+    const sw = sheet.width / cfg.frames;                        // auto-slice: no pixel sizes to enter
+    const w = h * (sw / sheet.height);
+    ctx.drawImage(sheet, frame * sw, 0, sw, sheet.height,
+                  RESTOCKER.centerX - w / 2, RESTOCKER.hoverY + bob, w, h);
+    return;
+  }
+  const spr = getSprite('restocker');                           // static frame (pre-strip fallback)
   if (spr) {
-    const w = h * (spr.width / spr.height);                     // single frame for now; anims when
-    ctx.drawImage(spr, RESTOCKER.centerX - w / 2, RESTOCKER.hoverY + bob, w, h);  // the art lands
+    const w = h * (spr.width / spr.height);
+    ctx.drawImage(spr, RESTOCKER.centerX - w / 2, RESTOCKER.hoverY + bob, w, h);
     return;
   }
   const w = h * 0.7;                                            // Bob's placeholder proportions, small
