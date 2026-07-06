@@ -318,6 +318,53 @@ export const MONSTER_RESULTS = {
       `Bob waved him off warmly. Froggo hated that. He'll be back.`,
     ],
   },
+  // Ratty (roadmap 6, Pass A — Daniel 2026-07-05). Comic lever: CHEERFUL ACQUISITION — nothing
+  // is ever stolen, it's "found," "recovered," "liberated"; he'd happily explain the five-finger
+  // discount. Cozy law holds: we laugh WITH the scrounger, no victims on screen. Ladder per the
+  // suite contracts (sections 31/40): 2 @25 + exactly 3 @50 + one golden @100.
+  rat: {
+    excellent: [
+      `Ratty won and checked the hero's pockets. Professional habit.`,
+      `Ratty won! The victory is his. So is the hero's lunch.`,
+      `The hero blinked. Ratty was behind him. The fight was a formality.`,
+      { text: `Ratty's a regular now. The register gets locked anyway. He approves.`, minServes: 25 },
+      { text: `Ratty won and gave the hero's wallet back. Growth? No — it was empty.`, minServes: 50 },
+      { text: `Ratty paid full price, tipped, and stole nothing. Bob framed the receipt.`,
+        minServes: 100, golden: true },
+    ],
+    success: [
+      `Ratty survived and left with more than he arrived with. Unrelated.`,
+      `Ratty slipped away mid-fight. The hero is still counting his arrows.`,
+      `Ratty called it a draw. The hero's coin purse abstained.`,
+      { text: `Ratty apologized for last week's spoons. He replaced them. Different spoons.`, minServes: 25 },
+      { text: `Ratty knows the kid with the sword. "Good kid. Heavy pockets."`, minServes: 50 },
+    ],
+    partial: [
+      `Ratty lost the fight but found a shiny button. Net profit.`,
+      `Ratty lost, politely returned the hero's watch, and fled.`,
+      `Defeated, Ratty bowed out with dignity. And two spoons.`,
+    ],
+    failure: [
+      `Ratty got caught mid-pickpocket. The fight ended shortly after.`,
+      `The hero won and counted his fingers afterward. All ten. Lucky.`,
+      `Ratty lost. The {item} was recovered from three hiding spots.`,
+    ],
+    funnyFailure: [
+      `Ratty tried to steal the hero's shadow. There were complications.`,
+      `Ratty pocketed his own {item} for safekeeping, then forgot where.`,
+      `Ratty winked at the hero. The hero did not wink back. Fatal.`,
+      { text: `Ratty tried to lift Batty's pebble. The whole shop gasped. He put it back.`, minServes: 50 },
+    ],
+    leave: [
+      `Ratty left. Count the spoons.`,
+      `Ratty left to case— to VISIT another shop. Visit.`,
+    ],
+    dismiss: [
+      `Bob waved Ratty off and courteously patted him down. Twice.`,
+      `Ratty was declined and took it well. Took a pen, too.`,
+      { text: `Greg watched Ratty leave with both eyes. Both.`, greg: true },
+    ],
+  },
 };
 
 // Hire flavor (Greg's voice pass, 2026-07-05): what a worker "says" the moment they're hired —

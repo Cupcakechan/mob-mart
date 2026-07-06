@@ -108,6 +108,13 @@ comedy vein: the wink for players who know RPGs. The rule that keeps it safe and
   grump; he keeps coming back, and hates that he does. His walk strip is named `_walk_happy` by
   convention but authored as a grumpy stomp — the mismatch IS the joke.
 
+- **Ratty** (scrappy rat thief, roadmap 6 — the low-tier scrounger) -> **cheerful acquisition.**
+  Nothing is ever stolen: it is "found," "recovered," "liberated," a five-finger discount he
+  would happily itemize. Sunny about it, never sneaky-sinister — the cozy law holds because his
+  victims are off-screen and unbothered (spoons, buttons, a pen). Economic identity: the
+  anti-Froggo (ceiling 16 vs 30) — he wants the cheap shelf. His mechanic (Pass B, queued):
+  pocketing his wanted item on a patience-timeout leave — dismissing him prevents it.
+
 Test: cover the name and you should still know who it is.
 
 **Bob (the shopkeeper) is a fourth voice, used ONLY in shop-side tiers (dismiss, later leave):**
@@ -140,7 +147,12 @@ Plant a few and escalate them across updates (the 3rd appearance gets the bigges
   there."). The chain is complete; retire from active escalation.
 - **Slimey's eat-gag** — escalated @25 ("It's tradition at this point.") on the unlock ladder.
 - ~~Batty's emotional support pebble — escalation candidate for the next @50 batch.~~ DONE (see above).
-- **The off-screen hero ("the kid with the sword")** — SEEDED @50 (Batty, leave tier). The phrase is live; next appearances build the legend without ever showing the kid.
+- **The off-screen hero ("the kid with the sword")** — SEEDED @50 (Batty, leave), GROWN in
+  Ratty's debut (@50 success: "Good kid. Heavy pockets."). x2 — the legend builds, the kid
+  stays off-screen. Next beat: a third mob's angle on him.
+- **Batty's pebble x Ratty crossover** — Ratty's @50 funnyFailure ("tried to lift the pebble,
+  the whole shop gasped, he put it back"). Cross-character gags are a NEW register opened by a
+  five-mob roster; use sparingly, they hit harder than solo gags.
 
 - **The duplicate lampshade (Option 3 canon, 2026-07-05)** — mascot logic is CANON: Slimey is
   Slimey even when two are in line. SEEDED x2 (leave: "Or the same one. Nobody checks.";
@@ -363,6 +375,16 @@ lives in `WORKER_HIRE_LINES` (results.js). BUBBLE-WIDTH RULE for quips: ~40 char
 - New guy. Don't touch the shelves.
 - I count. You sell. We're fine.
 - The shelves are MY problem now.
+
+### Ratty's debut batch (2026-07-05) — the fifth voice
+
+Full roster-member kit per the suite contracts: ~17 base lines across the tiers plus the ladder
+(2 @25, exactly 3 @50, one golden @100). Highlights: the golden is the INVERSION payoff ("paid
+full price, tipped, and stole nothing. Bob framed the receipt."); the kid-with-the-sword grows
+(@50); the pebble crossover (@50, he puts it back); one Greg-tagged dismiss ("Greg watched
+Ratty leave with both eyes. Both." — blunt x scrounger is a strong pairing). Full texts live in
+results.js under rat: {} — this section records placement, not a second copy (the batch is big;
+the registry is the source of truth).
 
 ## Growing the batch later
 

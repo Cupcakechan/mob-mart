@@ -98,6 +98,9 @@ loadSprite('skeleton_walk_happy', 'assets/sprites/skeleton_walk_happy.png');  //
 loadSprite('frog', 'assets/sprites/frog.png');                    // Pass 4b — Froggo (128x128 per the permanent
 loadSprite('frog_idle', 'assets/sprites/frog_idle.png');          //   convention; registered BEFORE the art exists,
 loadSprite('frog_walk_happy', 'assets/sprites/frog_walk_happy.png'); // the wall_shelf lesson; absent -> rect/static.
+loadSprite('rat', 'assets/sprites/rat.png');                      // Ratty (roadmap 6, Pass A) — same contract:
+loadSprite('rat_idle', 'assets/sprites/rat_idle.png');            //   static 128 + 4x128 idle strip + walk strip,
+loadSprite('rat_walk_happy', 'assets/sprites/rat_walk_happy.png');//   all pre-registered, placeholder until art.
                                                                   //   "_walk_happy" name kept by convention; the
                                                                   //   authored content will be a grumpy stomp.
 

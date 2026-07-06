@@ -54,6 +54,29 @@ export const MONSTERS = {
                                                      // signature goods dominate WITHIN the category
                                                      // (pre-license the unlock filter hides them).
   },
+  rat: {
+    id:'rat', displayName:'Ratty', spriteId:'rat', combatMod:-1, budgetRange:[10,16],
+    // The Rat Thief (roadmap item 6, Pass A — Daniel 2026-07-05). Comic lever: CHEERFUL
+    // ACQUISITION (nothing is stolen; everything is "found"). The ANTI-Froggo economically:
+    // his identity lives in the CEILING ([10,16] vs Froggo's [16,30]) — a scrounger hunting the
+    // cheap end of the shelf. Floor is 10, NOT lower: the free-tier strand invariant (suite,
+    // batch 1) requires every free item price <= the roster's minimum roll, because the
+    // want-picker is NOT budget-aware — a lower floor strands him at cant-afford. (Budget-aware
+    // wants would let the floor drop and make poor customers want cheap things — a natural
+    // future pass, flagged 2026-07-05.) Grounded (no `flying`). combatMod -1: scrappy, loses
+    // funny. Art PENDING — placeholder-first: rat.png (static 128) + rat_idle.png (4x128 strip)
+    // + rat_walk_happy.png, all registered in main.js (the wall_shelf lesson); footPad MEASURED
+    // via pngjs when the PNG lands — absent until then, every read site guards ?? 0.
+    // Pass B (queued, separate commit): the LEAVE-THEFT — he pockets one unit of his wanted item
+    // on a patience timeout; dismissing him prevents it. Plus the away-modal "prevented
+    // robberies" flavor line (Daniel's idea, same queue).
+    anim: { frames: 4, fps: 6 },   // idle strip on the SHARED 4x128 -> 512x128 contract;
+                                   // absent -> static -> placeholder, never a crash
+    categoryWeights: { consumable: 2, weapon: 2, armor: 2 },   // omnivorous scrounger — anything
+                                                               // unattended is interesting
+    itemBias: { rusty_key: 3, tattered_shirt: 2 },   // signature loves: a THIEF craves the key,
+                                                     // and the cheapest shirt is peak scrounger
+  },
 };
 
-export const MONSTER_IDS = ['slime', 'bat', 'skeleton', 'frog'];
+export const MONSTER_IDS = ['slime', 'bat', 'skeleton', 'frog', 'rat'];

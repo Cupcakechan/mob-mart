@@ -1088,7 +1088,7 @@ console.log('M4 auto-serve worker — smoke test\n');
   const { ITEMS } = await import('./src/data/items.js');
   const { MONSTER_RESULTS } = await import('./src/data/results.js');
 
-  ok(MONSTER_IDS.includes('frog') && MONSTER_IDS.length === 4, 'roster: frog joined, four mobs');
+  ok(MONSTER_IDS.includes('frog'), 'roster: frog joined (exact roster count is the NEWEST batch section\'s job)');
   const f = MONSTERS.frog;
   // Values from the registry, not memory (the Batty-budget lesson): Option 2 identity pinned.
   ok(f.combatMod === 0 && f.budgetRange[0] === 16 && f.budgetRange[1] === 30,
@@ -2029,7 +2029,7 @@ console.log('M4 auto-serve worker — smoke test\n');
   const at50 = (id) => Object.values(MONSTER_RESULTS[id] ?? {}).flat()
     .filter((t) => typeof t !== 'string' && t.minServes === 50);
   ok(MONSTER_IDS.every((id) => at50(id).length === 3)
-     && MONSTER_IDS.reduce((a, id) => a + at50(id).length, 0) === 12,
+     && MONSTER_IDS.reduce((a, id) => a + at50(id).length, 0) === MONSTER_IDS.length * 3,
      'batch @50: exactly 3 gated lines per monster, 12 total');
   ok(MONSTER_IDS.flatMap(at50).every((t) => t.text.length <= 80 && t.golden !== true),
      'batch @50: every line respects the 80-char log budget; goldens stay a 100-serve privilege');
@@ -2209,6 +2209,37 @@ console.log('M4 auto-serve worker — smoke test\n');
     .map((t) => (typeof t === 'string' ? t : t.text));
   ok(texts.some((t) => t.includes('Nobody checks')) && texts.some((t) => t.includes('impostor')),
      'lampshade: both Option-3 canon lines are live (leave + dismiss)');
+}
+
+// 45. Ratty's debut (roadmap 6 Pass A, 2026-07-05): the NEWEST batch owns the exact totals -------
+// Row invariants + the debut ladder. The theft MECHANIC is Pass B (separate commit); this pass
+// makes him a complete roster member: sections 31/40's per-monster contracts already scaled to
+// include him and pass — pinned here are the exacts and the row's design constraints.
+{
+  const { MONSTERS, MONSTER_IDS } = await import('./src/data/monsters.js');
+  const { MONSTER_RESULTS } = await import('./src/data/results.js');
+  const { ITEMS } = await import('./src/data/items.js');
+
+  ok(MONSTER_IDS.length === 5 && MONSTER_IDS.includes('rat'),
+     'ratty: five mobs on the roster (the newest batch\u2019s exact)');
+
+  // The floor itself is guarded by batch 1's live-derived strand test (free-batch prices <= the
+  // roster's min roll — it failed at floor 6 and passes at 10); one law, one home. Pinned here:
+  // the ceiling identity only.
+  ok(MONSTERS.rat.budgetRange[1] < MONSTERS.frog.budgetRange[1],
+     'ratty: ceiling below Froggo\u2019s — the scrounger is the anti-big-spender');
+  ok(Object.keys(MONSTERS.rat.categoryWeights ?? {}).length > 0,
+     'ratty: categoryWeights present — without them every want falls back to ITEM_ORDER[0]');
+
+  // Debut ladder exacts: 2 @25 + 3 @50 + one golden @100 (sections 31/40 hold the generic rules).
+  const all = Object.values(MONSTER_RESULTS.rat).flat().filter((t) => typeof t !== 'string');
+  ok(all.filter((t) => t.minServes === 25).length === 2
+     && all.filter((t) => t.minServes === 50).length === 3
+     && all.filter((t) => t.golden === true && t.minServes === 100).length === 1,
+     'ratty: debut ladder — 2 @25, 3 @50, one golden @100');
+  const everyText = Object.values(MONSTER_RESULTS.rat).flat()
+    .map((t) => (typeof t === 'string' ? t : t.text));
+  ok(everyText.every((t) => t.length <= 80), 'ratty: every debut line fits the 80-char budget');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
