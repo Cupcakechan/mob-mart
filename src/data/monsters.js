@@ -56,6 +56,9 @@ export const MONSTERS = {
   },
   rat: {
     id:'rat', displayName:'Ratty', spriteId:'rat', combatMod:-1, budgetRange:[10,16],
+    thief: true,         // Pass B (2026-07-05): a patience-timeout LEAVE pockets one unit of his
+                         // wanted item (game.js leave branch reads this flag — registry-driven,
+                         // so a future thieving mob joins the mechanic with one field).
         spriteScale: 1.1,    // content is 76% of frame (MEASURED 2026-07-05 via pngjs) — the exact
                                // Froggo ratio, so the exact Froggo calibration. PROVISIONAL: confirm
                          // his mass reads right beside Slimey in the queue.

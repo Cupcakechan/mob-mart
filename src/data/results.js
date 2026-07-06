@@ -359,6 +359,15 @@ export const MONSTER_RESULTS = {
       `Ratty left. Count the spoons.`,
       `Ratty left to case— to VISIT another shop. Visit.`,
     ],
+    // The theft tier (Pass B): fires INSTEAD of a leave line when a patience timeout actually
+    // pockets a unit (in stock, thief flag). The line must carry both facts — he left AND the
+    // shelf is lighter — in the cheerful-acquisition register. No generic pool exists for this
+    // tier on purpose: theft is a character mechanic, not shop weather.
+    theft: [
+      `Ratty got tired of waiting and the {item} left with him. Coincidence.`,
+      `Ratty left. So did one {item}. The two facts are unrelated, he insists.`,
+      `Ratty waited, gave up, and comped himself one {item}. For the trouble.`,
+    ],
     dismiss: [
       `Bob waved Ratty off and courteously patted him down. Twice.`,
       `Ratty was declined and took it well. Took a pen, too.`,

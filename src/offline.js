@@ -11,6 +11,7 @@
 //   simply aren't in the estimate.
 import { CONFIG } from './config.js';
 import { ITEMS, ITEM_ORDER } from './data/items.js';
+import { MONSTERS, MONSTER_IDS } from './data/monsters.js';
 import { WORKERS, WORKER_ORDER, isWorkerOwned } from './data/workers.js';
 import { sumEffect } from './data/upgrades.js';
 import { perkLevel } from './data/perks.js';
@@ -28,7 +29,7 @@ export function computeOffline(state, nowMs) {
   // inventory, not hours).
   const capHours = (CONFIG.offline?.capHours ?? 0) + sumEffect(state, 'offlineCap');
   const cappedSec = Math.min(awaySec, capHours * 3600);
-  const zero = { awaySec, cappedSec, sales: 0, gold: 0, rep: 0, consumed: {}, reserveUsed: 0, soldByItem: {}, gregRefills: 0 };
+  const zero = { awaySec, cappedSec, sales: 0, gold: 0, rep: 0, consumed: {}, reserveUsed: 0, soldByItem: {}, gregRefills: 0, ratsFoiled: 0 };
 
   // First owned serve-worker sets the pace (just Bob for now; a second serve-worker would need a
   // combined-throughput pass — deliberately out of scope until one exists).
@@ -98,7 +99,15 @@ export function computeOffline(state, nowMs) {
   const rep = sales * effectiveRepPerSale(state);                            // Better Signage applies offline too
   // (Monster rep-milestones are NOT applied offline: the sim sells items, it doesn't simulate WHO
   // bought them — monster counts stay live-only, flagged in the handoff.)
-  return { awaySec, cappedSec, sales, gold, rep, consumed, reserveUsed, soldByItem, gregRefills };
+  // "Bob prevented N robberies" (Daniel's idea, Pass B 2026-07-05): offline never simulates
+  // LEAVES at all — customers who would have timed out simply aren't in the estimate — so thefts
+  // genuinely cannot happen while away. This number is FICTION dressed over that fact: every
+  // thief-mob serve in the estimate is a thief who didn't leave, i.e. a robbery prevented.
+  // Derived deterministically from sales x the roster's thief share (recompute-stable).
+  const thiefShare = MONSTER_IDS.filter((id) => MONSTERS[id]?.thief === true).length / MONSTER_IDS.length;
+  const ratsFoiled = Math.round(sales * thiefShare);
+
+  return { awaySec, cappedSec, sales, gold, rep, consumed, reserveUsed, soldByItem, gregRefills, ratsFoiled };
 }
 
 // Bank a computed result into state. Safe to call with a zero result (no-op, returns false).

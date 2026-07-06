@@ -45,6 +45,9 @@ if (offline.sales > 0 && offline.awaySec >= CONFIG.offline.minAwaySec) {
   // a full shelf that never needed the backroom earns Bob the credit alone.
   document.getElementById('offline-greg')
     ?.classList.toggle('hidden', !(offline.gregRefills > 0 && offline.reserveUsed > 0));
+  setText('offline-rats-n', offline.ratsFoiled);
+  document.getElementById('offline-rats')
+    ?.classList.toggle('hidden', !(offline.ratsFoiled > 0));
   document.getElementById('offline-modal')?.classList.remove('hidden');
 }
 document.getElementById('offline-collect-btn')?.addEventListener('click', () => {

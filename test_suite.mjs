@@ -2242,5 +2242,66 @@ console.log('M4 auto-serve worker — smoke test\n');
   ok(everyText.every((t) => t.length <= 80), 'ratty: every debut line fits the 80-char budget');
 }
 
+// 46. The leave-theft (roadmap 6 Pass B, 2026-07-05): Ratty's mechanic ---------------------------
+// Contract: a THIEF-flagged mob's patience timeout pockets one unit of his wanted item (in-stock
+// only, unpaid, leave penalty still applies, theft-tier line replaces the leave line); DISMISSAL
+// prevents it; non-thieves are untouched; offline reports the fiction number deterministically.
+{
+  const { MONSTERS, MONSTER_IDS } = await import('./src/data/monsters.js');
+  const { MONSTER_RESULTS } = await import('./src/data/results.js');
+  const { dismissCurrent } = await import('./src/game.js');
+  const { computeOffline } = await import('./src/offline.js');
+  const { CONFIG } = await import('./src/config.js');
+
+  ok(MONSTERS.rat.thief === true, 'theft: the mechanic is registry-driven (thief flag on the row)');
+
+  const timedOut = (monsterId) => {
+    const s = shopState();
+    s.items.club.stock = 3;
+    s.queue = [{ ...customer(monsterId, 'club', 0), patienceRemaining: 0.01 }];
+    update(s, 0.05);                                 // the timeout fires inside update's patience loop
+    return s;
+  };
+  // The theft: stock -1, no payment, leave penalty applies, the theft-tier line lands.
+  {
+    const goldBefore = shopState().gold;
+    const s = timedOut('rat');
+    const theftTexts = MONSTER_RESULTS.rat.theft.map((t) => t.replace(/\{name\}/g, 'Ratty').replace(/\{item\}/g, 'Club'));
+    ok(s.items.club.stock === 2, 'theft: the timed-out thief pockets exactly one unit');
+    ok(s.gold === goldBefore, 'theft: pocketed, not purchased — gold untouched');
+    ok(theftTexts.includes(s.log[0].text) && s.log[0].repDelta === -CONFIG.reputation.leavePenalty,
+       'theft: the theft-tier line replaces the leave line and carries the leave penalty');
+  }
+  // Guards: out-of-stock steals nothing (a normal leave); non-thieves never steal.
+  {
+    const s = shopState();
+    s.items.club.stock = 0;
+    s.queue = [{ ...customer('rat', 'club', 0), patienceRemaining: 0.01 }];
+    update(s, 0.05);
+    ok(s.items.club.stock === 0 && s.log[0].tier === 'leave',
+       'theft: an empty shelf forces an honest leave — stock never goes negative');
+  }
+  ok(timedOut('skeleton').items.club.stock === 3, 'theft: non-thief timeouts touch nothing');
+  // The prevention: dismissing the thief keeps the shelf whole (Send Away = anti-theft).
+  {
+    const s = shopState();
+    s.items.club.stock = 3;
+    s.queue = [customer('rat', 'club', 0)];
+    dismissCurrent(s);
+    ok(s.items.club.stock === 3, 'theft: dismissal prevents it — the whole point of the mechanic');
+  }
+  // Offline: the fiction number derives from sales x the roster's thief share; deterministic.
+  {
+    const s = shopState();
+    s.workers.mimic_merchant.owned = true;
+    s.lastSeen = Date.now() - 3600 * 1000;
+    const r1 = computeOffline(s, Date.now()), r2 = computeOffline(s, Date.now());
+    const thieves = MONSTER_IDS.filter((id) => MONSTERS[id]?.thief === true).length;
+    ok(r1.ratsFoiled === Math.round(r1.sales * thieves / MONSTER_IDS.length)
+       && r1.ratsFoiled === r2.ratsFoiled,
+       'theft offline: ratsFoiled = sales x thief share, recompute-stable');
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

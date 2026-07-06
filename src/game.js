@@ -594,10 +594,26 @@ export function update(state, dt) {
       if (c.patienceRemaining > 0) { stillWaiting.push(c); continue; }
       const name = MONSTERS[c.monsterId]?.displayName ?? 'Someone';
       state.reputation = Math.max(0, state.reputation - CONFIG.reputation.leavePenalty);
-      pushLog(state, { ...logLine(c.monsterId, 'leave', { name,
-        serves: state.stats.monsterServes[c.monsterId] ?? 0,
-        gregHired: state.workers?.restocker?.owned === true }),  // Greg's leave remarks, hire-gated
-        repDelta: -CONFIG.reputation.leavePenalty, tier: 'leave', monsterId: c.monsterId });
+      // The leave-theft (roadmap 6 Pass B, Daniel 2026-07-05): a THIEF-flagged mob who times out
+      // pockets ONE unit of his wanted item — in-stock only, no payment, the leave rep penalty
+      // still applies on top. Bounded on purpose: leave-only, one unit, wanted-item-only. The
+      // prevention is DISMISSAL — Send Away and Bob's auto-wave are the anti-theft plays, which
+      // turns an existing pure-loss event into a watch-his-patience decision. The theft-tier
+      // line REPLACES the generic leave line (one event, one line, both facts).
+      const steals = MONSTERS[c.monsterId]?.thief === true
+        && (state.items[c.wantedItemId]?.stock ?? 0) > 0;
+      if (steals) {
+        state.items[c.wantedItemId].stock -= 1;
+        pushLog(state, { ...logLine(c.monsterId, 'theft', { name,
+          item: ITEMS[c.wantedItemId]?.displayName, itemId: c.wantedItemId,
+          serves: state.stats.monsterServes[c.monsterId] ?? 0 }),
+          repDelta: -CONFIG.reputation.leavePenalty, tier: 'leave', monsterId: c.monsterId });
+      } else {
+        pushLog(state, { ...logLine(c.monsterId, 'leave', { name,
+          serves: state.stats.monsterServes[c.monsterId] ?? 0,
+          gregHired: state.workers?.restocker?.owned === true }),  // Greg's leave remarks, hire-gated
+          repDelta: -CONFIG.reputation.leavePenalty, tier: 'leave', monsterId: c.monsterId });
+      }
     }
     if (stillWaiting.length !== state.queue.length) {
       state.queue = stillWaiting;
