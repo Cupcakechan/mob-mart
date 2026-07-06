@@ -469,39 +469,61 @@ Playable end-to-end with the full idle lattice live: mobs queue → Serve (manua
 auto-serve) → celebration hop + march through the battle door → comedy result + gold/rep →
 restock/upgrades/perks/licenses. Loyalty (Pass 1), dual-track Fame + perks (Pass 2), tier-2 licensed
 stock (Pass 3), Restock All (3.5), spawn director, offline earnings, Kongregate no-op bridge — all
-shipped. **Roster: FOUR customers** (Slimey / Batty / Skele / **Froggo**, all art IN) and
-**FIFTEEN items** (base trio + tier-2 three + batch-1 nine, all icons IN). Battle results land at
-DOOR ENTRY (render-synced + fallback). Wants are A2 category-affinity; the everything tier is B2
-ratcheted; comedy is item-aware (category-tagged templates). Save `mobmart.save.v1`, additive
-schema, clamped merges (ratchet merge-seeded from the pinned legacy basis). Suite:
-**`test_suite.mjs` at repo root, 288 assertions green** — a fresh clone self-verifies with
-`node test_suite.mjs`. Suite doctrine (batch-1 lesson, 19 fixtures broke at once): EXACT-MATH
-tests pin the trio shelf via `pinTrioShelf`; RULE tests derive expectations from the live
-registry — never hand-type a roster-dependent number into a rule test.
+shipped. **Roster: FOUR customers** (Slimey / Batty / Skele / **Froggo**, all art IN),
+**FIFTEEN items** (all icons IN), and **TWO workers** (Bob the serve-mimic, **Greg** the
+restock-gargoyle — full arc below). **UX roadmap items 1–4 are SHIPPED** (2026-07-04/05, as-built
+deltas marked on each item below): Bob's hire arc, the Fame track panel (5th nav tab), license
+alerts via Bob's clickable DOM bubble, and Greg — who grew into a full subsystem: Trusted-gated
+600◆ hire, paid 8s trickle, duty-cycled clickable restock bubble, errand flights (random shelf
+destination, north-facing work strip, apex-masked turn hops), flyer-only shadows, two Fame perks
+(Swift Wings −20%/lvl interval, Bulk Satchel 2-unit runs), bounded offline reserve refills
+(+1, +1 with satchel), and a hire-gated voice (blunt anti-Bob; shoo/leave lines + gold hire
+intro + bubble quip). Gold milestone lines now land as staggered beats (2.5s dial). Comedy:
+@25 AND @50 ladder batches live, goldens @100, two hygiene laws suite-pinned (no second person;
+consumable verbs must fit the whole roster — the Rusty Key is a consumable). Save
+`mobmart.save.v1`, additive schema, clamped merges. Suite: **`test_suite.mjs` at repo root,
+394 assertions green** — a fresh clone self-verifies with `node test_suite.mjs`. Suite doctrine
+(batch-1 lesson): EXACT-MATH tests pin the trio shelf via `pinTrioShelf`; RULE tests derive from
+live registries — never hand-type a roster-dependent number; exact batch totals live only in the
+NEWEST batch's section. New module since the items phase: `src/data/fametrack.js` (registry-
+scanned tier track). Transient (never-serialized) state fields now include: `bobSpeech`,
+`licenseReminderIn`, `gregBubble`, `gregRestocked`, `workerServed`, `milestoneQueue`,
+`milestoneCooldown` — the serializer is an explicit field list, and suite sections pin each
+exclusion.
 
 ### Next up — the idle-progression roadmap (from MOB_MART_RESEARCH.md)
 
 **Agreed immediate order — THE UX ROADMAP (Daniel's fresh-eyes full-reset findings, 2026-07-04;
 all shapes below are HIS refinements of the options rounds, decided):**
-1. **Bob's hire arc (pseudo-tutorial).** Bob is NOT visible until hired (drawBob + serve anims
+1. **SHIPPED 2026-07-04.** **Bob's hire arc (pseudo-tutorial).** Bob is NOT visible until hired (drawBob + serve anims
    gate on `workers.mimic_merchant.owned`); the empty counter carries a persistent goal chip
    ("The counter needs a merchant! Hire Bob — 50◆", DOM, click -> Workers tab); on hire Bob
    appears. Teaches manual serve THEN automation, and keeps the first-purchase beat.
    startingGold 40 vs hireCost 50 = 1-2 manual serves fund it (deliberate). Old saves
    (owned: true) see nothing. Suite: M4 sections assume unowned start — already compatible.
-2. **Fame track panel ("unlock tree" — Daniel's twist on Option 3).** Fame is LINEAR, so the tree
+2. **SHIPPED 2026-07-04** (as-built: live tier labels start at NEUTRAL, not "Newcomer"; workers
+   with a requiredTier scan onto the track too — Greg sits on the Trusted node).
+   **Fame track panel ("unlock tree" — Daniel's twist on Option 3).** Fame is LINEAR, so the tree
    is a vertical TRACK: one node per tier (Newcomer..Legendary), each node fanning out what it
    unlocks — REGISTRY-SCANNED (licenses' + perks' requiredTier auto-populate; new content
    auto-appears). Centered showcase presentation (the Bestiary-v2 pattern; documented actor-band
    exception). Plus a one-line HUD remainder ("· 32♛ to Trusted"). NOT a branching spend-tree —
    that would be a new system; display only. Must visually separate spendable ♛ vs lifetime Fame.
-3. **License alerts via BOB'S SPEECH BUBBLE (Daniel's twist on Option 2).** On a tier crossing
+3. **SHIPPED 2026-07-04** (as-built: the bubble became the CLICKABLE DOM variant same day —
+   Daniel's call, superseding "not clickable"; headPad measured via pngjs; click routes to the
+   license's shelf category; a blinking bright-gold card frame marks affordable licenses,
+   eligible-but-broke keeps the subtle button gold; canvas click handling remains ZERO).
+   **License alerts via BOB'S SPEECH BUBBLE (Daniel's twist on Option 2).** On a tier crossing
    with newly eligible licenses, Bob gets his own bubble (drawBubble variant anchored at Bob):
    queued announcements ~6s each, PLUS a gentle recurring reminder (~30s dial) while any eligible
    license sits unbought, PLUS the milestone log line as the permanent record. NOT clickable
    (canvas has zero click handling — by design); if click-to-shop ever matters, a DOM chip is the
    fallback. Trigger = TIER ELIGIBILITY, never affordability (gold fluctuates -> spam).
-4. **The Restocker (second worker).** SMALLER than Bob, a FLYING something (art undecided —
+4. **SHIPPED 2026-07-04/05, expanded far beyond this spec — see Current state.** The Restocker
+   is **GREG** (gargoyle, 112x112 native, greg_fly + greg_fly_n strips in). Deltas from the spec
+   below: hire 600◆ (Daniel, up from the 100-150 band — a mid-game goal) gated behind TRUSTED;
+   the standing chip became his duty-cycled clickable bubble (10s/45s dials); trickle is C1 flat
+   8s, paid per unit. **The Restocker (second worker).** SMALLER than Bob, a FLYING something (art undecided —
    flyer conventions apply: `flying: true`-style hover, altitude padding). Passive slow
    auto-restock trickle + the "Restock now" clickable DOM chip over the diorama for active play
    ("Club out — Restock 6◆" -> restockItem). Upgrade specifics deferred to the pass (mini options
@@ -952,28 +974,33 @@ set. Add "bumpy" x2 spikes at 25/50-style breakpoints. Never add decay/backward 
 
 ## 13. Open questions / pending decisions
 
-- **Rat: coming, but later** (Daniel, 2026-07-04) — a future content pass; the cost is a fifth
-  distinct comedy voice, everything else is one registry row + 3 PNGs.
-- **Line-unlock mechanic design** — deferred from the old Pass 4 bundle; needs its own options
-  round (gating comedy pools by serve count touches the no-repeat picker).
-- **Knight Helm 26 — Daniel's edit, verify landed:** next session, confirm `basePrice: 26` is at
-  HEAD (items.js line ~18; restockCost stays 15 — margin holds; no suite change needed).
-- **probe_economy.mjs is scratch and NOT gitignored** — if Daniel ran it locally, it must be
-  deleted before `git add .` (or add `probe_*.mjs` to .gitignore).
-- **Restocker build-time mini round owed:** chip stacking (list vs one-at-a-time), affordability
-  graying, passive trickle rate + upgrade shape. Art is a small FLYER, undecided — placeholder-
-  first per the standing pattern.
-- **@50 line batches** whenever Daniel wants more comedy content (Batty's pebble escalation is
-  teed up in the bible tracker).
-- **Shelf-panel scroll tradeoff (provisional):** `overflow-y: auto` clips the attention-pulse glow
-  at the panel edge — confirm on feel or adjust the dials named in style.css.
-- **Feel verdicts logged 2026-07-04:** early pace GOOD (no dilution lever); wiggle tuned 800/4;
-  golden styling unconfirmed on feel (ships, revisit only if it reads wrong).
-- **Potion display names locked:** Murk Tonic, Zip Tonic (Daniel approved 2026-07-04).
-- **itch.io dual-publish: yes or Kongregate-only?** Decides whether the `butler` deploy path is added.
+**Resolved this session (2026-07-05), recorded for the log:** Knight Helm 26 landed at HEAD;
+probe_economy.mjs never existed on Daniel's machine; the Restocker mini round was held and decided
+(A1 one-at-a-time / B1 gray / C1 flat 8s — then the chip evolved into Greg's bubble); the @50
+batch shipped; shelf-scroll glow-clip and golden styling both passed Daniel's feel checks; the
+restock worker's visual home is canvas-beside-Bob (Greg at 490,330); the line-unlock mechanic
+shipped as the minServes ladder; the offline model review picked BOUNDED refills for Greg (Option
+2 — never time-derived; the "stock binds before time" property is load-bearing).
+
+**Open:**
+- **NEXT UP — roadmap item 5, MENUS (title / pause / settings / credits):** owed an options round
+  before build. Then item 6, **the Rat** (fifth voice cost stands; note the naming-canon item
+  below interacts — six mob types make queue-uniqueness cheap).
+- **Lampshade lines (queued, next content beat):** Daniel picked OPTION 3 on the identity
+  question — mascot logic is CANON (Slimey is Slimey even when there are two of him); 1-2 lines
+  winking at duplicates join the next line batch ("Another Skele. Or the same one. Nobody
+  checks."). **Queue-uniqueness** (at most one of each type in line) is the deferred Option-1
+  polish, revisit once Goblin + Rat bring the roster to six.
+- **itch.io dual-publish: STILL UNDECIDED** (asked 2026-07-05) — decides whether the `butler`
+  deploy path is added.
+- **Bob-voiced dismiss lines can fire pre-hire** (a ~2-serve window given 40g start vs 50g hire).
+  Flagged, not fixed — a `bob: true` gate is the same four-line mechanism as Greg's tag if Daniel
+  ever wants it airtight.
+- **Swift Wings math note:** divisor form (matches serveSpeed) — 0.25/level reads as **−20%** per
+  level, described honestly in the perk text; `perLevel: 1/3` is the lever for a true −25%.
+- **Feel dials shipped provisional, confirm on play:** Greg's shadow (`shadowY: 472`), errand
+  length (4400ms), turn hops (24px), milestone stagger (2.5s), Greg bubble duty cycle (10s/45s),
+  flap fps (8).
+- **DevLog: opted out** (standing — skip at every feature completion).
 - **Repo:** `github.com/Cupcakechan/mob-mart` (local folder `mob-mart`).
-- **Offline earning model — DECIDED (M5):** worker-only, no drip. Bob is hireable within minutes, so
-  a no-worker drip had a negligible window; revisit only if a rebalance moves `hireCost` far up.
-- **Restock worker visual home:** DOM-only avatar vs canvas backroom/shelf prop vs beside Bob (decide
-  when a second/restock worker is on the table).
 - **Special "visits"** design (high-rep rare customers) — deferred.
