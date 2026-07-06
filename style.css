@@ -337,12 +337,17 @@ body{
   rows; 'overflow: visible' would spill row 2 over the queue heads (~y394), so the second row
   scrolls instead. TRADEOFF (provisional): the attention-pulse glow clips at the panel edge —
   if that reads badly on feel, the dials are this max-height vs the panel's top:96. */
-.shelf-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+/* SHELF-HEADER BUDGET (2026-07-05, revised for the Consumables label): panel inner width 398
+   (430 - 28 padding - 4 border). The tab row went MIXED-CASE deliberately (Daniel's Option 2) —
+   "CONSUMABLES" in forced caps blows the row, mixed-case fits: row minimum at the widest compact
+   quote ("Restock All <>99.9k") ~393 with these paddings + the 8px header gap -> ~5px slack.
+   A FOURTH category tab does NOT fit — redesign (two rows / drop the title), don't shrink. */
+.shelf-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .shelf-header .panel-title { margin: 0; flex-shrink: 0; }
 .shelf-tabs { display: flex; gap: 4px; flex: 1; }
 .shelf-tab {
   background: transparent; color: #b6abc9; border: 1px solid #4b3a63; border-radius: 8px;
-  padding: 4px 6px; font-weight: 800; font-size: 11px; text-transform: uppercase; cursor: pointer;
+  padding: 4px 6px; font-weight: 800; font-size: 11px; cursor: pointer;
 }
 .shelf-tab.active { background: #ffcf4a; color: #241a33; border-color: #ffcf4a; }
 .shelf-tab.attention { animation: attn-nav 1.2s ease-in-out infinite; border-color: #ffcf4a; }

@@ -52,7 +52,7 @@ export function initPanels(root, h) {
         <div class="shelf-tabs" id="shelf-tabs">
           <button class="shelf-tab active" data-cat="weapon">Weapons</button>
           <button class="shelf-tab" data-cat="armor">Armor</button>
-          <button class="shelf-tab" data-cat="consumable">Potions</button>
+          <button class="shelf-tab" data-cat="consumable">Consumables</button>
         </div>
         <button id="restock-all-btn" class="restock-all-btn">Restock All</button>
       </div>
