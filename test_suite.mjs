@@ -2197,5 +2197,19 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
 }
 
+// 44. Fold pass (2026-07-05): compactGold + the Option-3 lampshade lines -------------------------
+{
+  const { compactGold } = await import('./src/utils.js');
+  ok(compactGold(999) === '999' && compactGold(1000) === '1k'
+     && compactGold(1116) === '1.1k' && compactGold(12500) === '12.5k',
+     'compactGold: exact under 1000, one-decimal k above, no trailing .0');
+
+  const { GENERIC_RESULTS } = await import('./src/data/results.js');
+  const texts = [...GENERIC_RESULTS.leave, ...GENERIC_RESULTS.dismiss]
+    .map((t) => (typeof t === 'string' ? t : t.text));
+  ok(texts.some((t) => t.includes('Nobody checks')) && texts.some((t) => t.includes('impostor')),
+     'lampshade: both Option-3 canon lines are live (leave + dismiss)');
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

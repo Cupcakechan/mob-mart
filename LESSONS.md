@@ -66,3 +66,18 @@
   read its import block first** — treat each section as its own module.
 - Route: project convention (suite structure). Same family as "read the established call pattern
   before using a helper" (the mergeSave two-arg miss, same day).
+
+## 2026-07-05 — `git add .` shipped an unnoticed file DELETION (COMEDY_BIBLE.md, 417 lines)
+- What broke: the milestone-stagger commit deleted COMEDY_BIBLE.md alongside its three intended
+  files — discovered only when the NEXT pass tried to edit the bible and got ENOENT at HEAD.
+- Root cause: the file was already missing from the local working tree at commit time (local
+  cause unknown — a move, an unzip mishap); `git add .` faithfully staged the deletion, and the
+  checkpoint's `git status` output wasn't scanned for `deleted:` lines before committing.
+- Recovery: `git checkout <last-good-sha> -- COMEDY_BIBLE.md` (recover-before-diagnose; content
+  fully intact in history — this is why small commits matter).
+- Plug / rule: **the `git status` step is a READ, not a ritual** — before any `git add .`, scan
+  specifically for `deleted:` and unexpected paths; any unexpected deletion stops the checkpoint.
+  Claude-side mirror: after `git pull`, verify the key docs (handoff, bible, LESSONS) still exist
+  before editing "around" them.
+- Route: universal method candidate (the git checkpoint section) — until harvested, this entry
+  is the guard.

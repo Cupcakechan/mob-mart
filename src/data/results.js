@@ -101,6 +101,9 @@ export const GENERIC_RESULTS = {
     `{name} left a one-star review in his heart, then the shop.`,
     `{name} gave up his spot in line. His greatest sacrifice yet.`,
     `{name} left, still holding the coupon. Still folded. Still hopeful.`,
+    // Duplicate lampshade (Option 3 canon, Daniel 2026-07-05): mascot logic — Slimey is Slimey
+    // even when there are two of him, and the shop has noticed.
+    `Another {name} came in right after. Or the same one. Nobody checks.`,
     { text: `{name} left. Greg waved. Technically it was a shrug.`, greg: true },
     { text: `Greg watched {name} go. "Saves me a restock." Employee of the month.`, greg: true },
   ],
@@ -119,6 +122,7 @@ export const GENERIC_RESULTS = {
     `{name} got a firm, friendly no and a free peppermint.`,
     `Bob pointed at the door with genuine warmth. {name} obliged.`,
     `Bob cited store policy: no coin, no {item}. {name} nodded sagely.`,
+    `{name} swears the other {name} is the impostor. Both are {name}.`,
     // Greg-voiced shoos (voice pass, 2026-07-05): { greg: true } lines fire only once Greg is
     // hired — the anti-Bob register: blunt, zero padding, never about the customer's worth.
     { text: `Greg pointed at the door. {name} respected the efficiency.`, greg: true },

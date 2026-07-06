@@ -2,6 +2,7 @@
 // battle log. The Shelf / Upgrades / Workers panels share the center slot; the bottom nav toggles
 // which is visible.
 import { setShopAttention, openTab } from './nav.js';
+import { compactGold } from '../utils.js';
 import { ITEM_BREAKPOINTS, MONSTER_BREAKPOINTS, MONSTER_REP_PER_BREAKPOINT,
   nextBreakpoint, crossedCount, bestiaryCompletion } from '../data/milestones.js';
 import { PERKS, PERK_ORDER, perkCost } from '../data/perks.js';
@@ -313,10 +314,13 @@ export function renderPanels(state) {
     card.classList.toggle('hidden', ITEMS[card.dataset.item]?.category !== activeCategory));
 
   // Restock All: quote = full fill at effective costs; enabled while ANY unit is buyable.
+  // Quote COMPACTS at 1000+ (clip fix, 2026-07-05): the header row's minimum width is fixed but
+  // the quote grows with roster + maxStock — the exact figure rides the tooltip.
   const raBtn = document.getElementById('restock-all-btn');
   if (raBtn) {
     const quote = restockAllCost(state);
-    raBtn.textContent = quote > 0 ? `Restock All ◆${quote}` : 'Stocked';
+    raBtn.textContent = quote > 0 ? `Restock All ◆${compactGold(quote)}` : 'Stocked';
+    raBtn.title = quote >= 1000 ? `◆${quote} exact` : '';
     raBtn.disabled = !canRestockAll(state);
   }
 
