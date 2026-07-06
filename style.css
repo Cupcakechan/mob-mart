@@ -145,11 +145,13 @@ body{
 .cust-wait{margin-top:6px;font-size:12px;font-weight:700;color:#a99fbb;text-transform:uppercase;letter-spacing:1px;}
 
 /* Menu (top-right) — opens the Settings/Credits overlay; Reset lives INSIDE it now (relocated
-   2026-07-05: a destructive action floating loose on the stage earned its move) */
+   2026-07-05: a destructive action floating loose on the stage earned its move). Styled as the
+   HUD capsule family (Daniel, 2026-07-05: transparent vanished into the brick wall). */
 .menu-btn{
-  position:absolute;top:16px;right:16px;z-index:6;background:transparent;color:#8a7fa0;
-  border:2px solid var(--panel-edge);border-radius:10px;padding:6px 12px;font-weight:700;
+  position:absolute;top:16px;right:16px;z-index:6;background:var(--panel-bg);color:#b6abc9;
+  border:2px solid var(--panel-edge);border-radius:12px;padding:8px 14px;font-weight:700;
   font-size:12px;cursor:pointer;text-transform:uppercase;letter-spacing:1px;
+  box-shadow:0 4px 0 rgba(0,0,0,.4);
 }
 .menu-btn:hover{color:#e8e0cd;border-color:#8a7fa0;}
 
