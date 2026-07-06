@@ -154,11 +154,55 @@ initPanels(document.getElementById('shop-ui'), {
 });
 initNav(document.getElementById('nav'));           // bottom nav swaps the center panel
 
-document.getElementById('reset-btn').addEventListener('click', () => {
-  if (window.confirm('Reset all progress? This clears your saved shop.')) {
-    clearSave();
-    location.reload();
-  }
+// --- Menu overlay (UX roadmap 5, Option 2) -------------------------------------------------
+// In-game: the Menu button opens it over the RUNNING shop (no pause state exists on purpose —
+// idle-honest). From the title: the Credits link opens it on the credits tab, over the title.
+const menuOverlay = document.getElementById('menu-overlay');
+const showMenu = (tab) => {
+  document.querySelectorAll('.menu-tab').forEach((b) =>
+    b.classList.toggle('active', b.dataset.menuTab === tab));
+  document.getElementById('menu-settings').classList.toggle('hidden', tab !== 'settings');
+  document.getElementById('menu-credits').classList.toggle('hidden', tab !== 'credits');
+  menuOverlay.classList.remove('hidden');
+};
+
+// Reset, relocated into the menu with DOUBLE-CONFIRM friction (a destructive action deserves it —
+// replaces the old floating button's window.confirm): first click ARMS the button ("Really
+// erase?"), a second click within 4s resets; the arm decays on the timer or when the menu closes.
+const resetBtn = document.getElementById('menu-reset-btn');
+let resetArmTimer = null;
+const resetArm = (armed) => {
+  clearTimeout(resetArmTimer);
+  resetBtn.classList.toggle('armed', armed);
+  resetBtn.textContent = armed ? 'Really erase? Click again' : 'Reset Progress';
+  if (armed) resetArmTimer = setTimeout(() => resetArm(false), 4000);
+};
+resetBtn.addEventListener('click', () => {
+  if (!resetBtn.classList.contains('armed')) { resetArm(true); return; }
+  clearSave();
+  location.reload();
+});
+
+document.getElementById('menu-btn').addEventListener('click', () => showMenu('settings'));
+document.getElementById('title-credits-btn').addEventListener('click', () => showMenu('credits'));
+document.querySelectorAll('.menu-tab').forEach((b) =>
+  b.addEventListener('click', () => showMenu(b.dataset.menuTab)));
+document.getElementById('menu-close-btn').addEventListener('click', () => {
+  menuOverlay.classList.add('hidden');
+  resetArm(false);                                // a half-armed reset never survives the menu closing
+});
+
+// Back to Title: recreates the BOOT state exactly — update() gates on screen === 'shop', so the
+// shop freezes (no spawns, no timers, no autosave), just like before the first Open Shop. Save
+// FIRST: autosave only runs on the shop screen, so without this a tab closed at the title could
+// lose up to an autosave interval. Re-entry is the existing Open Shop handler (it resets the
+// spawn grace too).
+document.getElementById('menu-title-btn').addEventListener('click', () => {
+  saveState(state);
+  state.screen = 'title';
+  menuOverlay.classList.add('hidden');
+  resetArm(false);
+  document.getElementById('title').classList.remove('hidden');
 });
 
 document.getElementById('open-shop-btn').addEventListener('click', () => {

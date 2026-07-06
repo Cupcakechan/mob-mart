@@ -12,7 +12,7 @@
 
     <!-- DOM overlay: HUD + shop panels sit on top of the canvas diorama -->
     <div id="hud" class="hud"></div>
-    <button id="reset-btn" class="reset-btn" title="Reset all progress">Reset</button>
+    <button id="menu-btn" class="menu-btn" title="Menu">Menu</button>
     <div id="shop-ui" class="shop-ui"></div>
     <div id="nav" class="nav"></div>
 
@@ -38,6 +38,39 @@
       <h1 class="title-logo">MOB MART</h1>
       <p class="title-tag">Gear up the little guys. Watch them lose. Get paid.</p>
       <button id="open-shop-btn" class="open-shop-btn">Open Shop</button>
+      <button id="title-credits-btn" class="title-credits-link">Credits</button>
+    </div>
+
+    <!-- Menu overlay (UX roadmap 5, Option 2 — Daniel's pick): tabbed Settings/Credits card,
+         reachable from the in-game Menu button AND the title's Credits link. z15: above the
+         title (10) so the title route works, below the away modal (20 — a boot-priority
+         message). The IN-GAME overlay does NOT pause the sim (idle-honest: an open-but-frozen
+         idle game earns less than a closed tab, which accrues offline — the card says so).
+         Back to Title recreates the BOOT state exactly (update() gates on screen === 'shop'). -->
+    <div id="menu-overlay" class="menu-overlay hidden">
+      <div class="menu-card">
+        <div class="menu-tabs">
+          <button class="menu-tab active" data-menu-tab="settings">Settings</button>
+          <button class="menu-tab" data-menu-tab="credits">Credits</button>
+        </div>
+        <div id="menu-settings" class="menu-section">
+          <p class="menu-note">The shop stays open while you're here.</p>
+          <div class="menu-row">
+            <span>Return to the title screen</span>
+            <button id="menu-title-btn" class="menu-action">Back to Title</button>
+          </div>
+          <div class="menu-row">
+            <span>Erase the saved shop and start over</span>
+            <button id="menu-reset-btn" class="menu-action danger">Reset Progress</button>
+          </div>
+        </div>
+        <div id="menu-credits" class="menu-section hidden">
+          <p class="menu-credit"><b>Mob Mart</b> &mdash; a tiny idle shop for little monsters.</p>
+          <p class="menu-credit">Design, code &amp; pixel art: <b>Daniel</b></p>
+          <p class="menu-credit">Built with vanilla JavaScript and HTML5 Canvas. System fonts; no engines were harmed.</p>
+        </div>
+        <button id="menu-close-btn" class="menu-close">Close</button>
+      </div>
     </div>
 
     <!-- "While you were away" modal (M5) — shown over the title on return when Bob earned something -->

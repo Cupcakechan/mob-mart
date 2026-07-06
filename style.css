@@ -144,13 +144,59 @@ body{
 /* Queue count under the current customer */
 .cust-wait{margin-top:6px;font-size:12px;font-weight:700;color:#a99fbb;text-transform:uppercase;letter-spacing:1px;}
 
-/* Reset (top-right) — destructive, so it's muted and warns red on hover */
-.reset-btn{
+/* Menu (top-right) — opens the Settings/Credits overlay; Reset lives INSIDE it now (relocated
+   2026-07-05: a destructive action floating loose on the stage earned its move) */
+.menu-btn{
   position:absolute;top:16px;right:16px;z-index:6;background:transparent;color:#8a7fa0;
   border:2px solid var(--panel-edge);border-radius:10px;padding:6px 12px;font-weight:700;
   font-size:12px;cursor:pointer;text-transform:uppercase;letter-spacing:1px;
 }
-.reset-btn:hover{background:rgba(224,106,106,.12);color:#e06a6a;border-color:#e06a6a;}
+.menu-btn:hover{color:#e8e0cd;border-color:#8a7fa0;}
+
+/* --- Menu overlay (UX roadmap 5, Option 2). z15: above the title (10) so the title's Credits
+   route works; below the away modal (20). The in-game overlay does NOT pause the sim. -------- */
+.menu-overlay{
+  position:absolute;inset:0;z-index:15;display:flex;align-items:center;justify-content:center;
+  background:rgba(10,7,16,.72);
+}
+.menu-overlay.hidden{display:none;}
+.menu-card{
+  width:380px;background:var(--panel-bg);border:2px solid var(--panel-edge);border-radius:14px;
+  padding:16px 18px;box-shadow:0 8px 0 rgba(0,0,0,.45);
+}
+.menu-tabs{display:flex;gap:6px;margin-bottom:12px;}
+.menu-tab{
+  flex:1;background:transparent;color:#b6abc9;border:1px solid #4b3a63;border-radius:8px;
+  padding:6px 0;font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:1px;cursor:pointer;
+}
+.menu-tab.active{background:#ffcf4a;color:#241a33;border-color:#ffcf4a;}
+.menu-note{margin:0 0 4px;color:#8a7fa0;font-size:12px;font-style:italic;text-align:center;}
+.menu-row{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 0;border-bottom:1px solid #3a2c50;color:#c9bfa8;font-size:13px;
+}
+.menu-row:last-child{border-bottom:none;}
+.menu-action{
+  flex-shrink:0;background:#3b2a55;color:#e8e0cd;border:1px solid var(--panel-edge);
+  border-radius:8px;padding:6px 12px;font-weight:800;font-size:12px;cursor:pointer;
+}
+.menu-action:hover{border-color:#8a7fa0;}
+.menu-action.danger{color:#e06a6a;border-color:#5a3a3a;}
+.menu-action.danger:hover{background:rgba(224,106,106,.12);border-color:#e06a6a;}
+.menu-action.danger.armed{background:#e06a6a;color:#241a33;border-color:#e06a6a;}
+.menu-section .menu-credit{margin:0 0 10px;color:#c9bfa8;font-size:13px;line-height:1.5;}
+.menu-close{
+  width:100%;margin-top:12px;background:transparent;color:#b6abc9;border:1px solid #4b3a63;
+  border-radius:8px;padding:8px 0;font-weight:800;font-size:12px;text-transform:uppercase;cursor:pointer;
+}
+.menu-close:hover{color:#e8e0cd;border-color:#8a7fa0;}
+
+/* The title's small credits route */
+.title-credits-link{
+  background:transparent;border:none;color:#8a7fa0;font-size:13px;cursor:pointer;
+  text-decoration:underline;font-family:var(--font);
+}
+.title-credits-link:hover{color:#e8e0cd;}
 
 /* Generic hide helper (used for tab switching) */
 .hidden{display:none;}
