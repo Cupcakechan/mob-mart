@@ -342,13 +342,13 @@ body{
 .shelf-tabs { display: flex; gap: 4px; flex: 1; }
 .shelf-tab {
   background: transparent; color: #b6abc9; border: 1px solid #4b3a63; border-radius: 8px;
-  padding: 4px 10px; font-weight: 800; font-size: 11px; text-transform: uppercase; cursor: pointer;
+  padding: 4px 6px; font-weight: 800; font-size: 11px; text-transform: uppercase; cursor: pointer;
 }
 .shelf-tab.active { background: #ffcf4a; color: #241a33; border-color: #ffcf4a; }
 .shelf-tab.attention { animation: attn-nav 1.2s ease-in-out infinite; border-color: #ffcf4a; }
 .restock-all-btn {
   background: #3b2a55; color: #ffcf4a; border: 1px solid #ffcf4a; border-radius: 8px;
-  padding: 5px 10px; font-weight: 800; font-size: 11px; cursor: pointer; flex-shrink: 0;
+  padding: 5px 8px; font-weight: 800; font-size: 11px; cursor: pointer; flex-shrink: 0;
 }
 .restock-all-btn:disabled { color: #8f86a3; border-color: #5a4a75; cursor: default; }
 
