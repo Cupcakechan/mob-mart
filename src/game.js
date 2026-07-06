@@ -539,6 +539,21 @@ export function update(state, dt) {
     }
   }
 
+  // Milestone stagger drain: tick the cooldown; on expiry, release the OLDEST queued gold line
+  // and rearm — beats stay milestoneSpacingSec apart in game time, FIFO, however many stacked.
+  if ((state.milestoneCooldown ?? 0) > 0) {
+    state.milestoneCooldown -= dt;
+    if (state.milestoneCooldown <= 0) {
+      state.milestoneCooldown = 0;
+      const next = state.milestoneQueue?.shift();
+      if (next) {
+        pushLogNow(state, next);
+        state.milestoneCooldown = CONFIG.log.milestoneSpacingSec ?? 2.5;
+        state.uiDirty = true;
+      }
+    }
+  }
+
   // Greg's restock report (Option 1 duty cycle, Daniel 2026-07-05): "a way to restock, not the
   // main way" — while Greg is hired and something unlocked sits OUT, the bubble pops for showSec
   // once per cycleSec instead of standing permanently. Transient like the license reminder (boot
@@ -598,9 +613,26 @@ export function update(state, dt) {
   updateWorkers(state, dt);   // auto-serve runs last, on the settled queue (spawns in, leavers out)
 }
 
-function pushLog(state, entry) {
+// Raw log insert — no spacing logic. Internal: the drain below and non-milestone lines use this.
+function pushLogNow(state, entry) {
   state.log.unshift(entry);
   if (state.log.length > CONFIG.log.maxEntries) state.log.length = CONFIG.log.maxEntries;
+}
+
+// The single log chokepoint. MILESTONE-tier entries are STAGGERED (Daniel, 2026-07-05): one serve
+// can legitimately earn several gold lines (breakpoint + new-stories + a fame crossing), and
+// simultaneous gold reads as one blob — so the first delivers instantly and the rest queue,
+// released by update() every milestoneSpacingSec. Battle/dismiss/leave lines bypass entirely
+// (only gold-vs-gold spacing matters; a battle line landing between beats is natural feed
+// behavior). Both spacing fields are TRANSIENT — a reload mid-gap drops queued LINES only (the
+// milestones' effects are already applied), the same accepted trade as pendingReports.
+function pushLog(state, entry) {
+  if (entry.tier === 'milestone' && (state.milestoneCooldown ?? 0) > 0) {
+    (state.milestoneQueue ??= []).push(entry);
+    return;
+  }
+  if (entry.tier === 'milestone') state.milestoneCooldown = CONFIG.log.milestoneSpacingSec ?? 2.5;
+  pushLogNow(state, entry);
 }
 
 // Deliver the OLDEST pending battle report to the log. Called from two places: main.js's

@@ -644,12 +644,18 @@ console.log('M4 auto-serve worker — smoke test\n');
        'dismiss counts nothing (only real serves feed the ledger)');
   }
   {
+    const { CONFIG } = await import('./src/config.js');   // for the stagger beat below
     const s = shopState();
     for (const id of Object.keys(s.stats.itemSales)) s.stats.itemSales[id] = 50;   // laggard: flask at 49
     s.stats.itemSales.hp_flask = 49;
     s.items.hp_flask.stock = 3;
     s.queue = [customer('bat', 'hp_flask', 99)];
     serveCurrent(s);                                 // flask hits 50: item breakpoint + everything tier
+    // Stagger (2026-07-05): double-gold delivers as BEATS — one instantly, the second queued and
+    // released a spacing later, so each line gets read.
+    ok(s.log.filter((e) => e.tier === 'milestone').length === 1 && s.milestoneQueue?.length === 1,
+       'laggard crossing: first gold line instant, second queued (the stagger)');
+    update(s, (CONFIG.log.milestoneSpacingSec ?? 2.5) + 0.01);
     ok(s.log.filter((e) => e.tier === 'milestone').length === 2,
        'laggard crossing announces both the item breakpoint AND the everything tier');
   }
@@ -1500,10 +1506,12 @@ console.log('M4 auto-serve worker — smoke test\n');
   // Unlock announcement: crossing a breakpoint WITH a batch pushes the extra milestone line;
   // crossing one WITHOUT (250 — no batch authored there yet) does not.
   {
+    const { CONFIG } = await import('./src/config.js');   // for the stagger beat below
     const s = shopState();
     s.stats.monsterServes.slime = 24;                // the 25th serve crosses the batch threshold
     s.queue = [customer('slime', 'club', 99)];
     serveCurrent(s);
+    update(s, (CONFIG.log.milestoneSpacingSec ?? 2.5) + 0.01);   // stagger (2026-07-05): the second gold line lands one beat later
     ok(s.log.filter((e) => e.tier === 'milestone').length === 2,
        'unlock: crossing 25 announces the monster milestone AND the new-stories line');
   }
@@ -2048,10 +2056,12 @@ console.log('M4 auto-serve worker — smoke test\n');
 
   // The 50 crossing now announces (the registry scan sees a real batch there — no false hype).
   {
+    const { CONFIG } = await import('./src/config.js');   // for the stagger beat below
     const s = shopState();
     s.stats.monsterServes.slime = 49;
     s.queue = [customer('slime', 'club', 99)];
     serveCurrent(s);
+    update(s, (CONFIG.log.milestoneSpacingSec ?? 2.5) + 0.01);   // stagger (2026-07-05): the second gold line lands one beat later
     ok(s.log.filter((e) => e.tier === 'milestone').length === 2,
        'batch @50: crossing 50 announces the monster milestone AND the new-stories line');
   }
@@ -2135,6 +2145,56 @@ console.log('M4 auto-serve worker — smoke test\n');
   const tagged = all.filter((t) => typeof t !== 'string' && t.cats?.includes('consumable'));
   ok(tagged.every((t) => !/\b(drank|drink|chug|chugged|sipped|gulped)\b/i.test(t.text)),
      'hygiene: consumable-tagged lines carry no liquid-only verbs (keys are consumables too)');
+}
+
+// 43. Milestone stagger (Daniel's pick, 2026-07-05): gold lines land as BEATS ---------------------
+// One serve can earn several milestone lines; simultaneous gold reads as a blob. Contract: the
+// first delivers instantly; the rest queue and release FIFO every milestoneSpacingSec; only
+// milestone-tier lines participate (battle/dismiss lines bypass, even mid-cooldown); transience.
+{
+  const { CONFIG } = await import('./src/config.js');
+  const { dismissCurrent } = await import('./src/game.js');
+  const gap = (CONFIG.log.milestoneSpacingSec ?? 2.5) + 0.01;
+
+  // A triple stack drains FIFO, one per beat, with uiDirty on each release.
+  {
+    const s = shopState();
+    const laggard = { text: 'gold-A', repDelta: 0, tier: 'milestone' };
+    // Drive three golds through the real chokepoint via a crossing that stacks two, plus a
+    // synthetic third: 25-crossing (monster milestone + stories) then a hand-pushed entry.
+    s.stats.monsterServes.slime = 24;
+    s.queue = [customer('slime', 'club', 99)];
+    serveCurrent(s);                                    // gold #1 instant, #2 queued
+    ok(s.log.filter((e) => e.tier === 'milestone').length === 1 && s.milestoneQueue.length === 1,
+       'stagger: first gold instant, second queued');
+    s.uiDirty = false;
+    update(s, gap);
+    ok(s.log.filter((e) => e.tier === 'milestone').length === 2 && s.uiDirty === true,
+       'stagger: one beat later the second gold lands, uiDirty set');
+    update(s, gap);
+    ok(s.milestoneQueue.length === 0 && (s.milestoneCooldown ?? 0) === 0,
+       'stagger: an empty queue winds the cooldown down to rest');
+  }
+  // Non-milestone lines bypass: a dismiss mid-cooldown lands instantly.
+  {
+    const s = shopState();
+    s.stats.monsterServes.slime = 24;
+    s.queue = [customer('slime', 'club', 99), customer('bat', 'club', 0)];
+    serveCurrent(s);                                    // cooldown armed, one gold queued
+    const before = s.log.length;
+    dismissCurrent(s);                                  // the broke bat gets waved mid-cooldown
+    ok(s.log.length === before + 1 && s.log[0].tier === 'dismiss',
+       'stagger: non-milestone lines bypass the queue entirely');
+  }
+  // Transience: neither the queue nor the cooldown survives a save round-trip.
+  {
+    const s = shopState();
+    s.milestoneQueue = [{ text: 'x', repDelta: 0, tier: 'milestone' }];
+    s.milestoneCooldown = 2;
+    const data = serializeSave(s);
+    ok(!('milestoneQueue' in data) && !('milestoneCooldown' in data),
+       'stagger: queue and cooldown are never serialized (effects already applied)');
+  }
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

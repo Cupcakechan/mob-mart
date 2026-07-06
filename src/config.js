@@ -81,9 +81,13 @@ export const CONFIG = {
   },
 
   log: { maxEntries: 30,
-    reportFallbackSec: 3.0 },  // battle-report safety valve: a pending report older than this is
+    reportFallbackSec: 3.0,    // battle-report safety valve: a pending report older than this is
                                // delivered by update() even if its celebrant never fires the
                                // door-entry event (dropped by the cap, tab hidden, art edge case).
+    milestoneSpacingSec: 2.5 },// gold-line stagger (Daniel, 2026-07-05): when one serve earns
+                               // several milestone lines (breakpoint + new-stories + fame can
+                               // stack), the first lands instantly and the rest wait this long
+                               // between beats — each gold moment gets read.
 
   licenseAlerts: {
     // License alerts via BOB'S bubble (UX roadmap 3). Trigger is TIER ELIGIBILITY, never
