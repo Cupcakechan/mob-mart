@@ -56,6 +56,13 @@ export const MONSTERS = {
   },
   rat: {
     id:'rat', displayName:'Ratty', spriteId:'rat', combatMod:-1, budgetRange:[10,16],
+        spriteScale: 1.1,    // content is 76% of frame (MEASURED 2026-07-05 via pngjs) — the exact
+                               // Froggo ratio, so the exact Froggo calibration. PROVISIONAL: confirm
+                         // his mass reads right beside Slimey in the queue.
+      footPad: 15,         // MEASURED (2026-07-05): transparent rows below the feet in rat.png —
+                         // coincidentally identical to Froggo's 15.
+                         // funny. Art: rat.png LANDED 2026-07-05 (footPad + scale measured above); the idle and walk
+    // strips are authored and incoming — registered in main.js already, they light up on drop.
     // The Rat Thief (roadmap item 6, Pass A — Daniel 2026-07-05). Comic lever: CHEERFUL
     // ACQUISITION (nothing is stolen; everything is "found"). The ANTI-Froggo economically:
     // his identity lives in the CEILING ([10,16] vs Froggo's [16,30]) — a scrounger hunting the
