@@ -2347,5 +2347,68 @@ console.log('M4 auto-serve worker — smoke test\n');
      'beetley: every debut line fits the 80-char budget');
 }
 
+// 48. Queue uniqueness (Option 2, 2026-07-05): never two of him, never him in two places --------
+// Contract: spawns exclude types in line AND types on return cooldown; every queue exit arms the
+// cooldown (serve / dismiss / timeout-leave); an empty candidate pool skips the beat gracefully;
+// the cooldown map is transient.
+{
+  const { MONSTER_IDS } = await import('./src/data/monsters.js');
+  const { spawnCustomer, dismissCurrent } = await import('./src/game.js');
+  const { CONFIG } = await import('./src/config.js');
+  const cd = CONFIG.queue.returnCooldownSec;
+
+  // Dedup: with a type in line, 200 spawns never duplicate it.
+  {
+    const s = shopState();
+    s.queue = [customer('skeleton', 'club', 99)];
+    ok(Array.from({ length: 200 }, () => spawnCustomer(s)).every((c) => c.monsterId !== 'skeleton'),
+       'uniqueness: a type in line never spawns again (200 draws)');
+  }
+  // Empty pool: all six types in line -> null, and the spawn beat skips without pushing.
+  {
+    const s = shopState();
+    s.queue = MONSTER_IDS.map((id) => customer(id, 'club', 99));
+    ok(spawnCustomer(s) === null, 'uniqueness: a full-roster line empties the pool -> null');
+    s.spawnTimer = 0.01;
+    const len = s.queue.length;
+    update(s, 0.05);
+    ok(s.queue.length === len && s.spawnTimer > 0,
+       'uniqueness: the skipped beat pushes nothing and the director timer still rearms');
+  }
+  // Every exit arms the cooldown; expiry restores the type to the pool.
+  {
+    const s = shopState();
+    s.items.club.stock = 3;
+    s.queue = [customer('skeleton', 'club', 99)];
+    serveCurrent(s);
+    ok((s.mobCooldowns?.skeleton ?? 0) > 0, 'uniqueness: SERVING arms the return cooldown');
+    ok(Array.from({ length: 120 }, () => spawnCustomer(s)).every((c) => c.monsterId !== 'skeleton'),
+       'uniqueness: a cooling type never spawns (120 draws) — no Skele in two places');
+    update(s, cd + 0.05);
+    ok(!('skeleton' in (s.mobCooldowns ?? {})), 'uniqueness: expiry cleans the transient map');
+    ok(Array.from({ length: 300 }, () => spawnCustomer(s)).some((c) => c?.monsterId === 'skeleton'),
+       'uniqueness: after the cooldown he can return (300 draws)');
+  }
+  {
+    const s = shopState();
+    s.queue = [customer('rat', 'club', 0)];
+    dismissCurrent(s);
+    ok((s.mobCooldowns?.rat ?? 0) > 0, 'uniqueness: DISMISSAL arms it (the auto-wave path too)');
+  }
+  {
+    const s = shopState();
+    s.items.club.stock = 0;
+    s.queue = [{ ...customer('bat', 'club', 0), patienceRemaining: 0.01 }];
+    update(s, 0.05);
+    ok((s.mobCooldowns?.bat ?? 0) > 0, 'uniqueness: a timeout LEAVE arms it');
+  }
+  // Transience: the comings and goings never serialize.
+  {
+    const s = shopState();
+    s.mobCooldowns = { slime: 5 };
+    ok(!('mobCooldowns' in serializeSave(s)), 'uniqueness: mobCooldowns is never serialized');
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

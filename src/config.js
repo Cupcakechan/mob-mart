@@ -30,6 +30,14 @@ export const CONFIG = {
 
   queue: {
     maxLength: 4,              // most mobs that can wait in line at once
+    returnCooldownSec: 8,      // QUEUE UNIQUENESS (Option 2, Daniel 2026-07-05): after ANY queue
+                               // exit (served/left/dismissed) a mob can't respawn for this long —
+                               // the served-Skele-respawns-mid-march fix. THE MATH THAT SET 8:
+                               // steady-state cooling count = cooldown / serve interval, and it
+                               // must stay well under the roster (6) at MAXED throughput (~2.5s
+                               // serves): 18 starved the endgame stage (director test caught it,
+                               // ~7 cooling); 8 -> ~3 cooling, pool sustained. Still 2x the
+                               // celebrant march, so the fiction holds. Transient.
     // SPAWN DIRECTOR (replaces the flat spawnIntervalSec): next-spawn interval indexed by CURRENT
     // queue length (index clamps to the last entry). Self-balancing at every Bob speed — the flat
     // rate's equilibrium was min(1, throughput-limited) customers: maxed Bob served faster than

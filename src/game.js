@@ -16,8 +16,26 @@ import { MONSTER_RESULTS } from './data/results.js';   // line-unlock: scan for 
 
 // --- Customer spawning -------------------------------------------------------
 
+// Queue uniqueness (Option 2, Daniel 2026-07-05): "never two of him, never him in two places."
+// A mob exiting the queue for ANY reason (served/left/dismissed — the auto-wave routes through
+// dismiss) arms a short return cooldown, so a served Skele can't respawn while his celebrant is
+// still marching to the door. TRANSIENT (never serialized): a reload just resets the world's
+// comings and goings.
+function armReturnCooldown(state, monsterId) {
+  (state.mobCooldowns ??= {})[monsterId] = CONFIG.queue.returnCooldownSec ?? 18;
+}
+
 export function spawnCustomer(state) {
-  const monster = MONSTERS[pick(MONSTER_IDS)];
+  // Uniqueness filter: candidates are types NOT in line and NOT cooling down. An empty pool
+  // (roster spread between the line and the door) returns null — the caller skips that spawn
+  // beat and the director's timer simply runs again: an honest quiet moment, not a bug. Without
+  // state (older tests), the full roster — the safe default, same pattern as the unlock filter.
+  const candidates = state
+    ? MONSTER_IDS.filter((id) => !state.queue.some((c) => c.monsterId === id)
+        && (state.mobCooldowns?.[id] ?? 0) <= 0)
+    : MONSTER_IDS;
+  if (candidates.length === 0) return null;
+  const monster = MONSTERS[pick(candidates)];
   // Wants (A2, items-scaffold pass): CATEGORY affinity first, then an item WITHIN it. Two-stage on
   // purpose — a monster's personality share ("Froggo is half potions") holds no matter how big a
   // category grows; per-item share dilutes as the catalog does, which is how a real shop feels.
@@ -175,6 +193,7 @@ export function serveCurrent(state) {
   }
 
   state.serveCooldown = effectiveServeCooldown(state);          // start the counter cooldown
+  armReturnCooldown(state, c.monsterId);                        // he's in the dungeon for a beat
   state.queue.shift();                                          // front leaves; line shifts forward
   state.uiDirty = true;
   return true;
@@ -192,7 +211,8 @@ export function dismissCurrent(state) {
     serves: state.stats.monsterServes[c.monsterId] ?? 0,
     gregHired: state.workers?.restocker?.owned === true }),   // Greg's shoo lines exist once he does
     repDelta: 0, tier: 'dismiss', monsterId: c.monsterId });
-  state.queue.shift();
+  armReturnCooldown(state, c.monsterId);              // walked off — gone for a beat (the worker
+  state.queue.shift();                                // auto-wave routes through here too)
   state.uiDirty = true;
   return true;
 }
@@ -578,10 +598,17 @@ export function update(state, dt) {
   }
 
   state.spawnTimer -= dt;
+  // Return cooldowns tick here, deleted at expiry (the spawn filter stays a cheap lookup and the
+  // transient object never accumulates stale keys).
+  if (state.mobCooldowns) {
+    for (const id of Object.keys(state.mobCooldowns)) {
+      if ((state.mobCooldowns[id] -= dt) <= 0) delete state.mobCooldowns[id];
+    }
+  }
   if (state.spawnTimer <= 0) {
     if (state.queue.length < CONFIG.queue.maxLength + sumPerkEffect(state, 'queueLength')) {  // Velvet Rope
-      state.queue.push(spawnCustomer(state));
-      state.uiDirty = true;
+      const c = spawnCustomer(state);                 // null = uniqueness pool empty; skip the beat
+      if (c) { state.queue.push(c); state.uiDirty = true; }
     }
     // Spawn director: the NEXT interval depends on how the line looks now (post-spawn length),
     // clamped to the table's last entry. Empty -> hurry, deep -> relax; see CONFIG.queue.
@@ -594,6 +621,7 @@ export function update(state, dt) {
     const stillWaiting = [];
     for (const c of state.queue) {
       if (c.patienceRemaining > 0) { stillWaiting.push(c); continue; }
+      armReturnCooldown(state, c.monsterId);          // timed out and wandered off — gone for a beat
       const name = MONSTERS[c.monsterId]?.displayName ?? 'Someone';
       state.reputation = Math.max(0, state.reputation - CONFIG.reputation.leavePenalty);
       // The leave-theft (roadmap 6 Pass B, Daniel 2026-07-05): a THIEF-flagged mob who times out
