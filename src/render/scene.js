@@ -4,6 +4,7 @@
 import { CONFIG } from '../config.js';
 import { MONSTERS } from '../data/monsters.js';
 import { ITEMS, ITEM_ORDER } from '../data/items.js';
+import { MARKET_EVENTS, boardQuipFor } from '../data/marketevents.js';   // Special-of-the-Day board (leaf, no cycle)
 import { sumEffect } from '../data/upgrades.js';
 import { getSprite } from './sprites.js';
 
@@ -380,12 +381,98 @@ export function spawnItemFloat(itemId) {
   if (floaters.length > FLOAT.maxAlive) floaters.shift();
 }
 
+// --- "Special of the Day" board (Daniel's art + idea, 2026-07-07 — Market Day's comedy home) ---
+// Authored: assets/sprites/special_board.png, 640x220 (MEASURED at integration: opaque bbox
+// x3..636 y3..218, transparent plank-end corners, face RGB 170,106,55 — hence the CREAM ink).
+// Drawn at `width` with aspect preserved, flush-mounted on the wall above Bob (a hanging-hardware
+// art revision later needs zero code). The header is CODE-DRAWN for now: if Daniel letters the
+// art, flip `drawHeader` to false — a one-value swap. The quip is DETERMINISTIC per (day, event)
+// via boardQuipFor — the sign is chalked once each morning, not re-rolled per reload. Fallback:
+// a code plank (wall_shelf family) so the board renders even without the PNG.
+const SPECIAL_BOARD = {
+  centerX: W * 0.57,    // = BOB.centerX (~730): the merchant stands under his own sign
+  topY: 88,             // below the HUD row (bottom ~62); the fame panel (top 96) covers the
+                        // board while open — accepted, panels cover the whole diorama
+  width: 320,           // display width -> the 640 art lands at a clean x0.5
+  drawHeader: true,     // "SPECIAL OF THE DAY" in code; false once the art carries lettering
+  header: 'SPECIAL OF THE DAY',
+  headerFont: "800 13px 'Segoe UI', system-ui, sans-serif",   // mirrors BUBBLE's family
+  nameFont:   "800 14px 'Segoe UI', system-ui, sans-serif",
+  quipFont:   "700 14px 'Segoe UI', system-ui, sans-serif",
+  headerColor: '#f6e7c8', nameColor: '#ffcf4a', quipColor: '#f6e7c8',
+  shade: 'rgba(0,0,0,.35)',   // 1px offset under every glyph — legibility over the wood grain
+  padX: 14,                   // text inset from the board's side edges
+  headerY: 13, nameY: 37, quipY: 61,  // line TOPS, from the board's top (110-tall display box)
+  quipLineH: 19, maxQuipLines: 2,     // quips are authored <=48 chars -> two 14px lines always fit
+  plank: '#8a5a30', plankEdge: '#5b3a24',   // fallback colors (wall_shelf family)
+};
+
+// Greedy word-wrap into at most maxLines; a too-long tail ellipsizes on the last line. Guards a
+// future long quip — today's authored pool (<=48 chars) never trips the ellipsis.
+function wrapBoardText(ctx, text, maxW, maxLines) {
+  const words = String(text).split(' ');
+  const lines = [];
+  let cur = '';
+  for (let i = 0; i < words.length; i++) {
+    const next = cur ? `${cur} ${words[i]}` : words[i];
+    if (ctx.measureText(next).width <= maxW || cur === '') { cur = next; continue; }
+    lines.push(cur);
+    cur = words[i];
+    if (lines.length === maxLines - 1) {                    // last line: take the rest, ellipsize to fit
+      cur = words.slice(i).join(' ');
+      while (cur.length > 1 && ctx.measureText(`${cur}\u2026`).width > maxW) cur = cur.slice(0, -1);
+      if (i < words.length) { lines.push(ctx.measureText(cur).width > maxW ? `${cur}\u2026` : cur); }
+      return lines;
+    }
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+
+function drawSpecialBoard(ctx, state) {
+  const B = SPECIAL_BOARD;
+  const spr = getSprite('special_board');
+  const w = B.width;
+  const h = spr ? Math.round(w * (spr.height / spr.width)) : 110;
+  const x = Math.round(B.centerX - w / 2), y = B.topY;
+  if (spr) {
+    ctx.drawImage(spr, x, y, w, h);
+  } else {                                                  // pre-art fallback: one framed plank
+    ctx.fillStyle = B.plank;
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = B.plankEdge; ctx.lineWidth = 3;
+    ctx.strokeRect(x + 1.5, y + 1.5, w - 3, h - 3);
+  }
+
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  const cx = x + w / 2, maxW = w - B.padX * 2;
+  // Every line lands twice: a 1px dark shade then the ink — cheap legibility over the grain.
+  const line = (text, font, color, ly) => {
+    ctx.font = font;
+    ctx.fillStyle = B.shade; ctx.fillText(text, cx + 1, y + ly + 1);
+    ctx.fillStyle = color;   ctx.fillText(text, cx, y + ly);
+  };
+  if (B.drawHeader) line(B.header, B.headerFont, B.headerColor, B.headerY);
+  const ev = MARKET_EVENTS[state?.marketEventId];
+  if (ev) {
+    line(ev.displayName, B.nameFont, B.nameColor, B.nameY);
+    ctx.font = B.quipFont;                                  // wrap measures in the quip's own font
+    const quip = boardQuipFor(ev, state.marketDayKey);
+    const rows = wrapBoardText(ctx, quip, maxW, B.maxQuipLines);
+    rows.forEach((t, i) => line(t, B.quipFont, B.quipColor, B.quipY + i * B.quipLineH));
+  }
+  ctx.restore();
+}
+
 export function drawScene(ctx, state, tMs) {
   ctx.clearRect(0, 0, W, H);
 
   drawBackground(ctx);          // shop_bg.png if present, else flat wall + floor
 
   drawWallShelf(ctx, state, tMs);  // goods on the wall (diegetic shelf, C-lite — display only)
+  drawSpecialBoard(ctx, state);    // the Special-of-the-Day sign over Bob (Market Day's comedy home)
   drawCounterShadow(ctx);       // contact shadow FIRST: grounds the desk AND Bob standing behind it
   drawBob(ctx, state, tMs);     // before the counter, so the counter front overlaps his lower body
   drawRestocker(ctx, state, tMs); // the flyer hovers left of Bob — same layer, same counter overlap

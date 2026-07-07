@@ -153,3 +153,14 @@ export function marketBannerCompact(event, mult) {
   const label = CATEGORY_LABELS[event?.category] ?? event?.category ?? '';
   return `${label} +${pct}%`;
 }
+
+// The Special-of-the-Day board's quip (Daniel's board, 2026-07-07): DETERMINISTIC per
+// (day, event) — a sign chalked in the morning must not re-write itself on every reload, which
+// a Math.random pick would. Same FNV as the event pick, salted with the event id so a growing
+// pool reshuffles per-event rather than in lockstep. Draws from the bubble pool (authored
+// board-short, <=48 chars, suite-pinned).
+export function boardQuipFor(event, dayKey) {
+  const pool = event?.bubble ?? [];
+  if (pool.length === 0) return '';
+  return pool[hashDayKey(`${dayKey ?? ''}:${event.id}`) % pool.length];
+}

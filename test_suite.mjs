@@ -2683,5 +2683,20 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
 }
 
+// 51. Special-of-the-Day board (Daniel's board, 2026-07-07): the quip is chalked ONCE a morning --
+// The board's line is a pure function of (day, event) — a reload must show the identical sign.
+// The render half is canvas (browser-tested); the pure picker and its pool contract pin here.
+// The sprite pairing (getSprite('special_board') <-> main.js loadSprite) is covered by 0b.
+{
+  const M = await import('./src/data/marketevents.js');
+  const ev = M.MARKET_EVENTS[M.MARKET_EVENT_ORDER[0]];
+  const a = M.boardQuipFor(ev, '2026-07-07');
+  ok(a === M.boardQuipFor(ev, '2026-07-07') && typeof a === 'string' && a.length > 0,
+     'board: same day + same event -> the identical quip (deterministic, reload-stable)');
+  ok(ev.bubble.includes(a), 'board: the quip is drawn from the event\u2019s authored pool');
+  ok(M.boardQuipFor(null, '2026-07-07') === '' && M.boardQuipFor({ id: 'x', bubble: [] }, '2026-07-07') === '',
+     'board: no event / empty pool -> empty string, never a crash');
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

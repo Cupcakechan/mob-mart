@@ -120,6 +120,8 @@ loadSprite('bat_idle', 'assets/sprites/bat_idle.png');            // Batty's 4-f
 loadSprite('slime_idle', 'assets/sprites/slime_idle.png');        // Slimey/Skele idle strips (Pass B): same
 loadSprite('skeleton_idle', 'assets/sprites/skeleton_idle.png');  //   shared 4-frame contract; absent -> static
 loadSprite('wall_shelf', 'assets/sprites/wall_shelf.png');        // wall-shelf plank prop (shelf v2; absent -> code-drawn plank)
+loadSprite('special_board', 'assets/sprites/special_board.png');  // Special-of-the-Day sign over Bob (Daniel's 640x220,
+                                                                  //   2026-07-07; absent -> code plank, text still draws)
 loadSprite('slime_walk_happy', 'assets/sprites/slime_walk_happy.png');        // celebrate pass: happy-walk strips,
 loadSprite('bat_walk_happy', 'assets/sprites/bat_walk_happy.png');            //   4 equal frames each; absent ->
 loadSprite('skeleton_walk_happy', 'assets/sprites/skeleton_walk_happy.png');  //   idle strip / static march fallback
