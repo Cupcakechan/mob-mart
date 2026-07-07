@@ -26,8 +26,14 @@ body{
 }
 #scene{position:absolute;inset:0;width:1280px;height:720px;image-rendering:pixelated;}
 
-/* HUD (top) */
-.hud{position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:5;}
+/* HUD (top). LAYOUT BUDGET (2026-07-07, measured): the wall-shelf unit owns x60..372 with top-row
+   icons at y38..86, and chips run y16..62 — so the HUD's box is BAND-BOUND, never stage-centered:
+   left:396 (shelf's plank edge 372 + breath) .. right:16. Gold/Rep center inside the band via
+   justify-content (worst reachable cluster ~600px vs the ~780px to the Menu button — the long
+   "to <tier>" remainder only exists below Legendary, where rep is <=4 digits, so the widths
+   anticorrelate). The market chip is ABSOLUTE within this same box (top-right corner, under
+   Menu) and out of the flex flow. */
+.hud{position:absolute;top:16px;left:396px;right:16px;z-index:5;}
 .hud-chip{
   display:flex;align-items:center;gap:10px;background:var(--panel-bg);
   border:2px solid var(--panel-edge);padding:8px 18px;border-radius:12px;
@@ -133,8 +139,8 @@ body{
 .dismiss-btn:hover:not(:disabled){background:rgba(255,255,255,.06);color:#fff;}
 .dismiss-btn:disabled{opacity:.35;cursor:not-allowed;}
 
-/* HUD holds two chips (Gold + Rep) in a centered row */
-.hud{display:flex;gap:12px;}
+/* HUD holds two chips (Gold + Rep) in a row, centered INSIDE the band above (never the stage) */
+.hud{display:flex;gap:12px;justify-content:center;}
 .hud-icon.rep{color:#b794f6;}
 .hud-tier{
   color:#e6ddf7;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:1px;
@@ -452,6 +458,23 @@ body{
    soft glow. Rare by pool math, loud by design; the memorability IS the reward. */
 .battle-log li.golden { color: var(--gold); font-weight: 800; text-shadow: 0 0 6px rgba(255, 207, 74, .45); }
 .battle-log li.golden .log-crown { color: var(--gold); }
+
+/* --- Market Day (retention pass): the daily demand event + supplier crate. AMBER, deliberately
+   a shade off milestone-gold — the log separates "the world today" (market) from "your
+   achievement" (milestone). The HUD chip is the persistent all-day banner; its text runs long
+   ("Porcupine Migration · Armor +50%"), so it drops the label column and sizes down. ---------- */
+.battle-log li.market {
+  border-left: 3px solid #ff9d3b;
+  color: #ffd9a8;
+  background: rgba(255, 157, 59, 0.07);
+}
+/* The market chip DOCKS top-right under the Menu button, absolute against the .hud band (band
+   right edge = stage x1264, so right:0/top:52 lands the chip at stage right:16, y68 — below
+   Menu's bottom ~56, above the door's top ~150, and right of the fame panel's edge at x960:
+   the widest compact label, "Consumables +50%" ~213px, still starts past x1050). */
+.hud-chip.market { position: absolute; top: 52px; right: 0; padding: 8px 14px; }
+.hud-icon.market { color: #ff9d3b; font-size: 16px; }
+.hud-market-text { color: #ffd9a8; font-weight: 700; font-size: 14px; letter-spacing: .3px; white-space: nowrap; }
 
 /* --- Fame track panel (UX roadmap 2): the "unlock tree". Fame is LINEAR, so it's a vertical
    TRACK — one node per tier on a spine, unlock chips fanned under each, registry-scanned in

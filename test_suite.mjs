@@ -2455,5 +2455,233 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
 }
 
+// 50. Market Day (retention pass Option 2, 2026-07-06): daily demand event + supplier crate ------
+// The event is a pure function of the LOCAL calendar date (deterministic, reroll-proof); the
+// crate is once per day, latched by the PERSISTED lastMarketDay. Two laws pinned here: the event
+// multiplies PAYOUT only (never basePrice — inherited from milestones), and offline earnings are
+// EVENT-FREE (the sim is a frozen estimate; the event is a come-play-today hook). Exact totals
+// below (crate gold 10 / 28, flask 23) belong to THIS newest section per the suite doctrine.
+{
+  const M = await import('./src/data/marketevents.js');
+  const { refreshMarketDay, marketPayoutMult, dealCrateUnits, activeMarketEvent,
+    spawnCustomer, effectiveMaxStock, update: upd } = await import('./src/game.js');
+  const { computeOffline } = await import('./src/offline.js');
+  const { ITEMS, ITEM_ORDER } = await import('./src/data/items.js');
+  const { CONFIG } = await import('./src/config.js');
+
+  // (a) Registry contract + deterministic date math
+  ok(M.MARKET_EVENT_ORDER.length >= 3
+     && M.MARKET_EVENT_ORDER.every((id) => M.MARKET_EVENTS[id]?.id === id),
+     'market: every ordered id resolves to a registry row');
+  const validCats = ['weapon', 'armor', 'consumable'];
+  ok(M.MARKET_EVENT_ORDER.every((id) => validCats.includes(M.MARKET_EVENTS[id].category)),
+     'market: every event targets a live shelf category');
+  const epoch = Date.parse('2026-07-06T12:00:00');
+  ok(/^\d{4}-\d{2}-\d{2}$/.test(M.dayKeyOf(epoch)), 'market: day key is YYYY-MM-DD');
+  ok(M.eventIdForDay('2026-07-06') === M.eventIdForDay('2026-07-06'),
+     'market: same day -> same event (deterministic, nothing to reroll)');
+  {
+    const ids = new Set(); const cats = new Set();
+    for (let d = 0; d < 365; d++) {
+      const id = M.eventIdForDay(M.dayKeyOf(epoch + d * 86400000));
+      ids.add(id);
+      if (d < 60) cats.add(M.MARKET_EVENTS[id].category);
+    }
+    ok(ids.size === M.MARKET_EVENT_ORDER.length,
+       `market: a year of days covers the whole roster (${ids.size}/${M.MARKET_EVENT_ORDER.length})`);
+    ok(cats.size === validCats.length,
+       'market: 60 days cover every category — each shelf gets its days');
+  }
+
+  // (b) Payout law (pinned trio): the event multiplies the PAYOUT of its category only, never
+  // the price. Flask 15 -> 23 (round(15 x 1.5)) under a consumable event; club stays 12; a
+  // budget of exactly basePrice still buys (affordability untouched).
+  {
+    const evId = M.MARKET_EVENT_ORDER.find((id) => M.MARKET_EVENTS[id].category === 'consumable');
+    const s = pinTrioShelf(shopState(), 'full');
+    s.marketEventId = evId;
+    ok(marketPayoutMult(s, 'consumable') === 1.5 && marketPayoutMult(s, 'weapon') === 1
+       && marketPayoutMult({ marketEventId: null }, 'consumable') === 1,
+       'market: mult is 1.5 on the event category, 1 elsewhere, 1 with no event');
+    s.queue = [customer('slime', 'hp_flask', 15)];             // budget EXACTLY basePrice
+    const g0 = s.gold;
+    ok(serveCurrent(s) === true, 'market: exact-budget customer still buys under the event (price untouched)');
+    ok(s.gold - g0 === 23, `market: flask pays 23 under the event (got ${s.gold - g0})`);
+    s.serveCooldown = 0;
+    s.queue = [customer('skeleton', 'club', 99)];
+    const g1 = s.gold;
+    serveCurrent(s);
+    ok(s.gold - g1 === 12, `market: club (off-category) still pays base 12 (got ${s.gold - g1})`);
+    ok(activeMarketEvent(s)?.id === evId, 'market: activeMarketEvent resolves the derived id');
+  }
+
+  // (c) Want bias (statistical, derived margins — probe-verified true shifts are 0.14-0.17 at
+  // 4000 samples; sigma of the share diff ~0.01, so >0.06 is orders-of-magnitude safe): under an
+  // event, that category's want share rises materially and strictly, for every category.
+  for (const cat of validCats) {
+    const evId = M.MARKET_EVENT_ORDER.find((id) => M.MARKET_EVENTS[id].category === cat);
+    const share = (eventId) => {
+      const s = shopState();
+      s.marketEventId = eventId;
+      let hit = 0;
+      for (let i = 0; i < 4000; i++) {
+        if (ITEMS[spawnCustomer(s).wantedItemId].category === cat) hit++;
+      }
+      return hit / 4000;
+    };
+    const base = share(null), biased = share(evId);
+    ok(biased > base, `market: ${cat} share rises under its event (${base.toFixed(3)} -> ${biased.toFixed(3)})`);
+    ok(biased - base > 0.06, `market: ${cat} shift is material (${(biased - base).toFixed(3)} > 0.06)`);
+  }
+
+  // (d) The crate: exact math at Neutral (tier 0 -> 3 units + 10 gold), round-robin fairness,
+  // cap + license respect, the full-shelf gold fallback (10 + 3x6 = 28), and the once-a-day latch.
+  {
+    const s = shopState();
+    const total = () => ITEM_ORDER.reduce((t, id) => t + (s.items[id]?.stock ?? 0), 0);
+    const before = total(); const g0 = s.gold;
+    const res = refreshMarketDay(s, epoch);
+    ok(res?.crate?.units === 3 && total() - before === 3,
+       `market: Neutral crate deals exactly 3 units (${res?.crate?.units})`);
+    ok(s.gold - g0 === 10, `market: Neutral crate gold is exactly 10 (got ${s.gold - g0})`);
+    ok(ITEM_ORDER.every((id) => (s.items[id]?.stock ?? 0) <= effectiveMaxStock(s, id)),
+       'market: crate never exceeds the effective cap');
+    ok(ITEM_ORDER.filter((id) => ITEMS[id].license).every((id) => s.items[id].stock === 0),
+       'market: licensed-unbought items are invisible to the crate');
+    ok(s.lastMarketDay === M.dayKeyOf(epoch), 'market: the persisted latch records the day');
+    ok(s.log.length === 2 && s.log.every((e) => e.tier === 'market'),
+       'market: new-day boot writes exactly two market lines (event over crate)');
+    ok(s.bobSpeech?.queue?.length === 1
+       && ITEMS[s.bobSpeech.queue[0].itemId]?.category === res.event.category,
+       'market: Bob\u2019s bubble queued once, click-routed to the event\u2019s category');
+    ok(refreshMarketDay(s, epoch) === null && s.gold - g0 === 10,
+       'market: same session, same day -> no-op (no double crate)');
+    const nextRes = refreshMarketDay(s, epoch + 86400000);
+    ok(nextRes?.crate !== null && s.lastMarketDay === M.dayKeyOf(epoch + 86400000),
+       'market: the next calendar day grants again');
+  }
+  {
+    // Round-robin exactness on a constructed shelf: only club (-2) and helmet (-1) have room.
+    const s = shopState();
+    for (const id of ITEM_ORDER) s.items[id].stock = ITEMS[id].license ? 0 : effectiveMaxStock(s, id);
+    s.items.club.stock -= 2;
+    s.items.metal_helmet.stock -= 1;
+    ok(dealCrateUnits(s, 5) === 3
+       && s.items.club.stock === effectiveMaxStock(s, 'club')
+       && s.items.metal_helmet.stock === effectiveMaxStock(s, 'metal_helmet'),
+       'market: round-robin tops the gaps and stops at the caps (3 of 5 land)');
+  }
+  {
+    // Full shelves: zero units land; every undealt unit converts to gold. 10 + 3x6 = 28.
+    const s = shopState();
+    for (const id of ITEM_ORDER) s.items[id].stock = ITEMS[id].license ? 0 : effectiveMaxStock(s, id);
+    const g0 = s.gold;
+    const res = refreshMarketDay(s, epoch);
+    ok(res?.crate?.units === 0 && s.gold - g0 === 28,
+       `market: full shop converts the crate to 28 gold (got ${s.gold - g0})`);
+  }
+  {
+    // Same-day RELOAD (latch already today's key): event derives, crate + announcements do not.
+    const s = shopState();
+    s.lastMarketDay = M.dayKeyOf(epoch);
+    const g0 = s.gold;
+    const res = refreshMarketDay(s, epoch);
+    ok(res?.crate === null && s.gold === g0 && s.log.length === 0 && !!s.marketEventId,
+       'market: a same-day reload gets the banner, not a re-run of the morning');
+  }
+
+  // (e) update() gating: an UNARMED state (no boot refresh) never trips the market machinery —
+  // this is what keeps every pre-market headless test byte-identical. An ARMED state with a stale
+  // day key rolls over via the real clock.
+  {
+    const s = shopState();
+    for (let i = 0; i < 30; i++) upd(s, 1);
+    ok(s.lastMarketDay === '' && s.gold === CONFIG.economy.startingGold,
+       'market: unarmed update() ticks grant nothing (headless tests stay untouched)');
+  }
+  {
+    const s = shopState();
+    const keyBefore = M.dayKeyOf(Date.now());
+    s.marketDayKey = '1999-01-01';                    // armed, but the calendar has "flipped"
+    const g0 = s.gold;
+    upd(s, (CONFIG.market?.rolloverCheckSec ?? 5) + 1);
+    const keyAfter = M.dayKeyOf(Date.now());
+    ok((s.lastMarketDay === keyBefore || s.lastMarketDay === keyAfter)
+       && s.gold - g0 >= (CONFIG.market?.crateGoldBase ?? 0),
+       'market: an armed session rolls the day over mid-play (midnight crate)');
+  }
+
+  // (f) Persistence: the latch round-trips; the derived fields never serialize; tampering heals.
+  {
+    const s = shopState();
+    refreshMarketDay(s, epoch);
+    const saved = serializeSave(s);
+    ok(typeof saved.lastMarketDay === 'string' && saved.lastMarketDay === M.dayKeyOf(epoch),
+       'market: lastMarketDay serializes');
+    ok(!('marketEventId' in saved) && !('marketDayKey' in saved),
+       'market: derived event/day fields are transient — the date IS the save');
+    ok(mergeSave(createInitialState(), saved).lastMarketDay === M.dayKeyOf(epoch),
+       'market: the latch survives a save/load round-trip');
+    ok(mergeSave(createInitialState(), { lastMarketDay: 12345 }).lastMarketDay === '',
+       'market: a tampered non-string latch heals to never-collected');
+  }
+
+  // (g) Offline independence: the away sim is byte-identical with and without an active event.
+  {
+    const s = shopState();
+    s.workers.mimic_merchant.owned = true;
+    s.lastSeen = epoch - 2 * 3600 * 1000;
+    const noEv = JSON.stringify(computeOffline(s, epoch));
+    s.marketEventId = M.MARKET_EVENT_ORDER[0];
+    ok(noEv === JSON.stringify(computeOffline(s, epoch)),
+       'market: offline earnings are event-free (a bonus is for playing, not for sleeping)');
+  }
+
+  // (h) Line hygiene for the new pools (section-42 laws applied at the source: no second person;
+  // log lines fit the width; bubbles stay one-liners; fills present where the math needs them).
+  {
+    const announces = M.MARKET_EVENT_ORDER.flatMap((id) => M.MARKET_EVENTS[id].announce ?? []);
+    const bubbles = M.MARKET_EVENT_ORDER.flatMap((id) => M.MARKET_EVENTS[id].bubble ?? []);
+    const crates = [...M.CRATE_LINES.stocked, ...M.CRATE_LINES.full];
+    const all = [...announces, ...bubbles, ...crates];
+    ok(all.every((t) => !/\byou\b/i.test(t.replace(/you'd/gi, ''))),
+       'market hygiene: no second person in any market pool');
+    ok(announces.every((t) => t.length <= 80), 'market hygiene: announce lines fit the log width (<=80)');
+    ok(bubbles.every((t) => t.length <= 48), 'market hygiene: bubble lines stay one-liners (<=48)');
+    ok(M.CRATE_LINES.stocked.every((t) => t.includes('{units}') && t.includes('{gold}'))
+       && M.CRATE_LINES.full.every((t) => t.includes('{gold}')),
+       'market hygiene: crate templates carry their fills');
+    ok(M.marketBannerText(M.MARKET_EVENTS[M.MARKET_EVENT_ORDER[0]], 1.5).includes('+50%'),
+       'market: the HUD banner formats the bonus percent');
+    {
+      // Compact chip form (layout pass 2026-07-07): category label + percent, NO event name —
+      // the name moved to the tooltip when the full-width chip broke the shelf's airspace.
+      const ev0 = M.MARKET_EVENTS[M.MARKET_EVENT_ORDER[0]];
+      const compact = M.marketBannerCompact(ev0, 1.5);
+      ok(compact.includes('+50%') && compact.includes(M.CATEGORY_LABELS[ev0.category])
+         && !compact.includes(ev0.displayName),
+         'market: the compact banner is label + percent, name-free');
+    }
+  }
+
+  // (i) THE MIRROR GUARD (LESSONS 2026-07-06): index.kongregate.html is index.html + Kong-only
+  // insertions, nothing less. Subsequence check: every index.html line must appear IN ORDER in
+  // the Kong shell — extras (the API tag) are allowed anywhere; missing or stale content fails.
+  {
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync('./index.html', 'utf8').split('\n').map((l) => l.trimEnd());
+    const kong = readFileSync('./index.kongregate.html', 'utf8').split('\n').map((l) => l.trimEnd());
+    let k = 0;
+    let missing = null;
+    for (const line of src) {
+      while (k < kong.length && kong[k] !== line) k++;
+      if (k >= kong.length) { missing = line; break; }
+      k++;
+    }
+    ok(missing === null,
+       `mirror: index.kongregate.html contains index.html in order (first missing: ${JSON.stringify(missing)})`);
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

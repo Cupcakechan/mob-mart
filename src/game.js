@@ -13,6 +13,8 @@ import { resolveCombat } from './combat.js';
 import { reputationTier } from './reputation.js';
 import { logLine } from './messages.js';
 import { MONSTER_RESULTS } from './data/results.js';   // line-unlock: scan for minServes batches at crossings (leaf registry, no cycle)
+import { MARKET_EVENTS, eventIdForDay, dayKeyOf, marketAnnounceLine, marketBubbleLine,
+  crateLine } from './data/marketevents.js';   // Market Day (leaf registry, no cycle)
 
 // --- Customer spawning -------------------------------------------------------
 
@@ -58,9 +60,16 @@ export function spawnCustomer(state) {
   // mismatch (rare by construction), same handling.
   const unlockedIds = ITEM_ORDER.filter((id) =>
     state ? isItemUnlocked(state, id) : !ITEMS[id]?.license);
+  // MARKET DAY (retention pass, 2026-07-06): today's demand event biases the CATEGORY stage —
+  // "everyone wants flasks today" — by weighing the event's category x CONFIG.market.wantBias.
+  // SOFT like affordableWantBias below: personality still rules (a weapon-hating Slimey mostly
+  // stays a weapon-hater), the day just leans the crowd. No event (or headless tests with no
+  // marketEventId) -> x1 everywhere, i.e. exactly the old math.
+  const eventCat = MARKET_EVENTS[state?.marketEventId]?.category ?? null;
   const catEntries = Object.entries(monster.categoryWeights ?? {})
     .map(([cat, weight]) => ({
-      value: cat, weight,
+      value: cat,
+      weight: weight * (cat === eventCat ? (CONFIG.market?.wantBias ?? 1) : 1),
       ids: unlockedIds.filter((id) => ITEMS[id].category === cat),
     }))
     .filter((e) => e.ids.length > 0 && (e.weight ?? 0) > 0);
@@ -124,7 +133,11 @@ export function serveCurrent(state) {
   // with the multipliers earned BEFORE it; the ledger increments after, so a crossing kicks in from
   // the NEXT sale (and announces below).
   const repGain = Math.round(effectiveRepPerSale(state) * monsterRepMult(state, c.monsterId));
-  const goldGain = Math.round(item.basePrice * itemGoldMult(state, c.wantedItemId) * globalGoldMult(state));
+  // Market Day rides the same payout-side law: today's demand event multiplies matching-category
+  // PAYOUTS (grateful mobs tip), never basePrice — serveBlockReason above kept checking the real
+  // price, so a demand spike can never price a customer out. x1 when no event is active.
+  const goldGain = Math.round(item.basePrice * itemGoldMult(state, c.wantedItemId) * globalGoldMult(state)
+    * marketPayoutMult(state, item.category));
   state.items[c.wantedItemId].stock -= 1;                       // hand over the item
   state.gold += goldGain;                                       // take payment (base + loyalty on top)
   const prevTierIdx = reputationTier(fameOf(state)).index;      // tier BEFORE this sale's fame lands —
@@ -351,6 +364,89 @@ export function restockAll(state) {
   return bought;
 }
 
+// --- Market Day (retention pass Option 2, Daniel 2026-07-06) -------------------
+// One demand event per LOCAL calendar day (derived from the date — deterministic, reroll-proof)
+// plus a once-a-day supplier crate. The registry + date math live in data/marketevents.js; this
+// is the stateful half. Offline earnings are deliberately EVENT-FREE: the sim is a frozen,
+// deterministic estimate of the absence, and the event is a come-play-today hook — applying it
+// offline would pay yesterday's bonus for sleeping through it.
+
+export function activeMarketEvent(state) {
+  return MARKET_EVENTS[state?.marketEventId] ?? null;
+}
+
+// Payout multiplier for a category under today's event. x1 for non-matching categories, x1 when
+// no event is derived (fresh headless states) — so every pre-market exact-math test still holds.
+export function marketPayoutMult(state, category) {
+  const ev = activeMarketEvent(state);
+  if (!ev || ev.category !== category) return 1;
+  return ev.payoutMult ?? CONFIG.market?.payoutMult ?? 1;
+}
+
+// Deal `units` FREE restock units round-robin, one per unlocked below-cap item per pass — the
+// offline sim's fairness loop, so a small crate spreads across the shelf instead of topping the
+// first card. Licensed-but-unbought items are invisible to it (isItemUnlocked), caps are hard.
+// Returns how many units actually landed (a full shop absorbs zero).
+export function dealCrateUnits(state, units) {
+  let landed = 0, dealt = true;
+  while (landed < units && dealt) {
+    dealt = false;
+    for (const id of ITEM_ORDER) {
+      if (landed >= units) break;
+      if (!isItemUnlocked(state, id)) continue;
+      if ((state.items[id]?.stock ?? 0) >= effectiveMaxStock(state, id)) continue;
+      state.items[id].stock += 1;
+      landed += 1;
+      dealt = true;
+    }
+  }
+  return landed;
+}
+
+// The one entry point, called at boot (main.js) and on calendar rollover (update() below).
+// Derives today's event, and — once per calendar day, latched by the PERSISTED lastMarketDay —
+// banks the supplier crate: fame-scaled free units (dealt above) + a gold sweetener; units that
+// found no shelf room convert to gold, so the crate never arrives empty-handed. Announcements
+// (two 'market' log lines + Bob's bubble) fire only on the new-day path — a same-day reload gets
+// the HUD banner alone, not a re-run of the morning. Returns null when nothing changed, else
+// { event, crate } (crate null on a same-day reload) — main.js saves immediately on a grant,
+// the same no-double-collect rule as the offline bank.
+export function refreshMarketDay(state, nowMs) {
+  const key = dayKeyOf(nowMs);
+  if (state.marketDayKey === key) return null;                 // same day, same session — no-op
+  state.marketDayKey = key;                                    // transient (also arms the rollover check)
+  state.marketEventId = eventIdForDay(key);                    // transient — the date IS the save
+  const ev = MARKET_EVENTS[state.marketEventId] ?? null;
+
+  let crate = null;
+  if (state.lastMarketDay !== key) {                           // first open of this calendar day
+    const tierIdx = reputationTier(fameOf(state)).index;       // fame-scaled: bigger shop, bigger crate
+    const units = (CONFIG.market?.crateBaseUnits ?? 0) + tierIdx * (CONFIG.market?.crateUnitsPerTier ?? 0);
+    const landed = dealCrateUnits(state, units);
+    const gold = (CONFIG.market?.crateGoldBase ?? 0) + tierIdx * (CONFIG.market?.crateGoldPerTier ?? 0)
+      + (units - landed) * (CONFIG.market?.crateUnitGoldFallback ?? 0);
+    state.gold += gold;
+    state.lastMarketDay = key;                                 // the persisted once-a-day latch
+    crate = { units: landed, gold };
+    // Log order: pushed crate-first so the EVENT line sits on top of the newest-first feed —
+    // the world's news above the shop's delivery.
+    pushLog(state, { text: crateLine(landed, gold), repDelta: 0, tier: 'market' });
+    if (ev) {
+      pushLog(state, { text: marketAnnounceLine(ev), repDelta: 0, tier: 'market' });
+      // Bob announces the day's market through his existing bubble queue. itemId routes the
+      // bubble's click to the event category's shelf tab (any unlocked item of the category —
+      // every category ships free items, but the ITEM_ORDER[0] guard keeps this crash-proof).
+      // Pre-hire the bubble ticks unseen (same accepted trade as license announcements).
+      const routeId = ITEM_ORDER.find((id) => isItemUnlocked(state, id)
+        && ITEMS[id].category === ev.category) ?? ITEM_ORDER[0];
+      const bs = (state.bobSpeech ??= { queue: [], current: null });
+      bs.queue.push({ text: marketBubbleLine(ev), itemId: routeId });
+    }
+  }
+  state.uiDirty = true;
+  return { event: ev, crate };
+}
+
 // --- Upgrades ----------------------------------------------------------------
 
 // Fame (dual-track): tiers are driven by LIFETIME rep — the never-decreasing track — so spending
@@ -535,6 +631,18 @@ export function update(state, dt) {
   if (state.serveCooldown > 0) {                    // count down the post-sale counter cooldown
     state.serveCooldown = Math.max(0, state.serveCooldown - dt);
     if (state.serveCooldown === 0) state.uiDirty = true;  // re-enable the Serve button
+  }
+
+  // Market Day rollover (leave-it-open players): once the LOCAL calendar flips, re-derive the
+  // event and grant the new day's crate mid-session. GATED on marketDayKey — only a boot that
+  // explicitly ran refreshMarketDay (main.js) arms this, so headless tests that tick update()
+  // never trigger crates or events by accident. Throttled: one string compare per checkSec.
+  if (state.marketDayKey) {
+    state.marketCheckIn = (state.marketCheckIn ?? 0) - dt;
+    if (state.marketCheckIn <= 0) {
+      state.marketCheckIn = CONFIG.market?.rolloverCheckSec ?? 5;
+      refreshMarketDay(state, Date.now());
+    }
   }
 
   // Bob's bubble (license alerts): tick the current line, promote the next from the queue. All

@@ -115,3 +115,21 @@
 - Plug: scratch files live outside the clone; after every pull, verify the expected HEAD (the
   log line) — a pull that "ran" is not a pull that succeeded.
 - Route: Claude-side workflow rule; pairs with the existing "git status is a READ" entry.
+
+## 2026-07-06 — index.kongregate.html silently drifted several passes behind index.html
+- What broke / what happened: the Kongregate shell (defined as "index.html + one script tag,
+  otherwise identical") was missing the hire-goal chip, Bob's bubble markup, the menu overlay,
+  and the away-modal additions from the last three passes — it still carried the retired
+  floating Reset button. Found while applying the Market Day modal edit under the sync rule.
+- Root cause: the sync rule ("any edit to index.html must be mirrored") lives only in comments
+  and the handoff; every recent index.html-touching pass edited one file and nothing checked the
+  other. A no-build project has no bundler to notice two entry pages diverging.
+- Verification gap it exposed: nothing machine-checks the mirror. The module-health suite never
+  parses HTML, and the shell only misbehaves ON Kongregate — locally it's never loaded.
+- Plug shipped (fix + sweep + guard): fix = regenerated index.kongregate.html mechanically from
+  today's index.html + the two Kong-only insertions, diff-verified to be exactly those five
+  lines. Sweep = full diff (no other drift classes found). Guard = suite section 50 asserts
+  every line of index.html appears IN ORDER in index.kongregate.html (subsequence check — Kong
+  extras allowed anywhere, missing/stale content fails).
+- Route: skill reference (html-game.md) candidate — "a mirrored entry page is a build artifact
+  without a build step; regenerate it mechanically and suite-pin the mirror, never hand-sync."

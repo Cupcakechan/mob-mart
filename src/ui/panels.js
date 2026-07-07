@@ -539,7 +539,8 @@ export function renderPanels(state) {
     log.innerHTML = state.log.map((e) => {
       const cls = e.golden ? 'golden'                        // 100-serve payoff lines outrank tiers
         : (e.tier === 'milestone' ? 'milestone'
-        : (e.repDelta > 0 ? 'good' : (e.repDelta < 0 ? 'bad' : 'meh')));
+        : (e.tier === 'market' ? 'market'                    // Market Day: amber "world news" lines
+        : (e.repDelta > 0 ? 'good' : (e.repDelta < 0 ? 'bad' : 'meh'))));
       const crown = e.repDelta !== 0
         ? `<span class="log-crown">${e.repDelta > 0 ? '+' : ''}${e.repDelta}&#9819;</span>`
         : '';

@@ -86,6 +86,10 @@ export function mergeSave(fresh, data) {
     }
   }
   fresh.lastSeen = numOr(data.lastSeen, fresh.lastSeen);         // kept for M5 offline earnings
+  // Market Day (additive schema, SAVE_VERSION unchanged): string-coerced — a pre-market save or a
+  // tampered non-string reads as '' (never collected), which just grants today's crate. Harmless
+  // by design: the latch prevents double-collect within a day, not across an update boundary.
+  fresh.lastMarketDay = typeof data.lastMarketDay === 'string' ? data.lastMarketDay : '';
   return fresh;
 }
 
@@ -112,6 +116,9 @@ export function serializeSave(state) {
       everythingTierEarned: state.stats?.everythingTierEarned ?? 0,   // B2 ratchet (see milestones.js)
     },
     lastSeen: Date.now(),
+    // Market Day latch: which local calendar day already granted its supplier crate. A string
+    // ('' = never); the EVENT id is deliberately not saved — it re-derives from the date.
+    lastMarketDay: typeof state.lastMarketDay === 'string' ? state.lastMarketDay : '',
   };
 }
 

@@ -61,6 +61,15 @@ export function createInitialState() {
                                 // a reload inside the ~2s window drops the LINE only (gold/rep
                                 // applied at serve, so nothing economic can be lost).
     lastSeen: Date.now(),       // timestamp of last activity (persisted; used by M5 offline earnings)
+    lastMarketDay: '',          // 'YYYY-MM-DD' of the last supplier-crate grant (PERSISTED — the
+                                // once-a-day latch, saved immediately on grant like the offline
+                                // bank; '' = never collected, so day one grants)
+    marketDayKey: null,         // transient: the day the market machinery last derived. Doubles as
+                                // the ARMING flag for update()'s rollover check — only a boot that
+                                // ran refreshMarketDay (main.js) sets it, so headless tests that
+                                // tick update() never trigger crates/events by accident
+    marketEventId: null,        // transient: today's demand event — re-derived from the date at
+                                // boot/rollover, never saved (the date IS the save)
     uiDirty: true,              // transient: request a DOM panel re-render (not persisted)
   };
 }

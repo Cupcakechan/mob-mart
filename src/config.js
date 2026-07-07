@@ -84,6 +84,25 @@ export const CONFIG = {
     budgetPerTierAboveBeloved: 0.15,
   },
 
+  market: {
+    // Market Day (retention pass Option 2, Daniel 2026-07-06): one day-seeded demand event per
+    // calendar day + a once-a-day supplier crate on first open. THE LAW (same as milestones):
+    // the event multiplies the PAYOUT of matching-category sales, never basePrice — so a demand
+    // spike can never price a customer out. Event choice is derived from the LOCAL date alone
+    // (deterministic — reloads recompute the identical market; nothing to reroll).
+    payoutMult: 1.5,           // default event bonus (+50%); a registry row's payoutMult overrides
+    wantBias: 2,               // want-pick CATEGORY stage: today's category weighs x this. SOFT,
+                               // same philosophy as affordableWantBias — flavor, not a filter
+    crateBaseUnits: 3,         // free restock units in the crate at Neutral...
+    crateUnitsPerTier: 1,      // ...plus this many per fame tier (Legendary = 3 + 5 = 8)
+    crateGoldBase: 10,         // gold sweetener at Neutral...
+    crateGoldPerTier: 10,      // ...plus this per fame tier (Legendary = 60)
+    crateUnitGoldFallback: 6,  // full shelves: each UNDEALT unit converts to this much gold
+                               // (~an average restock cost — the crate never arrives empty-handed)
+    rolloverCheckSec: 5,       // how often update() checks the calendar (leave-it-open players
+                               // get their new market + crate at local midnight)
+  },
+
   workers: {
     // The customer-visibility floor: a FRONT customer must stand at the counter this long before a
     // hired worker may serve them, no matter how fast upgrades make Bob. Guarantees every mob is

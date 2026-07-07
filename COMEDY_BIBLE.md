@@ -460,3 +460,55 @@ so keep templates under ~40 chars plus the {item}. Trigger is tier eligibility, 
 *Reminder (~30s dial while any eligible license sits unbought — gentle, never desperate):*
 - That {item} license won't buy itself...
 - Still no {item} license? Bob keeps hinting.
+
+## Market Day announcements (system voice — lives in `src/data/marketevents.js`)
+
+One demand event per calendar day ("everyone wants flasks today") plus the morning supplier
+crate. Same system-voice rules as the milestone lines (shop-side, PG, fits the log width, no
+second person) plus the two Market-Day-specific laws:
+
+1. **The fiction is DUNGEON-SIDE.** The world outside shifts — a scare, a season, a parade —
+   and the shop reacts. Mob Mart never manufactures the demand; it profits from it politely.
+2. **Never imply a price increase** (the milestone law, inherited verbatim): event bonuses ride
+   the PAYOUT as tips and gratitude. Prices never move, so customers can never be priced out.
+
+**The six events (two per shelf category — a new event is one registry row):**
+
+*Dragon Scare (consumables):*
+- A dragon was spotted two valleys over. Tonics and snacks pay extra today.
+- Dragon scare in the hills — mobs tip extra for anything swallowable today.
+- (bubble) Dragon scare! Consumables are hot today.
+
+*Dungeon Sniffles (consumables):*
+- The dungeon sniffles are going around. Remedies of every kind pay a bonus.
+- Sniffles season below. Anything swallowable sells at a happy premium today.
+- (bubble) Sniffles season — tonics tip well today.
+
+*Hero Parade (weapons):*
+- A hero parade passes the dungeon today. Mobs tip extra to look armed.
+- Heroes parading nearby — nothing sells like a weapon held bravely. Tips up.
+- (bubble) Hero parade! Weapons tip extra today.
+
+*Dueling Season (weapons):*
+- Dueling season opens. Every polite challenge needs a weapon — they pay extra.
+- It's dueling season below. Weapons leave the shelf with a bonus attached.
+- (bubble) Dueling season — weapons pay a bonus.
+
+*Porcupine Migration (armor):*
+- The porcupines are migrating. Suddenly everyone appreciates armor — tips up.
+- Porcupine migration week: padding is priceless, and armor pays a bonus.
+- (bubble) Porcupines migrating! Armor pays extra.
+
+*Falling Rock Season (armor):*
+- Falling-rock season in the caves. Helmets and shields earn a grateful bonus.
+- Rocks are falling on schedule again. Armor sells with extra thanks today.
+- (bubble) Falling rocks! Armor tips well today.
+
+**Crate lines ({units} free restock units + {gold} sweetener; the 'full' variant covers a
+topped-up shop — undealt units convert to gold, so the crate never arrives empty-handed):**
+- The morning supplier crate: {units} items shelved, plus {gold} gold in the straw.
+- Supplier crate came early: {units} items stocked, {gold} gold under the lid.
+- (full) Shelves already full — the supplier left {gold} gold and a compliment.
+
+Consumable-verb note: both consumable events say "swallowable" on purpose — the hygiene law's
+register (the Rusty Key is a consumable; liquid-only verbs stay banned).

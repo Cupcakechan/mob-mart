@@ -1,7 +1,8 @@
 // main.js — entry point: wires DOM, scale-to-fit, input, save/load, nav, and the rAF game loop.
 import { CONFIG } from './config.js';
 import { clamp } from './utils.js';
-import { update, serveCurrent, dismissCurrent, restockItem, restockAll, buyUpgrade, buyPerk, buyLicense, hireWorker, deliverBattleReport } from './game.js';
+import { update, serveCurrent, dismissCurrent, restockItem, restockAll, buyUpgrade, buyPerk, buyLicense, hireWorker, deliverBattleReport, refreshMarketDay } from './game.js';
+import { CATEGORY_LABELS } from './data/marketevents.js';
 import { loadState, saveState, clearSave } from './save.js';
 import { computeOffline, applyOffline, formatAway } from './offline.js';
 import { drawScene, playBobServe, playPortalOpen, spawnItemFloat, spawnCelebrant, setCelebrantEnteredCallback, playGregErrand } from './render/scene.js';
@@ -53,6 +54,30 @@ if (offline.sales > 0 && offline.awaySec >= CONFIG.offline.minAwaySec) {
 document.getElementById('offline-collect-btn')?.addEventListener('click', () => {
   document.getElementById('offline-modal')?.classList.add('hidden');
 });
+
+// Market Day (retention pass, Option 2): derive today's demand event and, on the FIRST open of a
+// calendar day, bank the supplier crate. Runs AFTER the offline bank on purpose — Bob sells the
+// old shelf first, then the crate restocks the morning after. Save IMMEDIATELY on a grant (the
+// lastMarketDay latch is what makes a reload a no-op — same rule as the offline bank above). The
+// announcements live in refreshMarketDay (log lines + Bob's bubble) and the HUD banner is
+// persistent; when the away modal is already up, its card doubles as the morning paper and gets
+// the market lines appended here.
+const market = refreshMarketDay(state, Date.now());
+if (market?.crate) {
+  saveState(state);
+  const modalUp = !document.getElementById('offline-modal')?.classList.contains('hidden');
+  if (modalUp) {
+    const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    if (market.event) {
+      setText('offline-market-name', market.event.displayName);
+      setText('offline-market-what', CATEGORY_LABELS[market.event.category] ?? market.event.category);
+    }
+    document.getElementById('offline-market')?.classList.toggle('hidden', !market.event);
+    setText('offline-crate-units', market.crate.units);
+    setText('offline-crate-gold', market.crate.gold);
+    document.getElementById('offline-crate')?.classList.remove('hidden');
+  }
+}
 
 // Diorama sprites — each falls back to a placeholder if its PNG is absent, so art can drop in
 // piecemeal. Filenames match the ids the scene uses.

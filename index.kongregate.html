@@ -17,15 +17,65 @@
 
     <!-- DOM overlay: HUD + shop panels sit on top of the canvas diorama -->
     <div id="hud" class="hud"></div>
-    <button id="reset-btn" class="reset-btn" title="Reset all progress">Reset</button>
+    <button id="menu-btn" class="menu-btn" title="Menu">Menu</button>
     <div id="shop-ui" class="shop-ui"></div>
     <div id="nav" class="nav"></div>
+
+    <!-- Bob's hire arc: persistent goal chip over the empty counter until the first merchant is
+         hired. Label (incl. the live hire cost) is filled by panels.js from the worker registry;
+         click routes to the Workers tab. Sits under the title overlay, so it only shows in-shop. -->
+    <button id="hire-goal-chip" class="hire-goal-chip hidden"></button>
+
+    <!-- Bob's license-alert bubble (UX roadmap 3, DOM variant — Daniel's clickable pick): filled
+         and toggled by panels.js from state.bobSpeech; game.js owns the queue/durations. Bob is
+         stationary, so its position is a fixed CSS coordinate over his measured head. Click
+         routes to the named license on the shelf (Shop tab + its category). -->
+    <button id="bob-bubble" class="bob-bubble hidden"></button>
+
+    <!-- Greg's restock bubble (Daniel's Option 1, 2026-07-04 — replaces the standing restock
+         chip): out-of-stock news is GREG'S line of work, so it appears as his clickable speech
+         bubble, hire-gated. Pre-hire, out-of-stock guidance falls back to the starved-attention
+         trail (card/tab/nav pulses), which predates the chip. Filled/toggled by panels.js. -->
+    <button id="greg-bubble" class="greg-bubble hidden"></button>
 
     <!-- Minimal title screen (dismissed on Open Shop) -->
     <div id="title" class="title-overlay">
       <h1 class="title-logo">MOB MART</h1>
       <p class="title-tag">Gear up the little guys. Watch them lose. Get paid.</p>
       <button id="open-shop-btn" class="open-shop-btn">Open Shop</button>
+      <button id="title-credits-btn" class="title-credits-link">Credits</button>
+    </div>
+
+    <!-- Menu overlay (UX roadmap 5, Option 2 — Daniel's pick): tabbed Settings/Credits card,
+         reachable from the in-game Menu button AND the title's Credits link. z15: above the
+         title (10) so the title route works, below the away modal (20 — a boot-priority
+         message). The IN-GAME overlay does NOT pause the sim (idle-honest: an open-but-frozen
+         idle game earns less than a closed tab, which accrues offline — the card says so).
+         Back to Title recreates the BOOT state exactly (update() gates on screen === 'shop'). -->
+    <div id="menu-overlay" class="menu-overlay hidden">
+      <div class="menu-card">
+        <div class="menu-tabs">
+          <button class="menu-tab active" data-menu-tab="settings">Settings</button>
+          <button class="menu-tab" data-menu-tab="credits">Credits</button>
+        </div>
+        <div id="menu-settings" class="menu-section">
+          <p class="menu-note">The shop stays open while you're here.</p>
+          <div class="menu-row">
+            <span>Return to the title screen</span>
+            <button id="menu-title-btn" class="menu-action">Back to Title</button>
+          </div>
+          <div class="menu-row">
+            <span>Erase the saved shop and start over</span>
+            <button id="menu-reset-btn" class="menu-action danger">Reset Progress</button>
+          </div>
+        </div>
+        <div id="menu-credits" class="menu-section hidden">
+          <p class="menu-credit"><b>Mob Mart</b> &mdash; a tiny idle shop for little monsters.</p>
+          <p class="menu-credit">Design, code &amp; pixel art: <b>Daniel</b></p>
+          <p class="menu-credit">Built with vanilla JavaScript and HTML5 Canvas. System fonts; no engines were harmed.</p>
+        </div>
+        <button id="menu-close-btn" class="menu-close">Close</button>
+      </div>
     </div>
 
     <!-- "While you were away" modal (M5) — shown over the title on return when Bob earned something -->
@@ -34,6 +84,17 @@
         <h2 class="offline-title">While you were away&hellip;</h2>
         <p class="offline-body">Bob kept the shop open for <b id="offline-away">&mdash;</b> and sold
           <b id="offline-sales">0</b> items.</p>
+        <!-- Shown only when Greg's bonus refills existed AND the backroom reserve was actually
+             drawn on (main.js toggles) — the pool is shared with Backroom Storage, so the credit
+             is flavor, not an exact unit count. -->
+        <p id="offline-greg" class="offline-body hidden">Greg kept the shelves topped up.</p>
+        <!-- Pass B flavor (Daniel's idea): offline never simulates leaves, so thefts CANNOT
+             happen while away — this line dresses that true fact as Bob's vigilance. -->
+        <p id="offline-rats" class="offline-body hidden">Bob prevented <b id="offline-rats-n">0</b> robberies from the pesky Rat Thief.</p>
+        <!-- Market Day (retention pass): when the crate lands at the same boot the modal shows,
+             the card doubles as the morning paper — main.js fills + unhides these two. -->
+        <p id="offline-market" class="offline-body hidden">Market Day: <b id="offline-market-name">&mdash;</b> &mdash; <span id="offline-market-what">&mdash;</span> pay a bonus today.</p>
+        <p id="offline-crate" class="offline-body hidden">The supplier crate added <b id="offline-crate-units">0</b> items to the shelves and <b id="offline-crate-gold">0</b>&#9670;.</p>
         <div class="offline-gains">
           <span class="offline-gain gold">&#9670; +<span id="offline-gold">0</span></span>
           <span class="offline-gain rep">&#9819; +<span id="offline-rep">0</span></span>
