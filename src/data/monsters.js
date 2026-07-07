@@ -87,6 +87,24 @@ export const MONSTERS = {
     itemBias: { rusty_key: 3, tattered_shirt: 2 },   // signature loves: a THIEF craves the key,
                                                      // and the cheapest shirt is peak scrounger
   },
+  beetle: {
+    id:'beetle', displayName:'Beetley', spriteId:'beetle', combatMod:1, budgetRange:[14,26],
+    footPad: 9,          // MEASURED (2026-07-05, pngjs) from beetle.png: transparent rows below feet
+                         // content is 85% of frame height — trio-class mass, so NO spriteScale
+                         // (default 1.0; Froggo/Ratty needed 1.1 at 76%)
+    // Beetley (roadmap 6.5 — Daniel swapped the planned Goblin for the beetle, 2026-07-05).
+    // Comic lever: the OVERPREPARED TINY SOLDIER — treats shopping like requisitions, drills
+    // formations of one, salutes decisions. Economic identity: the roster's ARMOR LEAD (a beetle
+    // buying armor to wear over his shell IS the joke), mid purse between the trio and Froggo.
+    // combatMod +1: trained — wins respectably, loses at attention.
+    patienceBonus: 8,    // THE STEADFAST QUIRK (Option 2, Daniel 2026-07-05): +8s on the 24s
+                         // default (~33% more) — the guard holds the line. Ratty punishes
+                         // inattention; Beetley forgives it — the thief and the guard bracket
+                         // the patience system from both ends. PROVISIONAL feel dial.
+    anim: { frames: 4, fps: 6 },   // idle strip, shared 4x128 contract; strips authored, incoming
+    categoryWeights: { armor: 4, weapon: 2, consumable: 1 },   // armor-first by a wide margin
+    itemBias: { wooden_shield: 2, iron_buckler: 2 },           // signature loves: MORE shell
+  },
 };
 
-export const MONSTER_IDS = ['slime', 'bat', 'skeleton', 'frog', 'rat'];
+export const MONSTER_IDS = ['slime', 'bat', 'skeleton', 'frog', 'rat', 'beetle'];

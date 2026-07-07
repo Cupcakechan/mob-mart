@@ -104,6 +104,9 @@ loadSprite('frog_walk_happy', 'assets/sprites/frog_walk_happy.png'); // the wall
 loadSprite('rat', 'assets/sprites/rat.png');                      // Ratty (roadmap 6, Pass A) — same contract:
 loadSprite('rat_idle', 'assets/sprites/rat_idle.png');            //   static 128 + 4x128 idle strip + walk strip,
 loadSprite('rat_walk_happy', 'assets/sprites/rat_walk_happy.png');//   all pre-registered, placeholder until art.
+loadSprite('beetle', 'assets/sprites/beetle.png');                // Beetley (roadmap 6.5) — same contract;
+loadSprite('beetle_idle', 'assets/sprites/beetle_idle.png');      //   static landed 2026-07-05, strips
+loadSprite('beetle_walk_happy', 'assets/sprites/beetle_walk_happy.png'); // authored and incoming.
                                                                   //   "_walk_happy" name kept by convention; the
                                                                   //   authored content will be a grumpy stomp.
 

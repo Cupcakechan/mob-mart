@@ -51,7 +51,9 @@ export function spawnCustomer(state) {
     monsterId: monster.id,
     wantedItemId,
     budget: Math.round(randInt(minB, maxB) * budgetMult),
-    patienceRemaining: CONFIG.queue.defaultPatienceSec + (state ? sumPerkEffect(state, 'patience') : 0),  // Warm Welcome
+    patienceRemaining: CONFIG.queue.defaultPatienceSec
+      + (monster.patienceBonus ?? 0)                           // the Steadfast quirk (Beetley +8)
+      + (state ? sumPerkEffect(state, 'patience') : 0),        // Warm Welcome
     brokeWait: 0,               // seconds spent unaffordable at the front; drives the worker auto-wave
     frontWait: 0,               // seconds spent AT the front; gates the worker greet delay (feel fix)
     state: 'queued',

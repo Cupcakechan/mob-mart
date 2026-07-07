@@ -115,6 +115,13 @@ comedy vein: the wink for players who know RPGs. The rule that keeps it safe and
   anti-Froggo (ceiling 16 vs 30) — he wants the cheap shelf. His mechanic (Pass B, queued):
   pocketing his wanted item on a patience-timeout leave — dismissing him prevents it.
 
+- **Beetley** (beetle with a spear, roadmap 6.5 — the armor-lead mid-spender) -> **the
+  overprepared tiny soldier.** Requisitions, formations of one, salutes for everything,
+  unshakeable posture. His military-ness is entirely self-appointed and harmless — nobody
+  suffers but his dignity, and even that survives (cozy law). Mechanically the anti-Ratty:
+  patienceBonus +8s, the guard who holds the line while the thief punishes inattention.
+  Armor is his joke (a shell buying MORE shell).
+
 Test: cover the name and you should still know who it is.
 
 **Bob (the shopkeeper) is a fourth voice, used ONLY in shop-side tiers (dismiss, later leave):**
@@ -147,7 +154,8 @@ Plant a few and escalate them across updates (the 3rd appearance gets the bigges
   there."). The chain is complete; retire from active escalation.
 - **Slimey's eat-gag** — escalated @25 ("It's tradition at this point.") on the unlock ladder.
 - ~~Batty's emotional support pebble — escalation candidate for the next @50 batch.~~ DONE (see above).
-- **The off-screen hero ("the kid with the sword")** — SEEDED @50 (Batty, leave), GROWN in
+- **The off-screen hero ("the kid with the sword")** — x3 (Batty leave; Ratty @50; Beetley @50
+  guards his favorite shelf). The legend builds, the kid stays off-screen. GROWN in
   Ratty's debut (@50 success: "Good kid. Heavy pockets."). x2 — the legend builds, the kid
   stays off-screen. Next beat: a third mob's angle on him.
 - **Batty's pebble x Ratty crossover** — Ratty's @50 funnyFailure ("tried to lift the pebble,
@@ -385,6 +393,17 @@ full price, tipped, and stole nothing. Bob framed the receipt."); the kid-with-t
 Ratty leave with both eyes. Both." — blunt x scrounger is a strong pairing). Full texts live in
 results.js under rat: {} — this section records placement, not a second copy (the batch is big;
 the registry is the source of truth).
+
+### Beetley's debut batch (2026-07-05) — the sixth voice
+
+Full roster kit: ~16 base lines + the ladder (2 @25, exactly 3 @50, one golden @100).
+Highlights: the golden self-promotion ("promoted to General of the Queue. By Beetley. Bob
+signed it."); the kid-with-the-sword grows AGAIN (@50: he guards the kid's favorite shelf —
+x3, the legend builds); the Ratty standoff crossover (@50 funnyFailure: "Ratty stole nothing.
+Beetley knew. Ratty knew." — the guard fiction the mechanic pass deliberately did NOT build,
+living as comedy instead); one armor-tagged line ("the beetle under it, less so"); one
+Greg-tagged dismiss (the flawless about-face). Texts live in results.js under beetle: {} —
+this section records placement, not a second copy.
 
 ## Growing the batch later
 

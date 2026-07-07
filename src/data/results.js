@@ -374,6 +374,53 @@ export const MONSTER_RESULTS = {
       { text: `Greg watched Ratty leave with both eyes. Both.`, greg: true },
     ],
   },
+  // Beetley (roadmap 6.5 — Daniel 2026-07-05). Comic lever: the OVERPREPARED TINY SOLDIER —
+  // requisitions, formations of one, salutes for everything, unshakeable posture. Cozy law:
+  // his military-ness is entirely self-appointed and harmless; nobody suffers but his dignity,
+  // and even that survives. Ladder per the suite contracts: 2 @25 + exactly 3 @50 + one golden.
+  beetle: {
+    excellent: [
+      `Beetley won in formation. The formation was one beetle. It held.`,
+      `Beetley won and saluted the fallen hero. Protocol is protocol.`,
+      `The hero met a wall of one shield. The wall filed a victory report.`,
+      { text: `Beetley's a regular now. He inspects the queue on arrival. It passes.`, minServes: 25 },
+      { text: `Beetley won and pinned a medal on himself. He brought spares. For morale.`, minServes: 50 },
+      { text: `Beetley was promoted to General of the Queue. By Beetley. Bob signed it.`,
+        minServes: 100, golden: true },
+    ],
+    success: [
+      `Beetley completed the mission. Nobody assigned a mission. He assigned it.`,
+      `Beetley won on points. He requested the points in writing.`,
+      `Beetley held the line. The line was grateful.`,
+      { text: `Beetley calls the shop "the outpost" now. Bob has stopped correcting him.`, minServes: 25 },
+      { text: `Beetley guards the kid with the sword's favorite shelf. Unpaid. Devoted.`, minServes: 50 },
+    ],
+    partial: [
+      `Beetley retreated in perfect order. Backwards, saluting.`,
+      `Beetley survived and logged the incident. Form 7, dented pride.`,
+      { text: `Beetley's {item} held up great. The beetle under it, less so.`, cats: ['armor'] },
+    ],
+    failure: [
+      `Beetley lost, but his posture never did.`,
+      `The hero won. Beetley requested a rematch through official channels.`,
+      `Beetley was defeated and took full responsibility. Loudly. At attention.`,
+    ],
+    funnyFailure: [
+      `Beetley polished his spear so long the battle ended without him.`,
+      `Beetley challenged the hero to single combat. The hero brought friends.`,
+      `Beetley tripped during the war cry. The war cry was excellent though.`,
+      { text: `Beetley stood guard over Ratty. Ratty stole nothing. Beetley knew. Ratty knew.`, minServes: 50 },
+    ],
+    leave: [
+      `Beetley's shift ended. He relieved himself of duty. Salute included.`,
+      `Beetley marched off. Somewhere, a queue lost its best soldier.`,
+    ],
+    dismiss: [
+      `Bob declined him gently. Beetley saluted the decision itself.`,
+      `Beetley took the no like a soldier. He'll be back at 0600.`,
+      { text: `Greg pointed at the door. Beetley executed a flawless about-face.`, greg: true },
+    ],
+  },
 };
 
 // Hire flavor (Greg's voice pass, 2026-07-05): what a worker "says" the moment they're hired —

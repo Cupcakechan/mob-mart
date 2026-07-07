@@ -2220,8 +2220,8 @@ console.log('M4 auto-serve worker — smoke test\n');
   const { MONSTER_RESULTS } = await import('./src/data/results.js');
   const { ITEMS } = await import('./src/data/items.js');
 
-  ok(MONSTER_IDS.length === 5 && MONSTER_IDS.includes('rat'),
-     'ratty: five mobs on the roster (the newest batch\u2019s exact)');
+  ok(MONSTER_IDS.includes('rat'),
+     'ratty: on the roster (exact roster count is the NEWEST batch section\u2019s job)');
 
   // The floor itself is guarded by batch 1's live-derived strand test (free-batch prices <= the
   // roster's min roll — it failed at floor 6 and passes at 10); one law, one home. Pinned here:
@@ -2301,6 +2301,50 @@ console.log('M4 auto-serve worker — smoke test\n');
        && r1.ratsFoiled === r2.ratsFoiled,
        'theft offline: ratsFoiled = sales x thief share, recompute-stable');
   }
+}
+
+// 47. Beetley's debut (roadmap 6.5, 2026-07-05): the NEWEST batch owns the exact totals ----------
+// The Goblin's slot went to the beetle (Daniel's call). Row invariants, the debut ladder, and the
+// Steadfast quirk's spawn math. Sections 31/40's per-monster contracts scaled to include him.
+{
+  const { MONSTERS, MONSTER_IDS } = await import('./src/data/monsters.js');
+  const { MONSTER_RESULTS } = await import('./src/data/results.js');
+  const { spawnCustomer } = await import('./src/game.js');
+  const { CONFIG } = await import('./src/config.js');
+
+  ok(MONSTER_IDS.length === 6 && MONSTER_IDS.includes('beetle'),
+     'beetley: six mobs on the roster (the newest batch\u2019s exact)');
+  ok(Object.keys(MONSTERS.beetle.categoryWeights ?? {}).length > 0,
+     'beetley: categoryWeights present (the Ratty lesson — the fallback wants only clubs)');
+  ok((MONSTERS.beetle.categoryWeights.armor ?? 0) > (MONSTERS.beetle.categoryWeights.weapon ?? 0),
+     'beetley: armor-lead identity — armor outweighs everything else in his wants');
+
+  // The Steadfast quirk: spawned patience = default + bonus (+ perks when owned). Sampled through
+  // the REAL factory (it picks the monster internally; 1-in-6 per try makes 300 tries certain).
+  {
+    const s = shopState();
+    let beetle = null, other = null;
+    for (let i = 0; i < 300 && !(beetle && other); i++) {
+      const c = spawnCustomer(s);
+      if (c.monsterId === 'beetle') beetle = c;
+      else other = other ?? c;
+    }
+    ok(beetle && beetle.patienceRemaining ===
+         CONFIG.queue.defaultPatienceSec + MONSTERS.beetle.patienceBonus,
+       'beetley: the guard holds the line — patience = default + patienceBonus');
+    ok(other && other.patienceRemaining === CONFIG.queue.defaultPatienceSec,
+       'beetley: the quirk is his alone — everyone else spawns at the default');
+  }
+
+  // Debut ladder exacts: 2 @25 + 3 @50 + one golden @100; every line inside the log budget.
+  const all = Object.values(MONSTER_RESULTS.beetle).flat().filter((t) => typeof t !== 'string');
+  ok(all.filter((t) => t.minServes === 25).length === 2
+     && all.filter((t) => t.minServes === 50).length === 3
+     && all.filter((t) => t.golden === true && t.minServes === 100).length === 1,
+     'beetley: debut ladder — 2 @25, 3 @50, one golden @100');
+  ok(Object.values(MONSTER_RESULTS.beetle).flat()
+       .map((t) => (typeof t === 'string' ? t : t.text)).every((t) => t.length <= 80),
+     'beetley: every debut line fits the 80-char budget');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
