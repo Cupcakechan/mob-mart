@@ -1014,14 +1014,18 @@ swapped the slot for BEETLEY; lampshade lines shipped (Option 3 canon); QUEUE-UN
 (dedup + 8s return cooldown); the COMEDY_BIBLE was accidentally deleted at one commit and fully
 recovered from history (LESSONS entry: git status is a READ — scan for deleted:).
 
+**Resolved 2026-07-06:** BUDGET-AWARE WANTS shipped (Option 2 SOFT BIAS — Daniel's pick): the
+budget now rolls BEFORE the want pick, and the item stage weighs affordable items x
+CONFIG.queue.affordableWantBias (4). Soft on purpose — the broke state survives as texture
+(auto-wave, brokeGrace, broke-comedy, theft-prevention-via-wave all live on). RATTY'S FLOOR
+FREED to [6,16] (the liberation the pass was flagged for). Suite: the strand invariant
+RE-SCOPED ('never strands' -> 'every purse has a free-tier target'; rare mismatches are by
+design), the A2 itemBias test now conditions on affordability (isolating the two contracts),
+and a LATENT FLAKE died: the Warm Welcome patience test had hand-expected 29s since Beetley's
+quirk shipped — it now derives from the spawned mob's row. Section 49 owns the affordability
+contract (mismatches rare AND possible). Suite 440.
+
 **Open:**
-- **NEXT UP — BUDGET-AWARE WANTS (options round in progress as of this sweep):** the want-picker
-  currently ignores budget (wants pick by category affinity; budget rolls independently), which
-  is why Ratty's floor is pinned at 10 by the strand invariant. Making wants budget-aware would
-  free low floors and make poor customers want cheap things — BUT the cant-afford state is
-  LOAD-BEARING (Bob's auto-wave, brokeGrace, the "3 gold short" comedy register, and theft
-  prevention via the wave all live on it), so the design fork is hard-filter vs soft-bias.
-  Daniel has options in hand; his pick lands next conversation if not already made.
 - **itch.io dual-publish: STILL UNDECIDED** (asked 2026-07-05) — decides whether the `butler`
   deploy path is added.
 - **Bob-voiced dismiss lines can fire pre-hire** (a ~2-serve window given 40g start vs 50g hire).

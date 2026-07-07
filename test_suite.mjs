@@ -703,6 +703,7 @@ console.log('M4 auto-serve worker — smoke test\n');
   const { buyPerk, canBuyPerk, isPerkUnlocked, isUpgradeUnlocked, effectiveRestockCost,
     restockItem, fameOf } = await import('./src/game.js');
   const { perkCost } = await import('./src/data/perks.js');
+  const { MONSTERS } = await import('./src/data/monsters.js');   // Beetley-proof patience derive
   const { computeOffline, applyOffline } = await import('./src/offline.js');
 
   // Dual track: gains feed both; losses (patience leave) hit the spendable balance only.
@@ -780,8 +781,10 @@ console.log('M4 auto-serve worker — smoke test\n');
     s.perks.warm_welcome = 2;                         // +8s patience
     s.spawnTimer = 0.1;                               // opt back into spawning
     update(s, 3.0);                                   // let one spawn
-    ok(s.queue.length >= 1 && s.queue[s.queue.length - 1].patienceRemaining === 29,
-       'Warm Welcome L2: spawns at 24 + 8 = 32s (29 after the same 3.0s tick that spawned them)');
+    const spawned = s.queue[s.queue.length - 1];
+    const bonus = MONSTERS[spawned.monsterId].patienceBonus ?? 0;   // Beetley-proof (2026-07-06):
+    ok(s.queue.length >= 1 && spawned.patienceRemaining === 29 + bonus,   // the mob is random, so
+       'Warm Welcome L2: spawns at 24 + 8 (+ any Steadfast bonus) - the 3.0s tick');  // derive from ITS row
   }
 
   // Perk levels persist and clamp.
@@ -1254,10 +1257,15 @@ console.log('M4 auto-serve worker — smoke test\n');
     const s = shopState();
     s.licenses.greater_flask = true;                // frog's bias-3 flask is now in the pool
     let flaskWants = 0, consumableWants = 0;
-    for (let i = 0; i < 2000 && consumableWants < 150; i++) {
+    for (let i = 0; i < 12000 && consumableWants < 150; i++) {   // cap raised 2026-07-06: the
+      // budget>=flask conditioning qualifies only ~3% of draws; 12k keeps the >=100 sample floor
       const c = spawnCustomer(s);
       if (c.monsterId !== 'frog') continue;
       if (ITEMS[c.wantedItemId].category !== 'consumable') continue;
+      // Budget-aware wants (2026-07-06): condition on purses that AFFORD the flask — there every
+      // consumable carries the same x4, so relative weights are pure itemBias again. This
+      // isolates the itemBias contract from the affordability contract (section 49 owns that).
+      if (c.budget < ITEMS.greater_flask.basePrice) continue;
       consumableWants++;
       if (c.wantedItemId === 'greater_flask') flaskWants++;
     }
@@ -1386,12 +1394,16 @@ console.log('M4 auto-serve worker — smoke test\n');
        && ITEMS[id].basePrice > ITEMS[id].restockCost && Number.isFinite(ITEMS[id].combatEffect)),
      'batch 1: real categories, restock < price (margin invariant), finite eff');
 
-  // Free-tier affordability INVARIANT: price <= the roster's minimum budget roll, from the LIVE
-  // registry — a free-tier want can never strand a customer at cant-afford.
+  // Free-tier affordability INVARIANT, RE-SCOPED for budget-aware wants (2026-07-06): the old
+  // form (every free price <= the minimum roll, i.e. strands NEVER happen) retired with the
+  // soft bias — rare mismatches are now BY DESIGN, handled by the auto-wave. What must still
+  // hold: every mob's floor affords AT LEAST ONE free-tier item, so the affordability bias
+  // always has a target and no purse is unservable by construction.
   const minRoll = Math.min(...MONSTER_IDS.map((id) => MONSTERS[id].budgetRange[0]));
   const free = batch.filter((id) => !ITEMS[id].license);
-  ok(free.length === 4 && free.every((id) => ITEMS[id].basePrice <= minRoll),
-     `batch 1: free four never strand (every price <= min roll ${minRoll})`);
+  const cheapestFree = Math.min(...free.map((id) => ITEMS[id].basePrice));
+  ok(free.length === 4 && cheapestFree <= minRoll,
+     `batch 1: every purse has a free-tier target (cheapest free ${cheapestFree} <= min roll ${minRoll})`);
 
   // The license rung: five gated rows, valid tier indices, empty shelves until bought, and the
   // NEW Trusted rung actually exists below the old 800g Renowned tier.
@@ -2407,6 +2419,39 @@ console.log('M4 auto-serve worker — smoke test\n');
     const s = shopState();
     s.mobCooldowns = { slime: 5 };
     ok(!('mobCooldowns' in serializeSave(s)), 'uniqueness: mobCooldowns is never serialized');
+  }
+}
+
+// 49. Budget-aware wants (Option 2 soft bias, 2026-07-06): the affordability contract -----------
+// The want pick's item stage weighs affordable items x affordableWantBias. Pinned: mismatched
+// wants (price > purse) became RARE but stayed POSSIBLE — both halves are the design (a hard
+// filter would amputate the broke state that the auto-wave, brokeGrace, and the broke-comedy
+// register live on). Plus the visible payoff: Ratty's floor is FREED below the old strand pin.
+{
+  const { MONSTERS } = await import('./src/data/monsters.js');
+  const { spawnCustomer } = await import('./src/game.js');
+  const { ITEMS } = await import('./src/data/items.js');
+  const { CONFIG } = await import('./src/config.js');
+
+  ok((CONFIG.queue.affordableWantBias ?? 1) > 1, 'wants: the bias dial exists and is active');
+  ok(MONSTERS.rat.budgetRange[0] < 10,
+     'wants: Ratty\u2019s floor is freed — the liberation this pass was flagged for');
+
+  // Statistical, derived margins: sample the real spawner; mismatch share must be well under the
+  // unbiased world's (~25-40% at low fame) yet nonzero. 4000 samples: <15% and >0 are both
+  // orders-of-magnitude safe against noise.
+  {
+    const s = shopState();
+    let mismatched = 0, total = 0;
+    for (let i = 0; i < 4000; i++) {
+      const c = spawnCustomer(s);
+      total++;
+      if (ITEMS[c.wantedItemId].basePrice > c.budget) mismatched++;
+    }
+    ok(mismatched / total < 0.15,
+       `wants: mismatches are RARE under the bias (${mismatched}/${total})`);
+    ok(mismatched > 0,
+       'wants: mismatches remain POSSIBLE — the broke state survives as texture (soft, not a filter)');
   }
 }
 

@@ -36,12 +36,26 @@ export function spawnCustomer(state) {
     : MONSTER_IDS;
   if (candidates.length === 0) return null;
   const monster = MONSTERS[pick(candidates)];
+  // Budget rolls FIRST (budget-aware wants, Option 2 — Daniel 2026-07-06): the want pick below is
+  // biased by affordability, so it needs the FINAL purse — fame multiplier included. x1.15 at
+  // Renowned, x1.30 at Legendary (CONFIG.fame dial): the customer-side answer to tier-2 prices.
+  const [minB, maxB] = monster.budgetRange ?? [10, 20];
+  const tierIdx = state ? reputationTier(fameOf(state)).index : 0;
+  const budgetMult = 1 + (CONFIG.fame?.budgetPerTierAboveBeloved ?? 0) * Math.max(0, tierIdx - 3);
+  const budget = Math.round(randInt(minB, maxB) * budgetMult);
   // Wants (A2, items-scaffold pass): CATEGORY affinity first, then an item WITHIN it. Two-stage on
   // purpose — a monster's personality share ("Froggo is half potions") holds no matter how big a
   // category grows; per-item share dilutes as the catalog does, which is how a real shop feels.
   // itemBias (?? 1) makes signature loves non-uniform within a category. The Pass-3 unlock filter
   // is unchanged: locked tier-2 items are invisible to customers; without state (older tests),
   // only license-free items count — the safe default.
+  // BUDGET-AWARE (Option 2, soft bias — Daniel 2026-07-06): at the ITEM stage, affordable picks
+  // weigh x affordableWantBias (4). SOFT on purpose — a hard filter would amputate the broke
+  // state that Bob's auto-wave, brokeGrace, the "3 gold short" comedy register, and Ratty's
+  // theft-prevention-via-wave all live on. Poor customers now MOSTLY want cheap things; the
+  // occasional mismatch survives as texture, and the wave handles it — which is its job. The
+  // bias is item-stage only: a category whose every item exceeds the purse still yields a
+  // mismatch (rare by construction), same handling.
   const unlockedIds = ITEM_ORDER.filter((id) =>
     state ? isItemUnlocked(state, id) : !ITEMS[id]?.license);
   const catEntries = Object.entries(monster.categoryWeights ?? {})
@@ -54,21 +68,18 @@ export function spawnCustomer(state) {
   if (catEntries.length > 0) {
     const cat = weightedPick(catEntries);
     const ids = catEntries.find((e) => e.value === cat)?.ids ?? [];
-    wantedItemId = weightedPick(ids.map((id) => ({ value: id, weight: monster.itemBias?.[id] ?? 1 })));
+    wantedItemId = weightedPick(ids.map((id) => ({ value: id,
+      weight: (monster.itemBias?.[id] ?? 1)
+        * (ITEMS[id].basePrice <= budget ? (CONFIG.queue.affordableWantBias ?? 4) : 1) })));
   }
   // Fallback must be an ITEM id (guards a monster shipped with missing/empty categoryWeights). A
   // monster id here once made the customer want a nonexistent item -> a permanent 'no-item' front
   // blocker. ITEM_ORDER[0] is always license-free.
   wantedItemId = wantedItemId ?? ITEM_ORDER[0];
-  const [minB, maxB] = monster.budgetRange ?? [10, 20];
-  // Fame-scaled budgets: tiers ABOVE Beloved (index 3) attract wealthier mobs — the customer-side
-  // answer to tier-2 prices. x1.15 at Renowned, x1.30 at Legendary (CONFIG.fame dial).
-  const tierIdx = state ? reputationTier(fameOf(state)).index : 0;
-  const budgetMult = 1 + (CONFIG.fame?.budgetPerTierAboveBeloved ?? 0) * Math.max(0, tierIdx - 3);
   return {
     monsterId: monster.id,
     wantedItemId,
-    budget: Math.round(randInt(minB, maxB) * budgetMult),
+    budget,                     // rolled above, BEFORE the want pick (budget-aware wants)
     patienceRemaining: CONFIG.queue.defaultPatienceSec
       + (monster.patienceBonus ?? 0)                           // the Steadfast quirk (Beetley +8)
       + (state ? sumPerkEffect(state, 'patience') : 0),        // Warm Welcome

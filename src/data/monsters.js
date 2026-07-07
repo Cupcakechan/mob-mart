@@ -55,7 +55,7 @@ export const MONSTERS = {
                                                      // (pre-license the unlock filter hides them).
   },
   rat: {
-    id:'rat', displayName:'Ratty', spriteId:'rat', combatMod:-1, budgetRange:[10,16],
+    id:'rat', displayName:'Ratty', spriteId:'rat', combatMod:-1, budgetRange:[6,16],
     thief: true,         // Pass B (2026-07-05): a patience-timeout LEAVE pockets one unit of his
                          // wanted item (game.js leave branch reads this flag — registry-driven,
                          // so a future thieving mob joins the mechanic with one field).
@@ -68,12 +68,11 @@ export const MONSTERS = {
     // strips are authored and incoming — registered in main.js already, they light up on drop.
     // The Rat Thief (roadmap item 6, Pass A — Daniel 2026-07-05). Comic lever: CHEERFUL
     // ACQUISITION (nothing is stolen; everything is "found"). The ANTI-Froggo economically:
-    // his identity lives in the CEILING ([10,16] vs Froggo's [16,30]) — a scrounger hunting the
-    // cheap end of the shelf. Floor is 10, NOT lower: the free-tier strand invariant (suite,
-    // batch 1) requires every free item price <= the roster's minimum roll, because the
-    // want-picker is NOT budget-aware — a lower floor strands him at cant-afford. (Budget-aware
-    // wants would let the floor drop and make poor customers want cheap things — a natural
-    // future pass, flagged 2026-07-05.) Grounded (no `flying`). combatMod -1: scrappy, loses
+    // a true scrounger's purse ([6,16] vs Froggo's [16,30]). The floor was pinned at 10 until
+    // budget-aware wants shipped (Option 2 soft bias, 2026-07-06) — the want pick now weighs
+    // affordable items x4, so a 6-gold Ratty mostly wants Tattered Shirts and Bandages instead
+    // of stranding on a Club; the rare mismatch is the auto-wave's job (by design, it keeps the
+    // broke-comedy register alive). Grounded (no `flying`). combatMod -1: scrappy, loses
     // funny. Art PENDING — placeholder-first: rat.png (static 128) + rat_idle.png (4x128 strip)
     // + rat_walk_happy.png, all registered in main.js (the wall_shelf lesson); footPad MEASURED
     // via pngjs when the PNG lands — absent until then, every read site guards ?? 0.

@@ -38,6 +38,11 @@ export const CONFIG = {
                                // serves): 18 starved the endgame stage (director test caught it,
                                // ~7 cooling); 8 -> ~3 cooling, pool sustained. Still 2x the
                                // celebrant march, so the fiction holds. Transient.
+    affordableWantBias: 4,     // BUDGET-AWARE WANTS (Option 2 soft bias, Daniel 2026-07-06): at
+                               // the want pick's item stage, affordable items weigh x this. SOFT
+                               // (not a hard filter) so the broke state survives as texture —
+                               // the auto-wave, brokeGrace, and the broke-comedy register all
+                               // live on it. 1 disables the bias entirely.
     // SPAWN DIRECTOR (replaces the flat spawnIntervalSec): next-spawn interval indexed by CURRENT
     // queue length (index clamps to the last entry). Self-balancing at every Bob speed — the flat
     // rate's equilibrium was min(1, throughput-limited) customers: maxed Bob served faster than
