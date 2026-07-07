@@ -469,9 +469,10 @@ Playable end-to-end with the full idle lattice live: mobs queue → Serve (manua
 auto-serve) → celebration hop + march through the battle door → comedy result + gold/rep →
 restock/upgrades/perks/licenses. Loyalty (Pass 1), dual-track Fame + perks (Pass 2), tier-2 licensed
 stock (Pass 3), Restock All (3.5), spawn director, offline earnings, Kongregate no-op bridge — all
-shipped. **Roster: FOUR customers** (Slimey / Batty / Skele / **Froggo**, all art IN),
+shipped. **Roster: SIX customers** (Slimey / Batty / Skele / Froggo / **Ratty** the rat
+thief / **Beetley** the beetle guard — ALL art complete including idle + walk strips),
 **FIFTEEN items** (all icons IN), and **TWO workers** (Bob the serve-mimic, **Greg** the
-restock-gargoyle — full arc below). **UX roadmap items 1–4 are SHIPPED** (2026-07-04/05, as-built
+restock-gargoyle — full arc below). **THE ENTIRE UX ROADMAP (items 1–6) IS SHIPPED** (2026-07-04/05, as-built
 deltas marked on each item below): Bob's hire arc, the Fame track panel (5th nav tab), license
 alerts via Bob's clickable DOM bubble, and Greg — who grew into a full subsystem: Trusted-gated
 600◆ hire, paid 8s trickle, duty-cycled clickable restock bubble, errand flights (random shelf
@@ -482,7 +483,7 @@ intro + bubble quip). Gold milestone lines now land as staggered beats (2.5s dia
 @25 AND @50 ladder batches live, goldens @100, two hygiene laws suite-pinned (no second person;
 consumable verbs must fit the whole roster — the Rusty Key is a consumable). Save
 `mobmart.save.v1`, additive schema, clamped merges. Suite: **`test_suite.mjs` at repo root,
-394 assertions green** — a fresh clone self-verifies with `node test_suite.mjs`. Suite doctrine
+436 assertions green** — a fresh clone self-verifies with `node test_suite.mjs`. Suite doctrine
 (batch-1 lesson): EXACT-MATH tests pin the trio shelf via `pinTrioShelf`; RULE tests derive from
 live registries — never hand-type a roster-dependent number; exact batch totals live only in the
 NEWEST batch's section. New module since the items phase: `src/data/fametrack.js` (registry-
@@ -490,6 +491,31 @@ scanned tier track). Transient (never-serialized) state fields now include: `bob
 `licenseReminderIn`, `gregBubble`, `gregRestocked`, `workerServed`, `milestoneQueue`,
 `milestoneCooldown` — the serializer is an explicit field list, and suite sections pin each
 exclusion.
+
+**Shipped since the 2026-07-05 mid-session sweep (all committed, suite 394 -> 436):** MENUS
+(roadmap 5, Option 2 — tabbed Settings/Credits overlay at z15, reachable in-game and from a
+title Credits link; Reset relocated inside with DOUBLE-CONFIRM arm/disarm; Back to Title saves
+first, then recreates the boot state exactly since update() gates on screen === 'shop'; the
+Menu button wears the HUD-capsule styling; NO sim pause by design — idle-honest). SHELF HEADER
+hardening (Restock All quote COMPACTS at 1000+ via compactGold with the exact figure in the
+tooltip; tab/button paddings budgeted; tabs went MIXED-CASE so the honest "Consumables" label
+fits — a 4th category tab does NOT fit, redesign not shrink). LAMPSHADE LINES (Option 3 canon:
+mascot logic; two generic winks). RATTY (roadmap 6): registry row (thief, [10,16] — floor 10 is
+the strand invariant, want-picker is NOT budget-aware... yet), full debut ladder batch, art
+measured (footPad 15, scale 1.1), LEAVE-THEFT Pass B (thief flag: a patience timeout pockets one
+unit of his wanted in-stock item, theft-tier line replaces the leave line, DISMISSAL prevents
+it — the auto-wave is anti-theft infrastructure), ratsFoiled away-modal flavor (offline never
+simulates leaves, so the "Bob prevented N robberies" line is fiction over a true fact).
+BEETLEY (roadmap 6.5 — Daniel SWAPPED THE GOBLIN for the beetle): armor-lead mid-spender
+([14,26], armor 4/2/1 weights), the STEADFAST quirk (patienceBonus +8s on the 24s default —
+the anti-Ratty: the guard forgives inattention), combatMod +1, footPad 9 at native scale, full
+debut batch (the Ratty standoff crossover lives as COMEDY — the guard mechanic was deliberately
+not built). QUEUE UNIQUENESS (Option 2: "never two of him, never him in two places") — spawns
+exclude in-queue AND cooling types; every queue exit (serve/dismiss/timeout, auto-wave included)
+arms a transient returnCooldownSec = 8 — THE DIAL'S MATH LIVES IN CONFIG: steady-state cooling
+= cooldown / serve interval and must stay under the roster at maxed throughput; 18 starved the
+endgame stage (the statistical director test caught it), 8 sustains the pool at 2x the celebrant
+march. New suite sections 44-48.
 
 ### Next up — the idle-progression roadmap (from MOB_MART_RESEARCH.md)
 
@@ -982,15 +1008,20 @@ restock worker's visual home is canvas-beside-Bob (Greg at 490,330); the line-un
 shipped as the minServes ladder; the offline model review picked BOUNDED refills for Greg (Option
 2 — never time-derived; the "stock binds before time" property is load-bearing).
 
+**Resolved 2026-07-05 (evening), recorded for the log:** MENUS shipped (Option 2, no pause by
+design); the Rat shipped as RATTY with the leave-theft; the GOBLIN is OFF the roadmap — Daniel
+swapped the slot for BEETLEY; lampshade lines shipped (Option 3 canon); QUEUE-UNIQUENESS shipped
+(dedup + 8s return cooldown); the COMEDY_BIBLE was accidentally deleted at one commit and fully
+recovered from history (LESSONS entry: git status is a READ — scan for deleted:).
+
 **Open:**
-- **NEXT UP — roadmap item 5, MENUS (title / pause / settings / credits):** owed an options round
-  before build. Then item 6, **the Rat** (fifth voice cost stands; note the naming-canon item
-  below interacts — six mob types make queue-uniqueness cheap).
-- **Lampshade lines (queued, next content beat):** Daniel picked OPTION 3 on the identity
-  question — mascot logic is CANON (Slimey is Slimey even when there are two of him); 1-2 lines
-  winking at duplicates join the next line batch ("Another Skele. Or the same one. Nobody
-  checks."). **Queue-uniqueness** (at most one of each type in line) is the deferred Option-1
-  polish, revisit once Goblin + Rat bring the roster to six.
+- **NEXT UP — BUDGET-AWARE WANTS (options round in progress as of this sweep):** the want-picker
+  currently ignores budget (wants pick by category affinity; budget rolls independently), which
+  is why Ratty's floor is pinned at 10 by the strand invariant. Making wants budget-aware would
+  free low floors and make poor customers want cheap things — BUT the cant-afford state is
+  LOAD-BEARING (Bob's auto-wave, brokeGrace, the "3 gold short" comedy register, and theft
+  prevention via the wave all live on it), so the design fork is hard-filter vs soft-bias.
+  Daniel has options in hand; his pick lands next conversation if not already made.
 - **itch.io dual-publish: STILL UNDECIDED** (asked 2026-07-05) — decides whether the `butler`
   deploy path is added.
 - **Bob-voiced dismiss lines can fire pre-hire** (a ~2-serve window given 40g start vs 50g hire).
@@ -1000,7 +1031,8 @@ shipped as the minServes ladder; the offline model review picked BOUNDED refills
   level, described honestly in the perk text; `perLevel: 1/3` is the lever for a true −25%.
 - **Feel dials shipped provisional, confirm on play:** Greg's shadow (`shadowY: 472`), errand
   length (4400ms), turn hops (24px), milestone stagger (2.5s), Greg bubble duty cycle (10s/45s),
-  flap fps (8).
+  flap fps (8), Beetley patienceBonus (8s), queue
+  returnCooldownSec (8 — the steady-state math is in the CONFIG comment; raise with care).
 - **DevLog: opted out** (standing — skip at every feature completion).
 - **Repo:** `github.com/Cupcakechan/mob-mart` (local folder `mob-mart`).
 - **Special "visits"** design (high-rep rare customers) — deferred.

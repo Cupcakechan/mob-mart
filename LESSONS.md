@@ -81,3 +81,37 @@
   before editing "around" them.
 - Route: universal method candidate (the git checkpoint section) — until harvested, this entry
   is the guard.
+
+## 2026-07-05 — The 18s return cooldown starved the endgame stage (statistical section caught it)
+- What broke: queue-uniqueness shipped with returnCooldownSec 18; the suite's statistical
+  director test failed — at maxed Bob throughput the stage sat EMPTY 51% of frames.
+- Root cause: steady-state cooling count = cooldown / serve interval. At ~2.5s maxed serves,
+  18s -> ~7 mobs cooling against a 6-mob roster: the spawn pool was permanently near-empty. The
+  fiction only needs the cooldown to outlast the ~4s celebrant march; 18 was 4x that for no gain.
+- Plug: dial to 8 (~3 cooling at max speed, pool sustained, still 2x the march) and THE MATH NOW
+  LIVES IN THE CONFIG COMMENT so the next tuner sees the ceiling before raising it.
+- Route: project (the comment is the guard) + a general shape worth keeping: any per-entity
+  cooldown that gates a shared spawn pool needs its steady-state count checked against the pool
+  size at MAXIMUM throughput, not typical throughput. The statistical suite sections exist for
+  exactly this class — they catch balance regressions that exact-math tests can't see.
+
+## 2026-07-05 — A truncated registry read nearly shipped a mob who only wanted Clubs
+- What broke (nearly): Ratty's first row omitted categoryWeights — my earlier read of Froggo's
+  row used a grep window that cut off before those fields, so the template I copied was
+  incomplete. Without the field, the want-picker's fallback makes EVERY want ITEM_ORDER[0].
+- Root cause: templating a new registry entry from a PARTIAL read of the reference entry.
+- Plug: caught before delivery (the strand-invariant failure prompted a full-row read); suite
+  sections 45/47 now pin categoryWeights presence for every new mob.
+- Route: instance of the standing artifact-wins rule with a sharper edge: when a new entry is
+  templated from an existing one, read the reference entry TO ITS CLOSING BRACE — a grep window
+  is not a read.
+
+## 2026-07-05 — An untracked scratch file silently blocked git pull (stale-tree reads followed)
+- What broke: a beetle.png copied into the clone as scratch blocked \`git pull\` ("untracked
+  working tree files would be overwritten"); the pull ABORTED, the session's reads ran on a tree
+  one commit behind, and only the stderr line revealed it.
+- Root cause: leaving untracked working copies inside a tree that syncs against a remote Daniel
+  pushes art into.
+- Plug: scratch files live outside the clone; after every pull, verify the expected HEAD (the
+  log line) — a pull that "ran" is not a pull that succeeded.
+- Route: Claude-side workflow rule; pairs with the existing "git status is a READ" entry.
