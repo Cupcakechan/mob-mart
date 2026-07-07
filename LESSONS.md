@@ -1,6 +1,6 @@
 # LESSONS.md — error record (feeds the dev-method; harvest in a dev-method skill session)
 
-## 2026-07-03 — wall_shelf prop hook shipped without its sprite registration
+## 2026-07-03 — wall_shelf prop hook shipped without its sprite registration [HARVESTED — 2026-07-03]
 - What broke / what happened: Shelf decoration v2's optional `wall_shelf.png` never rendered —
   the PNG was correctly named and placed, but both planks kept drawing the code fallback.
 - Root cause: `sprites.js` is a registry — `getSprite(id)` only serves ids previously registered
@@ -18,11 +18,15 @@
   never requested because those mobs declare no `anim`). Guard = QUEUED into the housekeeping
   pass: when the suite is committed as `test_suite.mjs`, add an assertion that every literal
   `getSprite('…')` id in `src/render/scene.js` appears as a `loadSprite('…')` in `src/main.js`.
+  **SHIPPED (verified 2026-07-07, housekeeping pass): suite section 0b** — broader than queued:
+  it scans ALL of `src/` for literal `getSprite('…')` PLUS config-carried `propId:`/`spriteId:`
+  ids (the shape this very bug wore) against main.js registrations, with a guard-the-guard
+  assertion so a rotted regex can't pass vacuously.
 - Route: skill reference (html-game.md) candidate — "registry-consumer pairing: a pass that adds a
   sprite consumer must add/verify its registration; grep both sides before delivery." Guard itself
   is project-level (suite assertion) until harvested.
 
-## 2026-07-04 — Fifth nav tab overlapped the customer panel (no bottom-bar budget existed)
+## 2026-07-04 — Fifth nav tab overlapped the customer panel (no bottom-bar budget existed) [HARVESTED — 2026-07-07]
 - What broke: adding the Fame tab pushed the right-anchored nav's LEFT edge ~50px into the
   customer panel — the nav grows leftward, and the only guard was a stale "~537" comment.
 - Root cause: the bottom bar's three fixed neighbors (customer panel, nav, log) had no recorded
@@ -35,7 +39,7 @@
 - Route: project-level (CSS comments are the guard). Skill candidate: "every fixed-position bar
   gets a written width budget the day it ships."
 
-## 2026-07-05 — "Batty drank the Rusty Key": a category tag is a contract with the WHOLE roster
+## 2026-07-05 — "Batty drank the Rusty Key": a category tag is a contract with the WHOLE roster [HARVESTED — 2026-07-07]
 - What broke: consumable-tagged drink lines fired with the Rusty Key — which is legitimately
   `category: 'consumable'` (single-use; the shelf has three buckets), so the tag system worked
   exactly as designed and still produced nonsense.
@@ -47,7 +51,7 @@
 - Route: bible law (recorded) + suite guard (shipped). Skill candidate: "when authoring against a
   category, read the category's full roster first — including its weirdest member."
 
-## 2026-07-05 — Non-integer pixel-art scaling almost shipped (Greg 112 -> 96)
+## 2026-07-05 — Non-integer pixel-art scaling almost shipped (Greg 112 -> 96) [HARVESTED — 2026-07-07]
 - What broke (nearly): the Restocker placeholder pass set drawn height 96; Daniel's art arrived
   at native 112. A 0.857x downscale muddies every pixel of pixel art.
 - Root cause: the drawn size was chosen before the art existed, from proportion feel ("smaller
@@ -67,7 +71,7 @@
 - Route: project convention (suite structure). Same family as "read the established call pattern
   before using a helper" (the mergeSave two-arg miss, same day).
 
-## 2026-07-05 — `git add .` shipped an unnoticed file DELETION (COMEDY_BIBLE.md, 417 lines)
+## 2026-07-05 — `git add .` shipped an unnoticed file DELETION (COMEDY_BIBLE.md, 417 lines) [HARVESTED — 2026-07-07]
 - What broke: the milestone-stagger commit deleted COMEDY_BIBLE.md alongside its three intended
   files — discovered only when the NEXT pass tried to edit the bible and got ENOENT at HEAD.
 - Root cause: the file was already missing from the local working tree at commit time (local
@@ -82,7 +86,7 @@
 - Route: universal method candidate (the git checkpoint section) — until harvested, this entry
   is the guard.
 
-## 2026-07-05 — The 18s return cooldown starved the endgame stage (statistical section caught it)
+## 2026-07-05 — The 18s return cooldown starved the endgame stage (statistical section caught it) [HARVESTED — 2026-07-07]
 - What broke: queue-uniqueness shipped with returnCooldownSec 18; the suite's statistical
   director test failed — at maxed Bob throughput the stage sat EMPTY 51% of frames.
 - Root cause: steady-state cooling count = cooldown / serve interval. At ~2.5s maxed serves,
@@ -95,7 +99,7 @@
   size at MAXIMUM throughput, not typical throughput. The statistical suite sections exist for
   exactly this class — they catch balance regressions that exact-math tests can't see.
 
-## 2026-07-05 — A truncated registry read nearly shipped a mob who only wanted Clubs
+## 2026-07-05 — A truncated registry read nearly shipped a mob who only wanted Clubs [HARVESTED — 2026-07-07]
 - What broke (nearly): Ratty's first row omitted categoryWeights — my earlier read of Froggo's
   row used a grep window that cut off before those fields, so the template I copied was
   incomplete. Without the field, the want-picker's fallback makes EVERY want ITEM_ORDER[0].
@@ -106,7 +110,7 @@
   templated from an existing one, read the reference entry TO ITS CLOSING BRACE — a grep window
   is not a read.
 
-## 2026-07-05 — An untracked scratch file silently blocked git pull (stale-tree reads followed)
+## 2026-07-05 — An untracked scratch file silently blocked git pull (stale-tree reads followed) [HARVESTED — 2026-07-07]
 - What broke: a beetle.png copied into the clone as scratch blocked \`git pull\` ("untracked
   working tree files would be overwritten"); the pull ABORTED, the session's reads ran on a tree
   one commit behind, and only the stderr line revealed it.

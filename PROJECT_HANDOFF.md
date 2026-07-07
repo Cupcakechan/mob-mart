@@ -1,5 +1,7 @@
 # Mob Mart — PROJECT_HANDOFF.md
 
+Repo: https://github.com/Cupcakechan/mob-mart
+
 *Living source of truth. Read this in full (together with the code) at the start of every
 session before doing any work. Update it as decisions change. Kept self-contained so a fresh
 Claude or ChatGPT can parse it cold.*
@@ -362,6 +364,17 @@ integration; guarded `?? 0`) — flyers skip `footPad` and may carry deliberate 
 32px, DOM cards 32px); a 48px re-export fixes one and turns both clean ×0.5 consumers into crunchy
 ×0.667. The shelf's ×0.75 is the accepted residual.
 
+**Special-visitor (VIP) sizing — recorded 2026-07-07 for the Visits pass (numbers verified at
+HEAD):** keep the permanent 128×128 frame; author the VIP at **~90% frame fill** and give its
+registry row **`spriteScale: 1.25`** → ~99px visible body, **+~33% over the regular cast's
+~73–75px** — both draw sites (queue idle scene.js:696, celebration march :851) already multiply
+by the guarded per-monster `spriteScale`, so this is zero-code. **Ceiling ~1.3** (Skele's parked
+stopgap precedent); the binding constraint above that is **bubble airspace** (bubble box top
+measured ~y322, see the WALL_SHELF ceiling comment + style.css:383) — measure clearance at
+integration with pngjs, same session as `footPad`. Width is fine: queue `stepX` ~134px absorbs a
+full-width 1.3× sprite. Size alone reads "somewhat bigger"; size + a distinct silhouette is the
+"someone special" read — silhouette is Daniel's call.
+
 | Asset | Target size (authoring) | Animations | Filename(s) | Status |
 |---|---|---|---|---|
 | Froggo (4th customer, Pass 4b) | 128×128/frame (permanent convention) | shared 4-frame idle @6fps + walk strip | `frog.png`, `frog_idle.png`, `frog_walk_happy.png` (the walk is authored as a GRUMPY STOMP — naming kept by convention, mismatch intended) | **ALL IN** (2026-07-04) — `footPad` 15 MEASURED, `spriteScale` 1.1 (content 76% of frame) |
@@ -483,14 +496,45 @@ intro + bubble quip). Gold milestone lines now land as staggered beats (2.5s dia
 @25 AND @50 ladder batches live, goldens @100, two hygiene laws suite-pinned (no second person;
 consumable verbs must fit the whole roster — the Rusty Key is a consumable). Save
 `mobmart.save.v1`, additive schema, clamped merges. Suite: **`test_suite.mjs` at repo root,
-436 assertions green** — a fresh clone self-verifies with `node test_suite.mjs`. Suite doctrine
+484 assertions green** — a fresh clone self-verifies with `node test_suite.mjs`. Suite doctrine
 (batch-1 lesson): EXACT-MATH tests pin the trio shelf via `pinTrioShelf`; RULE tests derive from
 live registries — never hand-type a roster-dependent number; exact batch totals live only in the
-NEWEST batch's section. New module since the items phase: `src/data/fametrack.js` (registry-
-scanned tier track). Transient (never-serialized) state fields now include: `bobSpeech`,
-`licenseReminderIn`, `gregBubble`, `gregRestocked`, `workerServed`, `milestoneQueue`,
-`milestoneCooldown` — the serializer is an explicit field list, and suite sections pin each
-exclusion.
+NEWEST batch's section. New modules since the items phase: `src/data/fametrack.js` (registry-
+scanned tier track) and `src/data/marketevents.js` (Market Day leaf registry). Transient
+(never-serialized) state fields now include: `bobSpeech`, `licenseReminderIn`, `gregBubble`,
+`gregRestocked`, `workerServed`, `milestoneQueue`, `milestoneCooldown`, `marketDayKey`,
+`marketEventId`, `marketCheckIn` — the serializer is an explicit field list, and suite sections
+pin each exclusion.
+
+**Shipped 2026-07-06/07 — MARKET DAY (retention pass, Option 2 of Daniel's roadmap pick; suite
+440 -> 484, section 50):** one **demand event per LOCAL calendar day** (pure function of the date
+— FNV-1a over 'YYYY-MM-DD' in `marketevents.js`; deterministic, reroll-proof, same market for
+every player that day; 6 events, 2 per shelf category, **a new event = one registry row**) +
+the **once-a-day supplier crate** on first open (`3 + fameTier` free units dealt via the offline
+round-robin, caps/licenses respected, + `10 + 10×fameTier` gold; **undealt units convert to 6◆
+each** so a full shop still gets paid; latched by PERSISTED `lastMarketDay`, **saved immediately
+on grant** — the offline bank's no-double-collect rule). **THE LAWS:** event multiplies
+**PAYOUT only, never basePrice** (milestone law inherited; exact-budget buys suite-pinned);
+want-pick CATEGORY stage leans ×2 toward the day (soft, `CONFIG.market.wantBias`); **offline is
+event-free** (suite-pinned byte-identical) — the event rewards playing today, not sleeping;
+absence is never punished. Surfaces: two amber `market`-tier log lines (bypass the milestone
+stagger), Bob-bubble announcement click-routed to the event's shelf tab, away-modal augment
+lines, and the HUD chip. Mid-session rollover: `update()` re-derives the day every 5s but is
+**ARMED ONLY by the boot refresh** (`marketDayKey` set in main.js) — headless tests never trip
+crates. **HUD LAYOUT BUDGET (2026-07-07, measured — the collision fix, Daniel picked Option 2):**
+`.hud` is **band-bound, never stage-centered** (`left:396px` = shelf plank edge 372 + breath;
+`right:16px`; cluster centers via justify-content — the long "to <tier>" remainder only exists
+below Legendary where rep is ≤4 digits, so widths anticorrelate and the worst reachable cluster
+~600px fits the ~780px band); the market chip is **absolute in that box** (`top:52; right:0` →
+stage y68/right16, under Menu, clear of the fame panel's x960 edge) and shows the **compact form**
+("Armor +50%", `marketBannerCompact`) with the full name on the tooltip. Numbers documented in
+the style.css HUD comment — same status as the bubble-airspace ceiling. **KONG MIRROR INCIDENT:**
+`index.kongregate.html` had silently drifted ~3 passes (old Reset button, no menus/chip/bubble);
+regenerated MECHANICALLY from index.html + the two Kong-only insertions (diff-verified), and
+**section 50 now suite-pins the mirror** (every index.html line must appear in order in the Kong
+shell) — full write-up in LESSONS.md 2026-07-06. Files: `marketevents.js` (new), config, state,
+save, game, main, hud, panels, both index pages, style.css, suite, COMEDY_BIBLE (Market Day
+lines mirrored), LESSONS.
 
 **Shipped since the 2026-07-05 mid-session sweep (all committed, suite 394 -> 436):** MENUS
 (roadmap 5, Option 2 — tabbed Settings/Credits overlay at z15, reachable in-game and from a
@@ -1025,7 +1069,19 @@ and a LATENT FLAKE died: the Warm Welcome patience test had hand-expected 29s si
 quirk shipped — it now derives from the spawned mob's row. Section 49 owns the affordability
 contract (mismatches rare AND possible). Suite 440.
 
+**Resolved 2026-07-07:** the RETENTION ROADMAP is LOCKED — **Market Day -> Deep Sinks (worker
+gold-tier leveling + the Mythic ~5000 rung) -> Special Visits**, with the check-in calendar as a
+separable later mini-pass. MARKET DAY shipped as Option 2 (event + crate; as-built block in §12).
+The HUD collision fix shipped as Option 2 (band-bound cluster + right-docked compact chip) —
+measuring it also surfaced a LATENT pre-pass graze (mid-tier "to <tier>" remainder could reach
+x~328 vs the 4th shelf icon at 354), now retired by the band. VIP sizing numbers recorded in §9
+for the Visits pass. Kong mirror drift found + plugged (LESSONS 2026-07-06; suite-pinned).
+
 **Open:**
+- **"Special of the Day" wooden board (Daniel's idea, 2026-07-07):** a diegetic authored sign
+  above Bob carrying the day's quip — the Market Day comedy's persistent visible home. Options
+  presented, awaiting Daniel's pick; art is Daniel's (prop contract like `counter`/`wall_shelf`:
+  registered-before-art, code-drawn fallback).
 - **itch.io dual-publish: STILL UNDECIDED** (asked 2026-07-05) — decides whether the `butler`
   deploy path is added.
 - **Bob-voiced dismiss lines can fire pre-hire** (a ~2-serve window given 40g start vs 50g hire).
