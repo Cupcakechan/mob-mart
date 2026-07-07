@@ -5,7 +5,7 @@ import { update, serveCurrent, dismissCurrent, restockItem, restockAll, buyUpgra
 import { CATEGORY_LABELS } from './data/marketevents.js';
 import { loadState, saveState, clearSave } from './save.js';
 import { computeOffline, applyOffline, formatAway } from './offline.js';
-import { drawScene, playBobServe, playPortalOpen, spawnItemFloat, spawnCelebrant, setCelebrantEnteredCallback, playGregErrand } from './render/scene.js';
+import { drawScene, playBobServe, playPortalOpen, spawnItemFloat, spawnCelebrant, setCelebrantEnteredCallback, playGregErrand, playBoardChalk } from './render/scene.js';
 import { loadSprite } from './render/sprites.js';
 import { initHud, renderHud } from './ui/hud.js';
 import { initPanels, renderPanels } from './ui/panels.js';
@@ -273,6 +273,13 @@ function frame(now) {
   if (state.gregRestocked) {                      // trickle landed this tick -> Greg's shelf errand
     playGregErrand();                             // (visual echo only; the stock already moved)
     state.gregRestocked = false;
+  }
+  // Board chalk (life pass): armed by a FRESH market day (refreshMarketDay), consumed only once
+  // the shop is actually on screen — a boot's morning waits through the title for Open Shop; a
+  // midnight rollover mid-play fires immediately. One-shot, then the flag drops.
+  if (state.boardChalkPending && state.screen === 'shop') {
+    playBoardChalk();
+    state.boardChalkPending = false;
   }
   drawScene(ctx, state, now);
 

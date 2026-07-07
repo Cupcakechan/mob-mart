@@ -53,6 +53,8 @@ export function createInitialState() {
     spawnTimer: 0,              // seconds until the next mob joins the back of the line
     serveCooldown: 0,           // transient: seconds until Serve re-enables after a sale (Faster Counter)
     workerServed: false,        // transient: a worker just auto-served -> main.js plays Bob's serve anim
+    boardChalkPending: false,   // transient: a fresh market day arrived -> main.js plays the board's
+                                // chalk write-on once the shop screen is visible (never serialized)
     log: [],                    // [{ text, repDelta, tier, monsterId }]  newest first
     pendingReports: [],         // battle results awaiting delivery — the report lands when the
                                 // celebrant ENTERS the door (render event), or via the fallback

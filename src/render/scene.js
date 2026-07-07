@@ -405,7 +405,30 @@ const SPECIAL_BOARD = {
   headerY: 13, nameY: 37, quipY: 61,  // line TOPS, from the board's top (110-tall display box)
   quipLineH: 19, maxQuipLines: 2,     // quips are authored <=48 chars -> two 14px lines always fit
   plank: '#8a5a30', plankEdge: '#5b3a24',   // fallback colors (wall_shelf family)
+  // Life pass (Option 2, Daniel 2026-07-07) — BOTH motions are event-driven on purpose (the
+  // shelf-wiggle law: occasional motion draws the eye, constant motion numbs it):
+  chalk: { durMs: 1200 },     // morning write-on: name + quip reveal char-by-char over this span.
+                              // Plays on a FRESH market day only (crate moment), deferred until
+                              // the shop screen is actually visible (main.js gates the trigger) —
+                              // same-day reloads show the sign already written, as the fiction says.
+  thump: { durMs: 600, amp: 3, swings: 3, cooldownSec: 25 },  // door-slam shudder: a decaying
+                              // x-rattle when a celebrant enters the portal. amp 0 = kill switch;
+                              // the cooldown keeps maxed-Bob throughput (~2.5s serves) from
+                              // turning a beat into wallpaper.
 };
+
+// One-shot presentation state (never saved — the render layer's usual ephemera).
+const boardFx = { chalkStartMs: 0, lastThumpMs: -1e9 };
+
+// The morning chalk one-shot. -1 sentinel: stamped with the real tMs on the next draw, the
+// portalAnim pattern — callers don't need a clock.
+export function playBoardChalk() { boardFx.chalkStartMs = -1; }
+
+// Door-slam shudder, cooldown-gated at the trigger so the dial lives with the effect.
+function thumpSpecialBoard(tMs) {
+  if (tMs - boardFx.lastThumpMs < SPECIAL_BOARD.thump.cooldownSec * 1000) return;
+  boardFx.lastThumpMs = tMs;
+}
 
 // Greedy word-wrap into at most maxLines; a too-long tail ellipsizes on the last line. Guards a
 // future long quip — today's authored pool (<=48 chars) never trips the ellipsis.
@@ -429,12 +452,22 @@ function wrapBoardText(ctx, text, maxW, maxLines) {
   return lines;
 }
 
-function drawSpecialBoard(ctx, state) {
+function drawSpecialBoard(ctx, state, tMs) {
   const B = SPECIAL_BOARD;
+  // Door-slam shudder: a decaying sine on x — a flush-mounted board RATTLES (translate), it
+  // doesn't swing (rotate would claim hanging hardware the art doesn't show). Costs nothing
+  // when idle: past durMs the offset is exactly 0.
+  let shakeX = 0;
+  const st = tMs - boardFx.lastThumpMs;
+  if (st >= 0 && st < B.thump.durMs && B.thump.amp > 0) {
+    const p = st / B.thump.durMs;
+    shakeX = Math.sin(p * Math.PI * 2 * B.thump.swings) * B.thump.amp * (1 - p);
+  }
+
   const spr = getSprite('special_board');
   const w = B.width;
   const h = spr ? Math.round(w * (spr.height / spr.width)) : 110;
-  const x = Math.round(B.centerX - w / 2), y = B.topY;
+  const x = Math.round(B.centerX - w / 2 + shakeX), y = B.topY;
   if (spr) {
     ctx.drawImage(spr, x, y, w, h);
   } else {                                                  // pre-art fallback: one framed plank
@@ -444,24 +477,46 @@ function drawSpecialBoard(ctx, state) {
     ctx.strokeRect(x + 1.5, y + 1.5, w - 3, h - 3);
   }
 
+  // Morning chalk progress: startMs 0 = never armed this session (a same-day reload) -> the sign
+  // is already fully written, exactly as the fiction says; -1 = one-shot armed (playBoardChalk)
+  // -> stamp with the real clock now; otherwise animate to 1 and stay there.
+  if (boardFx.chalkStartMs === -1) boardFx.chalkStartMs = tMs;
+  const chalkP = boardFx.chalkStartMs === 0
+    ? 1 : Math.min(1, (tMs - boardFx.chalkStartMs) / B.chalk.durMs);
+
   ctx.save();
-  ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   const cx = x + w / 2, maxW = w - B.padX * 2;
   // Every line lands twice: a 1px dark shade then the ink — cheap legibility over the grain.
-  const line = (text, font, color, ly) => {
+  // A PARTIAL row (mid-chalk) anchors LEFT at its FINAL left edge, so the reveal writes
+  // left-to-right and finishes pixel-identical to the centered full row.
+  const line = (text, fullText, font, color, ly) => {
     ctx.font = font;
-    ctx.fillStyle = B.shade; ctx.fillText(text, cx + 1, y + ly + 1);
-    ctx.fillStyle = color;   ctx.fillText(text, cx, y + ly);
+    const partial = text.length < fullText.length;
+    ctx.textAlign = partial ? 'left' : 'center';
+    const lx = partial ? cx - ctx.measureText(fullText).width / 2 : cx;
+    ctx.fillStyle = B.shade; ctx.fillText(text, lx + 1, y + ly + 1);
+    ctx.fillStyle = color;   ctx.fillText(text, lx, y + ly);
   };
-  if (B.drawHeader) line(B.header, B.headerFont, B.headerColor, B.headerY);
+  if (B.drawHeader) line(B.header, B.header, B.headerFont, B.headerColor, B.headerY);  // painted, never chalked
+
   const ev = MARKET_EVENTS[state?.marketEventId];
   if (ev) {
-    line(ev.displayName, B.nameFont, B.nameColor, B.nameY);
     ctx.font = B.quipFont;                                  // wrap measures in the quip's own font
     const quip = boardQuipFor(ev, state.marketDayKey);
     const rows = wrapBoardText(ctx, quip, maxW, B.maxQuipLines);
-    rows.forEach((t, i) => line(t, B.quipFont, B.quipColor, B.quipY + i * B.quipLineH));
+    const plan = [
+      { text: ev.displayName, font: B.nameFont, color: B.nameColor, ly: B.nameY },
+      ...rows.map((t, i) => ({ text: t, font: B.quipFont, color: B.quipColor, ly: B.quipY + i * B.quipLineH })),
+    ];
+    // Char budget across the plan: the name writes first, then the quip rows — one hand, one pass.
+    let budget = Math.round(plan.reduce((n, r) => n + r.text.length, 0) * chalkP);
+    for (const r of plan) {
+      const take = Math.min(r.text.length, budget);
+      budget -= take;
+      if (take <= 0) break;
+      line(r.text.slice(0, take), r.text, r.font, r.color, r.ly);
+    }
   }
   ctx.restore();
 }
@@ -472,7 +527,7 @@ export function drawScene(ctx, state, tMs) {
   drawBackground(ctx);          // shop_bg.png if present, else flat wall + floor
 
   drawWallShelf(ctx, state, tMs);  // goods on the wall (diegetic shelf, C-lite — display only)
-  drawSpecialBoard(ctx, state);    // the Special-of-the-Day sign over Bob (Market Day's comedy home)
+  drawSpecialBoard(ctx, state, tMs); // the Special-of-the-Day sign over Bob (Market Day's comedy home)
   drawCounterShadow(ctx);       // contact shadow FIRST: grounds the desk AND Bob standing behind it
   drawBob(ctx, state, tMs);     // before the counter, so the counter front overlaps his lower body
   drawRestocker(ctx, state, tMs); // the flyer hovers left of Bob — same layer, same counter overlap
@@ -891,6 +946,7 @@ function drawCelebrants(ctx, tMs) {
       // tell the game so the pending battle report lands NOW. Render->game is callback-only
       // (main.js wires it); scene never touches state directly. Fired once per despawn.
       celebrantEnteredCb?.();
+      thumpSpecialBoard(tMs);   // the slam rattles the wall — the board shudders (cooldown-gated)
       continue;
     }
 

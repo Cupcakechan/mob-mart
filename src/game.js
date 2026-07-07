@@ -428,6 +428,11 @@ export function refreshMarketDay(state, nowMs) {
     state.gold += gold;
     state.lastMarketDay = key;                                 // the persisted once-a-day latch
     crate = { units: landed, gold };
+    // Board chalk handshake (life pass, 2026-07-07): a FRESH morning arms the write-on one-shot.
+    // TRANSIENT, consumed by main.js only once the shop screen is visible — so a boot lands the
+    // animation at Open Shop, not behind the title overlay. Same-day reloads never set this:
+    // the sign was chalked this morning already.
+    state.boardChalkPending = true;
     // Log order: pushed crate-first so the EVENT line sits on top of the newest-first feed —
     // the world's news above the shop's delivery.
     pushLog(state, { text: crateLine(landed, gold), repDelta: 0, tier: 'market' });

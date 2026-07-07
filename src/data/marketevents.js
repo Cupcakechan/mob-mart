@@ -22,7 +22,9 @@ export const MARKET_EVENTS = {
       'A dragon was spotted two valleys over. Tonics and snacks pay extra today.',
       'Dragon scare in the hills — mobs tip extra for anything swallowable today.',
     ],
-    bubble: ['Dragon scare! Consumables are hot today.'],
+    bubble: ['Dragon scare! Consumables are hot today.',
+      'Nothing calms nerves like a swallowable.',
+      'Big lizard rumors. Tonics moving fast.'],
   },
   dungeon_sniffles: {
     id: 'dungeon_sniffles', displayName: 'Dungeon Sniffles', category: 'consumable',
@@ -30,7 +32,9 @@ export const MARKET_EVENTS = {
       'The dungeon sniffles are going around. Remedies of every kind pay a bonus.',
       'Sniffles season below. Anything swallowable sells at a happy premium today.',
     ],
-    bubble: ['Sniffles season — tonics tip well today.'],
+    bubble: ['Sniffles season — tonics tip well today.',
+      'Every cough buys a remedy. Good day.',
+      'Get well soon, dungeon. Buy something.'],
   },
   hero_parade: {
     id: 'hero_parade', displayName: 'Hero Parade', category: 'weapon',
@@ -38,7 +42,9 @@ export const MARKET_EVENTS = {
       'A hero parade passes the dungeon today. Mobs tip extra to look armed.',
       'Heroes parading nearby — nothing sells like a weapon held bravely. Tips up.',
     ],
-    bubble: ['Hero parade! Weapons tip extra today.'],
+    bubble: ['Hero parade! Weapons tip extra today.',
+      'Look armed, feel brave. Weapons move.',
+      'Parade day. Every mob wants a prop sword.'],
   },
   dueling_season: {
     id: 'dueling_season', displayName: 'Dueling Season', category: 'weapon',
@@ -46,7 +52,9 @@ export const MARKET_EVENTS = {
       'Dueling season opens. Every polite challenge needs a weapon — they pay extra.',
       "It's dueling season below. Weapons leave the shelf with a bonus attached.",
     ],
-    bubble: ['Dueling season — weapons pay a bonus.'],
+    bubble: ['Dueling season — weapons pay a bonus.',
+      'Polite duels, impolite demand. Weapons up.',
+      'Duels at dawn. Weapons selling by dusk.'],
   },
   porcupine_migration: {
     id: 'porcupine_migration', displayName: 'Porcupine Migration', category: 'armor',
@@ -54,7 +62,9 @@ export const MARKET_EVENTS = {
       'The porcupines are migrating. Suddenly everyone appreciates armor — tips up.',
       'Porcupine migration week: padding is priceless, and armor pays a bonus.',
     ],
-    bubble: ['Porcupines migrating! Armor pays extra.'],
+    bubble: ['Porcupines migrating! Armor pays extra.',
+      'Quill season. Padding is beyond price.',
+      'Hug a porcupine once. Then buy armor.'],
   },
   falling_rock_season: {
     id: 'falling_rock_season', displayName: 'Falling Rock Season', category: 'armor',
@@ -62,7 +72,9 @@ export const MARKET_EVENTS = {
       'Falling-rock season in the caves. Helmets and shields earn a grateful bonus.',
       'Rocks are falling on schedule again. Armor sells with extra thanks today.',
     ],
-    bubble: ['Falling rocks! Armor tips well today.'],
+    bubble: ['Falling rocks! Armor tips well today.',
+      'The ceiling is generous. Helmets are wise.',
+      'Rocks fall, everyone shops. Armor up.'],
   },
 };
 

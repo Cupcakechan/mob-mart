@@ -478,37 +478,52 @@ second person) plus the two Market-Day-specific laws:
 - A dragon was spotted two valleys over. Tonics and snacks pay extra today.
 - Dragon scare in the hills — mobs tip extra for anything swallowable today.
 - (bubble) Dragon scare! Consumables are hot today.
+- (bubble) Nothing calms nerves like a swallowable.
+- (bubble) Big lizard rumors. Tonics moving fast.
 
 *Dungeon Sniffles (consumables):*
 - The dungeon sniffles are going around. Remedies of every kind pay a bonus.
 - Sniffles season below. Anything swallowable sells at a happy premium today.
 - (bubble) Sniffles season — tonics tip well today.
+- (bubble) Every cough buys a remedy. Good day.
+- (bubble) Get well soon, dungeon. Buy something.
 
 *Hero Parade (weapons):*
 - A hero parade passes the dungeon today. Mobs tip extra to look armed.
 - Heroes parading nearby — nothing sells like a weapon held bravely. Tips up.
 - (bubble) Hero parade! Weapons tip extra today.
+- (bubble) Look armed, feel brave. Weapons move.
+- (bubble) Parade day. Every mob wants a prop sword.
 
 *Dueling Season (weapons):*
 - Dueling season opens. Every polite challenge needs a weapon — they pay extra.
 - It's dueling season below. Weapons leave the shelf with a bonus attached.
 - (bubble) Dueling season — weapons pay a bonus.
+- (bubble) Polite duels, impolite demand. Weapons up.
+- (bubble) Duels at dawn. Weapons selling by dusk.
 
 *Porcupine Migration (armor):*
 - The porcupines are migrating. Suddenly everyone appreciates armor — tips up.
 - Porcupine migration week: padding is priceless, and armor pays a bonus.
 - (bubble) Porcupines migrating! Armor pays extra.
+- (bubble) Quill season. Padding is beyond price.
+- (bubble) Hug a porcupine once. Then buy armor.
 
 *Falling Rock Season (armor):*
 - Falling-rock season in the caves. Helmets and shields earn a grateful bonus.
 - Rocks are falling on schedule again. Armor sells with extra thanks today.
 - (bubble) Falling rocks! Armor tips well today.
+- (bubble) The ceiling is generous. Helmets are wise.
+- (bubble) Rocks fall, everyone shops. Armor up.
 
 **Crate lines ({units} free restock units + {gold} sweetener; the 'full' variant covers a
 topped-up shop — undealt units convert to gold, so the crate never arrives empty-handed):**
 - The morning supplier crate: {units} items shelved, plus {gold} gold in the straw.
 - Supplier crate came early: {units} items stocked, {gold} gold under the lid.
 - (full) Shelves already full — the supplier left {gold} gold and a compliment.
+
+The bubble pool now doubles as the BOARD pool (life pass, 2026-07-07): boardQuipFor picks
+deterministically per (day, event), so growing a pool reshuffles that event's calendar of quips.
 
 Consumable-verb note: both consumable events say "swallowable" on purpose — the hygiene law's
 register (the Rusty Key is a consumable; liquid-only verbs stay banned).

@@ -2698,5 +2698,39 @@ console.log('M4 auto-serve worker — smoke test\n');
      'board: no event / empty pool -> empty string, never a crash');
 }
 
+// 52. Board life pass (Option 2, 2026-07-07): grown pools + the chalk handshake -----------------
+// Content half: every event's bubble pool grew to 3+ lines (this batch's exact — hygiene rules
+// for these pools live in section 50h and cover the newcomers automatically), and the day-hash
+// SPREADS them: probe-verified, all 3 lines of every event surface inside 60 days (pinned >=2,
+// noise-free margin — it's deterministic). Handshake half: a FRESH market day arms the transient
+// boardChalkPending flag for main.js; a same-day reload must NOT (the sign was chalked already),
+// and the flag never serializes.
+{
+  const M = await import('./src/data/marketevents.js');
+  const { refreshMarketDay } = await import('./src/game.js');
+  const epoch = Date.parse('2026-07-07T12:00:00');
+
+  for (const id of M.MARKET_EVENT_ORDER) {
+    const ev = M.MARKET_EVENTS[id];
+    ok((ev.bubble?.length ?? 0) >= 3, `board life: ${id} carries a 3+ line pool`);
+    const seen = new Set();
+    for (let d = 0; d < 60; d++) seen.add(M.boardQuipFor(ev, M.dayKeyOf(epoch + d * 86400000)));
+    ok(seen.size >= 2, `board life: ${id}'s calendar spreads its pool (${seen.size} distinct over 60 days)`);
+  }
+
+  {
+    const s = shopState();
+    ok(s.boardChalkPending === false, 'chalk: the flag rests false on a fresh state');
+    refreshMarketDay(s, epoch);
+    ok(s.boardChalkPending === true, 'chalk: a fresh market day arms the write-on');
+    s.boardChalkPending = false;                       // main.js consumed it
+    const s2 = shopState();
+    s2.lastMarketDay = M.dayKeyOf(epoch);              // a same-day reload: latch already today
+    refreshMarketDay(s2, epoch);
+    ok(s2.boardChalkPending === false, 'chalk: a same-day reload never re-arms (chalked this morning already)');
+    ok(!('boardChalkPending' in serializeSave(s)), 'chalk: the handshake flag is transient — never serialized');
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
