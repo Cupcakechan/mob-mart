@@ -1586,10 +1586,14 @@ console.log('M4 auto-serve worker — smoke test\n');
   const licensed = Object.values(ITEMS).filter((it) => it.license);
   const { WORKERS: TRACK_WORKERS } = await import('./src/data/workers.js');
   const gatedWorkers = Object.values(TRACK_WORKERS).filter((w) => w.requiredTier !== undefined);
+  // Deep Sinks (2026-07-07): deep-training bands are a NEW chip source — a worker with a levels
+  // block carrying deepTier lists one chip on its gate's node. Derived like every other term.
+  const deepBands = Object.values(TRACK_WORKERS).filter((w) => w.levels?.deepTier !== undefined);
   const budgetLines = nodes.reduce((a, n) => a + n.unlocks.filter((u) => u.kind === 'budget').length, 0);
   const total = nodes.reduce((a, n) => a + n.unlocks.length, 0);
-  ok(total === UPGRADE_ORDER.length + PERK_ORDER.length + licensed.length + gatedWorkers.length + budgetLines,
-     'fame track: unlock count = upgrades + perks + licenses + gated hires + budget lines');
+  ok(total === UPGRADE_ORDER.length + PERK_ORDER.length + licensed.length + gatedWorkers.length
+       + deepBands.length + budgetLines,
+     'fame track: unlock count = upgrades + perks + licenses + gated hires + deep bands + budget lines');
   ok(gatedWorkers.every((w) => nodes[w.requiredTier].unlocks
        .some((u) => u.kind === 'worker' && u.label === w.displayName)),
      'fame track: every tier-gated worker sits on its requiredTier node (ungated staff stay off)');
@@ -2729,6 +2733,136 @@ console.log('M4 auto-serve worker — smoke test\n');
     refreshMarketDay(s2, epoch);
     ok(s2.boardChalkPending === false, 'chalk: a same-day reload never re-arms (chalked this morning already)');
     ok(!('boardChalkPending' in serializeSave(s)), 'chalk: the handshake flag is transient — never serialized');
+  }
+}
+
+// 53. Deep Sinks (Option 2, 2026-07-07): worker training + the Mythic rung ----------------------
+// The repeatable gold sink: per-worker levels on a GENTLE 1.15 curve with a x3 bump entering the
+// deep band (L6-10), which is gated behind the new Mythic tier — the rung's content. Exact curve
+// numbers (2000/2300/12068/21107, band-1 total 13485) are THIS newest section's pins. Two effect
+// laws: Bob's tip is FLAT and lands AFTER the rounded multiplier product (linear production,
+// payout-side only); Greg's training extends the BOUNDED offline reserve (never time-derived).
+{
+  const { WORKERS, workerLevel, workerLevelCost, isWorkerLevelMaxed, sumWorkerEffect } =
+    await import('./src/data/workers.js');
+  const { canBuyWorkerLevel, buyWorkerLevel, effectiveMaxStock } = await import('./src/game.js');
+  const { computeOffline } = await import('./src/offline.js');
+  const { reputationTier } = await import('./src/reputation.js');
+  const { trackByTier, nextTierInfo } = await import('./src/data/fametrack.js');
+  const { CONFIG } = await import('./src/config.js');
+  const { ITEMS, ITEM_ORDER } = await import('./src/data/items.js');
+
+  // (a) The Mythic row: last rung, min 5000; Legendary players get their HUD goal line back.
+  const top = CONFIG.reputation.tiers.at(-1);
+  ok(top.label === 'Mythic' && top.min === 5000, 'mythic: the reserved rung is live at 5000');
+  ok(reputationTier(5000).index === CONFIG.reputation.tiers.length - 1
+     && reputationTier(4999).label === 'Legendary',
+     'mythic: 5000 crosses, 4999 stays Legendary');
+  ok(nextTierInfo(1500)?.label === 'Mythic',
+     'mythic: a Legendary shop sees "to Mythic" again (the horizon returns)');
+
+  // (b) Registry + curve contract (exact pins live here, the newest section).
+  ok(!!WORKERS.mimic_merchant.levels && !!WORKERS.restocker.levels,
+     'sinks: both workers ship a training ladder');
+  ok(workerLevelCost('mimic_merchant', 0) === 2000 && workerLevelCost('mimic_merchant', 1) === 2300,
+     'sinks: shallow rungs price 2000 / 2300 (1.15 curve)');
+  ok(workerLevelCost('mimic_merchant', 5) === 12068 && workerLevelCost('mimic_merchant', 9) === 21107,
+     'sinks: deep rungs carry the x3 bump (12068 / 21107)');
+  ok(workerLevelCost('nobody', 0) === Infinity, 'sinks: unknown workers price Infinity (fail closed)');
+
+  // (c) The gate, both ways: L1-5 open at hire; L6 demands Mythic; MAX closes the ladder.
+  {
+    const s = shopState();
+    s.workers.mimic_merchant.owned = true;
+    s.gold = 1e9; s.lifetimeRep = 1500;                          // Legendary, deep band still shut
+    const g0 = s.gold;
+    for (let i = 0; i < 5; i++) ok(buyWorkerLevel(s, 'mimic_merchant'), `sinks: level ${i + 1} buys at Legendary`);
+    ok(g0 - s.gold === 13485, `sinks: the shallow band costs exactly 13485 (spent ${g0 - s.gold})`);
+    ok(canBuyWorkerLevel(s, 'mimic_merchant') === false, 'sinks: level 6 refuses below Mythic');
+    s.lifetimeRep = 5000;                                        // cross the rung
+    ok(canBuyWorkerLevel(s, 'mimic_merchant') === true, 'sinks: Mythic opens the deep band');
+    while (canBuyWorkerLevel(s, 'mimic_merchant')) buyWorkerLevel(s, 'mimic_merchant');
+    ok(workerLevel(s, 'mimic_merchant') === WORKERS.mimic_merchant.levels.maxLevel
+       && isWorkerLevelMaxed(s, 'mimic_merchant'),
+       'sinks: the ladder tops out at maxLevel and closes');
+    ok(canBuyWorkerLevel(s, 'restocker') === false, 'sinks: an unhired worker cannot train (gold alone is not enough)');
+  }
+
+  // (d) Tip law (pinned trio): flat, AFTER the rounded product, on every serve path.
+  {
+    const s = pinTrioShelf(shopState(), 'full');
+    s.workers.mimic_merchant.owned = true;
+    s.workers.mimic_merchant.level = 3;
+    s.queue = [customer('skeleton', 'club', 99)];
+    const g0 = s.gold; serveCurrent(s);
+    ok(s.gold - g0 === 15, `sinks: club pays 12 + 3 tip (got ${s.gold - g0})`);
+    s.serveCooldown = 0;
+    const M = await import('./src/data/marketevents.js');
+    s.marketEventId = M.MARKET_EVENT_ORDER.find((id) => M.MARKET_EVENTS[id].category === 'consumable');
+    s.queue = [customer('slime', 'hp_flask', 15)];
+    const g1 = s.gold; serveCurrent(s);
+    ok(s.gold - g1 === 26, `sinks: event flask pays round(15x1.5)+3 = 26 — tip lands AFTER the product (got ${s.gold - g1})`);
+  }
+
+  // (e) Offline tip: Bob works offline — same sale count, +tip per sale, frozen like the mults.
+  {
+    const mk = (lvl) => {
+      const s = shopState();
+      s.workers.mimic_merchant.owned = true;
+      s.workers.mimic_merchant.level = lvl;
+      s.lastSeen = 0;
+      return computeOffline(s, 3600 * 1000);                     // one hour away
+    };
+    const a = mk(0), b = mk(2);
+    ok(a.sales === b.sales && a.sales > 0, 'sinks offline: the tip never changes the sale count');
+    ok(b.gold - a.gold === a.sales * 2, `sinks offline: gold rises by exactly sales x tip (${b.gold - a.gold} = ${a.sales} x 2)`);
+  }
+
+  // (f) Greg's Deeper Backroom: +level full refills into the SAME bounded per-item pool.
+  {
+    const mk = (lvl) => {
+      const s = shopState();
+      s.workers.mimic_merchant.owned = true;                     // the pace
+      s.workers.restocker.owned = true;                          // the pool (+1 base refill)
+      s.workers.restocker.level = lvl;
+      for (const id of ITEM_ORDER) s.items[id].stock = 0;        // reserve-only absence
+      s.lastSeen = 0;
+      return computeOffline(s, 12 * 3600 * 1000);
+    };
+    const capSum = (() => {                                      // live-registry derivation (rule test)
+      const s = shopState();
+      return ITEM_ORDER.filter((id) => !ITEMS[id].license)
+        .reduce((t, id) => t + effectiveMaxStock(s, id), 0);
+    })();
+    const a = mk(0), b = mk(2);
+    ok(b.sales - a.sales === 2 * capSum,
+       `sinks offline: two training levels add exactly two full refills per item (${b.sales - a.sales} = 2 x ${capSum})`);
+  }
+
+  // (g) Persistence: levels round-trip, clamp, default, and stay inert unowned.
+  {
+    const s = shopState();
+    s.workers.restocker.owned = true;
+    s.workers.restocker.level = 4;
+    const back = mergeSave(createInitialState(), serializeSave(s));
+    ok(back.workers.restocker.level === 4, 'sinks save: the level round-trips');
+    const tampered = mergeSave(createInitialState(),
+      { workers: { restocker: { owned: true, level: 999 } } });
+    ok(tampered.workers.restocker.level === WORKERS.restocker.levels.maxLevel,
+       'sinks save: a hand-edited 999 clamps to the ladder');
+    const legacy = mergeSave(createInitialState(), { workers: { restocker: { owned: true } } });
+    ok(legacy.workers.restocker.level === 0, 'sinks save: pre-pass saves read level 0');
+    const inert = createInitialState();
+    inert.workers.mimic_merchant.level = 5;                      // level without ownership
+    ok(sumWorkerEffect(inert, 'saleTip') === 0, 'sinks: an unowned level sums to nothing (inert)');
+  }
+
+  // (h) The Fame track headline: the Mythic node carries both deep-training chips.
+  {
+    const node = trackByTier().at(-1);
+    ok(node.unlocks.some((u) => u.label.includes('Salesmanship'))
+       && node.unlocks.some((u) => u.label.includes('Deeper Backroom')),
+       'mythic: the track node lists both workers\u2019 deep bands');
   }
 }
 

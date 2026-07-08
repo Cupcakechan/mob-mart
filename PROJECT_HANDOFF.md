@@ -375,6 +375,12 @@ integration with pngjs, same session as `footPad`. Width is fine: queue `stepX` 
 full-width 1.3× sprite. Size alone reads "somewhat bigger"; size + a distinct silhouette is the
 "someone special" read — silhouette is Daniel's call.
 
+**2026-07-07 update: the VIP is a DRAGON.** Daniel has authored the PNG + animation strips
+(files incoming). Flyer-vs-walker resolves from the art itself at integration — a flyer takes
+the hover-bob + altitude-padding + shadow conventions and skips `footPad`; a grounded dragon
+takes the measured-footPad path. Roster id `dragon` cannot collide with the marketevents id
+`dragon_scare` (different registries) — and the crossover day is a comedy opportunity on file.
+
 | Asset | Target size (authoring) | Animations | Filename(s) | Status |
 |---|---|---|---|---|
 | Froggo (4th customer, Pass 4b) | 128×128/frame (permanent convention) | shared 4-frame idle @6fps + walk strip | `frog.png`, `frog_idle.png`, `frog_walk_happy.png` (the walk is authored as a GRUMPY STOMP — naming kept by convention, mismatch intended) | **ALL IN** (2026-07-04) — `footPad` 15 MEASURED, `spriteScale` 1.1 (content 76% of frame) |
@@ -496,15 +502,47 @@ intro + bubble quip). Gold milestone lines now land as staggered beats (2.5s dia
 @25 AND @50 ladder batches live, goldens @100, two hygiene laws suite-pinned (no second person;
 consumable verbs must fit the whole roster — the Rusty Key is a consumable). Save
 `mobmart.save.v1`, additive schema, clamped merges. Suite: **`test_suite.mjs` at repo root,
-484 assertions green** — a fresh clone self-verifies with `node test_suite.mjs`. Suite doctrine
+531 assertions green** — a fresh clone self-verifies with `node test_suite.mjs`. Suite doctrine
 (batch-1 lesson): EXACT-MATH tests pin the trio shelf via `pinTrioShelf`; RULE tests derive from
 live registries — never hand-type a roster-dependent number; exact batch totals live only in the
 NEWEST batch's section. New modules since the items phase: `src/data/fametrack.js` (registry-
-scanned tier track) and `src/data/marketevents.js` (Market Day leaf registry). Transient
-(never-serialized) state fields now include: `bobSpeech`, `licenseReminderIn`, `gregBubble`,
-`gregRestocked`, `workerServed`, `milestoneQueue`, `milestoneCooldown`, `marketDayKey`,
-`marketEventId`, `marketCheckIn` — the serializer is an explicit field list, and suite sections
-pin each exclusion.
+scanned tier track) and `src/data/marketevents.js` (Market Day leaf registry). Workers now
+persist `{ owned, level }` (training levels, clamped merge). Transient (never-serialized) state
+fields now include: `bobSpeech`, `licenseReminderIn`, `gregBubble`, `gregRestocked`,
+`workerServed`, `milestoneQueue`, `milestoneCooldown`, `marketDayKey`, `marketEventId`,
+`marketCheckIn`, `boardChalkPending` — the serializer is an explicit field list, and suite
+sections pin each exclusion.
+
+**Shipped 2026-07-07 (three passes after Market Day; suite 484 -> 488 -> 504 -> 531):**
+- **SPECIAL-OF-THE-DAY BOARD (Daniel's idea + 640x220 art):** flush-mounted over Bob —
+  `SPECIAL_BOARD` in scene.js (centerX W*0.57, topY 88, width 320; PNG MEASURED at integration:
+  bbox x3..636 y3..218, face RGB 170,106,55 -> cream/gold ink with 1px shade). Header CODE-DRAWN
+  behind `drawHeader: true` (flip false if the art ever carries lettering — one value). Quip =
+  `boardQuipFor(event, dayKey)`, DETERMINISTIC per (day, event) via the salted FNV — a sign
+  chalked once each morning, never re-rolled per reload. Pairing guard 0b auto-verified the new
+  sprite consumer (+1 assertion, the wall_shelf lesson's guard catching its successor). Suite §51.
+- **BOARD LIFE (Option 2):** morning CHALK write-on (char-by-char over 1.2s; armed by
+  refreshMarketDay's crate branch via transient `boardChalkPending`, consumed by main.js only
+  once `screen === 'shop'` — a boot's chalk waits through the title for Open Shop; same-day
+  reloads show the sign already written) + DOOR THUMP (decaying x-rattle at celebrant door entry;
+  TRANSLATE not rotate — flush-mount physics; dials `SPECIAL_BOARD.thump` durMs 600 / amp 3 /
+  swings 3 / cooldownSec 25, amp 0 = kill switch) + **12 new quips** (every event pool 1 -> 3,
+  day-hash surfaces all 3 within 60 days probe-verified, bible-mirrored). Suite §52.
+- **DEEP SINKS (Option 2) — MYTHIC IS LIVE:** `{ Mythic, min 5000 }` appended; budgets x1.45,
+  crate 9 units / 70◆, the track node, and the HUD remainder ALL auto-flowed from the one row.
+  **Worker training:** registry `levels` blocks (workers.js) + pure accessors + `sumWorkerEffect`.
+  Bob "Salesmanship" = **+1◆ FLAT tip per sale per level**, added AFTER the rounded multiplier
+  product (order suite-pinned: event flask 26 = round(15x1.5)+3), applied manual/auto/OFFLINE
+  (offline IS Bob working; frozen like the mults). Greg "Deeper Backroom" = **+1 bounded offline
+  reserve refill per level** into Backroom Storage's exact pool — stock-binds-before-time intact.
+  **Levels 1-5 at hire; 6-10 MYTHIC-gated with a x3 cost bump** (rungs 2000 / 2300 / ... / 12,068
+  / ... / 21,107; shallow band 13,485; ~94.9k per worker, ~190k both — sized against a 321k
+  endgame wallet). Saves: `{ owned, level }` with clamped merge (999 -> maxLevel, pre-pass -> 0,
+  unowned levels inert). UI: worker cards grow a training row + Train button (compactGold label,
+  exact tooltip, "Reach Mythic" gate text). Fame track: deep bands chip the Mythic node, and
+  §33's derived chip-count grew the new SOURCE CLASS. Build catches for the record: a §53
+  scope-import crash (the standing suite-scopes lesson — caught by reading the run's tail) and
+  the §33 extension. Suite §53.
 
 **Shipped 2026-07-06/07 — MARKET DAY (retention pass, Option 2 of Daniel's roadmap pick; suite
 440 -> 484, section 50):** one **demand event per LOCAL calendar day** (pure function of the date
@@ -1076,12 +1114,17 @@ The HUD collision fix shipped as Option 2 (band-bound cluster + right-docked com
 measuring it also surfaced a LATENT pre-pass graze (mid-tier "to <tier>" remainder could reach
 x~328 vs the 4th shelf icon at 354), now retired by the band. VIP sizing numbers recorded in §9
 for the Visits pass. Kong mirror drift found + plugged (LESSONS 2026-07-06; suite-pinned).
+LATER THE SAME DAY: the SPECIAL BOARD shipped (Option 2 quip board, Daniel's 640x220 art), then
+BOARD LIFE (Option 2 — chalk write-on + door thump + 12 quips), then DEEP SINKS (Option 2 —
+Mythic live, worker training ladders); the housekeeping pass landed 8 HARVESTED markers + the
+Repo line and confirmed guard 0b already covered the queued pairing assertion (the LESSONS
+wall_shelf entry closed SHIPPED). All as-built blocks in §12.
 
 **Open:**
-- **"Special of the Day" wooden board (Daniel's idea, 2026-07-07):** a diegetic authored sign
-  above Bob carrying the day's quip — the Market Day comedy's persistent visible home. Options
-  presented, awaiting Daniel's pick; art is Daniel's (prop contract like `counter`/`wall_shelf`:
-  registered-before-art, code-drawn fallback).
+- **Special Visits: THE NEXT PASS.** The VIP is a **DRAGON** — Daniel has authored the PNG +
+  animation strips (incoming); §9 carries the sizing contract (~90% frame fill, `spriteScale:
+  1.25`, ceiling ~1.3, bubble clearance pngjs-measured at integration, flyer-vs-walker read from
+  the art). The MECHANICS options round is pending (what a visit is, how often, what it pays).
 - **itch.io dual-publish: STILL UNDECIDED** (asked 2026-07-05) — decides whether the `butler`
   deploy path is added.
 - **Bob-voiced dismiss lines can fire pre-hire** (a ~2-serve window given 40g start vs 50g hire).

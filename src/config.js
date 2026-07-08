@@ -16,8 +16,13 @@ export const CONFIG = {
       { label: 'Friendly', min: 25 },   // TUNING SWEEP: tiers stretched (were 20/50/100) so rep
       { label: 'Trusted',  min: 75 },   // stays meaningful past the first minutes; signage still
       { label: 'Beloved',  min: 200 },  // makes Beloved a session-one goal, not a minute-five one
-      { label: 'Renowned', min: 500 },  // Fame (Pass 2): tiers read LIFETIME rep (never decreases);
-      { label: 'Legendary', min: 1500 },// a Mythic ~5000 row is the reserved future rung
+      { label: 'Renowned', min: 500 },  // Fame (Pass 2): tiers read LIFETIME rep (never decreases)
+      { label: 'Legendary', min: 1500 },
+      { label: 'Mythic',   min: 5000 }, // Deep Sinks (Option 2, Daniel 2026-07-07): the reserved
+                                        // rung, now LIVE — gates the workers' DEEP training band
+                                        // (levels 6-10, workers.js). Budgets (x1.45), the crate
+                                        // (9 units / 70 gold), the Fame track node, and the HUD
+                                        // remainder all auto-flow from this one row.
     ],
   },
 

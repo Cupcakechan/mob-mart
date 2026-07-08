@@ -83,6 +83,10 @@ export function mergeSave(fresh, data) {
       const owned = data.workers[id]?.owned === true;            // only true when explicitly saved true
       fresh.workers[id].owned = owned;
       if (owned) fresh.workers[id].timer = WORKERS[id]?.baseInterval ?? 0;
+      // Deep Sinks: clamp the restored training level to the registry's ladder (a hand-edited 999
+      // must not become +999 gold/sale); pre-pass saves have no field and read as level 0.
+      fresh.workers[id].level = clamp(
+        Math.floor(numOr(data.workers[id]?.level, 0)), 0, WORKERS[id]?.levels?.maxLevel ?? 0);
     }
   }
   fresh.lastSeen = numOr(data.lastSeen, fresh.lastSeen);         // kept for M5 offline earnings
@@ -99,7 +103,12 @@ export function serializeSave(state) {
   const items = {};
   for (const id of Object.keys(state.items)) items[id] = { stock: state.items[id].stock };
   const workers = {};
-  for (const id of Object.keys(state.workers)) workers[id] = { owned: state.workers[id].owned === true };
+  for (const id of Object.keys(state.workers)) {
+    workers[id] = { owned: state.workers[id].owned === true,
+      // Deep Sinks: training levels persist beside ownership (floored non-negative; merge clamps
+      // to the registry's maxLevel on the way back in).
+      level: Math.max(0, Math.floor(state.workers[id].level ?? 0)) };
+  }
   return {
     version: SAVE_VERSION,
     gold: state.gold,

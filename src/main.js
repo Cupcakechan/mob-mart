@@ -1,7 +1,7 @@
 // main.js — entry point: wires DOM, scale-to-fit, input, save/load, nav, and the rAF game loop.
 import { CONFIG } from './config.js';
 import { clamp } from './utils.js';
-import { update, serveCurrent, dismissCurrent, restockItem, restockAll, buyUpgrade, buyPerk, buyLicense, hireWorker, deliverBattleReport, refreshMarketDay } from './game.js';
+import { update, serveCurrent, dismissCurrent, restockItem, restockAll, buyUpgrade, buyPerk, buyLicense, hireWorker, buyWorkerLevel, deliverBattleReport, refreshMarketDay } from './game.js';
 import { CATEGORY_LABELS } from './data/marketevents.js';
 import { loadState, saveState, clearSave } from './save.js';
 import { computeOffline, applyOffline, formatAway } from './offline.js';
@@ -187,6 +187,7 @@ initPanels(document.getElementById('shop-ui'), {
   onBuyPerk:    (id) => buyPerk(state, id),      // Fame perks: spends rep, never the lifetime track
   onBuyLicense: (id) => buyLicense(state, id),   // supplier licenses: one-time gold, unlocks tier-2
   onHireWorker: (id) => hireWorker(state, id),
+  onBuyWorkerLevel: (id) => buyWorkerLevel(state, id),  // Deep Sinks: worker training purchases
 });
 initNav(document.getElementById('nav'));           // bottom nav swaps the center panel
 

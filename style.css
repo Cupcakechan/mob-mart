@@ -280,12 +280,14 @@ body{
 .wrk-info{flex:1 1 auto;min-width:0;}
 .wrk-name{font-weight:800;font-size:14px;line-height:1.15;}
 .wrk-desc{font-size:11px;font-weight:600;opacity:.72;line-height:1.15;}
-.wrk-buy{
+.wrk-buy,.wrk-train{
   flex:0 0 auto;background:var(--wood);color:#ffeecb;border:2px solid var(--wood-edge);
   border-radius:7px;padding:6px 14px;font-weight:800;font-size:12px;cursor:pointer;
 }
-.wrk-buy:hover:not(:disabled){background:var(--wood-light);}
-.wrk-buy:disabled{opacity:.4;cursor:not-allowed;}
+.wrk-buy:hover:not(:disabled),.wrk-train:hover:not(:disabled){background:var(--wood-light);}
+.wrk-buy:disabled,.wrk-train:disabled{opacity:.4;cursor:not-allowed;}
+/* Deep Sinks: the training row under the worker desc — quiet like .item-sold. */
+.wrk-level{font-size:11px;font-weight:700;color:#6b4a2a;margin-top:2px;}
 /* Active (hired) worker — green accent so "on" reads at a glance. */
 .worker-card.owned{border-color:var(--good);}
 .worker-card.owned .wrk-buy:disabled{opacity:1;background:var(--good);color:#123;border-color:var(--good);}

@@ -6,7 +6,8 @@ import { itemGoldMult, monsterRepMult, globalGoldMult, everythingTier,
 import { MONSTERS, MONSTER_IDS } from './data/monsters.js';
 import { ITEMS, ITEM_ORDER } from './data/items.js';
 import { UPGRADES, upgradeLevel, upgradeCost, isMaxed, sumEffect } from './data/upgrades.js';
-import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost } from './data/workers.js';
+import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost,
+  workerLevel, workerLevelCost, isWorkerLevelMaxed, sumWorkerEffect } from './data/workers.js';
 import { randInt, pick, weightedPick } from './utils.js';
 import { WORKER_HIRE_LINES } from './data/results.js';
 import { resolveCombat } from './combat.js';
@@ -136,8 +137,10 @@ export function serveCurrent(state) {
   // Market Day rides the same payout-side law: today's demand event multiplies matching-category
   // PAYOUTS (grateful mobs tip), never basePrice — serveBlockReason above kept checking the real
   // price, so a demand spike can never price a customer out. x1 when no event is active.
+  // Bob's Salesmanship (Deep Sinks) is a FLAT tip added AFTER the rounded product — linear
+  // production against exponential training costs, and payout-side like everything else here.
   const goldGain = Math.round(item.basePrice * itemGoldMult(state, c.wantedItemId) * globalGoldMult(state)
-    * marketPayoutMult(state, item.category));
+    * marketPayoutMult(state, item.category)) + sumWorkerEffect(state, 'saleTip');
   state.items[c.wantedItemId].stock -= 1;                       // hand over the item
   state.gold += goldGain;                                       // take payment (base + loyalty on top)
   const prevTierIdx = reputationTier(fameOf(state)).index;      // tier BEFORE this sale's fame lands —
@@ -521,6 +524,27 @@ export function canHireWorker(state, id) {
   // ?? 0 keeps ungated workers (Bob) hireable from day one.
   if (reputationTier(fameOf(state)).index < (WORKERS[id].requiredTier ?? 0)) return false;
   return state.gold >= workerHireCost(id);
+}
+
+// --- Worker training (Deep Sinks, Option 2 — Daniel 2026-07-07). Levels below deepFrom open at
+// hire; the DEEP band additionally needs the Mythic tier — the rung's content. Fail-closed like
+// canBuyUpgrade: unknown worker, unhired, maxed, tier-short, or broke all return false.
+export function canBuyWorkerLevel(state, id) {
+  const L = WORKERS[id]?.levels;
+  if (!L || !isWorkerOwned(state, id)) return false;
+  const lvl = workerLevel(state, id);
+  if (lvl >= L.maxLevel) return false;
+  if ((lvl + 1) >= (L.deepFrom ?? Infinity)
+      && reputationTier(fameOf(state)).index < (L.deepTier ?? 0)) return false;
+  return state.gold >= workerLevelCost(id, lvl);
+}
+
+export function buyWorkerLevel(state, id) {
+  if (!canBuyWorkerLevel(state, id)) return false;
+  state.gold -= workerLevelCost(id, workerLevel(state, id));   // pay the current rung's price
+  state.workers[id].level = workerLevel(state, id) + 1;
+  state.uiDirty = true;
+  return true;
 }
 
 export function hireWorker(state, id) {

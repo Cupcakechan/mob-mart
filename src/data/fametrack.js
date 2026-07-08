@@ -47,6 +47,19 @@ export function trackByTier() {
     });
   }
 
+  // Deep training (Deep Sinks, 2026-07-07): a worker's DEEP level band is tier-gated content, so
+  // it chips onto its gate's node — the Mythic rung's headline. Same auto-flow promise: a future
+  // worker shipping a `levels` block with a deepTier lists itself with zero wiring.
+  for (const id of WORKER_ORDER) {
+    const w = WORKERS[id]; const L = w.levels;
+    if (!L || L.deepTier === undefined) continue;
+    at(L.deepTier).unlocks.push({
+      kind: 'worker',
+      label: `${w.displayName} \u2014 ${L.name} ${L.deepFrom}\u2013${L.maxLevel}`,
+      detail: 'deep training',
+    });
+  }
+
   // Fame-scaled budgets — CONFIG-derived rather than registry, but the same auto-flow promise:
   // retune the dial (or add tiers) and these lines follow. The bump applies ABOVE Beloved (index
   // 3), mirroring spawnCustomer's math exactly: mult = 1 + per x (tierIndex - 3).

@@ -14,10 +14,10 @@ export function createInitialState() {
   const upgrades = {};
   for (const id of UPGRADE_ORDER) upgrades[id] = 0;   // level per upgrade, starts at 0
 
-  // Workers: per-id { owned, timer }. `owned` is persisted (see save.js); `timer` (seconds until the
-  // next auto-serve attempt) is transient and always regenerated — never saved.
+  // Workers: per-id { owned, timer, level }. `owned` and `level` are persisted (see save.js);
+  // `timer` (seconds until the next auto-serve attempt) is transient and always regenerated.
   const workers = {};
-  for (const id of WORKER_ORDER) workers[id] = { owned: false, timer: 0 };
+  for (const id of WORKER_ORDER) workers[id] = { owned: false, timer: 0, level: 0 };
 
   // Lifetime ledger (persisted): fuels milestone bonuses now; the bestiary (roadmap Pass 4) and
   // Kongregate badge stats later hang off these same integers. Keyed by current registries so a

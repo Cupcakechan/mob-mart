@@ -12,7 +12,7 @@
 import { CONFIG } from './config.js';
 import { ITEMS, ITEM_ORDER } from './data/items.js';
 import { MONSTERS, MONSTER_IDS } from './data/monsters.js';
-import { WORKERS, WORKER_ORDER, isWorkerOwned } from './data/workers.js';
+import { WORKERS, WORKER_ORDER, isWorkerOwned, sumWorkerEffect } from './data/workers.js';
 import { sumEffect } from './data/upgrades.js';
 import { perkLevel } from './data/perks.js';
 import { itemGoldMult, globalGoldMult } from './data/milestones.js';
@@ -57,19 +57,25 @@ export function computeOffline(state, nowMs) {
   // worker: a perk without its fetcher fetches nothing.
   const gregOwned = WORKER_ORDER.some((id) => WORKERS[id].role === 'restock' && isWorkerOwned(state, id));
   const gregRefills = gregOwned ? 1 + (perkLevel(state, 'bulk_satchel') > 0 ? 1 : 0) : 0;
-  const reservePerItem = sumEffect(state, 'offlineReserve') + gregRefills;   // full refills per item
+  // Deep Sinks: Greg's "Deeper Backroom" training adds full refills to the SAME bounded pool —
+  // still a per-item count, never time-derived, so stock keeps binding before time.
+  const reservePerItem = sumEffect(state, 'offlineReserve') + gregRefills
+    + sumWorkerEffect(state, 'offlineReserve');                            // full refills per item
   const stocks = {}, reserves = {}, goldPer = {};
   // Milestone multipliers apply offline too (loyal regulars keep tipping) but are FROZEN at the
   // absence's start: counts crossed mid-absence don't compound within the same absence —
   // deterministic and conservative. Per-unit rounding matches the live serve path exactly.
+  // Bob's Salesmanship tip rides every offline sale the same way — offline IS Bob working — and
+  // is frozen at the absence's start like the multipliers.
   const gMult = globalGoldMult(state);
+  const saleTip = sumWorkerEffect(state, 'saleTip');
   for (const id of ITEM_ORDER) {
     // Unlicensed tier-2 items are inert offline too: live stock is 0 by construction, but the
     // backroom RESERVE would otherwise conjure sellable units for goods Bob can't legally stock.
     const unlocked = !ITEMS[id]?.license || state.licenses?.[id] === true;
     stocks[id] = unlocked ? (state.items[id]?.stock ?? 0) : 0;               // live shelf units
     reserves[id] = unlocked ? reservePerItem * effectiveMaxStock(state, id) : 0;  // Extra Shelf compounds in
-    goldPer[id] = Math.round((ITEMS[id]?.basePrice ?? 0) * itemGoldMult(state, id) * gMult);
+    goldPer[id] = Math.round((ITEMS[id]?.basePrice ?? 0) * itemGoldMult(state, id) * gMult) + saleTip;
   }
   const consumed = {};                                                       // LIVE units only (applyOffline
   const soldByItem = {};                                                     //  decrements the real shelf);

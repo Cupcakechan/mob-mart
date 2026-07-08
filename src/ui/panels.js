@@ -11,11 +11,12 @@ import { CONFIG } from '../config.js';
 import { ITEMS, ITEM_ORDER } from '../data/items.js';
 import { MONSTERS, MONSTER_IDS } from '../data/monsters.js';
 import { UPGRADES, UPGRADE_ORDER, upgradeLevel, upgradeCost, isMaxed } from '../data/upgrades.js';
-import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost } from '../data/workers.js';
+import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost,
+  workerLevel, workerLevelCost, isWorkerLevelMaxed } from '../data/workers.js';
 import {
   serveBlockReason, canRestock, effectiveMaxStock, canBuyUpgrade, isUpgradeUnlocked,
   canHireWorker, effectiveWorkerInterval, isPerkUnlocked, canBuyPerk, effectiveRestockCost,
-  isItemUnlocked, canBuyLicense, fameOf, restockAllCost, canRestockAll,
+  isItemUnlocked, canBuyLicense, fameOf, restockAllCost, canRestockAll, canBuyWorkerLevel,
 } from '../game.js';
 import { reputationTier } from '../reputation.js';
 const reputationTierIndex = (state) => reputationTier(fameOf(state)).index;
@@ -156,12 +157,16 @@ export function initPanels(root, h) {
         <div class="wrk-info">
           <div class="wrk-name">${w.displayName}</div>
           <div class="wrk-desc" id="wrkdesc-${id}"></div>
+          <div class="wrk-level hidden" id="wrklvl-${id}"></div>
         </div>
         <button class="wrk-buy" data-worker="${id}">Hire</button>
+        <button class="wrk-train hidden" data-worker="${id}">Train</button>
       </div>`;
   }).join('');
   root.querySelectorAll('.wrk-buy').forEach((btn) =>
     btn.addEventListener('click', () => handlers.onHireWorker(btn.dataset.worker)));
+  root.querySelectorAll('.wrk-train').forEach((btn) =>
+    btn.addEventListener('click', () => handlers.onBuyWorkerLevel(btn.dataset.worker)));
 
   // Bob's hire arc: the goal chip over the empty counter routes to the remedy (the Workers tab).
   // Lives outside this root (a #stage sibling over the diorama) — same document, direct lookup.
@@ -401,6 +406,8 @@ export function renderPanels(state) {
 
     const descEl = document.getElementById(`wrkdesc-${id}`);
     const buyBtn = document.querySelector(`.wrk-buy[data-worker="${id}"]`);
+    const lvlEl = document.getElementById(`wrklvl-${id}`);
+    const trainBtn = document.querySelector(`.wrk-train[data-worker="${id}"]`);
     if (owned) {
       if (descEl) {
         const secs = effectiveWorkerInterval(state, id);
@@ -409,8 +416,33 @@ export function renderPanels(state) {
           : `Restocks 1 unit \u00b7 ~${secs.toFixed(1)}s`;    // trickle pace (no speed upgrades yet)
       }
       if (buyBtn) { buyBtn.disabled = true; buyBtn.textContent = 'Active'; }
+      // Training row (Deep Sinks): level + live effect line, and a Train button that names its
+      // blocker — price when buyable, "Reach Mythic" at the deep gate (the license-button
+      // pattern), MAX at the top. Exact cost rides the tooltip; the label compacts (5-digit rungs).
+      const L = WORKERS[id].levels;
+      if (L && lvlEl && trainBtn) {
+        const lvl = workerLevel(state, id);
+        lvlEl.classList.remove('hidden');
+        lvlEl.textContent = `${L.name} Lv ${lvl}/${L.maxLevel} \u00b7 ${L.desc}`;
+        trainBtn.classList.remove('hidden');
+        if (isWorkerLevelMaxed(state, id)) {
+          trainBtn.disabled = true; trainBtn.textContent = 'MAX'; trainBtn.title = '';
+        } else if ((lvl + 1) >= (L.deepFrom ?? Infinity)
+                   && reputationTierIndex(state) < (L.deepTier ?? 0)) {
+          trainBtn.disabled = true;
+          trainBtn.textContent = `Reach ${CONFIG.reputation.tiers[L.deepTier]?.label ?? '???'}`;
+          trainBtn.title = '';
+        } else {
+          const cost = workerLevelCost(id, lvl);
+          trainBtn.disabled = !canBuyWorkerLevel(state, id);
+          trainBtn.innerHTML = `Train &#9670;${compactGold(cost)}`;
+          trainBtn.title = `\u25c6 ${cost}`;                  // compactGold rule: exact figure in the tooltip
+        }
+      }
     } else {
       if (descEl) descEl.textContent = w.role === 'serve' ? 'Serves customers automatically' : 'Restocks automatically';
+      lvlEl?.classList.add('hidden');                         // Back-to-Title re-renders must reset these
+      trainBtn?.classList.add('hidden');
       if (buyBtn) {
         // Fame-gated hires (Greg): below the tier, the button names the gate instead of the price —
         // the license-button pattern. ?? 0 keeps ungated workers (Bob) on the price path.
