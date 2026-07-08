@@ -1039,8 +1039,11 @@ console.log('M4 auto-serve worker — smoke test\n');
 // 23. Pass 4a — Bestiary completion: pure math over the Pass-1 serve ledger ---------------------
 {
   const { bestiaryCompletion, MONSTER_BREAKPOINTS } = await import('./src/data/milestones.js');
-  const { MONSTER_IDS } = await import('./src/data/monsters.js');
-  const total = MONSTER_IDS.length * MONSTER_BREAKPOINTS.length;
+  const { MONSTERS, MONSTER_IDS } = await import('./src/data/monsters.js');
+  // Special Visits (2026-07-07): SPECIAL rows are off the grid — completion and its totals derive
+  // over the non-special roster (the §33 evolution pattern: the derivation grows a source rule).
+  const gridIds = MONSTER_IDS.filter((id) => !MONSTERS[id].special);
+  const total = gridIds.length * MONSTER_BREAKPOINTS.length;
 
   const s0 = createInitialState();
   const c0 = bestiaryCompletion(s0);
@@ -1469,13 +1472,15 @@ console.log('M4 auto-serve worker — smoke test\n');
 {
   const { logLine } = await import('./src/messages.js');
   const { MONSTER_RESULTS } = await import('./src/data/results.js');
-  const { MONSTER_IDS } = await import('./src/data/monsters.js');
+  const { MONSTERS: LADDER_MONSTERS, MONSTER_IDS } = await import('./src/data/monsters.js');
   const { MONSTER_BREAKPOINTS } = await import('./src/data/milestones.js');
 
   // Contract: every monster has a ladder (>=1 minServes line) AND exactly one golden line; goldens
   // sit at the 100-serve breakpoint (the memorable payoff Daniel asked for) and every minServes
   // value is a real loyalty breakpoint, so the Bestiary pips always mark real material.
-  for (const id of MONSTER_IDS) {
+  // SPECIAL rows (the Inspector) are exempt: once-a-day visitors can never climb serve ladders,
+  // so their batches are deliberately FLAT — §54 pins that shape from the other side.
+  for (const id of MONSTER_IDS.filter((mid) => !LADDER_MONSTERS[mid].special)) {
     const all = Object.values(MONSTER_RESULTS[id] ?? {}).flat().filter((t) => typeof t !== 'string');
     const laddered = all.filter((t) => Number.isInteger(t.minServes));
     const goldens = all.filter((t) => t.golden === true);
@@ -2042,16 +2047,18 @@ console.log('M4 auto-serve worker — smoke test\n');
   const { GENERIC_RESULTS, MONSTER_RESULTS } = await import('./src/data/results.js');
   const { MONSTER_IDS } = await import('./src/data/monsters.js');
 
+  const { MONSTERS: B50 } = await import('./src/data/monsters.js');
+  const grid50 = MONSTER_IDS.filter((id) => !B50[id].special);   // specials ship flat batches (§54)
   const at50 = (id) => Object.values(MONSTER_RESULTS[id] ?? {}).flat()
     .filter((t) => typeof t !== 'string' && t.minServes === 50);
-  ok(MONSTER_IDS.every((id) => at50(id).length === 3)
-     && MONSTER_IDS.reduce((a, id) => a + at50(id).length, 0) === MONSTER_IDS.length * 3,
+  ok(grid50.every((id) => at50(id).length === 3)
+     && grid50.reduce((a, id) => a + at50(id).length, 0) === grid50.length * 3,
      'batch @50: exactly 3 gated lines per monster, 12 total');
-  ok(MONSTER_IDS.flatMap(at50).every((t) => t.text.length <= 80 && t.golden !== true),
+  ok(grid50.flatMap(at50).every((t) => t.text.length <= 80 && t.golden !== true),
      'batch @50: every line respects the 80-char log budget; goldens stay a 100-serve privilege');
 
   // Gating both ways, sampled: 49 serves never draws an @50 line; 50 reaches one (per monster).
-  const texts50 = new Set(MONSTER_IDS.flatMap(at50).map((t) => t.text));
+  const texts50 = new Set(grid50.flatMap(at50).map((t) => t.text));
   const fills = (raw) => raw.replace(/\{name\}/g, 'X').replace(/\{item\}/g, 'Club');
   let leak = false;
   const seen = new Set();
@@ -2067,8 +2074,8 @@ console.log('M4 auto-serve worker — smoke test\n');
     }
   }
   ok(!leak, 'batch @50: 49 serves never draws a gated-50 line (9600 draws)');
-  ok(MONSTER_IDS.every((id) => seen.has(id)),
-     'batch @50: at 50 serves every monster can reach its new material');
+  ok(grid50.every((id) => seen.has(id)),
+     'batch @50: at 50 serves every non-special monster can reach its new material');
 
   // The 50 crossing now announces (the registry scan sees a real batch there — no false hype).
   {
@@ -2328,8 +2335,8 @@ console.log('M4 auto-serve worker — smoke test\n');
   const { spawnCustomer } = await import('./src/game.js');
   const { CONFIG } = await import('./src/config.js');
 
-  ok(MONSTER_IDS.length === 6 && MONSTER_IDS.includes('beetle'),
-     'beetley: six mobs on the roster (the newest batch\u2019s exact)');
+  ok(MONSTER_IDS.length >= 6 && MONSTER_IDS.includes('beetle'),   // exact moved to §54 (doctrine:
+     'beetley: at least six mobs, Beetley among them');              // newest batch owns the total)
   ok(Object.keys(MONSTERS.beetle.categoryWeights ?? {}).length > 0,
      'beetley: categoryWeights present (the Ratty lesson — the fallback wants only clubs)');
   ok((MONSTERS.beetle.categoryWeights.armor ?? 0) > (MONSTERS.beetle.categoryWeights.weapon ?? 0),
@@ -2863,6 +2870,140 @@ console.log('M4 auto-serve worker — smoke test\n');
     ok(node.unlocks.some((u) => u.label.includes('Salesmanship'))
        && node.unlocks.some((u) => u.label.includes('Deeper Backroom')),
        'mythic: the track node lists both workers\u2019 deep bands');
+  }
+}
+
+// 54. Special Visits (Option 2, "The Inspection" — 2026-07-07): the dragon VIP -------------------
+// Contract: SPECIAL rows never enter the normal pool, the bestiary grid, or breakpoint milestones;
+// the trigger is pure (roll passed in) with a PERSISTED once-a-day latch; the tip is a report card
+// (fullness + variety, fame-scaled) landing payout-side AFTER the normal gains. Exact grade math
+// (175 full / 254 Mythic / 187 club serve) is THIS newest section's pin set.
+{
+  const { MONSTERS, MONSTER_IDS } = await import('./src/data/monsters.js');
+  const { visitEligible, trySpawnVisit, inspectionGrade, effectiveMaxStock, spawnCustomer } = await import('./src/game.js');
+  const V = await import('./src/data/visits.js');
+  const { MONSTER_RESULTS } = await import('./src/data/results.js');
+  const { bestiaryCompletion } = await import('./src/data/milestones.js');
+  const { CONFIG } = await import('./src/config.js');
+  const { ITEMS, ITEM_ORDER } = await import('./src/data/items.js');
+
+  // (a) Registry contract: the VIP row carries the measured integration numbers.
+  const d = MONSTERS.dragon;
+  // Sizing take three (2026-07-08, Daniel's verdict): the multiplier chain topped out at +12%
+  // visible; the VIP now draws at an INTEGER pixel-double of his authored frame — 256px box,
+  // ~200px visible, a little shorter than Bob — crisp by construction (the pixel-scaling lesson).
+  ok(d?.special === true && d.pixelScale === 2 && d.footPad === 14,
+     'visits: the Inspector ships special, integer pixelScale 2, measured footPad 14');
+  ok(MONSTER_IDS.length === 7, 'visits: seven on the roster (the newest batch\u2019s exact)');
+
+  // (b) Pool exclusion is absolute: thousands of spawns, never the dragon — both branches.
+  {
+    const s = shopState();
+    let seen = false;
+    for (let i = 0; i < 2000; i++) {
+      const c = spawnCustomer(s);
+      if (c?.monsterId === 'dragon') { seen = true; break; }
+    }
+    for (let i = 0; i < 1000 && !seen; i++) {
+      if (spawnCustomer(null)?.monsterId === 'dragon') seen = true;
+    }
+    ok(!seen, 'visits: the normal pool never produces the Inspector (stateful + stateless)');
+    const forced = spawnCustomer(shopState(), 'dragon');
+    ok(forced?.monsterId === 'dragon' && ITEMS[forced.wantedItemId] !== undefined,
+       'visits: the forced path spawns him with a real want on the shared pipeline');
+  }
+
+  // (c) Eligibility matrix + the trigger's two roll branches + the persisted latch.
+  {
+    const s = shopState();
+    ok(visitEligible(s) === false, 'visits: an unarmed state (no marketDayKey) is never eligible');
+    s.marketDayKey = '2026-07-07';
+    ok(visitEligible(s) === false, 'visits: below the required tier, still ineligible');
+    s.lifetimeRep = 1500;                                        // Legendary (requiredTier 5)
+    ok(visitEligible(s) === true, 'visits: armed + Legendary = eligible');
+    ok(trySpawnVisit(s, 0.99) === null && s.lastVisitDay === '',
+       'visits: a failed roll spawns nothing and burns nothing');
+    const c = trySpawnVisit(s, 0);
+    ok(c?.monsterId === 'dragon' && s.lastVisitDay === '2026-07-07',
+       'visits: a winning roll spawns him and sets the persisted latch');
+    ok(s.log.length === 1 && s.log[0].tier === 'market'
+       && s.bobSpeech?.queue?.length === 1
+       && ITEMS[s.bobSpeech.queue[0].itemId] !== undefined,
+       'visits: the arrival announces once — amber line + routed bubble');
+    ok(visitEligible(s) === false && trySpawnVisit(s, 0) === null,
+       'visits: the latch closes the day (once per calendar day)');
+    const saved = serializeSave(s);
+    ok(saved.lastVisitDay === '2026-07-07'
+       && mergeSave(createInitialState(), saved).lastVisitDay === '2026-07-07'
+       && mergeSave(createInitialState(), { lastVisitDay: 42 }).lastVisitDay === '',
+       'visits: the latch serializes, round-trips, and heals from tampering');
+  }
+
+  // (d) The grade, exact: full shop at Neutral = 100x1.0 + 3x25 = 175; empty = 0 fullness, 0
+  // categories -> tip 0; Mythic full = round(175 x 1.45) = 254.
+  {
+    const s = shopState();
+    for (const id of ITEM_ORDER) s.items[id].stock = ITEMS[id].license ? 0 : effectiveMaxStock(s, id);
+    let g = inspectionGrade(s);
+    ok(g.fullness === 1 && g.categories === 3 && g.tip === 175,
+       `visits: a full Neutral shop grades 175 (got ${g.tip})`);
+    s.lifetimeRep = 5000;                                        // Mythic: x1.45
+    g = inspectionGrade(s);
+    ok(g.tip === 254, `visits: the same shelf at Mythic grades 254 (got ${g.tip})`);
+    const empty = shopState();
+    for (const id of ITEM_ORDER) empty.items[id].stock = 0;
+    g = inspectionGrade(empty);
+    ok(g.fullness === 0 && g.categories === 0 && g.tip === 0,
+       'visits: an empty shop earns exactly nothing (the report card is honest)');
+  }
+
+  // (e) Serve integration, exact: grade reads the shelf BEFORE his own unit leaves it. Full
+  // Neutral shop, dragon buys the club: 12 base + 175 tip = 187; rep = 1 + 25 fame bonus = 26;
+  // the grade line lands as a second market-tier entry carrying the percent.
+  {
+    const s = pinTrioShelf(shopState(), 'full');
+    for (const id of ITEM_ORDER) s.items[id].stock = ITEMS[id].license ? 0 : effectiveMaxStock(s, id);
+    s.queue = [customer('dragon', 'club', 999)];
+    const g0 = s.gold, r0 = s.reputation;
+    ok(serveCurrent(s) === true, 'visits: the Inspector serves on the normal path');
+    ok(s.gold - g0 === 187, `visits: club + full-shelf grade pays exactly 187 (got ${s.gold - g0})`);
+    ok(s.reputation - r0 === 27, `visits: rep gains base 2 (perSale) + 25 fame bonus (got ${s.reputation - r0})`);
+    ok(s.log.some((e) => e.tier === 'market' && e.text.includes('%')),
+       'visits: the grade line reports its percent');
+  }
+
+  // (f) Off the grid: completion ignores him; a breakpoint count fires no milestone for him.
+  {
+    const a = bestiaryCompletion({ stats: { monsterServes: {} } });
+    const withDragon = { stats: { monsterServes: { dragon: 100 } } };
+    ok(JSON.stringify(bestiaryCompletion(withDragon)) === JSON.stringify(a),
+       'visits: 100 Inspector serves move bestiary completion by exactly nothing');
+    const s = pinTrioShelf(shopState(), 'full');
+    s.stats.monsterServes.dragon = 9;                            // this serve is his 10th — a breakpoint
+    s.queue = [customer('dragon', 'club', 999)];
+    serveCurrent(s);
+    ok(!s.log.some((e) => e.tier === 'milestone'),
+       'visits: a special monster crossing a breakpoint fires no pip milestone');
+  }
+
+  // (g) Voice contracts: results batch flat (no minServes ladders he could never climb) + hygiene
+  // on every new pool.
+  {
+    const batch = MONSTER_RESULTS.dragon;
+    ok(['excellent', 'success', 'partial', 'failure'].every((t) => (batch?.[t]?.length ?? 0) >= 3),
+       'visits: the Inspector covers all four combat tiers');
+    ok(Object.values(batch).every((arr) => arr.every((t) => typeof t === 'string')),
+       'visits: one flat batch — no minServes ladders a once-a-day visitor could never climb');
+    const pools = [...V.VISIT_LINES.announce, ...V.VISIT_LINES.bubble, ...V.VISIT_LINES.grade,
+      ...Object.values(batch).flat()];
+    ok(pools.every((t) => !/\byou\b/i.test(String(t).replace(/you'd/gi, ''))),
+       'visits hygiene: no second person anywhere');
+    ok(V.VISIT_LINES.announce.every((t) => t.length <= 80)
+       && V.VISIT_LINES.bubble.every((t) => t.length <= 48)
+       && V.VISIT_LINES.grade.every((t) => t.includes('{pct}') && t.includes('{tip}')),
+       'visits hygiene: widths hold and the grade carries its fills');
+    ok(V.visitGradeLine(94, 170).includes('94') && V.visitGradeLine(94, 170).includes('170'),
+       'visits: the grade line fills its numbers');
   }
 }
 

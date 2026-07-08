@@ -9,7 +9,7 @@
 // All numbers here are dials. Magnitudes at full ladder: items 1 + 7x0.08 = x1.56 each,
 // monsters 1 + 5x0.10 = x1.50 rep, everything 1.25^3 ~= x1.95 global -> ~x3 gold deep-endgame.
 import { ITEMS, ITEM_ORDER } from './items.js';
-import { MONSTER_IDS } from './monsters.js';   // bestiary completion walks the roster (no cycle:
+import { MONSTERS, MONSTER_IDS } from './monsters.js';   // bestiary completion walks the roster (no cycle:
                                                // monsters.js is a leaf registry with no imports)
 
 export const ITEM_BREAKPOINTS = [10, 25, 50, 100, 250, 500, 1000];   // lifetime SALES of one item
@@ -41,8 +41,11 @@ export function monsterRepMult(state, monsterId) {
 // the denominator automatically, so the % DROPS when a new mob joins. That's the field-guide feel
 // (a new page to fill), deliberate and not a bug. Guarded like the rest: absent stats read as 0.
 export function bestiaryCompletion(state) {
-  const total = MONSTER_IDS.length * MONSTER_BREAKPOINTS.length;
-  const crossed = MONSTER_IDS.reduce(
+  // SPECIAL rows (the Inspector) are off the bestiary grid, so completion ignores them —
+  // otherwise a once-a-day visitor would freeze the percent forever.
+  const gridIds = MONSTER_IDS.filter((id) => !MONSTERS[id].special);
+  const total = gridIds.length * MONSTER_BREAKPOINTS.length;
+  const crossed = gridIds.reduce(
     (sum, id) => sum + crossedCount(monsterCount(state, id), MONSTER_BREAKPOINTS), 0);
   return { crossed, total, pct: total > 0 ? Math.floor((100 * crossed) / total) : 0 };
 }

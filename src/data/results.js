@@ -421,6 +421,32 @@ export const MONSTER_RESULTS = {
       { text: `Greg pointed at the door. Beetley executed a flawless about-face.`, greg: true },
     ],
   },
+
+  dragon: {
+    // THE INSPECTOR (Special Visits, 2026-07-07). One flat batch on purpose: he visits once a
+    // day, so minServes ladders would never unlock — every line is available from serve one.
+    // Voice: officialdom meets a sword. He loses like everyone; the paperwork survives.
+    excellent: [
+      `The Inspector won and filed the hero under 'obstacles, minor'.`,
+      `The Inspector passed the hero's audit. The hero failed the Inspector's.`,
+      `Clipboard 1, hero 0. The margins were annotated in red.`,
+    ],
+    success: [
+      `The Inspector won on procedure. The hero objected. Overruled.`,
+      `The {item} performed to spec. The Inspector noted it approvingly.`,
+      `The Inspector defeated the hero and left constructive feedback.`,
+    ],
+    partial: [
+      `The Inspector called it a draw pending review. The review is him.`,
+      `Both parties retreated. The Inspector's notes survived intact.`,
+      `The {item} underperformed. A strongly worded memo is coming.`,
+    ],
+    failure: [
+      `The Inspector lost, but the paperwork was flawless.`,
+      `The hero won and was immediately cited for improper form.`,
+      `The Inspector was defeated. The clipboard was not. It remembers.`,
+    ],
+  },
 };
 
 // Hire flavor (Greg's voice pass, 2026-07-05): what a worker "says" the moment they're hired —

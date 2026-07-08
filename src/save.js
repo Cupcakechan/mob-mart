@@ -94,6 +94,7 @@ export function mergeSave(fresh, data) {
   // tampered non-string reads as '' (never collected), which just grants today's crate. Harmless
   // by design: the latch prevents double-collect within a day, not across an update boundary.
   fresh.lastMarketDay = typeof data.lastMarketDay === 'string' ? data.lastMarketDay : '';
+  fresh.lastVisitDay = typeof data.lastVisitDay === 'string' ? data.lastVisitDay : '';
   return fresh;
 }
 
@@ -128,6 +129,8 @@ export function serializeSave(state) {
     // Market Day latch: which local calendar day already granted its supplier crate. A string
     // ('' = never); the EVENT id is deliberately not saved — it re-derives from the date.
     lastMarketDay: typeof state.lastMarketDay === 'string' ? state.lastMarketDay : '',
+    // Special Visits latch: same contract as the market latch above.
+    lastVisitDay: typeof state.lastVisitDay === 'string' ? state.lastVisitDay : '',
   };
 }
 

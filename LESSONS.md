@@ -137,3 +137,32 @@
   extras allowed anywhere, missing/stale content fails).
 - Route: skill reference (html-game.md) candidate — "a mirrored entry page is a build artifact
   without a build step; regenerate it mechanically and suite-pin the mirror, never hand-sync."
+
+## 2026-07-08 — The VIP sizing saga: three deliveries and a burned re-export, all Claude's
+- What broke / what happened: the dragon VIP shipped at +15% over queue-mates and read
+  "massively smaller than everyone" (Daniel, correctly); two sizing iterations later
+  (spriteScale 1.25 -> 1.4 -> pixelScale 2), Claude instructed a 200% re-export with the words
+  "no code changes needed" while the registry still said pixelScale: 2 — Daniel followed the
+  instruction exactly and the game rendered a 512px dragon with per-file proportion mismatches.
+  Daniel is reauthoring the character from scratch. Three deliveries, an artist's export pass,
+  and trust were spent on what should have been one sizing decision.
+- Root causes (three, all Claude-side):
+  1. The size spec was computed against the wrong reference set. "+33% over the CAST" ignored
+     Greg (native 112px, ~93px visible, standing elevated) and Bob (240px) sharing the same
+     shot. A "special" read is relative to EVERYTHING on screen, never to the entity's category.
+  2. The §9 art contract (permanent 128 frame + a multiplier) capped the achievable size inside
+     the integer-scaling law, then spent the artist's time discovering that ceiling one bump at
+     a time instead of computing the ceiling FIRST and admitting the frame was wrong.
+  3. An instruction that breaks the game when followed exactly is a Claude defect, not a user
+     error. "No code changes needed" was false the moment it was typed — the dial change was a
+     precondition, and the message buried it as a later menu.
+- Verification gap it exposed: nothing machine-checks that authored asset DIMENSIONS match the
+  registry's drawing assumptions — 0b pairs sprite IDS, not sizes, so a frame-size change lands
+  silently as a scale explosion at draw time.
+- Plug (QUEUED into the reauthor integration, next session): a registry frame-size expectation
+  for pixel-scaled sprites + a suite assertion that reads each such PNG and pins its frame
+  dimensions; plus the standing rule change — oversized/VIP characters are AUTHORED AT DISPLAY
+  SIZE and drawn 1:1 (the Greg precedent), never routed through multipliers again.
+- Route: dev-method skill candidate (art-integration reference): "size specs enumerate every
+  on-screen reference; oversized characters author at 1:1; asset dimensions are a suite-pinned
+  contract, not a comment."

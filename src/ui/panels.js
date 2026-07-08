@@ -209,7 +209,7 @@ export function initPanels(root, h) {
   // Bestiary cards (Pass 4a; data-driven — Gobbo will auto-appear from the registry). DISPLAY
   // LAYER ONLY: the Pass-1 loyalty ledger (state.stats.monsterServes) is the single source of
   // truth; this pass adds no new counting, no save change. One pip per MONSTER_BREAKPOINT.
-  document.getElementById('beast-cards').innerHTML = MONSTER_IDS.map((id) => {
+  document.getElementById('beast-cards').innerHTML = MONSTER_IDS.filter((id) => !MONSTERS[id].special).map((id) => {
     const m = MONSTERS[id];
     const pips = MONSTER_BREAKPOINTS.map(() => '<span class="beast-pip"></span>').join('');
     return `<div class="beast-card" data-beast="${id}">
@@ -225,6 +225,29 @@ export function initPanels(root, h) {
         </div>
       </div>`;
   }).join('');
+
+  // VIP VISITORS (Daniel, 2026-07-08): special rows DO get bestiary entries — their own section
+  // under the grid, not rows in it. Same card system, same discovered/silhouette reveal (a mystery
+  // card until the first visit), but no pips/next — VIPs are trophies, not ladders, and the
+  // completion % stays a field guide of REGULARS (grid-only, suite-pinned). Built JS-side so
+  // index.html (and the Kong mirror) stay untouched; idempotence-guarded like all init work.
+  const vipIds = MONSTER_IDS.filter((id) => MONSTERS[id].special);
+  if (vipIds.length && !document.getElementById('beast-vip-cards')) {
+    document.getElementById('beast-cards')?.insertAdjacentHTML('afterend',
+      `<div class="beast-vip-header">VIP Visitors</div>
+       <div id="beast-vip-cards">${vipIds.map((id) => {
+        const m = MONSTERS[id];
+        return `<div class="beast-card vip" data-beast="${id}">
+            <img class="beast-portrait" src="assets/sprites/${m.spriteId ?? id}.png" alt=""
+                 onerror="this.style.display='none'">
+            <div class="beast-info">
+              <div class="beast-name" id="beast-name-${id}">${m.displayName}</div>
+              <div class="beast-sub" id="beast-sub-${id}"></div>
+            </div>
+            <div class="beast-progress"><div class="beast-next vip" id="beast-next-${id}"></div></div>
+          </div>`;
+      }).join('')}</div>`);
+  }
 }
 
 const REASON_LABEL = {
@@ -549,19 +572,24 @@ export function renderPanels(state) {
     const nameEl = document.getElementById(`beast-name-${id}`);
     if (nameEl) nameEl.textContent = discovered ? (MONSTERS[id]?.displayName ?? id) : '???';
     const crossed = crossedCount(served, MONSTER_BREAKPOINTS);
+    const isVip = MONSTERS[id]?.special === true;
     const subEl = document.getElementById(`beast-sub-${id}`);
     if (subEl) {
-      subEl.textContent = discovered
-        ? `Served ${served}${crossed > 0
-            ? ` \u00b7 +${Math.round(crossed * MONSTER_REP_PER_BREAKPOINT * 100)}% rep` : ''}`
-        : 'Not yet served';
+      // VIP cards speak visit language and skip the rep-mult line — trophies, not ladders.
+      subEl.textContent = isVip
+        ? (discovered ? `Visits ${served}` : 'Not yet visited')
+        : (discovered
+          ? `Served ${served}${crossed > 0
+              ? ` \u00b7 +${Math.round(crossed * MONSTER_REP_PER_BREAKPOINT * 100)}% rep` : ''}`
+          : 'Not yet served');
     }
     const pipsEl = document.getElementById(`beast-pips-${id}`);
     if (pipsEl) [...pipsEl.children].forEach((pip, i) => pip.classList.toggle('filled', i < crossed));
     const nextEl = document.getElementById(`beast-next-${id}`);
     if (nextEl) {
       const nb = nextBreakpoint(served, MONSTER_BREAKPOINTS);
-      nextEl.textContent = !discovered ? '' : (nb !== null ? `next ${nb}` : 'maxed');
+      nextEl.textContent = isVip ? (discovered ? 'VIP' : '')
+        : (!discovered ? '' : (nb !== null ? `next ${nb}` : 'maxed'));
     }
   }
 

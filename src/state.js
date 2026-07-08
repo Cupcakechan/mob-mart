@@ -66,6 +66,9 @@ export function createInitialState() {
     lastMarketDay: '',          // 'YYYY-MM-DD' of the last supplier-crate grant (PERSISTED — the
                                 // once-a-day latch, saved immediately on grant like the offline
                                 // bank; '' = never collected, so day one grants)
+    lastVisitDay: '',           // 'YYYY-MM-DD' of the last Inspector visit (PERSISTED — the
+                                // once-a-day visit latch; autosave carries it, a crash before
+                                // save just re-offers the visit)
     marketDayKey: null,         // transient: the day the market machinery last derived. Doubles as
                                 // the ARMING flag for update()'s rollover check — only a boot that
                                 // ran refreshMarketDay (main.js) sets it, so headless tests that

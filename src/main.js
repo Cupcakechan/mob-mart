@@ -134,6 +134,9 @@ loadSprite('rat_walk_happy', 'assets/sprites/rat_walk_happy.png');//   all pre-r
 loadSprite('beetle', 'assets/sprites/beetle.png');                // Beetley (roadmap 6.5) — same contract;
 loadSprite('beetle_idle', 'assets/sprites/beetle_idle.png');      //   static landed 2026-07-05, strips
 loadSprite('beetle_walk_happy', 'assets/sprites/beetle_walk_happy.png'); // authored and incoming.
+loadSprite('dragon', 'assets/sprites/dragon.png');                // THE INSPECTOR (Special Visits, 2026-07-07) —
+loadSprite('dragon_idle', 'assets/sprites/dragon_idle.png');      //   same contract; all three authored + measured
+loadSprite('dragon_walk_happy', 'assets/sprites/dragon_walk_happy.png'); // (footPad 14, 78% fill, spriteScale 1.25).
                                                                   //   "_walk_happy" name kept by convention; the
                                                                   //   authored content will be a grumpy stomp.
 

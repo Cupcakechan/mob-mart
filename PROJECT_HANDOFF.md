@@ -375,7 +375,12 @@ integration with pngjs, same session as `footPad`. Width is fine: queue `stepX` 
 full-width 1.3× sprite. Size alone reads "somewhat bigger"; size + a distinct silhouette is the
 "someone special" read — silhouette is Daniel's call.
 
-**2026-07-07 update: the VIP is a DRAGON.** Daniel has authored the PNG + animation strips
+**SUPERSEDED 2026-07-08 — the paragraph above and the update below are the FAILED spec (the
+sizing saga, LESSONS 2026-07-08). The live VIP art contract is the REAUTHOR contract in §13:
+author at display size, drawn 1:1 via pixelScale, dimensions suite-pinned. Do not re-apply the
+128-frame + multiplier approach to oversized characters.**
+
+**2026-07-07 update (historical): the VIP is a DRAGON.** Daniel has authored the PNG + animation strips
 (files incoming). Flyer-vs-walker resolves from the art itself at integration — a flyer takes
 the hover-bob + altitude-padding + shadow conventions and skips `footPad`; a grounded dragon
 takes the measured-footPad path. Roster id `dragon` cannot collide with the marketevents id
@@ -502,7 +507,7 @@ intro + bubble quip). Gold milestone lines now land as staggered beats (2.5s dia
 @25 AND @50 ladder batches live, goldens @100, two hygiene laws suite-pinned (no second person;
 consumable verbs must fit the whole roster — the Rusty Key is a consumable). Save
 `mobmart.save.v1`, additive schema, clamped merges. Suite: **`test_suite.mjs` at repo root,
-531 assertions green** — a fresh clone self-verifies with `node test_suite.mjs`. Suite doctrine
+560 assertions green** — a fresh clone self-verifies with `node test_suite.mjs`. Suite doctrine
 (batch-1 lesson): EXACT-MATH tests pin the trio shelf via `pinTrioShelf`; RULE tests derive from
 live registries — never hand-type a roster-dependent number; exact batch totals live only in the
 NEWEST batch's section. New modules since the items phase: `src/data/fametrack.js` (registry-
@@ -512,6 +517,34 @@ fields now include: `bobSpeech`, `licenseReminderIn`, `gregBubble`, `gregRestock
 `workerServed`, `milestoneQueue`, `milestoneCooldown`, `marketDayKey`, `marketEventId`,
 `marketCheckIn`, `boardChalkPending` — the serializer is an explicit field list, and suite
 sections pin each exclusion.
+
+**Shipped 2026-07-07/08 — SPECIAL VISITS ("The Inspection", Option 2; suite 531 -> 560,
+section 54) — ROADMAP COMPLETE, but see §13 TOP PRIORITY (dragon art reauthor):** the dragon
+VIP ("The Inspector", glasses + clipboard, Daniel's art + the design read straight off it).
+**Mechanics (all suite-pinned):** `special: true` registry rows are invisible to the normal
+spawn pool (both branches), breakpoint milestones, and the bestiary GRID; he arrives only via
+`trySpawnVisit(state, roll)` — pure trigger (roll passed in, both branches pinned without
+stubs), once per LOCAL calendar day at Legendary+ (CONFIG.visits.requiredTier 5, chancePerSpawn
+0.02), **PERSISTED `lastVisitDay` latch** (string-coerced merge, the lastMarketDay pattern),
+armed by `marketDayKey` so headless tests never see visits. Arrival = amber market-tier log
+line + Bob bubble click-routed to his want. **THE GRADE** (`inspectionGrade`): tip = 100 x
+shelf fullness + 25 per stocked category, x the fame budget mult, computed on the shelf AS HE
+SEES IT (before his own unit decrements) — exact pins: full Neutral 175, Mythic 254, club serve
+187, rep 27 (perSale 2 + fameBonus 25). Payout-side by law. **Voice:** `src/data/visits.js`
+(leaf: announce/bubble/grade pools) + a FLAT four-tier results batch (no minServes ladders a
+once-a-day visitor could climb — suite-pinned shape). **Bestiary VIP section (Daniel's call):**
+specials get their own amber-ruled "VIP Visitors" section under the grid — same card system,
+silhouette-until-first-visit reveal, "Visits N" + VIP tag, no pips; completion stays GRID-only.
+Built JS-side (index.html + Kong mirror untouched). **Roster:** MONSTER_IDS = 7 (dragon), and
+every roster-derived suite rule evolved to the non-special grid (bestiary totals, ladder
+contract, batch@50, Beetley's roster exact yielded to §54 per doctrine). **THE SIZING SAGA
+(LESSONS 2026-07-08 — read it):** three sizing iterations (1.25 -> 1.4 -> pixelScale 2) failed
+to produce the VIP read cleanly; Daniel is REAUTHORING (contract in §13/§9). Render side that
+STAYS: `mobDrawnBox` in scene.js is the ONE sizing formula (queue draw + celebration march +
+want-bubble tail all share it; `pixelScale` = integer multiple of the AUTHORED frame), and the
+want-bubble's tail now RIDES UP to taller-than-classic fronts (min() keeps every regular mob's
+geometry pixel-identical). Current interim: v3 code (pixelScale 2) + the ORIGINAL 128 dragon
+art = a consistent ~200px Inspector until the reauthor lands.
 
 **Shipped 2026-07-07 (three passes after Market Day; suite 484 -> 488 -> 504 -> 531):**
 - **SPECIAL-OF-THE-DAY BOARD (Daniel's idea + 640x220 art):** flush-mounted over Bob —
@@ -1120,8 +1153,21 @@ Mythic live, worker training ladders); the housekeeping pass landed 8 HARVESTED 
 Repo line and confirmed guard 0b already covered the queued pairing assertion (the LESSONS
 wall_shelf entry closed SHIPPED). All as-built blocks in §12.
 
+**TOP PRIORITY (next session): DRAGON REAUTHOR + 1:1 INTEGRATION.** Daniel is reauthoring
+the Inspector (the sizing saga — LESSONS 2026-07-08; the failure was Claude's spec, not the
+art). **Authoring contract:** frame **224x224** (strips 4 x 224 = **896x224**), same three
+filenames (dragon.png / dragon_idle.png / dragon_walk_happy.png); **body ~170-180px tall**;
+**all nine frames consistent** — body height +-3px, footPad +-2px (the bar the ORIGINAL files
+met: 99-103 content / 13-15 footPad). It will be drawn **1:1, pixel for pixel, forever**
+(`pixelScale: 1` — the Greg precedent); no multiplier touches this character again.
+**Integration steps when the files arrive:** pngjs-measure (dimensions, footPad, per-frame
+consistency) -> set `pixelScale: 1` + pin the measured footPad in monsters.js -> update suite
+§54(a)'s pin -> **SHIP THE QUEUED PLUG** (registry frame-size expectation + a suite assertion
+that reads each pixel-scaled PNG and pins its dimensions — see the LESSONS entry) -> Daniel's
+browser eye -> then the art fix commits.
+
 **Open:**
-- **Special Visits: THE NEXT PASS.** The VIP is a **DRAGON** — Daniel has authored the PNG +
+- **Special Visits mechanics: SHIPPED** (block in §12); only the art reauthor above remains. The VIP is a **DRAGON** — Daniel has authored the PNG +
   animation strips (incoming); §9 carries the sizing contract (~90% frame fill, `spriteScale:
   1.25`, ceiling ~1.3, bubble clearance pngjs-measured at integration, flyer-vs-walker read from
   the art). The MECHANICS options round is pending (what a visit is, how often, what it pays).

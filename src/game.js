@@ -16,6 +16,7 @@ import { logLine } from './messages.js';
 import { MONSTER_RESULTS } from './data/results.js';   // line-unlock: scan for minServes batches at crossings (leaf registry, no cycle)
 import { MARKET_EVENTS, eventIdForDay, dayKeyOf, marketAnnounceLine, marketBubbleLine,
   crateLine } from './data/marketevents.js';   // Market Day (leaf registry, no cycle)
+import { visitAnnounceLine, visitBubbleLine, visitGradeLine } from './data/visits.js';   // Special Visits (leaf, no cycle)
 
 // --- Customer spawning -------------------------------------------------------
 
@@ -28,17 +29,26 @@ function armReturnCooldown(state, monsterId) {
   (state.mobCooldowns ??= {})[monsterId] = CONFIG.queue.returnCooldownSec ?? 18;
 }
 
-export function spawnCustomer(state) {
+export function spawnCustomer(state, forcedId = null) {
   // Uniqueness filter: candidates are types NOT in line and NOT cooling down. An empty pool
   // (roster spread between the line and the door) returns null — the caller skips that spawn
   // beat and the director's timer simply runs again: an honest quiet moment, not a bug. Without
   // state (older tests), the full roster — the safe default, same pattern as the unlock filter.
-  const candidates = state
-    ? MONSTER_IDS.filter((id) => !state.queue.some((c) => c.monsterId === id)
-        && (state.mobCooldowns?.[id] ?? 0) <= 0)
-    : MONSTER_IDS;
-  if (candidates.length === 0) return null;
-  const monster = MONSTERS[pick(candidates)];
+  // SPECIAL rows (the Inspector) are invisible to the pool in BOTH branches — a VIP arrives only
+  // via trySpawnVisit's forcedId, which bypasses the pick but keeps everything downstream
+  // (budget, fame mult, wants, patience) on the one shared path.
+  let monster;
+  if (forcedId && MONSTERS[forcedId]) {
+    monster = MONSTERS[forcedId];
+  } else {
+    const candidates = state
+      ? MONSTER_IDS.filter((id) => !MONSTERS[id].special
+          && !state.queue.some((c) => c.monsterId === id)
+          && (state.mobCooldowns?.[id] ?? 0) <= 0)
+      : MONSTER_IDS.filter((id) => !MONSTERS[id].special);
+    if (candidates.length === 0) return null;
+    monster = MONSTERS[pick(candidates)];
+  }
   // Budget rolls FIRST (budget-aware wants, Option 2 — Daniel 2026-07-06): the want pick below is
   // biased by affordability, so it needs the FINAL purse — fame multiplier included. x1.15 at
   // Renowned, x1.30 at Legendary (CONFIG.fame dial): the customer-side answer to tier-2 prices.
@@ -139,15 +149,27 @@ export function serveCurrent(state) {
   // price, so a demand spike can never price a customer out. x1 when no event is active.
   // Bob's Salesmanship (Deep Sinks) is a FLAT tip added AFTER the rounded product — linear
   // production against exponential training costs, and payout-side like everything else here.
-  const goldGain = Math.round(item.basePrice * itemGoldMult(state, c.wantedItemId) * globalGoldMult(state)
+  let goldGain = Math.round(item.basePrice * itemGoldMult(state, c.wantedItemId) * globalGoldMult(state)
     * marketPayoutMult(state, item.category)) + sumWorkerEffect(state, 'saleTip');
+  let finalRepGain = repGain;
+  // THE INSPECTION (Special Visits): the dragon grades the shelf AS HE SEES IT — computed before
+  // his own unit leaves it (the decrement below), which is also the fiction: he inspected, THEN
+  // bought. Tip and fame bonus are flat adds on the payout side; the grade line lands instantly
+  // (market tier bypasses the milestone stagger), reporting the numbers that earned it.
+  if (monster.special) {
+    const g = inspectionGrade(state);
+    goldGain += g.tip;
+    finalRepGain += CONFIG.visits?.fameBonus ?? 0;
+    pushLog(state, { text: visitGradeLine(Math.round(g.fullness * 100), g.tip),
+      repDelta: 0, tier: 'market' });
+  }
   state.items[c.wantedItemId].stock -= 1;                       // hand over the item
   state.gold += goldGain;                                       // take payment (base + loyalty on top)
   const prevTierIdx = reputationTier(fameOf(state)).index;      // tier BEFORE this sale's fame lands —
   // captured before EITHER rep write: fameOf falls back to state.reputation when lifetimeRep is
   // absent (a pre-Fame save's first serve), and that fallback must not already include this gain.
-  state.reputation += repGain;                                  // spendable balance...
-  state.lifetimeRep = fameOf(state) + repGain;                  // ...and the tier track (never falls)
+  state.reputation += finalRepGain;                             // spendable balance...
+  state.lifetimeRep = fameOf(state) + finalRepGain;             // ...and the tier track (never falls)
 
   // License alerts (UX roadmap 3): a FAME TIER CROSSING that brings newly eligible licenses gets
   // the permanent milestone line here, plus queued speech for BOB'S bubble (transient, like
@@ -184,7 +206,7 @@ export function serveCurrent(state) {
   // news travels slow. Milestone lines below stay INSTANT — they're shop-side voice ("Sale #N!"),
   // which happens at the sale. Net log order: milestone at serve, result ~2s later on top of it.
   (state.pendingReports ??= []).push({
-    entry: { text, golden, repDelta: repGain, tier, monsterId: monster.id },
+    entry: { text, golden, repDelta: finalRepGain, tier, monsterId: monster.id },
     fallback: CONFIG.log?.reportFallbackSec ?? 3.0,
   });
 
@@ -198,7 +220,9 @@ export function serveCurrent(state) {
     pushLog(state, { text: milestoneLine('item', { count: soldNow, item: item.displayName }),
       repDelta: 0, tier: 'milestone', monsterId: monster.id });
   }
-  if (MONSTER_BREAKPOINTS.includes(servedNow)) {
+  // SPECIAL monsters (the Inspector) skip breakpoint milestones — they're off the bestiary grid,
+  // and a pip celebration for a hidden card would point at nothing. servedByMonster still counts.
+  if (!monster.special && MONSTER_BREAKPOINTS.includes(servedNow)) {
     pushLog(state, { text: milestoneLine('monster', { count: servedNow, name: monster.displayName }),
       repDelta: 0, tier: 'milestone', monsterId: monster.id });
     // Line-unlock ladder: if this crossing unlocks authored material (any template tagged
@@ -453,6 +477,58 @@ export function refreshMarketDay(state, nowMs) {
   }
   state.uiDirty = true;
   return { event: ev, crate };
+}
+
+// --- Special Visits (Option 2, "The Inspection" — Daniel 2026-07-07) -----------
+// The dragon VIP: once per LOCAL calendar day at Legendary+, a spawn beat may be him. Eligibility
+// is pure and testable; the RNG roll is passed IN (update() hands it Math.random()), so the suite
+// pins both branches deterministically with no stubs. The latch persists (lastVisitDay) —
+// reloading never re-rolls a day whose visit already landed.
+
+export function visitEligible(state) {
+  // marketDayKey doubles as the arming flag here exactly like the market rollover: only a boot
+  // that ran refreshMarketDay has a day identity, so headless tests never see visits.
+  return !!state.marketDayKey
+    && state.lastVisitDay !== state.marketDayKey
+    && reputationTier(fameOf(state)).index >= (CONFIG.visits?.requiredTier ?? Infinity);
+}
+
+export function trySpawnVisit(state, roll) {
+  if (!visitEligible(state)) return null;
+  if (roll >= (CONFIG.visits?.chancePerSpawn ?? 0)) return null;
+  const c = spawnCustomer(state, 'dragon');
+  if (!c) return null;
+  state.lastVisitDay = state.marketDayKey;          // PERSISTED once-a-day latch (autosave carries
+                                                    // it; a crash before save just re-offers)
+  // The arrival is an EVENT: amber "world news" log line (the market tier's family, by design)
+  // plus Bob's bubble, click-routed to whatever the Inspector actually wants today.
+  pushLog(state, { text: visitAnnounceLine(), repDelta: 0, tier: 'market' });
+  const bs = (state.bobSpeech ??= { queue: [], current: null });
+  bs.queue.push({ text: visitBubbleLine(), itemId: c.wantedItemId });
+  return c;
+}
+
+// The clipboard means something: his tip is a report card on the shelves at the moment of
+// service. Two measured ingredients — FULLNESS (Σstock/Σcap over unlocked items) and VARIETY
+// (categories with stock >= 1) — times the fame budget multiplier (a Mythic shop earns
+// Mythic-grade tips). This is the pass's design thesis: the RESTOCK LOOP itself gets celebrated —
+// Greg, the crate, and Restock All all feed this number. Payout-side by law; basePrice untouched.
+export function inspectionGrade(state) {
+  let stock = 0, cap = 0;
+  const cats = new Set();
+  for (const id of ITEM_ORDER) {
+    if (!isItemUnlocked(state, id)) continue;
+    const s = state.items[id]?.stock ?? 0;
+    stock += s;
+    cap += effectiveMaxStock(state, id);
+    if (s > 0) cats.add(ITEMS[id].category);
+  }
+  const fullness = cap > 0 ? stock / cap : 0;
+  const tierIdx = reputationTier(fameOf(state)).index;
+  const fameMult = 1 + (CONFIG.fame?.budgetPerTierAboveBeloved ?? 0) * Math.max(0, tierIdx - 3);
+  const tip = Math.round(((CONFIG.visits?.tipPerFullness ?? 0) * fullness
+    + cats.size * (CONFIG.visits?.tipPerCategory ?? 0)) * fameMult);
+  return { fullness, categories: cats.size, tip };
 }
 
 // --- Upgrades ----------------------------------------------------------------
@@ -755,7 +831,9 @@ export function update(state, dt) {
   }
   if (state.spawnTimer <= 0) {
     if (state.queue.length < CONFIG.queue.maxLength + sumPerkEffect(state, 'queueLength')) {  // Velvet Rope
-      const c = spawnCustomer(state);                 // null = uniqueness pool empty; skip the beat
+      // THE INSPECTION (Special Visits): the beat may be the dragon instead — pure trigger,
+      // roll passed in (suite-testable), persisted latch, armed like the market rollover.
+      const c = trySpawnVisit(state, Math.random()) ?? spawnCustomer(state);
       if (c) { state.queue.push(c); state.uiDirty = true; }
     }
     // Spawn director: the NEXT interval depends on how the line looks now (post-spawn length),

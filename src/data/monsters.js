@@ -104,6 +104,36 @@ export const MONSTERS = {
     categoryWeights: { armor: 4, weapon: 2, consumable: 1 },   // armor-first by a wide margin
     itemBias: { wooden_shield: 2, iron_buckler: 2 },           // signature loves: MORE shell
   },
+
+  dragon: {
+    id: 'dragon', displayName: 'The Inspector', spriteId: 'dragon', combatMod: 1,
+    budgetRange: [200, 400],   // the once-a-day whale: buys anything on the shelf, fame-scaled
+    special: true,       // SPECIAL VISITS (Option 2, Daniel 2026-07-07): NEVER in the normal spawn
+                         // pool, the bestiary grid, or breakpoint milestones — he arrives only via
+                         // trySpawnVisit (once per calendar day at Legendary+). Consumers filter on
+                         // this flag; a future VIP is one more row carrying it.
+    pixelScale: 2,       // VIP SIZE, TAKE THREE (Daniel's verdict 2026-07-08: "Greg-sized, or a
+                         // little shorter than Bob"). The spriteScale multiplier chain topped out
+                         // at +12% visible — never a VIP read. This instead draws the authored
+                         // 128 frame at an EXACT 2x nearest-neighbor double: 256px box, ~200px
+                         // visible body — a little shorter than Bob's 240, towering over Greg's
+                         // 93 and the cast's ~74. Integer doubling is the ONE upscale that stays
+                         // crisp (the pixel-scaling lesson), and it chunks his fine-grain pixels
+                         // to the cast's grammar. Geometry verified: queue neighbors keep ~17px
+                         // of air (stepX 134), head lands y267, and the want-bubble's tail now
+                         // rides up to tall fronts (mobDrawnBox in scene.js). If Daniel later
+                         // re-authors at a larger native frame, this SAME field covers it:
+                         // drawn box = authored frame x pixelScale (a 200-native at 1 = 200).
+    footPad: 14,         // MEASURED (pngjs): 13-15 consistent across all nine authored frames
+    patienceBonus: 24,   // a VIP walkout is a feel-bad — double the base wait (Steadfast's big
+                         // brother; Beetley holds the line, the Inspector owns the clipboard)
+    // THE INSPECTOR — glasses + clipboard (Daniel's art, the design read straight off it). Comic
+    // lever: OFFICIALDOM IN A MONSTER SHOP — he grades, he annotates, he tips by the numbers.
+    // Economic identity: his tip is a REPORT CARD on the shelves (inspectionGrade, game.js) —
+    // the restock loop itself is what gets celebrated.
+    anim: { frames: 4, fps: 6 },
+    categoryWeights: { weapon: 1, armor: 1, consumable: 1 },   // an inspector samples impartially
+  },
 };
 
-export const MONSTER_IDS = ['slime', 'bat', 'skeleton', 'frog', 'rat', 'beetle'];
+export const MONSTER_IDS = ['slime', 'bat', 'skeleton', 'frog', 'rat', 'beetle', 'dragon'];

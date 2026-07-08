@@ -580,7 +580,14 @@ function drawBubble(ctx, state, tMs) {
   const flying = MONSTERS[c.monsterId]?.flying ?? false;
   const bob = flying ? Math.sin(tMs / 300 + QUEUE.frontX) * 4 : 0;   // same phase as drawMob's front slot
   const cx = QUEUE.frontX + QUEUE.size / 2;
-  const tipY = QUEUE.y - BUBBLE.tipGapY + bob;
+  // Tail anchoring (VIP pass, 2026-07-08): the classic tip sits at QUEUE.y - tipGapY (y389),
+  // sized for the cast's heads (~y394-397). A pixel-doubled VIP's head is far above that, so the
+  // tip RIDES UP to point at whoever is actually front: min() means every regular mob keeps the
+  // exact old geometry, and only a taller-than-classic head lifts the bubble.
+  const front = MONSTERS[c.monsterId];
+  const frontHead = (QUEUE.y + QUEUE.size) - mobDrawnBox(front)
+    + (front?.footPad ?? 0) * (mobDrawnBox(front) / 128);
+  const tipY = Math.min(QUEUE.y - BUBBLE.tipGapY, frontHead - 2) + bob;
   const x = Math.max(8, Math.min(W - w - 8, cx - w / 2));        // clamp inside the stage
   const y = tipY - BUBBLE.tailH - h;
 
@@ -808,6 +815,19 @@ function drawQueue(ctx, state, tMs) {
   }
 }
 
+// Drawn box height for a mob — the ONE sizing formula, shared by drawMob and the want-bubble's
+// dynamic tail. Two regimes: `pixelScale` (VIPs) draws at an exact integer multiple of the
+// AUTHORED frame (nearest-neighbor-crisp by construction — the pixel-scaling lesson); otherwise
+// the classic chain, QUEUE.size x global dial x per-monster spriteScale.
+function mobDrawnBox(m) {
+  if (m?.pixelScale) {
+    const spr = (m.anim ? getSprite(`${m.id}_idle`) : null) ?? getSprite(m.id ?? '');
+    const fh = spr?.naturalHeight ?? 128;                  // frame height (strips are one row)
+    return fh * m.pixelScale;
+  }
+  return QUEUE.size * QUEUE.spriteScale * (m?.spriteScale ?? 1);
+}
+
 function drawMob(ctx, x, y, size, monsterId, tMs, isFront) {
   const m = MONSTERS[monsterId];
   // Grounding pass: the idle hover bob is a FLYER behavior (registry `flying`, ?? false) — a slime
@@ -834,8 +854,9 @@ function drawMob(ctx, x, y, size, monsterId, tMs, isFront) {
   const strip = anim ? getSprite(`${monsterId}_idle`) : null;
   const spr = strip ?? getSprite(monsterId);
   if (spr) {
-    // Global dial x per-monster calibration (optional registry field, ?? 1 so new mobs need nothing).
-    const h = size * QUEUE.spriteScale * (m?.spriteScale ?? 1);
+    // Global dial x per-monster calibration, OR a VIP's integer pixel-double — one shared formula
+    // (mobDrawnBox above) so the bubble's tail math can never drift from the draw.
+    const h = mobDrawnBox(m);
     if (strip) {
       // +x*37ms phase offset so two Battys in line don't flap in lockstep (same trick as the hop).
       const frame = Math.floor((tMs + x * 37) / (1000 / anim.fps)) % anim.frames;
@@ -991,7 +1012,7 @@ function drawCelebrants(ctx, tMs) {
 
     // Sprite chain, squash-and-stretch applied about the feet anchor so it reads ground-planted.
     const m = MONSTERS[c.monsterId];
-    const h = size * QUEUE.spriteScale * (m?.spriteScale ?? 1) * scale;
+    const h = mobDrawnBox(m) * scale;
     const sx = 1 + land * C.squash * 0.6;          // widen on landing...
     const sy = 1 - land * C.squash;                // ...while flattening — classic squash
     const cxA = x + size / 2, cyA = feetY;         // anchor: feet center
