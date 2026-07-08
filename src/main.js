@@ -97,6 +97,9 @@ loadSprite('portal_glow', 'assets/sprites/portal_glow.png');  // 4-frame swirl s
 loadSprite('portal_glow_mountain', 'assets/sprites/portal_glow_mountain.png');  // door destinations:
 loadSprite('portal_glow_forest',   'assets/sprites/portal_glow_forest.png');    // same door, different
 loadSprite('portal_glow_dungeon',  'assets/sprites/portal_glow_dungeon.png');   // world through it
+loadSprite('portal_glow_desert', 'assets/sprites/portal_glow_desert.png');  // +3 destinations (2026-07-08):
+loadSprite('portal_glow_tavern', 'assets/sprites/portal_glow_tavern.png');  //   desert, tavern, castle
+loadSprite('portal_glow_castle', 'assets/sprites/portal_glow_castle.png');  //   (committed with this pass)
 loadSprite('bob_idle',  'assets/sprites/bob_idle.png');   // 6-frame horizontal strip
 loadSprite('bob_serve', 'assets/sprites/bob_serve.png');  // 6-frame horizontal strip
 loadSprite('club',         'assets/sprites/club.png');         // item icons (64x64) — used by the

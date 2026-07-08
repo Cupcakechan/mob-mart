@@ -105,7 +105,8 @@ const portalAnim = { startMs: null };   // null = door closed/idle; a timestamp 
 // only chooses among strips that actually loaded, so drop them in piecemeal — none loaded falls
 // back to the base portal_glow.png (the original void), then static portal.png, then placeholder.
 // Adding a biome later = author one strip + add its id here.
-const DOOR_VARIANTS = ['portal_glow_mountain', 'portal_glow_forest', 'portal_glow_dungeon'];
+const DOOR_VARIANTS = ['portal_glow_mountain', 'portal_glow_forest', 'portal_glow_dungeon',
+  'portal_glow_desert', 'portal_glow_tavern', 'portal_glow_castle'];  // +3 (2026-07-08); pickDoorVariant rolls random, anti-repeat
 let doorVariant = null;                 // strip id for the current opening; null = base strip
 let lastVariant = null;                 // anti-repeat memory (same trick as the log-line picker)
 

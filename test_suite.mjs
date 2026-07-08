@@ -96,9 +96,16 @@ console.log('M4 auto-serve worker — smoke test\n');
     for (const m of src.matchAll(/(?:propId|spriteId):\s*'([a-z_]+)'/g)) {
       if (!consumers.has(m[1])) consumers.set(m[1], file);
     }
+    // Door destinations are 'portal_glow_*' ids fed to getSprite via a variable (DOOR_VARIANTS),
+    // so the literal getSprite scan above misses them; match the quoted ids as consumers too.
+    for (const m of src.matchAll(/'(portal_glow_[a-z_]+)'/g)) {
+      if (!consumers.has(m[1])) consumers.set(m[1], file);
+    }
   }
   // Guard the guard: zero consumers means the regexes rotted, not that the code went clean.
   ok(consumers.size >= 1, `pairing scan found sprite consumers (found ${consumers.size})`);
+  ok(consumers.has('portal_glow_mountain'),
+     'pairing scan reached the DOOR_VARIANTS pool (variable-fed ids the literal scan would miss)');
   for (const [id, file] of consumers) {
     ok(registered.has(id), `sprite id '${id}' (named in ${file}) has a loadSprite registration in main.js`);
   }
