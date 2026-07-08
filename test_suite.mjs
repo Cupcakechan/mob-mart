@@ -2158,7 +2158,7 @@ console.log('M4 auto-serve worker — smoke test\n');
 //     actor). Greg's bubble quip "You sell" is in-fiction dialogue and lives outside the pools.
 // (b) Consumable-tagged lines must work for the WHOLE consumable roster — the Rusty Key is
 //     category 'consumable' (single-use; the shelf has three buckets), so liquid-only verbs
-//     (drank/chugged/sipped/gulped) are banned in tagged texts; swallow-verbs are the register.
+//     (drank/chugged/sipped/gulped, plus pour/spill verbs) are banned in tagged texts; swallow-verbs are the register.
 {
   const { GENERIC_RESULTS, MONSTER_RESULTS } = await import('./src/data/results.js');
   const all = [];
@@ -2171,8 +2171,8 @@ console.log('M4 auto-serve worker — smoke test\n');
      `hygiene: no second-person outside the you'd idiom (found ${secondPerson.length})`);
 
   const tagged = all.filter((t) => typeof t !== 'string' && t.cats?.includes('consumable'));
-  ok(tagged.every((t) => !/\b(drank|drink|chug|chugged|sipped|gulped)\b/i.test(t.text)),
-     'hygiene: consumable-tagged lines carry no liquid-only verbs (keys are consumables too)');
+  ok(tagged.every((t) => !/\b(drank|drink|chug|chugged|sipped|gulped|spill|spilled|pour|poured|splash|splashed)\b/i.test(t.text)),
+     'hygiene: consumable-tagged lines carry no drink OR pour/spill verbs (keys/maps are consumables too)');
 }
 
 // 43. Milestone stagger (Daniel's pick, 2026-07-05): gold lines land as BEATS ---------------------

@@ -56,7 +56,7 @@ export const GENERIC_RESULTS = {
     `{name} dropped the {item} but kept his dignity. Some of it.`,
     `The hero looted {name} for 3 copper and an apology note.`,
     `{name} lost, but leveled up in something. Probably patience.`,
-    { text: `{name} spilled the {item} everywhere. The floor is thriving.`, cats: ['consumable'] },
+    { text: `{name} used the {item} at the worst possible moment. Almost artistic.`, cats: ['consumable'] },
   ],
   failure: [
     `{name} charged bravely. The hero yawned. Over fast.`,

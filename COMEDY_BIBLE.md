@@ -54,8 +54,9 @@ which-end-to-hold (weapon). New category registers opened: potion-chugging (cons
 worn-backwards / held-up-great (armor) — grow these when writing for the item batches.
 
 **Two hygiene laws (revision pass, 2026-07-05 — suite-pinned in section 42):** (1) A tagged
-line must work for its category's WHOLE roster — the Rusty Key is a consumable, so liquid-only
-verbs (drank/chugged/sipped) are banned in consumable lines; swallow-verbs are the register
+line must work for its category's WHOLE roster — the Rusty Key, Map, and Silver Key are all
+consumables, so liquid-only
+verbs (drank/chugged/sipped/gulped, plus pour/spill verbs) are banned in consumable lines; swallow-verbs are the register
 (swallowing a key whole is the joke). (2) No second-person in pool lines: shop-side actors are
 Bob (warm) or Greg (blunt, tagged) — the "you" era predates the hire arc. The one whitelisted
 idiom is "how you'd think" (audience figure of speech, not an actor).
