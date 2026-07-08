@@ -54,8 +54,10 @@ const COUNTER = {
 // and Bob move together. ---
 const BOB = {
   centerX: W * 0.57,           // ~730, centered over the counter
-  feetY:   COUNTER.baseY - 50, // <-- BOB-HEIGHT DIAL: raise the 50 to show MORE arms/hands, lower for less
-  height:  240,                // ON-SCREEN HEIGHT IN PX
+  feetY:   COUNTER.baseY - 82, // BOB LIFT DIAL (bigger = higher). Window 78-119 (pngjs-measured): below 78 his
+                               // hands (rows 89-119) clip behind the desk edge (y414); above 119 the chest bottom
+                               // peeks over. 82 -> hands rest just above the desk, whole face + arms + chest show.
+  height:  160,                // ON-SCREEN HEIGHT — drawn 1:1 (bob_idle is 160px/frame); no upscale = crisp.
   placeholderColor:'#7a4a2a',
 };
 
@@ -391,8 +393,8 @@ export function spawnItemFloat(itemId) {
 // a code plank (wall_shelf family) so the board renders even without the PNG.
 const SPECIAL_BOARD = {
   centerX: W * 0.57,    // = BOB.centerX (~730): the merchant stands under his own sign
-  topY: 88,             // below the HUD row (bottom ~62); the fame panel (top 96) covers the
-                        // board while open — accepted, panels cover the whole diorama
+  topY: 136,            // hung ~45px above the lifted Bob's head (y291) — the "sign over the merchant" gap.
+                        // Clears the HUD (bottom ~62) and the fame panel (top 96). Re-tune if you change BOB.feetY.
   width: 320,           // display width -> the 640 art lands at a clean x0.5
   drawHeader: true,     // "SPECIAL OF THE DAY" in code; false once the art carries lettering
   header: 'SPECIAL OF THE DAY',
