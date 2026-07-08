@@ -381,7 +381,7 @@ author at display size, drawn 1:1 via pixelScale, dimensions suite-pinned. Do no
 128-frame + multiplier approach to oversized characters.**
 
 **2026-07-07 update (historical): the VIP is a DRAGON.** Daniel has authored the PNG + animation strips
-(files incoming). Flyer-vs-walker resolves from the art itself at integration — a flyer takes
+(landed + integrated 2026-07-08 - see §13). Flyer-vs-walker resolves from the art itself at integration — a flyer takes
 the hover-bob + altitude-padding + shadow conventions and skips `footPad`; a grounded dragon
 takes the measured-footPad path. Roster id `dragon` cannot collide with the marketevents id
 `dragon_scare` (different registries) — and the crossover day is a comedy opportunity on file.
@@ -390,7 +390,7 @@ takes the measured-footPad path. Roster id `dragon` cannot collide with the mark
 |---|---|---|---|---|
 | Froggo (4th customer, Pass 4b) | 128×128/frame (permanent convention) | shared 4-frame idle @6fps + walk strip | `frog.png`, `frog_idle.png`, `frog_walk_happy.png` (the walk is authored as a GRUMPY STOMP — naming kept by convention, mismatch intended) | **ALL IN** (2026-07-04) — `footPad` 15 MEASURED, `spriteScale` 1.1 (content 76% of frame) |
 | Slimey / Batty / Skele (customers) | 128×128/frame (PERMANENT convention — see the Option-3 scrub note above) | shared 4-frame idle strips (6fps) | statics `slime.png` etc. + `slime_idle.png` etc. | **ALL IN** (statics + all three idle strips, 2026-07-03); drawn 88px (`QUEUE.size`), Slimey/Skele `spriteScale` 1.15, `footPad` MEASURED slime 18 / skeleton 12 (grounding pass), Batty `flying: true` (padding = hover altitude) |
-| Bob (mimic merchant) | 128×128 or 160×160/frame | idle 6f · serve 6f (one-shot) | `mimic_merchant.png` (static fallback), `bob_idle.png`, `bob_serve.png` (6-frame strips) | **IN** — 240px on-screen (`BOB.height`), feet anchored to `COUNTER.baseY` − 50 |
+| Bob (mimic merchant) | 160×160/frame | idle 6f · serve 6f (one-shot) | `mimic_merchant.png` (static fallback), `bob_idle.png`, `bob_serve.png` (6-frame strips) | **IN** - **160px on-screen, drawn 1:1** (`BOB.height` 160; art is 160/frame, no upscale = crisp), feet anchored to `COUNTER.baseY` − 82 (lifted onto a "stool", 2026-07-08) |
 | Counter / desk | ~480px wide (author 2× ≈ 960 for crisp) | static | `counter.png` | **IN** — 480px (`COUNTER.width`), base at H*0.74 (~533) + contact shadow |
 | Battle door (ex-portal) | **160×160/frame**, 4 frames → **640×160 strip**; frame 0 CLOSED → 3 OPEN; **frame 0 must be pixel-identical across variants** | one-shot open/hold/close on paid serve; destination re-rolled per opening | `portal_glow.png` (base/void), `portal_glow_mountain/_forest/_dungeon.png` (destination variants — a new biome = one strip + one `DOOR_VARIANTS` entry), `portal.png` (static fallback) | **IN** — 320px on-screen (2×); bottom = `FLOOR_Y + 6` (art has 3px bottom padding ×2 scale) |
 | Shop backdrop | 1280×720, **seam at y=462** | optional torch flicker later | `shop_bg.png` | **IN (WIP)** — iterating |
@@ -404,8 +404,8 @@ Item icons are the one exception to the perspective rule — they live in DOM ca
 front/slightly-angled icon is fine. The Aseprite fitting pass sets exact sizes and aligns every
 customer's baseline to the same floor plane (queue feet currently ~495; see `QUEUE.y`).
 
-**Art integration status:** Bob's scale is locked (`BOB.height` 240px in `scene.js`, feet anchored to
-`COUNTER.baseY`). Bob is animated — idle loop + serving one-shot, each a 6-frame horizontal strip
+**Art integration status:** Bob's scale is locked (`BOB.height` **160px, drawn 1:1** in `scene.js`, feet anchored to
+`COUNTER.baseY` − 82). Bob is animated — idle loop + serving one-shot, each a 6-frame horizontal strip
 (`bob_idle.png` / `bob_serve.png`), auto-sliced; serving fires on a successful Serve (manual OR auto —
 **M4 reuses `playBobServe` via the `workerServed` flag**), then returns to idle. Missing sheet → static
 `mimic_merchant.png` → placeholder. **M4 added NO new art** — the auto-serve worker reuses the existing
@@ -507,7 +507,7 @@ intro + bubble quip). Gold milestone lines now land as staggered beats (2.5s dia
 @25 AND @50 ladder batches live, goldens @100, two hygiene laws suite-pinned (no second person;
 consumable verbs must fit the whole roster — the Rusty Key is a consumable). Save
 `mobmart.save.v1`, additive schema, clamped merges. Suite: **`test_suite.mjs` at repo root,
-560 assertions green** — a fresh clone self-verifies with `node test_suite.mjs`. Suite doctrine
+569 assertions green** — a fresh clone self-verifies with `node test_suite.mjs`. Suite doctrine
 (batch-1 lesson): EXACT-MATH tests pin the trio shelf via `pinTrioShelf`; RULE tests derive from
 live registries — never hand-type a roster-dependent number; exact batch totals live only in the
 NEWEST batch's section. New modules since the items phase: `src/data/fametrack.js` (registry-
@@ -519,7 +519,7 @@ fields now include: `bobSpeech`, `licenseReminderIn`, `gregBubble`, `gregRestock
 sections pin each exclusion.
 
 **Shipped 2026-07-07/08 — SPECIAL VISITS ("The Inspection", Option 2; suite 531 -> 560,
-section 54) — ROADMAP COMPLETE, but see §13 TOP PRIORITY (dragon art reauthor):** the dragon
+section 54) — ROADMAP COMPLETE (the dragon art was reauthored + integrated 1:1 on 2026-07-08 - §13):** the dragon
 VIP ("The Inspector", glasses + clipboard, Daniel's art + the design read straight off it).
 **Mechanics (all suite-pinned):** `special: true` registry rows are invisible to the normal
 spawn pool (both branches), breakpoint milestones, and the bestiary GRID; he arrives only via
@@ -539,12 +539,12 @@ Built JS-side (index.html + Kong mirror untouched). **Roster:** MONSTER_IDS = 7 
 every roster-derived suite rule evolved to the non-special grid (bestiary totals, ladder
 contract, batch@50, Beetley's roster exact yielded to §54 per doctrine). **THE SIZING SAGA
 (LESSONS 2026-07-08 — read it):** three sizing iterations (1.25 -> 1.4 -> pixelScale 2) failed
-to produce the VIP read cleanly; Daniel is REAUTHORING (contract in §13/§9). Render side that
+to produce the VIP read cleanly; Daniel REAUTHORED at a 160 frame (as-built in §13). Render side that
 STAYS: `mobDrawnBox` in scene.js is the ONE sizing formula (queue draw + celebration march +
 want-bubble tail all share it; `pixelScale` = integer multiple of the AUTHORED frame), and the
 want-bubble's tail now RIDES UP to taller-than-classic fronts (min() keeps every regular mob's
-geometry pixel-identical). Current interim: v3 code (pixelScale 2) + the ORIGINAL 128 dragon
-art = a consistent ~200px Inspector until the reauthor lands.
+geometry pixel-identical). **RESOLVED 2026-07-08:** reauthored at a 160 frame, drawn 1:1
+(pixelScale 1), frameSize:160 suite-pinned - 160px box / ~132px visible Inspector (as-built §13).
 
 **Shipped 2026-07-07 (three passes after Market Day; suite 484 -> 488 -> 504 -> 531):**
 - **SPECIAL-OF-THE-DAY BOARD (Daniel's idea + 640x220 art):** flush-mounted over Bob —
@@ -1153,24 +1153,21 @@ Mythic live, worker training ladders); the housekeeping pass landed 8 HARVESTED 
 Repo line and confirmed guard 0b already covered the queued pairing assertion (the LESSONS
 wall_shelf entry closed SHIPPED). All as-built blocks in §12.
 
-**TOP PRIORITY (next session): DRAGON REAUTHOR + 1:1 INTEGRATION.** Daniel is reauthoring
-the Inspector (the sizing saga — LESSONS 2026-07-08; the failure was Claude's spec, not the
-art). **Authoring contract:** frame **224x224** (strips 4 x 224 = **896x224**), same three
-filenames (dragon.png / dragon_idle.png / dragon_walk_happy.png); **body ~170-180px tall**;
-**all nine frames consistent** — body height +-3px, footPad +-2px (the bar the ORIGINAL files
-met: 99-103 content / 13-15 footPad). It will be drawn **1:1, pixel for pixel, forever**
-(`pixelScale: 1` — the Greg precedent); no multiplier touches this character again.
-**Integration steps when the files arrive:** pngjs-measure (dimensions, footPad, per-frame
-consistency) -> set `pixelScale: 1` + pin the measured footPad in monsters.js -> update suite
-§54(a)'s pin -> **SHIP THE QUEUED PLUG** (registry frame-size expectation + a suite assertion
-that reads each pixel-scaled PNG and pins its dimensions — see the LESSONS entry) -> Daniel's
-browser eye -> then the art fix commits.
+**SHIPPED 2026-07-08 - DRAGON REAUTHOR + 1:1 INTEGRATION.** The Inspector was reauthored (the
+sizing saga - LESSONS 2026-07-08; the failure was Claude's spec, not the art). **As built:** Daniel
+authored at frame **160×160** (idle + walk strips 4×160 = 640×160; static 160×160); body ~132px
+visible, footPad 13-15 across all nine frames (pngjs-measured at integration). Drawn **1:1**
+(`pixelScale: 1` - the Greg precedent, no multiplier), so on-screen **160px box / ~132px visible**
+- level with Bob's ~125, ~1.4× a normal mob's ~90, under the 320 door. **`frameSize: 160`** was
+added to the registry as the authored-frame expectation; `footPad: 14` unchanged. **The queued
+plug SHIPPED:** the suite reads every pixelScale VIP's PNGs (IHDR, no pngjs) and asserts the frame
+matches `frameSize` - a re-export at another size fails the BUILD, not draw time; §54(a)'s pin
+flipped to `pixelScale === 1`. Files: monsters.js + main.js + test_suite.mjs + the 3 PNGs. Suite 569.
 
 **Open:**
-- **Special Visits mechanics: SHIPPED** (block in §12); only the art reauthor above remains. The VIP is a **DRAGON** — Daniel has authored the PNG +
-  animation strips (incoming); §9 carries the sizing contract (~90% frame fill, `spriteScale:
-  1.25`, ceiling ~1.3, bubble clearance pngjs-measured at integration, flyer-vs-walker read from
-  the art). The MECHANICS options round is pending (what a visit is, how often, what it pays).
+- **Special Visits: COMPLETE** - mechanics shipped (§12) and the Inspector's art reauthored +
+  integrated 1:1 (2026-07-08, above). The live sizing contract is the §13 reauthor record above,
+  NOT the superseded §9 `spriteScale: 1.25` spec. Adding MORE VIPs is the deferred item below.
 - **itch.io dual-publish: STILL UNDECIDED** (asked 2026-07-05) — decides whether the `butler`
   deploy path is added.
 - **Bob-voiced dismiss lines can fire pre-hire** (a ~2-serve window given 40g start vs 50g hire).
