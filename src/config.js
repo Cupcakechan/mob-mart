@@ -113,7 +113,7 @@ export const CONFIG = {
     // LOCAL calendar day at Legendary+, a spawn beat may be him instead; his tip is a GRADE of
     // the shelves at the moment of service (inspectionGrade, game.js) — payout-side by law.
     requiredTier: 5,           // Legendary opens visits (index into reputation.tiers)
-    chancePerSpawn: 0.02,      // roll per spawn beat until the day's visit lands (latched after)
+    chancePerSpawn:  0.02,      // roll per spawn beat until the day's visit lands (latched after)
     tipPerFullness: 100,       // gold at 100% shelf fullness (scales linearly with fullness)
     tipPerCategory: 25,        // gold per category with stock >= 1 (variety pays)
     fameBonus: 25,             // flat lifetime-rep bonus on serving him (a VIP's word travels)

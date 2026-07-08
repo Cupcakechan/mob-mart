@@ -136,7 +136,7 @@ loadSprite('beetle_idle', 'assets/sprites/beetle_idle.png');      //   static la
 loadSprite('beetle_walk_happy', 'assets/sprites/beetle_walk_happy.png'); // authored and incoming.
 loadSprite('dragon', 'assets/sprites/dragon.png');                // THE INSPECTOR (Special Visits, 2026-07-07) —
 loadSprite('dragon_idle', 'assets/sprites/dragon_idle.png');      //   same contract; all three authored + measured
-loadSprite('dragon_walk_happy', 'assets/sprites/dragon_walk_happy.png'); // (footPad 14, 78% fill, spriteScale 1.25).
+loadSprite('dragon_walk_happy', 'assets/sprites/dragon_walk_happy.png'); // (footPad 14, ~82% tall fill, drawn 1:1 at pixelScale 1).
                                                                   //   "_walk_happy" name kept by convention; the
                                                                   //   authored content will be a grumpy stomp.
 

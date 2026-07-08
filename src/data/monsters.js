@@ -112,18 +112,15 @@ export const MONSTERS = {
                          // pool, the bestiary grid, or breakpoint milestones — he arrives only via
                          // trySpawnVisit (once per calendar day at Legendary+). Consumers filter on
                          // this flag; a future VIP is one more row carrying it.
-    pixelScale: 2,       // VIP SIZE, TAKE THREE (Daniel's verdict 2026-07-08: "Greg-sized, or a
-                         // little shorter than Bob"). The spriteScale multiplier chain topped out
-                         // at +12% visible — never a VIP read. This instead draws the authored
-                         // 128 frame at an EXACT 2x nearest-neighbor double: 256px box, ~200px
-                         // visible body — a little shorter than Bob's 240, towering over Greg's
-                         // 93 and the cast's ~74. Integer doubling is the ONE upscale that stays
-                         // crisp (the pixel-scaling lesson), and it chunks his fine-grain pixels
-                         // to the cast's grammar. Geometry verified: queue neighbors keep ~17px
-                         // of air (stepX 134), head lands y267, and the want-bubble's tail now
-                         // rides up to tall fronts (mobDrawnBox in scene.js). If Daniel later
-                         // re-authors at a larger native frame, this SAME field covers it:
-                         // drawn box = authored frame x pixelScale (a 200-native at 1 = 200).
+    pixelScale: 1,       // DRAW 1:1 (reauthor 2026-07-08). Authored at DISPLAY size (160px frame),
+                         // drawn 160px on-screen -- no multiplier, no upscale (the sizing saga's rule:
+                         // oversized characters author 1:1 like Greg, never routed through a scale).
+                         // On-screen: 160 box, ~132 visible body -- level with Bob's ~125, ~1.4x a
+                         // normal mob's ~90, under the 320 door. mobDrawnBox = frame x pixelScale, so
+                         // this holds while the frame stays 160 (frameSize below; the suite reads the PNG).
+    frameSize: 160,      // AUTHORED frame w/h (pngjs-measured). The suite asserts every pixelScale VIP's
+                         // PNGs match this -- a re-export at another size fails the build instead of
+                         // exploding at draw time (the saga's silent 512px dragon). New VIPs carry it.
     footPad: 14,         // MEASURED (pngjs): 13-15 consistent across all nine authored frames
     patienceBonus: 24,   // a VIP walkout is a feel-bad — double the base wait (Steadfast's big
                          // brother; Beetley holds the line, the Inspector owns the clipboard)

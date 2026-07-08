@@ -2889,12 +2889,37 @@ console.log('M4 auto-serve worker — smoke test\n');
 
   // (a) Registry contract: the VIP row carries the measured integration numbers.
   const d = MONSTERS.dragon;
-  // Sizing take three (2026-07-08, Daniel's verdict): the multiplier chain topped out at +12%
-  // visible; the VIP now draws at an INTEGER pixel-double of his authored frame — 256px box,
-  // ~200px visible, a little shorter than Bob — crisp by construction (the pixel-scaling lesson).
-  ok(d?.special === true && d.pixelScale === 2 && d.footPad === 14,
-     'visits: the Inspector ships special, integer pixelScale 2, measured footPad 14');
+  // Reauthor (2026-07-08): the VIP is authored at DISPLAY size (160px frame) and drawn 1:1 --
+  // no multiplier (the sizing saga's rule). On-screen ~132 visible, level with Bob, ~1.4x a mob.
+  ok(d?.special === true && d.pixelScale === 1 && d.footPad === 14,
+     'visits: the Inspector ships special, drawn 1:1 at pixelScale 1, measured footPad 14');
   ok(MONSTER_IDS.length === 7, 'visits: seven on the roster (the newest batch\u2019s exact)');
+
+  // (a2) FRAME-SIZE CONTRACT (the sizing-saga plug, 2026-07-08): a pixelScale VIP draws at
+  // frame x pixelScale, so a re-export at a different frame size silently changes on-screen
+  // size (the saga's 512px dragon). Read each such VIP's PNGs straight from disk (IHDR, no
+  // pngjs) and assert the frame matches its declared frameSize -- a mismatch fails HERE.
+  {
+    const { readFileSync, existsSync } = await import('node:fs');
+    const frameH = (f) => readFileSync(f).readUInt32BE(20);   // PNG IHDR height (bytes 20-23)
+    const frameW = (f) => readFileSync(f).readUInt32BE(16);   // PNG IHDR width  (bytes 16-19)
+    const scaled = MONSTER_IDS.filter((id) => MONSTERS[id]?.pixelScale);
+    ok(scaled.length >= 1, 'frame-size: at least one pixelScale VIP is checked (guard-the-guard)');
+    for (const id of scaled) {
+      const m = MONSTERS[id];
+      ok(Number.isFinite(m.frameSize) && m.frameSize > 0,
+         `frame-size: ${id} declares a numeric frameSize expectation`);
+      ok(existsSync(`./assets/sprites/${id}.png`), `frame-size: ${id} has its static sprite`);
+      const files = [`./assets/sprites/${id}.png`, `./assets/sprites/${id}_idle.png`,
+                     `./assets/sprites/${id}_walk_happy.png`];
+      for (const f of files) {
+        if (!existsSync(f)) continue;   // a VIP may ship without a walk strip; pin what exists
+        const h = frameH(f), w = frameW(f);
+        ok(h === m.frameSize, `frame-size: ${f} frame height ${h} === declared ${m.frameSize}`);
+        ok(w % m.frameSize === 0, `frame-size: ${f} width ${w} is whole ${m.frameSize}-frames`);
+      }
+    }
+  }
 
   // (b) Pool exclusion is absolute: thousands of spawns, never the dragon — both branches.
   {
