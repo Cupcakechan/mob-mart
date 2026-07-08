@@ -3045,8 +3045,8 @@ console.log('M4 auto-serve worker — smoke test\n');
   const batch = ['tattered_cloak', 'leather_boots', 'leather_cap', 'leather_gloves', 'leather_sling'];
 
   // THE NEWEST BATCH owns the exact roster total (doctrine: exact totals live only in this section).
-  ok(ITEM_ORDER.length === 22 && Object.keys(ITEMS).length === 22,
-     'batch 3a: roster at 22 (the 17 before + the leather five)');
+  ok(ITEM_ORDER.length >= 22 && Object.keys(ITEMS).length >= 22,
+     'batch 3a: the leather five are present (exact total lives in the newest batch section)');
   ok(batch.every((id) => ITEMS[id] !== undefined && ITEM_ORDER.includes(id)),
      'batch 3a: all five rows exist and sit in ITEM_ORDER');
 
@@ -3077,6 +3077,60 @@ console.log('M4 auto-serve worker — smoke test\n');
     if (batch.includes(spawnCustomer(shopState()).wantedItemId)) sawLeather = true;
   }
   ok(sawLeather, 'batch 3a: the leather set enters the want pool with no wiring (800 spawns)');
+}
+
+// 56. Content batch 3b — upgrades + curios: three chain tops + two licensed curios; roster EXACT --
+{
+  const { ITEMS, ITEM_ORDER } = await import('./src/data/items.js');
+  const { CONFIG } = await import('./src/config.js');
+  const { spawnCustomer } = await import('./src/game.js');
+  const batch = ['silver_key', 'spiked_club', 'iron_shield', 'map', 'salt'];
+
+  // THE NEWEST BATCH owns the exact roster total (doctrine: exact totals live only in this section).
+  ok(ITEM_ORDER.length === 27 && Object.keys(ITEMS).length === 27,
+     'batch 3b: roster at 27 (the 22 before + these five)');
+  ok(batch.every((id) => ITEMS[id] !== undefined && ITEM_ORDER.includes(id)),
+     'batch 3b: all five rows exist and sit in ITEM_ORDER');
+
+  // All five are LICENSED: real tier index, positive cost, empty until bought, margin holds. Being
+  // licensed, none join the everything laggard (BASE_ITEMS is the free set) — reach, not dilution.
+  ok(batch.every((id) => {
+    const l = ITEMS[id].license;
+    return l && Number.isInteger(l.requiredTier) && l.requiredTier < CONFIG.reputation.tiers.length
+      && l.cost > 0 && ITEMS[id].startStock === 0 && ITEMS[id].basePrice > ITEMS[id].restockCost
+      && Number.isFinite(ITEMS[id].combatEffect);
+  }), 'batch 3b: five licensed rows, valid tiers, start empty, margin + finite eff');
+
+  // The three CHAIN tops: each strictly beats its base on eff AND price, same category, gated
+  // later than its base (or the base is free). Iron Shield extends a 3-link chain.
+  const chains = [['silver_key', 'rusty_key'], ['spiked_club', 'club'], ['iron_shield', 'iron_buckler']];
+  ok(chains.every(([top, base]) =>
+    ITEMS[top].combatEffect > ITEMS[base].combatEffect
+    && ITEMS[top].basePrice > ITEMS[base].basePrice
+    && ITEMS[top].category === ITEMS[base].category
+    && (!ITEMS[base].license || ITEMS[top].license.requiredTier > ITEMS[base].license.requiredTier)),
+     'batch 3b: chain invariant holds for all three tops (eff + price + category + gating)');
+
+  // The 3-link shield chain is monotonic: Wooden Shield (free) -> Iron Buckler (Beloved) -> Iron Shield.
+  ok(ITEMS.wooden_shield.combatEffect < ITEMS.iron_buckler.combatEffect
+     && ITEMS.iron_buckler.combatEffect < ITEMS.iron_shield.combatEffect
+     && ITEMS.wooden_shield.basePrice < ITEMS.iron_buckler.basePrice
+     && ITEMS.iron_buckler.basePrice < ITEMS.iron_shield.basePrice,
+     'batch 3b: the shield chain is monotonic across all three links (eff + price)');
+
+  // The two curios are standalone licensed consumables (not chain tops).
+  const curios = ['map', 'salt'];
+  ok(curios.every((id) => ITEMS[id].category === 'consumable' && ITEMS[id].license),
+     'batch 3b: Map + Bag of Salt are licensed consumables');
+
+  // Locked rows stay OUT of the want pool; once licensed they become wantable (same as batch 1).
+  let lockedLeak = false;
+  for (let i = 0; i < 500; i++) if (batch.includes(spawnCustomer(shopState()).wantedItemId)) lockedLeak = true;
+  const open = shopState();
+  for (const id of batch) open.licenses[id] = true;
+  let sawLicensed = false;
+  for (let i = 0; i < 900 && !sawLicensed; i++) if (batch.includes(spawnCustomer(open).wantedItemId)) sawLicensed = true;
+  ok(!lockedLeak && sawLicensed, 'batch 3b: license gate holds locked; the five become wantable once bought');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

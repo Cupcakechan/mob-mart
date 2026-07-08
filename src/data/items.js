@@ -62,6 +62,21 @@ export const ITEMS = {
   leather_cap:   { id:'leather_cap',    displayName:'Leather Cap',    iconId:'leather_cap',    category:'armor',  basePrice:7, restockCost:3, startStock:3, maxStock:5, combatEffect:2 },
   leather_gloves:{ id:'leather_gloves', displayName:'Leather Gloves', iconId:'leather_gloves', category:'armor',  basePrice:8, restockCost:4, startStock:3, maxStock:5, combatEffect:3 },
   leather_sling: { id:'leather_sling',  displayName:'Leather Sling',  iconId:'leather_sling',  category:'weapon', basePrice:9, restockCost:4, startStock:3, maxStock:5, combatEffect:3 },
+
+  // --- Batch 3b (upgrades + curios, 2026-07-08): LICENSED rows. Three chain tops that strictly
+  // beat their base on eff + price (the chain invariant), plus two standalone curios. All start
+  // empty (startStock 0) and unlock at a fame rung. Licensed => they do NOT join the everything
+  // laggard ladder (that stays the free set), so they add reach without diluting the global tier.
+  silver_key:  { id:'silver_key',  displayName:'Silver Key',  iconId:'silver_key',  category:'consumable', basePrice:20, restockCost:10, startStock:0, maxStock:5, combatEffect:3,
+                 license: { cost: 200, requiredTier: 2 } },   // Trusted -- chain top of Rusty Key (10/eff 1)
+  spiked_club: { id:'spiked_club', displayName:'Spiked Club', iconId:'spiked_club', category:'weapon',     basePrice:24, restockCost:12, startStock:0, maxStock:5, combatEffect:9,
+                 license: { cost: 300, requiredTier: 3 } },   // Beloved -- chain top of Club (12/eff 6)
+  iron_shield: { id:'iron_shield', displayName:'Iron Shield', iconId:'iron_shield', category:'armor',      basePrice:32, restockCost:16, startStock:0, maxStock:5, combatEffect:9,
+                 license: { cost: 600, requiredTier: 4 } },   // Renowned -- chain top of Iron Buckler (18/eff 6): 3-link w/ Wooden Shield
+  map:         { id:'map',         displayName:'Map',         iconId:'map',         category:'consumable', basePrice:18, restockCost:9,  startStock:0, maxStock:5, combatEffect:1,
+                 license: { cost: 150, requiredTier: 2 } },   // Trusted -- standalone curio
+  salt:        { id:'salt',        displayName:'Bag of Salt', iconId:'salt',        category:'consumable', basePrice:15, restockCost:7,  startStock:0, maxStock:5, combatEffect:2,
+                 license: { cost: 150, requiredTier: 2 } },   // Trusted -- standalone curio (anti-slime gag)
 };
 
 // Display order for the shelf cards (base row, tier-2 row, batch-1 free four + license rung, batch-2 chain tops).
@@ -69,4 +84,5 @@ export const ITEM_ORDER = ['club', 'metal_helmet', 'hp_flask', 'iron_sword', 'gr
   'tattered_shirt', 'bandages', 'wooden_shield', 'rusty_key',
   'leather_bracer', 'murk_tonic', 'pickaxe', 'quiver', 'zip_tonic',
   'iron_buckler', 'iron_gauntlet',
-  'tattered_cloak', 'leather_boots', 'leather_cap', 'leather_gloves', 'leather_sling'];
+  'tattered_cloak', 'leather_boots', 'leather_cap', 'leather_gloves', 'leather_sling',
+  'silver_key', 'spiked_club', 'iron_shield', 'map', 'salt'];

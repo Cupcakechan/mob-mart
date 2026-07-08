@@ -121,6 +121,11 @@ loadSprite('leather_boots',  'assets/sprites/leather_boots.png');  //   id-named
 loadSprite('leather_cap',    'assets/sprites/leather_cap.png');    //   batch; the wall_shelf pairing
 loadSprite('leather_gloves', 'assets/sprites/leather_gloves.png'); //   lesson, guarded by suite 0b)
 loadSprite('leather_sling',  'assets/sprites/leather_sling.png');
+loadSprite('silver_key',  'assets/sprites/silver_key.png');   // Batch 3b upgrades + curios (64x64,
+loadSprite('spiked_club', 'assets/sprites/spiked_club.png');  //   id-named, art landed with the
+loadSprite('iron_shield', 'assets/sprites/iron_shield.png');  //   batch; suite 0b guards pairing)
+loadSprite('map',         'assets/sprites/map.png');
+loadSprite('salt',        'assets/sprites/salt.png');
 loadSprite('bat_idle', 'assets/sprites/bat_idle.png');            // Batty's 4-frame wing-flap strip (512x128)
 loadSprite('slime_idle', 'assets/sprites/slime_idle.png');        // Slimey/Skele idle strips (Pass B): same
 loadSprite('skeleton_idle', 'assets/sprites/skeleton_idle.png');  //   shared 4-frame contract; absent -> static
