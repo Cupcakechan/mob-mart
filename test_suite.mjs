@@ -4,6 +4,7 @@
 // Run: node test_suite.mjs   (exits non-zero on any failure)
 import { createInitialState } from './src/state.js';
 import { serializeSave, mergeSave } from './src/save.js';
+import { ITEMS, ITEM_ORDER } from './src/data/items.js';   // live-derived trio fixture (below)
 import {
   update, serveCurrent, hireWorker, canHireWorker,
   effectiveWorkerInterval,
@@ -28,7 +29,11 @@ function shopState() {
 // assertion; the shelf composition is fixture). 'empty' zeroes the free batch's stock (offline
 // sims — the robin skips empties, so the old sequences hold); 'full' caps them (Restock-All
 // quotes — a full item quotes 0). RULE tests instead iterate the live registry; never pin those.
-const FREE_BATCH = ['tattered_shirt', 'bandages', 'wooden_shield', 'rusty_key'];
+const TRIO = ['club', 'metal_helmet', 'hp_flask'];
+// LIVE-DERIVED (2026-07-08): every free (license-free) item EXCEPT the trio, so a new free batch
+// (the leather set, and any after) is auto-zeroed/filled by the fixture. Was a hardcoded four;
+// batch 3a leaked its stock into the trio-only fixture (8 offline/quote failures) until this.
+const FREE_BATCH = ITEM_ORDER.filter((id) => !ITEMS[id].license && !TRIO.includes(id));
 function pinTrioShelf(s, mode = 'empty') {
   for (const id of FREE_BATCH) s.items[id].stock = (mode === 'full' ? s.items[id].maxStock ?? 5 : 0);
   return s;
@@ -1451,8 +1456,8 @@ console.log('M4 auto-serve worker — smoke test\n');
 {
   const { ITEMS, ITEM_ORDER } = await import('./src/data/items.js');
   const { CONFIG } = await import('./src/config.js');
-  ok(ITEM_ORDER.length === 17 && ITEMS.iron_buckler && ITEMS.iron_gauntlet,
-     'batch 2: both chain tops exist, ITEM_ORDER at 17');
+  ok(ITEM_ORDER.length >= 17 && ITEMS.iron_buckler && ITEMS.iron_gauntlet,
+     'batch 2: both chain tops exist (exact total lives in the newest batch section)');
   // A chain is naming + pricing, NOT a mechanic — but the pricing RELATION is the content promise:
   // the top must strictly beat its base on combatEffect AND basePrice, be licensed, share category.
   const chains = [['iron_buckler', 'wooden_shield'], ['iron_gauntlet', 'leather_bracer']];
@@ -3030,6 +3035,48 @@ console.log('M4 auto-serve worker — smoke test\n');
     ok(V.visitGradeLine(94, 170).includes('94') && V.visitGradeLine(94, 170).includes('170'),
        'visits: the grade line fills its numbers');
   }
+}
+
+// 55. Content batch 3a — the leather starter set: five FREE slot-fillers; the roster EXACT total --
+{
+  const { ITEMS, ITEM_ORDER } = await import('./src/data/items.js');
+  const { MONSTERS, MONSTER_IDS } = await import('./src/data/monsters.js');
+  const { spawnCustomer } = await import('./src/game.js');
+  const batch = ['tattered_cloak', 'leather_boots', 'leather_cap', 'leather_gloves', 'leather_sling'];
+
+  // THE NEWEST BATCH owns the exact roster total (doctrine: exact totals live only in this section).
+  ok(ITEM_ORDER.length === 22 && Object.keys(ITEMS).length === 22,
+     'batch 3a: roster at 22 (the 17 before + the leather five)');
+  ok(batch.every((id) => ITEMS[id] !== undefined && ITEM_ORDER.includes(id)),
+     'batch 3a: all five rows exist and sit in ITEM_ORDER');
+
+  const realCats = new Set(['weapon', 'armor', 'consumable']);
+  ok(batch.every((id) => realCats.has(ITEMS[id].category)
+       && ITEMS[id].basePrice > ITEMS[id].restockCost && Number.isFinite(ITEMS[id].combatEffect)),
+     'batch 3a: real categories, restock < price (margin invariant), finite eff');
+
+  // All five are FREE tier: no license, start stocked, priced within the free ceiling (<=10).
+  ok(batch.every((id) => !ITEMS[id].license && ITEMS[id].startStock > 0 && ITEMS[id].basePrice <= 10),
+     'batch 3a: all five free, stocked, and within the 10-gold free ceiling');
+
+  // Category mix: four armor + one weapon (the sling), no consumable this batch.
+  ok(batch.filter((id) => ITEMS[id].category === 'armor').length === 4
+     && batch.filter((id) => ITEMS[id].category === 'weapon').length === 1,
+     'batch 3a: four armor + one weapon (the sling)');
+
+  // Roster-wide affordability floor still holds: SOME free item affords the smallest purse, so no
+  // mob is unservable by construction (live-derived across the WHOLE free set, incl. these five).
+  const minRoll = Math.min(...MONSTER_IDS.map((id) => MONSTERS[id].budgetRange[0]));
+  const allFree = ITEM_ORDER.filter((id) => !ITEMS[id].license);
+  ok(Math.min(...allFree.map((id) => ITEMS[id].basePrice)) <= minRoll,
+     `batch 3a: some free item still affords the smallest purse (min roll ${minRoll})`);
+
+  // A2 payoff (as batch 1): new free items enter the want pool with zero per-monster wiring.
+  let sawLeather = false;
+  for (let i = 0; i < 800 && !sawLeather; i++) {
+    if (batch.includes(spawnCustomer(shopState()).wantedItemId)) sawLeather = true;
+  }
+  ok(sawLeather, 'batch 3a: the leather set enters the want pool with no wiring (800 spawns)');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

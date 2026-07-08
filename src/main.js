@@ -116,6 +116,11 @@ loadSprite('quiver',         'assets/sprites/quiver.png');
 loadSprite('zip_tonic',      'assets/sprites/zip_tonic.png');
 loadSprite('iron_buckler',   'assets/sprites/iron_buckler.png');   // Batch 2 chain tops (buckler IN;
 loadSprite('iron_gauntlet',  'assets/sprites/iron_gauntlet.png');  //   gauntlet registered pre-art)
+loadSprite('tattered_cloak', 'assets/sprites/tattered_cloak.png'); // Batch 3a leather set (64x64,
+loadSprite('leather_boots',  'assets/sprites/leather_boots.png');  //   id-named, art landed with the
+loadSprite('leather_cap',    'assets/sprites/leather_cap.png');    //   batch; the wall_shelf pairing
+loadSprite('leather_gloves', 'assets/sprites/leather_gloves.png'); //   lesson, guarded by suite 0b)
+loadSprite('leather_sling',  'assets/sprites/leather_sling.png');
 loadSprite('bat_idle', 'assets/sprites/bat_idle.png');            // Batty's 4-frame wing-flap strip (512x128)
 loadSprite('slime_idle', 'assets/sprites/slime_idle.png');        // Slimey/Skele idle strips (Pass B): same
 loadSprite('skeleton_idle', 'assets/sprites/skeleton_idle.png');  //   shared 4-frame contract; absent -> static

@@ -51,10 +51,22 @@ export const ITEMS = {
                   license: { cost: 300, requiredTier: 3 } },   // Beloved — chain top of Wooden Shield (8/eff 3)
   iron_gauntlet: { id:'iron_gauntlet',  displayName:'Iron Gauntlet',  iconId:'iron_gauntlet',  category:'armor',      basePrice:24, restockCost:12, startStock:0, maxStock:5, combatEffect:8,
                   license: { cost: 500, requiredTier: 4 } },   // Renowned — chain top of Leather Bracer (14/eff 5)
+
+  // --- Batch 3a (leather starter set, 2026-07-08): FREE TIER slot-fillers, all priced <= 10.
+  // combatEffect is COMEDY TEXTURE (which log line), not economy. Rounds out equipment slots
+  // (FEET is new) and adds three free chain-BASES existing licensed rows already top:
+  // cap -> Metal Helmet, gloves -> Leather Bracer, sling -> Quiver. Roster-wide floor stays
+  // afforded: the Rat purse is 6, and tattered_cloak at 5 keeps every mob a free-tier target.
+  tattered_cloak:{ id:'tattered_cloak', displayName:'Tattered Cloak', iconId:'tattered_cloak', category:'armor',  basePrice:5, restockCost:2, startStock:3, maxStock:5, combatEffect:1 },
+  leather_boots: { id:'leather_boots',  displayName:'Leather Boots',  iconId:'leather_boots',  category:'armor',  basePrice:6, restockCost:3, startStock:3, maxStock:5, combatEffect:2 },
+  leather_cap:   { id:'leather_cap',    displayName:'Leather Cap',    iconId:'leather_cap',    category:'armor',  basePrice:7, restockCost:3, startStock:3, maxStock:5, combatEffect:2 },
+  leather_gloves:{ id:'leather_gloves', displayName:'Leather Gloves', iconId:'leather_gloves', category:'armor',  basePrice:8, restockCost:4, startStock:3, maxStock:5, combatEffect:3 },
+  leather_sling: { id:'leather_sling',  displayName:'Leather Sling',  iconId:'leather_sling',  category:'weapon', basePrice:9, restockCost:4, startStock:3, maxStock:5, combatEffect:3 },
 };
 
 // Display order for the shelf cards (base row, tier-2 row, batch-1 free four + license rung, batch-2 chain tops).
 export const ITEM_ORDER = ['club', 'metal_helmet', 'hp_flask', 'iron_sword', 'greater_flask', 'knight_helm',
   'tattered_shirt', 'bandages', 'wooden_shield', 'rusty_key',
   'leather_bracer', 'murk_tonic', 'pickaxe', 'quiver', 'zip_tonic',
-  'iron_buckler', 'iron_gauntlet'];
+  'iron_buckler', 'iron_gauntlet',
+  'tattered_cloak', 'leather_boots', 'leather_cap', 'leather_gloves', 'leather_sling'];
