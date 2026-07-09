@@ -1182,3 +1182,44 @@ flipped to `pixelScale === 1`. Files: monsters.js + main.js + test_suite.mjs + t
 - **DevLog: opted out** (standing — skip at every feature completion).
 - **Repo:** `github.com/Cupcakechan/mob-mart` (local folder `mob-mart`).
 - **Special "visits"** design (high-rep rare customers) — deferred.
+---
+
+## §14 — THE SCRAP SYSTEM + DOUG (design doc, 2026-07-08 — LOCKED, art in progress)
+
+The "new to obtain" lane (Daniel's call: gold is the only currency and too easily gained). Scrap is
+a SCARCE second resource with a sink gold cannot buy, gated behind a third worker.
+
+**Doug — the third worker (a GREMLIN).** A `WORKERS` registry entry (workers.js), third staff after
+Bob (serve) and Greg (restock); fills the vacated goblin-worker slot (never actually plumbed).
+- Art: 160×160, 6-frame IDLE + 6-frame WALK (960×160 each — matches Bob's bob_idle/bob_serve). Drawn
+  1:1 (the sizing lesson — authored at display size, no multiplier; ~160px on screen). frameSize
+  suite-pin applies, same as the dragon.
+- Walk is reused FLIPPED for the return trip — no separate return anim. "Step into the portal" is
+  Doug walking up and the existing portal swirl swallowing him (he occludes into it as it opens);
+  the walk IS the step-in. He raids the same six door destinations.
+- HIRE gate: a one-time gold cost (like Greg). No Doug, no scrap.
+- VOICE: Gollum-esque but his OWN take — third-person self-talk ("Doug found it, Doug did"),
+  sibilant + covetous, his own pet word for salvage (his "shinies"/"good bits", NOT "precious"). A
+  third register beside Bob's warmth and Greg's bluntness; `doug: true` tag (Greg's mechanism).
+  Line trust — written in Pass A.
+
+**Scrap — the second resource.** New state field + a HUD counter using the reserved `icon_scrap.png`
+(§9, currently unused).
+- SOURCE: TIMED SCAVENGE RUNS — Doug heads out the door portal every N seconds and returns with
+  scrap (mirrors Greg's restock timer; independent of sales, easy to tune). The "salvaging the
+  aftermath" fiction lives in the FLAVOR, not wired to the sales rate. Offline accrual like Greg's.
+- Deliberately SCARCE (slow vs gold's flow) — that scarcity is the whole point.
+
+**The forge — the sink.** Spend scrap to unlock SPECIAL OBJECTS (Doug's salvage finds). WORKING MODEL
+(confirm at Pass B): new registry items carrying a SCRAP unlock (like a license, paid in scrap)
+instead of a fame-gated gold license; once unlocked they stock + sell with gold like everything
+else. Reuses the item + license + shelf system → bounded, and scrap stays the exclusive key.
+
+**Sequencing — two passes:**
+1. Pass A — Doug: `WORKERS` entry + hire gate + scavenge duty cycle (scrap yield) + scrap field +
+   HUD counter + offline accrual + draw/animation (a drawRunner mirroring drawRestocker) + Doug's
+   voice lines. Gated on Daniel's art.
+2. Pass B — the forge: the scrap sink (unlock panel + special-objects line + their 64×64 icons).
+   Scrap is inert until B, so fold ONE object into A as a proof, or run A→B back-to-back.
+
+**Art (Daniel):** Doug idle + walk (160×160, 6-frame, 960×160 each); 64×64 icons for special objects.
