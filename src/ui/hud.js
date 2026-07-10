@@ -19,6 +19,11 @@ export function initHud(root) {
       <span class="hud-tier" id="hud-tier">&mdash;</span>
       <span class="hud-next" id="hud-next"></span>
     </div>
+    <div class="hud-chip scrap hidden" id="hud-scrap-chip" title="Salvage — Doug's haul from beyond the door">
+      <span class="hud-icon scrap" aria-hidden="true">&#9881;</span>
+      <span class="hud-label">Scrap</span>
+      <span class="hud-value" id="hud-scrap">0</span>
+    </div>
     <div class="hud-chip market hidden" id="hud-market-chip" title="Today's market: demand pays a bonus">
       <span class="hud-icon market" aria-hidden="true">&#9788;</span>
       <span class="hud-market-text" id="hud-market">&mdash;</span>
@@ -43,6 +48,17 @@ export function renderHud(state) {
   if (next) {
     const info = nextTierInfo(state.lifetimeRep ?? state.reputation);
     next.textContent = info ? `\u00b7 ${info.remaining}\u265b to ${info.label}` : '';
+  }
+
+  // Scrap (§14): hidden until the scavenger is hired or scrap is banked — the early HUD stays
+  // two-chip clean. Glyph follows the gold/rep text-glyph convention (⚙); icon_scrap.png stays
+  // reserved for a future icon pass.
+  const scrapChip = document.getElementById('hud-scrap-chip');
+  const scrapVal = document.getElementById('hud-scrap');
+  if (scrapChip && scrapVal) {
+    const show = state.workers?.scavenger?.owned === true || (state.scrap ?? 0) > 0;
+    scrapChip.classList.toggle('hidden', !show);
+    scrapVal.textContent = Math.floor(state.scrap ?? 0);
   }
 
   // Market Day banner (compact since the layout pass, 2026-07-07): the chip shows the actionable

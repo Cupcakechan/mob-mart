@@ -29,7 +29,16 @@ export function computeOffline(state, nowMs) {
   // inventory, not hours).
   const capHours = (CONFIG.offline?.capHours ?? 0) + sumEffect(state, 'offlineCap');
   const cappedSec = Math.min(awaySec, capHours * 3600);
-  const zero = { awaySec, cappedSec, sales: 0, gold: 0, rep: 0, consumed: {}, reserveUsed: 0, soldByItem: {}, gregRefills: 0, ratsFoiled: 0 };
+  // Doug's haul (§14): BOUNDED like Greg's refills — a COUNT of runs (offlineRunsCap), never
+  // time-derived, so a week away adds the same few runs' worth as a night. Time only limits
+  // DOWN: an absence shorter than N intervals grants fewer. Independent of the serve-worker
+  // sim below — Doug scavenges whether or not Bob sold anything.
+  const dougId = WORKER_ORDER.find((id) => WORKERS[id].role === 'scavenge' && isWorkerOwned(state, id)) ?? null;
+  const scrap = (dougId && cappedSec > 0)
+    ? Math.min(Math.floor(cappedSec / effectiveWorkerInterval(state, dougId)),
+               WORKERS[dougId].offlineRunsCap ?? 0) * (WORKERS[dougId].scrapPerRun ?? 0)
+    : 0;
+  const zero = { awaySec, cappedSec, sales: 0, gold: 0, rep: 0, consumed: {}, reserveUsed: 0, soldByItem: {}, gregRefills: 0, ratsFoiled: 0, scrap };
 
   // First owned serve-worker sets the pace (just Bob for now; a second serve-worker would need a
   // combined-throughput pass — deliberately out of scope until one exists).
@@ -113,16 +122,19 @@ export function computeOffline(state, nowMs) {
   const thiefShare = MONSTER_IDS.filter((id) => MONSTERS[id]?.thief === true).length / MONSTER_IDS.length;
   const ratsFoiled = Math.round(sales * thiefShare);
 
-  return { awaySec, cappedSec, sales, gold, rep, consumed, reserveUsed, soldByItem, gregRefills, ratsFoiled };
+  return { awaySec, cappedSec, sales, gold, rep, consumed, reserveUsed, soldByItem, gregRefills, ratsFoiled, scrap };
 }
 
 // Bank a computed result into state. Safe to call with a zero result (no-op, returns false).
 export function applyOffline(state, result) {
-  if (!result || result.sales <= 0) return false;
+  // A scrap-only absence (Doug hired, shelf empty or Bob unhired) still banks — and still shows
+  // the modal (main.js gates on sales OR scrap).
+  if (!result || (result.sales <= 0 && (result.scrap ?? 0) <= 0)) return false;
   state.gold += result.gold;
   state.reputation += result.rep;
   state.lifetimeRep = (state.lifetimeRep ?? 0) + result.rep;  // lifetime tracks every rep gain
                                                               // (always initialized by state/merge)
+  state.scrap = (state.scrap ?? 0) + (result.scrap ?? 0);    // Doug's bounded haul (§14)
   for (const [id, n] of Object.entries(result.consumed)) {
     if (state.items[id]) state.items[id].stock = Math.max(0, state.items[id].stock - n);
   }

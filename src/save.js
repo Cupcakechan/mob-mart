@@ -39,6 +39,8 @@ export function mergeSave(fresh, data) {
   }
   fresh.gold = Math.max(0, numOr(data.gold, fresh.gold));
   fresh.reputation = Math.max(0, numOr(data.reputation, fresh.reputation));
+  // Scrap (§14): additive schema — pre-Doug saves have no field and load as 0, same as gold's guard.
+  fresh.scrap = Math.max(0, numOr(data.scrap, 0));
   // Dual-track migration: pre-Fame saves have no lifetimeRep — seed it from current rep so every
   // tier the player had already reached stays reached. Lifetime can never be below current.
   fresh.lifetimeRep = Math.max(fresh.reputation, Math.max(0, numOr(data.lifetimeRep, 0)));
@@ -114,6 +116,7 @@ export function serializeSave(state) {
     version: SAVE_VERSION,
     gold: state.gold,
     reputation: state.reputation,
+    scrap: Math.max(0, Math.floor(state.scrap ?? 0)),   // Doug's salvage (§14) — additive field
     lifetimeRep: state.lifetimeRep ?? state.reputation,
     perks: { ...(state.perks ?? {}) },
     licenses: { ...(state.licenses ?? {}) },

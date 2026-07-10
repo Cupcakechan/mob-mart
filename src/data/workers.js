@@ -52,9 +52,29 @@ export const WORKERS = {
       deepFrom: 6, deepTier: 6, deepCostMult: 3,
     },
   },
+  scavenger: {
+    id: 'scavenger',
+    displayName: 'Doug',          // the Scavenger (§14 Pass A, Daniel 2026-07-10) — a gremlin with a
+    spriteId: 'doug',             //   salvage pack. Static fallback doug.png (160×160); strips land as
+                                  //   doug_idle.png / doug_walk_happy.png (960×160, 6 frames — Bob's
+                                  //   exact strip shape). Drawn 1:1 (the sizing law): ~160px on screen.
+    role: 'scavenge',
+    requiredTier: 3,              // <-- TUNABLE: Beloved — one rung above Greg's Trusted; scrap is a
+                                  //     MID-GAME layer by design (§14).
+    baseInterval: 24,             // <-- TUNABLE: seconds per scavenge run. Deliberately SLOW (~50
+                                  //     scrap/10min at full uptime — scarcity is the point, §14);
+                                  //     calibrate against forge costs at Pass B. NOT sped by
+                                  //     trickleSpeed/serveSpeed (scoped in effectiveWorkerInterval).
+    hireCost: 1200,               // <-- TUNABLE: ~2× Greg — the third staff goal purchase
+    scrapPerRun: 2,               // <-- TUNABLE: scrap banked per completed run
+    offlineRunsCap: 3,            // <-- TUNABLE: offline scrap = min(runs that fit, THIS CAP) ×
+                                  //     scrapPerRun. BOUNDED like Greg's reserve refills — a COUNT,
+                                  //     never time-derived: an overnight absence adds 6 scrap, not
+                                  //     hundreds (the §14 runaway guard).
+  },
 };
 
-export const WORKER_ORDER = ['mimic_merchant', 'restocker'];
+export const WORKER_ORDER = ['mimic_merchant', 'restocker', 'scavenger'];
 
 // True only if the worker has been hired. Guarded so a missing/legacy save reads as "not owned".
 export function isWorkerOwned(state, id) {

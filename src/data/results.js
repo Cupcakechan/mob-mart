@@ -466,4 +466,24 @@ export const WORKER_HIRE_LINES = {
       `The shelves are MY problem now.`,
     ],
   },
+  scavenger: {
+    log: [
+      `Doug is hired! He sniffed the counter, approved of nothing, and asked which door has the good bits.`,
+      `Doug joined the crew. The interview was mostly hissing. References: "the dark". Hired.`,
+    ],
+    // no bubble entry: Doug's voice rides his RETURN lines below (Greg's bubble is Greg's beat)
+  },
 };
+
+// Doug's homecoming quips (§14 Pass A) — fired by the scavenge tick on ~1 in 4 returns. His
+// register (COMEDY_BIBLE): Gollum-ADJACENT but his own — third-person self-talk, sibilant,
+// covetous of the haul; his pet words are "good bits"/"shinies" (never that OTHER word). Pool
+// lines: no second-person (bible hygiene law #2).
+export const DOUG_RETURN_LINES = [
+  `Doug came back with good bits. "Doug finds, yes. Doug always finds."`,
+  `Doug emptied his pack. Mostly scrap. One confused snail. He kept the snail.`,
+  `"Shiny bitses for the pile," Doug whispered. Nobody asked. He told the pile.`,
+  `Doug returned humming. The pack clanked. "Good bits, good bits, all for usss."`,
+  `Doug slid back through the door sideways. "The beyond has SO much junk," he said, delighted.`,
+  `Doug counted his haul twice. Once out loud, once to the haul.`,
+];

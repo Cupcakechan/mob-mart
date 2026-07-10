@@ -3140,5 +3140,97 @@ console.log('M4 auto-serve worker — smoke test\n');
   ok(!lockedLeak && sawLicensed, 'batch 3b: license gate holds locked; the five become wantable once bought');
 }
 
+// 57. Doug + scrap (§14 Pass A) — the third worker, the second resource; worker-count EXACT lives here --
+{
+  const { WORKERS, WORKER_ORDER } = await import('./src/data/workers.js');
+  const { createInitialState } = await import('./src/state.js');
+  const { canHireWorker, hireWorker, effectiveWorkerInterval, update } = await import('./src/game.js');
+  const { computeOffline, applyOffline } = await import('./src/offline.js');
+  const { serializeSave, mergeSave } = await import('./src/save.js');
+  const { WORKER_HIRE_LINES, DOUG_RETURN_LINES } = await import('./src/data/results.js');
+  const { CONFIG } = await import('./src/config.js');
+
+  // THE NEWEST STAFF PASS owns the exact worker total (the batch-section doctrine, applied to workers).
+  const d = WORKERS.scavenger;
+  ok(WORKER_ORDER.length === 3 && WORKER_ORDER.includes('scavenger'),
+     'doug: three staff on the roster — Bob, Greg, Doug');
+  ok(d?.role === 'scavenge' && d.requiredTier === 3 && d.hireCost === 1200
+     && d.baseInterval === 24 && d.scrapPerRun === 2 && d.offlineRunsCap === 3,
+     'doug: registry contract — Beloved gate, 1200g, 24s runs, 2 scrap/run, offline cap 3');
+
+  // Fresh state: scrap exists at zero; Doug starts unhired.
+  const fresh = createInitialState();
+  ok(fresh.scrap === 0 && fresh.workers.scavenger?.owned === false,
+     'doug: fresh state carries scrap 0 and an unhired scavenger');
+
+  // The hire gate: rich but unknown (below Beloved) — no; at Beloved — yes, and the purse pays exactly.
+  const poor = shopState(); poor.gold = 5000; poor.lifetimeRep = 0;
+  ok(!canHireWorker(poor, 'scavenger'), 'doug: gold alone cannot hire below Beloved (fame gate holds)');
+  const rich = shopState(); rich.gold = 1500;
+  rich.lifetimeRep = CONFIG.reputation.tiers[3].min;                 // exactly Beloved
+  ok(canHireWorker(rich, 'scavenger') && hireWorker(rich, 'scavenger')
+     && rich.gold === 300 && rich.workers.scavenger.owned === true,
+     'doug: hire lands at Beloved and deducts exactly 1200');
+
+  // Interval scoping (regression pin for the trickleSpeed leak): Swift Wings speeds GREG, never Doug.
+  const perky = shopState(); perky.perks.swift_wings = 2;
+  ok(effectiveWorkerInterval(perky, 'scavenger') === d.baseInterval
+     && effectiveWorkerInterval(perky, 'restocker') < WORKERS.restocker.baseInterval,
+     'doug: trickleSpeed is scoped to the restock role — the scavenge clock never speeds up');
+
+  // The scavenge tick: a completed run banks exactly scrapPerRun and re-arms a full interval.
+  const run = shopState(); run.workers.scavenger.owned = true; run.workers.scavenger.timer = 0.1;
+  const before = run.scrap ?? 0;
+  update(run, 0.2);
+  ok(run.scrap === before + d.scrapPerRun && run.workers.scavenger.timer > d.baseInterval - 1,
+     'doug: a run banks 2 scrap and re-arms the 24s clock');
+
+  // Offline (§14's runaway guard): BOUNDED — a week away pays the same cap as a night; a
+  // sub-interval absence pays nothing; scrap banks even with ZERO sales (no serve-worker).
+  const away = shopState(); away.workers.scavenger.owned = true;
+  for (const id of Object.keys(away.workers)) if (id !== 'scavenger') away.workers[id].owned = false;
+  away.lastSeen = Date.now() - 7 * 24 * 3600 * 1000;                 // a week
+  const week = computeOffline(away, Date.now());
+  ok(week.sales === 0 && week.scrap === d.offlineRunsCap * d.scrapPerRun,
+     'doug: a week offline pays the bounded cap (3 runs x 2 = 6), never time-scaled');
+  ok(applyOffline(away, week) === true && away.scrap === 6,
+     'doug: a scrap-only absence still banks (applyOffline no longer needs sales)');
+  const brief = shopState(); brief.workers.scavenger.owned = true;
+  brief.lastSeen = Date.now() - 10 * 1000;                           // under one interval
+  ok(computeOffline(brief, Date.now()).scrap === 0,
+     'doug: a sub-interval absence scavenges nothing (time limits DOWN only)');
+
+  // Save round-trip: scrap persists; a pre-Doug save (no field) loads as 0 — additive schema.
+  const st = shopState(); st.scrap = 7;
+  const back = mergeSave(createInitialState(), JSON.parse(JSON.stringify(serializeSave(st))));
+  ok(back.scrap === 7, 'doug: scrap survives the save round-trip');
+  const legacy = serializeSave(shopState()); delete legacy.scrap;
+  ok(mergeSave(createInitialState(), legacy).scrap === 0,
+     'doug: a pre-scrap save loads at scrap 0 (additive schema, no migration)');
+
+  // The voice: hire lines authored; the return pool is nonempty, Doug-voiced, and pool-hygienic
+  // (no second-person — bible law #2).
+  ok((WORKER_HIRE_LINES.scavenger?.log?.length ?? 0) >= 1,
+     'doug: hire lines ride the registry beat (zero new game.js wiring)');
+  ok(DOUG_RETURN_LINES.length >= 4 && DOUG_RETURN_LINES.every((t) => t.includes('Doug') && !/\byou\b/i.test(t)),
+     'doug: return quips — his register, no second-person');
+
+  // Art contract (the dragon lesson, worker edition): 160px frames, whole-frame strips.
+  // existsSync-guarded — pins activate as each PNG lands in assets/sprites/.
+  {
+    const { readFileSync, existsSync } = await import('node:fs');
+    const dim = (f) => { const b = readFileSync(f); return [b.readUInt32BE(16), b.readUInt32BE(20)]; };
+    let checked = 0;
+    for (const f of ['doug.png', 'doug_idle.png', 'doug_walk_happy.png']) {
+      const p = `./assets/sprites/${f}`;
+      if (!existsSync(p)) continue;                                  // lands with Daniel's art drop
+      const [w, h] = dim(p);
+      ok(h === 160 && w % 160 === 0, `doug art: ${f} is 160px frames, whole-frame width (${w}x${h})`);
+      checked++;
+    }
+    ok(checked >= 1, 'doug art: at least one doug PNG is pinned (guard-the-guard)');
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

@@ -34,7 +34,7 @@ initKongregate();
 // lastSeen, so a reload can't collect the same window twice. Modal only shows when there's actually
 // something to report (quick reloads and worker-less/empty-shelf returns stay silent).
 const offline = computeOffline(state, Date.now());
-if (offline.sales > 0 && offline.awaySec >= CONFIG.offline.minAwaySec) {
+if ((offline.sales > 0 || (offline.scrap ?? 0) > 0) && offline.awaySec >= CONFIG.offline.minAwaySec) {  // scrap-only absences show too (§14)
   applyOffline(state, offline);
   saveState(state);
   const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
@@ -46,6 +46,11 @@ if (offline.sales > 0 && offline.awaySec >= CONFIG.offline.minAwaySec) {
   // a full shelf that never needed the backroom earns Bob the credit alone.
   document.getElementById('offline-greg')
     ?.classList.toggle('hidden', !(offline.gregRefills > 0 && offline.reserveUsed > 0));
+  // Doug's haul row — shown only when he actually brought something back (unhired or a
+  // sub-interval absence both read 0 and stay hidden).
+  setText('offline-scrap-n', offline.scrap ?? 0);
+  document.getElementById('offline-doug')
+    ?.classList.toggle('hidden', !((offline.scrap ?? 0) > 0));
   setText('offline-rats-n', offline.ratsFoiled);
   document.getElementById('offline-rats')
     ?.classList.toggle('hidden', !(offline.ratsFoiled > 0));
@@ -150,6 +155,9 @@ loadSprite('beetle_walk_happy', 'assets/sprites/beetle_walk_happy.png'); // auth
 loadSprite('dragon', 'assets/sprites/dragon.png');                // THE INSPECTOR (Special Visits, 2026-07-07) —
 loadSprite('dragon_idle', 'assets/sprites/dragon_idle.png');      //   same contract; all three authored + measured
 loadSprite('dragon_walk_happy', 'assets/sprites/dragon_walk_happy.png'); // (footPad 14, ~82% tall fill, drawn 1:1 at pixelScale 1).
+loadSprite('doug', 'assets/sprites/doug.png');                       // DOUG the Scavenger (§14 Pass A):
+loadSprite('doug_idle', 'assets/sprites/doug_idle.png');             //   160px frames drawn 1:1, 6f strips
+loadSprite('doug_walk_happy', 'assets/sprites/doug_walk_happy.png'); //   (Bob's shape); footPad measured
                                                                   //   "_walk_happy" name kept by convention; the
                                                                   //   authored content will be a grumpy stomp.
 

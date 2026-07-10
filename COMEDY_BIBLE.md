@@ -528,3 +528,16 @@ deterministically per (day, event), so growing a pool reshuffles that event's ca
 
 Consumable-verb note: both consumable events say "swallowable" on purpose — the hygiene law's
 register (the Rusty Key is a consumable; liquid-only verbs stay banned).
+
+
+---
+
+## Doug’s register (§14 Pass A, 2026-07-10)
+
+The third staff voice, beside Bob (warm) and Greg (blunt): **Gollum-ADJACENT but his own** —
+third-person self-talk (“Doug finds, yes. Doug always finds.”), sibilant and covetous of the
+haul, half a conversation always running with himself or the pile. His pet words are **“good
+bits” / “shinies”** — never that OTHER word (the line between homage and impression). Beats:
+the HIRE lines ride `WORKER_HIRE_LINES.scavenger`; the RETURN quips (`DOUG_RETURN_LINES`,
+results.js) fire on ~1 in 4 homecomings so the 24s cadence never spams the log. Pool-line
+hygiene applies (no second-person; suite-checked in section 57).

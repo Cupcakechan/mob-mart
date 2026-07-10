@@ -6,6 +6,7 @@ import { MONSTERS } from '../data/monsters.js';
 import { ITEMS, ITEM_ORDER } from '../data/items.js';
 import { MARKET_EVENTS, boardQuipFor } from '../data/marketevents.js';   // Special-of-the-Day board (leaf, no cycle)
 import { sumEffect } from '../data/upgrades.js';
+import { WORKERS } from '../data/workers.js';   // Doug's scavenge clock (leaf data module, no cycle)
 import { getSprite } from './sprites.js';
 
 const W = CONFIG.stage.width, H = CONFIG.stage.height;
@@ -524,6 +525,85 @@ function drawSpecialBoard(ctx, state, tMs) {
   ctx.restore();
 }
 
+// --- Doug the Scavenger (§14 Pass A): the third worker, a GROUND gremlin at the counter's right
+// corner — nearest the door he raids. Unlike Greg's echo-errand, Doug's round trip is a PURE
+// FUNCTION of his worker timer: idle at home, walk to the door, GONE through it, walk back — so
+// his homecoming lands exactly when the tick banks the scrap (game.js). One clock, nothing to
+// desync; any timer state maps to a pose (load/hire mid-cycle just snaps him to the right leg).
+// Draw order: with the workers — AFTER the door (wall furniture, so he walks in FRONT of it;
+// the 2026-07-10 layer fix) and BEFORE the counter (it overlaps his legs at home). He melts
+// through the threshold on a short alpha fade — the door's own purple glow sells the magic,
+// and the shared playPortalOpen one-shot stays celebrant-only (no re-entrancy to manage).
+const DOUG = {
+  homeX: 870,          // tucked behind the counter, clear of the DOOR. Budget (the bottom-bar
+                       // lesson): his content spans center-67..center+58 (measured cols), the door
+                       // spans 934-1254 (drawn after him, so it CLIPS anything overlapping while
+                       // idle), Bob's arms reach ~784, counter face ends ~970. Window: 867-876.
+                       // 870 = 6px clear of the door, 19px clear of Bob, whole body behind the desk.
+  feetY: COUNTER.baseY - 60,  // standing on the floor BEHIND the counter — less lifted than
+                              // stool-Bob's -82: legs occluded, pack + head clear the desk
+  doorFeetY: FLOOR_Y - 4,     // feet at the door threshold — he drifts 'deeper' as he crosses
+  height: 160,         // NATIVE frame — drawn 1:1 (the sizing law; Bob/dragon precedent)
+  footPadWalk: 10,     // MEASURED (pngjs, walk frames: 9-12) — soles on the walk line
+  footPadIdle: 12,     // PROVISIONAL — idle strip pending re-measure (walk's standing frames sit
+                       //   at 12); a one-value dial if his idle feet float or sink on sight
+  walkSec: 2.6,        // each leg (out/back) — an unhurried gremlin shuffle over the ~155px run
+  fadeSec: 0.45,       // threshold melt — the last/first beats of the out/back legs (alpha ramp)
+  idleFrac: 0.3,       // fraction of the interval spent home before departing (sorting the haul)
+  placeholderColor: '#5a7a4a',   // moss-green slab if every doug sprite is absent
+};
+const DOUG_ANIMS = {
+  idle: { spriteId: 'doug_idle',       fps: 6 },   // frames auto-sliced by aspect (square frames),
+  walk: { spriteId: 'doug_walk_happy', fps: 8 },   //   so the static doug.png fallback slices as 1
+};
+
+function drawScavenger(ctx, state, tMs) {
+  const w = state.workers?.scavenger;
+  if (!w?.owned) return;                                     // hire-gated, like Bob's arc and Greg
+  const interval = WORKERS.scavenger?.baseInterval ?? 24;    // scavenge has no speed perks (scoped
+                                                             //   in game.js) — this IS the clock
+  const walk = Math.min(DOUG.walkSec, interval / 4);         // degenerate-interval guard: legs never overlap
+  const timer = Math.max(0, Math.min(w.timer ?? interval, interval));
+  const elapsed = interval - timer;                          // 0 at run start, interval at homecoming
+  const idleSec = interval * DOUG.idleFrac;
+  const outEnd = idleSec + walk, backStart = interval - walk;
+  const dl = (a, b, t) => a + (b - a) * t;                   // local lerp
+
+  let x = DOUG.homeX, y = DOUG.feetY, mode = 'idle', flip = false, alpha = 1;
+  if (elapsed < idleSec) { /* home: idle, sorting the last haul */ }
+  else if (elapsed < outEnd) {                               // out-leg: home -> door (faces right, as authored)
+    const t = (elapsed - idleSec) / walk;
+    x = dl(DOUG.homeX, PORTAL.centerX, t); y = dl(DOUG.feetY, DOUG.doorFeetY, t); mode = 'walk';
+    alpha = Math.max(0, Math.min(1, (outEnd - elapsed) / DOUG.fadeSec));   // melt into the threshold
+  } else if (elapsed < backStart) {
+    return;                                                  // through the door — gone scavenging
+  } else {                                                   // back-leg: door -> home, MIRRORED
+    const t = (elapsed - backStart) / walk;
+    x = dl(PORTAL.centerX, DOUG.homeX, t); y = dl(DOUG.doorFeetY, DOUG.feetY, t); mode = 'walk'; flip = true;
+    alpha = Math.max(0, Math.min(1, (elapsed - backStart) / DOUG.fadeSec));  // and melt back out
+  }
+
+  const cfg = DOUG_ANIMS[mode];
+  const spr = getSprite(cfg.spriteId) ?? getSprite('doug');  // strip -> static -> placeholder
+  const box = DOUG.height;
+  const footPad = mode === 'walk' ? DOUG.footPadWalk : DOUG.footPadIdle;
+  const topY = y + footPad - box;                            // content bottom (soles) rests on y
+  if (!spr) {                                                // placeholder slab (standing pattern)
+    ctx.fillStyle = DOUG.placeholderColor;
+    ctx.fillRect(x - box * 0.25, topY + box * 0.2, box * 0.5, box * 0.8);
+    return;
+  }
+  const frames = Math.max(1, Math.round(spr.naturalWidth / spr.naturalHeight));  // aspect auto-slice
+  const frame = Math.floor((tMs / 1000) * cfg.fps) % frames;
+  const fw = spr.naturalWidth / frames;
+  ctx.save();
+  ctx.globalAlpha = alpha;                                   // threshold fade (1 everywhere else)
+  if (flip) { ctx.translate(x, 0); ctx.scale(-1, 1); ctx.translate(-x, 0); }    // instant mirror — masked
+  ctx.drawImage(spr, frame * fw, 0, fw, spr.naturalHeight,                      //   by the door/counter ends
+    x - box / 2, topY, box * (fw / spr.naturalHeight), box);
+  ctx.restore();
+}
+
 export function drawScene(ctx, state, tMs) {
   ctx.clearRect(0, 0, W, H);
 
@@ -531,11 +611,16 @@ export function drawScene(ctx, state, tMs) {
 
   drawWallShelf(ctx, state, tMs);  // goods on the wall (diegetic shelf, C-lite — display only)
   drawSpecialBoard(ctx, state, tMs); // the Special-of-the-Day sign over Bob (Market Day's comedy home)
+  drawPortal(ctx, tMs);         // the DOOR is furniture ON the far wall: it paints with the wall,
+                                // BEFORE every character — Doug approaches it in FRONT (2026-07-10
+                                // layer fix); celebrants + queue still draw later, so they overlap
+                                // it as before. Its content (x990-1198, measured) never meets the
+                                // counter (ends 970), so the desk corner is untouched by the move.
   drawCounterShadow(ctx);       // contact shadow FIRST: grounds the desk AND Bob standing behind it
   drawBob(ctx, state, tMs);     // before the counter, so the counter front overlaps his lower body
   drawRestocker(ctx, state, tMs); // the flyer hovers left of Bob — same layer, same counter overlap
+  drawScavenger(ctx, state, tMs); // Doug at the counter's right corner — in FRONT of the door, behind the desk
   drawCounter(ctx);
-  drawPortal(ctx, tMs);
   drawQueue(ctx, state, tMs);
   drawCelebrants(ctx, tMs);     // served-mob ghosts: hop at the counter, then march into the door
   drawBubble(ctx, state, tMs);  // front customer's ask, pinned to the asker (hybrid stage 2)

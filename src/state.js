@@ -40,6 +40,8 @@ export function createInitialState() {
   return {
     screen: 'title',            // 'title' | 'shop'
     gold: CONFIG.economy.startingGold,
+    scrap: 0,                   // SALVAGE (§14): Doug's second resource — flows only once the
+                                // scavenger is hired; spent at the forge (Pass B). Persisted.
     reputation: CONFIG.economy.startingReputation, // SPENDABLE rep balance (Fame perks draw this down)
     lifetimeRep: CONFIG.economy.startingReputation, // never decreases; drives tiers — spending can't
                                                     // cost you a gate you earned (dual-track Fame)

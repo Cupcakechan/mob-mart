@@ -26,13 +26,13 @@ body{
 }
 #scene{position:absolute;inset:0;width:1280px;height:720px;image-rendering:pixelated;}
 
-/* HUD (top). LAYOUT BUDGET (2026-07-07, measured): the wall-shelf unit owns x60..372 with top-row
-   icons at y38..86, and chips run y16..62 — so the HUD's box is BAND-BOUND, never stage-centered:
-   left:396 (shelf's plank edge 372 + breath) .. right:16. Gold/Rep center inside the band via
-   justify-content (worst reachable cluster ~600px vs the ~780px to the Menu button — the long
-   "to <tier>" remainder only exists below Legendary, where rep is <=4 digits, so the widths
-   anticorrelate). The market chip is ABSOLUTE within this same box (top-right corner, under
-   Menu) and out of the flex flow. */
+/* HUD (top). LAYOUT BUDGET (re-measured 2026-07-10 — the Scrap chip broke the 2026-07-07 budget,
+   the bottom-bar lesson replayed): the wall-shelf unit owns x60..372, so the HUD box stays
+   BAND-BOUND at left:396 (plank edge + breath) .. right:16. The row is now LEFT-ANCHORED —
+   three chips (Gold/Rep/Scrap) reach ~770px at endgame numbers (7-digit gold, MYTHIC badge),
+   which a centered row walked into the market dock's column. Separation is now VERTICAL and
+   structural: chips own y16..62; the market chip docks at top:68 (fully BELOW the row), so no
+   number width can ever collide. A 4th chip does NOT fit the band — redesign, don't shrink. */
 .hud{position:absolute;top:16px;left:396px;right:16px;z-index:5;}
 .hud-chip{
   display:flex;align-items:center;gap:10px;background:var(--panel-bg);
@@ -140,7 +140,7 @@ body{
 .dismiss-btn:disabled{opacity:.35;cursor:not-allowed;}
 
 /* HUD holds two chips (Gold + Rep) in a row, centered INSIDE the band above (never the stage) */
-.hud{display:flex;gap:12px;justify-content:center;}
+.hud{display:flex;gap:12px;justify-content:flex-start;}  /* left-anchored (2026-07-10): resources left, system right */
 .hud-icon.rep{color:#b794f6;}
 .hud-tier{
   color:#e6ddf7;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:1px;
@@ -474,7 +474,7 @@ body{
    right edge = stage x1264, so right:0/top:52 lands the chip at stage right:16, y68 — below
    Menu's bottom ~56, above the door's top ~150, and right of the fame panel's edge at x960:
    the widest compact label, "Consumables +50%" ~213px, still starts past x1050). */
-.hud-chip.market { position: absolute; top: 52px; right: 0; padding: 8px 14px; }
+.hud-chip.market { position: absolute; top: 68px; right: 0; padding: 8px 14px; }
 .hud-icon.market { color: #ff9d3b; font-size: 16px; }
 .hud-market-text { color: #ffd9a8; font-weight: 700; font-size: 14px; letter-spacing: .3px; white-space: nowrap; }
 

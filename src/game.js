@@ -9,7 +9,7 @@ import { UPGRADES, upgradeLevel, upgradeCost, isMaxed, sumEffect } from './data/
 import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost,
   workerLevel, workerLevelCost, isWorkerLevelMaxed, sumWorkerEffect } from './data/workers.js';
 import { randInt, pick, weightedPick } from './utils.js';
-import { WORKER_HIRE_LINES } from './data/results.js';
+import { WORKER_HIRE_LINES, DOUG_RETURN_LINES } from './data/results.js';
 import { resolveCombat } from './combat.js';
 import { reputationTier } from './reputation.js';
 import { logLine } from './messages.js';
@@ -589,7 +589,10 @@ export function effectiveWorkerInterval(state, id) {
   // Without this scope, buying counter upgrades would silently speed the restock trickle too.
   // The restock role has its own dial: Swift Wings' trickleSpeed, same divisor form as serveSpeed
   // (0.25/level -> interval x0.8/x0.667 — the honest player-facing number is -20%/-33%).
-  if (WORKERS[id]?.role !== 'serve') return base / (1 + sumPerkEffect(state, 'trickleSpeed'));
+  // Swift Wings' trickleSpeed is the RESTOCK dial only — without this scope it would silently
+  // speed Doug's scavenge runs too (the exact leak the serve-scope note above warns about).
+  if (WORKERS[id]?.role === 'restock') return base / (1 + sumPerkEffect(state, 'trickleSpeed'));
+  if (WORKERS[id]?.role !== 'serve') return base;             // scavenge (and future roles): the plain dial
   return base / (1 + sumEffect(state, 'serveSpeed'));
 }
 
@@ -692,6 +695,21 @@ function updateWorkers(state, dt) {
       } else {
         w.timer = 1;                                             // blocked (all full / broke) -> 1s recheck
       }
+    }
+
+    if (role === 'scavenge') {
+      w.timer -= dt;
+      if (w.timer > 0) continue;
+      // The haul lands exactly as Doug's walk-back ends — drawScavenger choreographs the round trip
+      // as a PURE FUNCTION of this timer (scene.js), so fiction and economy share one clock and
+      // nothing can desync. A run is never blocked: the beyond always has junk.
+      state.scrap = (state.scrap ?? 0) + (WORKERS[id].scrapPerRun ?? 0);
+      w.timer = effectiveWorkerInterval(state, id);
+      // His register, now and then — every return would spam the log at a 24s cadence.
+      if (Math.random() < 0.25 && DOUG_RETURN_LINES.length) {
+        pushLog(state, { text: pick(DOUG_RETURN_LINES), repDelta: 0 });
+      }
+      state.uiDirty = true;                                    // the HUD scrap chip re-renders
     }
   }
 }
