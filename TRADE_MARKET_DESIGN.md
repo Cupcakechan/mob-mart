@@ -37,12 +37,15 @@ the referee. Companion documents: `ECONOMY_AUDIT.md` (the measurements this refo
 FAUCETS                          MATERIALS                     SINKS
 serve a slime ────────────▶ Condensed Slime Core ─┐
 serve a bat ──────────────▶ Echo Fang            ─┤          THE TRADE MARKET (daily rates)
-serve Froggo ─────────────▶ Bogstone Bauble      ─┤            materials + gold ⇒ trade-tier
-serve a spider (upcoming) ▶ Silk Bundle          ─┼─ capped ─▶   stock items
-serve a demon (upcoming) ─▶ Infernal Ember       ─┤  stores   RELIC RESTORES (hard)
-Inspector visits ─────────▶ Inspector's Seal     ─┤            scrap + gold + materials
-EXPEDITIONS (targeted, ───▶ (the door/party you  ─┤          COMMISSIONS (later)
- rate-limited bursts)         chose to send)      ┘            N trade-tier items by deadline
+serve the dragon ─────────▶ Dragon Scale         ─┤            materials + gold ⇒ trade-tier
+serve Froggo ─────────────▶ Bogstone Bauble      ─┼─ capped ─▶   stock items
+serve a spider (upcoming) ▶ Silk Bundle          ─┤  stores   RELIC RESTORES (hard)
+serve a demon (upcoming) ─▶ Infernal Ember       ─┤            scrap + gold + materials
+(skeleton / rat / beetle ─▶ Femur / Trinket /    ─┤          COMMISSIONS (later)
+ as those customers land)   Carapace Shard       ─┤            N trade-tier items by deadline
+Inspector visits (VIP) ───▶ Inspector's Seal     ─┤
+EXPEDITIONS (targeted, ───▶ (the door/party you  ─┤
+ rate-limited bursts)         chose to send)      ┘
 
 gold keeps its lane: basics restock, licenses, upgrades, training, expedition fees
 scrap keeps its lane: relic-forge fuel (now alongside materials)
@@ -62,20 +65,29 @@ a small random chance on Doug's scavenges, plus VIP visits for the Seal. Data-dr
 born a faucet** with zero extra wiring — which is what makes spider and demon (art ready) real
 additions instead of quip carriers.
 
-**The roster (Daniel's PixelLab icons, 2026-07-11) and source mapping:**
+**The roster (Daniel's PixelLab icons — ten of them — mapping LOCKED by Daniel, 2026-07-11):**
 
 | Material | Source | Status |
 |---|---|---|
 | Condensed Slime Core | Slimey (serve drop) | confirmed |
 | Echo Fang | Batty | confirmed |
+| Dragon Scale | the Dragon (tenth icon, authored 2026-07-11) | confirmed |
 | Bogstone Bauble | Froggo | confirmed |
 | Silk Bundle | Spider — upcoming customer | confirmed, lands with the customer |
 | Infernal Ember | Demon — upcoming customer | confirmed, lands with the customer |
-| Inspector's Seal | The Inspector (VIP visits become rare-material faucets) | confirmed |
-| Lucky Femur Charm | future customer (skeleton?) | **Daniel assigns** |
-| Stolen Trinket | future customer (goblin/imp?) | **Daniel assigns** |
-| Polished Carapace Shard | future customer (beetle/crab?) — or the dragon | **Daniel assigns** |
-| *(dragon's material)* | **OPEN** — none of the nine reads as dragon; a tenth icon (scale?) or Carapace | **Daniel decides** |
+| Lucky Femur Charm | Skeleton — future customer | confirmed, lands with the customer |
+| Stolen Trinket | Rat — future customer | confirmed, lands with the customer |
+| Polished Carapace Shard | Beetle — future customer | confirmed, lands with the customer |
+| Inspector's Seal | The Inspector (VIP) | confirmed |
+
+**The VIP pattern (this answers "what do VIPs even add"):** every VIP carries a RARE material
+dropped on visits — the Seal is the first. Whether it drops per visit or only on a PASSED
+inspection is a later dial (the passed-inspection version gives his visits real stakes). Rare
+by supply: VIP cadence makes Seals the scarce ingredient late recipes lean on (§7's hard
+restores, premium offers). Future VIPs each arrive with their own rare material. The fiction
+is airtight and free: the Inspector IS a dragon (glasses, clipboard) — the customer dragon
+sheds scales, the dragon bureaucrat stamps seals. Mapping note: the roster names three future
+customer families outright — Skeleton, Rat, Beetle — each born a faucet when its art lands.
 
 ## 4. The laws (these bite — same standing as the handoff's laws)
 
@@ -208,10 +220,12 @@ single policy is optimal across days.
 
 ## 13. Open questions (Daniel)
 
-1. The dragon's material (tenth icon, or assign Polished Carapace?), and the future owners of
-   Lucky Femur Charm / Stolen Trinket (skeleton? goblin?) — art-fiction pairing is yours.
+1. **RESOLVED (Daniel, 2026-07-11):** the full mapping is locked in §3 — Dragon Scale is the
+   tenth icon; Skeleton, Rat, and Beetle own Femur/Trinket/Carapace as future customers; the
+   Inspector (himself a dragon) keeps the Seal as the first VIP rare-material faucet.
 2. Confirm the first trade-tier candidates (Iron Sword / Greater Flask / Knight Helm) or name
-   your own — settled at Market Pass A's options round either way.
+   your own — settled at Market Pass A's options round either way. **Nothing else gates the
+   pass: Market Pass A opens next session.**
 
 ## 14. Not decided here
 

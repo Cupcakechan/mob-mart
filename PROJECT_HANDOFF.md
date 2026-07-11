@@ -56,8 +56,10 @@ last, against what the harness measures then).
 
 **NEXT SESSION — MARKET PASS A.** Open with its options round (drop shape + rates, caps, offer
 count, the proof trade item, board UI direction — TRADE_MARKET_DESIGN.md §5/§14 lists the
-dials), after Daniel answers the design doc's §13 (the dragon's material; Femur/Trinket/
-Carapace owners). Acceptance for this and every reform pass: the harness grows a policy for
+dials) — §13 is ANSWERED (2026-07-11: Dragon Scale is the tenth icon; Skeleton, Rat, and
+Beetle own Femur/Trinket/Carapace as future customers; the Inspector — himself a dragon —
+keeps the Seal as the first VIP rare-material faucet), so nothing gates the pass. Acceptance
+for this and every reform pass: the harness grows a policy for
 the new system and the system-BLIND bot must measurably lose; the reform-level target is the
 variety-death moment (1h50m baseline) moving substantially later. Save schema stays additive;
 materials arrive registry-driven. PARKED but live: **P2 (Mythic → 40k)** — a one-value pass
@@ -1461,8 +1463,7 @@ humor/fair-F2P.
 
 **The design:** `TRADE_MARKET_DESIGN.md` — locked at DIRECTION level, all numbers deferred to
 per-pass options rounds with the harness as referee. Carries: the material roster (Daniel's
-nine PixelLab icons, source-mapped; the dragon's material is OPEN — his §13 answer gates
-Market Pass A), the six economy laws, the Trade Market spec (seeded daily rates + forecast on
+ten PixelLab icons, source-mapped and LOCKED same day — see NEXT), the six economy laws, the Trade Market spec (seeded daily rates + forecast on
 the reworked Special board), expeditions (family mastery via Bestiary counts; NOBODY DIES —
 the battle-log gag and the supply loop are split loops), hard relic restores + economy
 effects, commissions, offline party management, Franchise-as-factions, the 8-step locked
@@ -1475,5 +1476,9 @@ log line contradicted the pull line one command later. Standing rule now: after 
 confirm `git log -1` equals the expected remote tip before any work. (Benign this time — the
 skipped commit was doc-only, verified — but only by luck.)
 
-**NEXT:** Daniel answers design doc §13 (dragon material; Femur/Trinket/Carapace owners),
-then MARKET PASS A opens with its options round.
+**NEXT:** MARKET PASS A opens with its options round. Design doc §13 was answered the same
+day: Dragon → Dragon Scale (tenth icon authored); Skeleton, Rat, and Beetle named as future
+customers owning Femur / Trinket / Carapace; the Inspector — himself a dragon, glasses and
+clipboard — keeps the Seal as the first VIP rare-material faucet (drop-per-visit vs
+drop-on-passed-inspection is a later dial). This also closes the ancient "rat still an open
+call" note from the §13 art record: the rat is in, as a thief.
