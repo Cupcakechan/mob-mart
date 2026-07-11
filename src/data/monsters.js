@@ -113,6 +113,27 @@ export const MONSTERS = {
     material: 'carapace_shard', materialEveryNServes: 12,
   },
 
+  demon: {
+    id:'demon', displayName:'Demmy', spriteId:'demon', combatMod:2, budgetRange:[20,36],
+    footPad: 10,         // MEASURED (2026-07-11, pngjs): uniform across static + idle; walk 10-11
+                         // (±1, the Froggo-class variance — negligible). Content 81-84% of frame:
+                         // trio-class mass, NO spriteScale (the Beetley precedent).
+    // DEMMY (reform sequence step 3a — Daniel picked Option 1, 2026-07-11). Comic lever: the
+    // APOLOGETIC MENACE — the roster's FIRST real threat (combatMod +2: he WINS fights, and is
+    // terribly sorry about every one of them; his excellent/success tiers are the log's new
+    // victory-as-apology register). Economic identity: the NEW TOP SPENDER ([20,36], above
+    // Froggo's [16,30]) and the second weapon lead (Skele finally has an aisle colleague) —
+    // and his iron_sword signature makes him THE MARKET'S DEMAND ENGINE: a premium buyer
+    // chasing the trade-tier good is the organic answer to the thin sword margin the
+    // 2026-07-11 retune measured. Pre-license the unlock filter hides the sword and he buys
+    // base goods (the Froggo precedent). combatMod note: +2 shifts the outcome mix — one
+    // tuning look owed after feel, same as every customer landing.
+    anim: { frames: 4, fps: 6 },   // idle + walk strips IN (2026-07-11), shared 4x128 contract
+    categoryWeights: { weapon: 3, consumable: 2, armor: 1 },   // sword-first; flasks for the nerves
+    itemBias: { iron_sword: 3, greater_flask: 2 },   // signature loves: the TRADE item leads
+    material: 'infernal_ember', materialEveryNServes: 15,   // premium-rare, the Froggo logic
+  },
+
   dragon: {
     id: 'dragon', displayName: 'The Inspector', spriteId: 'dragon', combatMod: 1,
     budgetRange: [200, 400],   // the once-a-day whale: buys anything on the shelf, fame-scaled
@@ -141,4 +162,4 @@ export const MONSTERS = {
   },
 };
 
-export const MONSTER_IDS = ['slime', 'bat', 'skeleton', 'frog', 'rat', 'beetle', 'dragon'];
+export const MONSTER_IDS = ['slime', 'bat', 'skeleton', 'frog', 'rat', 'beetle', 'demon', 'dragon'];

@@ -78,7 +78,7 @@ the Pass A recon):**
 | Stolen Trinket | Ratty — live customer (the thief, 2026-07-05) | **LIVE** (Pass A) |
 | Polished Carapace Shard | Beetley — live customer (2026-07-05) | **LIVE** (Pass A) |
 | Silk Bundle | Spider — upcoming customer | lands with the customer |
-| Infernal Ember | Demon — upcoming customer | lands with the customer |
+| Infernal Ember | Demmy the demon — live customer (reform step 3a, 2026-07-11) | **LIVE** |
 | Dragon Scale | the Inspector — VIP drop | Pass B; drop design **OPEN** (§13) |
 | Inspector's Seal | the Inspector — VIP drop | Pass B; drop design **OPEN** (§13) |
 
@@ -202,7 +202,12 @@ One system per pass, §14's A/B precedent where a pass is large:
 2. **Market Pass B** — the full first trade tier, forecast, per-offer limits, and the board's
    SECOND ROW design (the daily-special / Market-Day-event presence — cut from Pass A as
    clutter; design it properly here or retire it).
-3. **Spider + Demon** — art-ready customers land as faucets (small passes, any time after A).
+3. **Spider + Demon** — 3a **Demmy DONE (2026-07-11)**: the Apologetic Menace (combatMod +2,
+   the victory-as-apology register, top budget [20,36], iron_sword signature — the market's
+   demand engine; ember faucet N 15). 3b **Leggsy the spider NEXT**: the Overstocker —
+   `bulkBuyer` quirk (one serve buys TWO units when stock and budget allow), budget [14,28],
+   bandages + zip_tonic signatures, silk faucet N 12; art fully in (footPad 12,
+   spriteScale 1.05 PROVISIONAL).
 4. **Expeditions MVP** — one monster, one door, one slot.
 5. **Relic rework** — hard restores + economy effects in the carrier slots.
 6. **Commissions.**

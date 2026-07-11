@@ -2911,7 +2911,7 @@ console.log('M4 auto-serve worker — smoke test\n');
   // no multiplier (the sizing saga's rule). On-screen ~132 visible, level with Bob, ~1.4x a mob.
   ok(d?.special === true && d.pixelScale === 1 && d.footPad === 14,
      'visits: the Inspector ships special, drawn 1:1 at pixelScale 1, measured footPad 14');
-  ok(MONSTER_IDS.length === 7, 'visits: seven on the roster (the newest batch\u2019s exact)');
+  ok(MONSTER_IDS.length === 8, 'visits: eight on the roster (updated at the Demmy batch — §60 carries the live exact)');
 
   // (a2) FRAME-SIZE CONTRACT (the sizing-saga plug, 2026-07-08): a pixelScale VIP draws at
   // frame x pixelScale, so a re-export at a different frame size silently changes on-screen
@@ -3376,8 +3376,9 @@ console.log('M4 auto-serve worker — smoke test\n');
     const mat = MONSTERS[id].material;
     if (mat !== undefined) ok(!!MATERIALS[mat], `market: ${id}.material '${mat}' exists in MATERIALS`);
   }
-  ok(MONSTER_IDS.filter((id) => !MONSTERS[id].special && MONSTERS[id].material).length === 6,
-    'market: six LIVE serve faucets in Pass A (slime/bat/skeleton/frog/rat/beetle)');
+  const liveFaucets = MONSTER_IDS.filter((id) => !MONSTERS[id].special && MONSTERS[id].material);
+  ok(liveFaucets.length >= 6,
+    'market: at least the Pass A six serve faucets are live (the exact count lives in the newest batch — §60)');
   ok(MONSTERS.dragon.material === undefined,
     'market: the Inspector (the dragon row) has NO serve faucet — VIP drops are Pass B');
   ok(tradeItemIds().length === 1 && tradeItemIds()[0] === 'iron_sword',
@@ -3421,8 +3422,8 @@ console.log('M4 auto-serve worker — smoke test\n');
     ok(JSON.stringify(a1) === JSON.stringify(offersForDay('sim-day-1')),
       'market: same day -> byte-identical offers (pure function of the date)');
     const eligible = new Set(eligibleMaterialIds());
-    ok(eligible.size === 6 && !eligible.has('inspectors_seal') && !eligible.has('dragon_scale'),
-      'market: eligibility = the six live faucets; reserved materials can never be demanded');
+    ok(eligible.size === liveFaucets.length && !eligible.has('inspectors_seal') && !eligible.has('dragon_scale'),
+      'market: eligibility = exactly the live faucet set; reserved materials can never be demanded');
     let badMat = 0, badBand = 0;
     const seen = new Set([JSON.stringify(a1)]);
     for (let d = 2; d <= 15; d++) {
@@ -3534,6 +3535,59 @@ console.log('M4 auto-serve worker — smoke test\n');
     ok(corrupt.materials.slime_core === 0 && corrupt.materials.fake_material === undefined
       && corrupt.materials.echo_fang === 2,
       'save: corrupt materials clamp/drop/floor (negative -> 0, unknown -> gone, float -> int)');
+  }
+}
+
+// 60. DEMMY the demon (reform step 3a, 2026-07-11) — the Apologetic Menace; roster/faucet exacts live here --
+// The roster's first WINNER (combatMod +2 — the victory-as-apology register) and the market's
+// demand engine (iron_sword signature on the new top budget). Exact-total doctrine: this is the
+// newest batch, so the live roster/faucet/eligibility exacts are pinned HERE (§59 now derives).
+{
+  const { MONSTERS, MONSTER_IDS } = await import('./src/data/monsters.js');
+  const { MATERIALS } = await import('./src/data/materials.js');
+  const { eligibleMaterialIds } = await import('./src/data/trademarket.js');
+  const { MONSTER_RESULTS } = await import('./src/data/results.js');
+  const { spawnCustomer } = await import('./src/game.js');
+
+  const d = MONSTERS.demon;
+  ok(!!d && d.displayName === 'Demmy' && d.special === undefined,
+    'demmy: registry row present, a NORMAL customer (never a special)');
+  ok(d.combatMod === 2, 'demmy: combatMod +2 — the roster\'s first real threat');
+  ok(d.budgetRange[0] === 20 && d.budgetRange[1] === 36 && d.budgetRange[0] > MONSTERS.frog.budgetRange[0],
+    'demmy: the new top spender ([20,36], above Froggo)');
+  ok(d.material === 'infernal_ember' && d.materialEveryNServes === 15 && !!MATERIALS.infernal_ember,
+    'demmy: ember faucet paired, premium-rare N');
+  ok(d.itemBias?.iron_sword === 3, 'demmy: the trade item leads his signature loves (the demand engine)');
+  ok(d.footPad === 10 && d.spriteScale === undefined,
+    'demmy: footPad 10 MEASURED; trio-class mass, no scale (the Beetley precedent)');
+  ok(MONSTER_IDS.length === 8 && MONSTER_IDS[6] === 'demon' && MONSTER_IDS[7] === 'dragon',
+    'demmy: roster EXACT eight; demon slots before the special dragon row');
+  ok(MONSTER_IDS.filter((id) => !MONSTERS[id].special && MONSTERS[id].material).length === 7
+     && eligibleMaterialIds().length === 7 && eligibleMaterialIds().includes('infernal_ember'),
+    'demmy: SEVEN live faucets — ember is eligible for recipes from day one');
+
+  // Spawn membership: with the rest of the roster parked in-queue, only demon remains eligible.
+  {
+    const s = shopState();
+    s.queue = MONSTER_IDS.filter((id) => id !== 'demon' && !MONSTERS[id].special)
+      .map((id) => customer(id, 'club', 99));
+    const c = spawnCustomer(s);
+    ok(c?.monsterId === 'demon', 'demmy: in the normal spawn pool (uniqueness filter leaves only him)');
+    ok(c.budget >= 20 && c.budget <= 36, 'demmy: budget rolls inside his band (no fame mult at tier 0)');
+  }
+
+  // Line ladder shape: the five battle tiers + leave + dismiss exist; exactly ONE golden, at 100.
+  {
+    const tiers = MONSTER_RESULTS.demon ?? {};
+    ok(['excellent', 'success', 'partial', 'failure', 'funnyFailure', 'leave', 'dismiss']
+      .every((t) => Array.isArray(tiers[t]) && tiers[t].length >= 2),
+      'demmy: every tier authored (the win tiers are his home register)');
+    const all = Object.values(tiers).flat().filter((t) => typeof t !== 'string');
+    const goldens = all.filter((t) => t.golden === true);
+    ok(goldens.length === 1 && goldens[0].minServes === 100,
+      'demmy: exactly ONE golden line, a 100-serve privilege');
+    ok(Object.values(tiers).flat().every((t) => (typeof t === 'string' ? t : t.text).length <= 80),
+      'demmy: every line respects the 80-char log budget');
   }
 }
 

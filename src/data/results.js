@@ -432,6 +432,54 @@ export const MONSTER_RESULTS = {
     ],
   },
 
+  // DEMMY (reform step 3a, 2026-07-11) — the APOLOGETIC MENACE. The roster's first winner:
+  // combatMod +2 means his home tiers are excellent/success, and the register is VICTORY AS
+  // APOLOGY — he's terribly sorry about all this. Losses land as visible relief. Ladder shape
+  // per the line-unlock law: base lines + batches at 25/50 + exactly ONE golden at 100.
+  demon: {
+    excellent: [
+      `Demmy won. He's already written the hero's family a lovely card.`,
+      `Demmy won decisively and apologized to each wound individually.`,
+      `The hero fell. Demmy tucked a blanket over him. "No hard feelings?"`,
+      { text: `Demmy won again. He's started a support group for his opponents.`, minServes: 25 },
+      { text: `Demmy's {item} was devastating. He polished it afterward, whispering "sorry."`,
+        cats: ['weapon'], minServes: 50 },
+      { text: `Demmy won the belt, engraved the champion's name on it, and mailed it back.`, minServes: 100, golden: true },
+    ],
+    success: [
+      `Demmy won on points and disputed the points. In the hero's favor.`,
+      `Demmy won, helped the hero up, dusted him off, and fled in shame.`,
+      `A win for Demmy. He left a five-star review of his opponent.`,
+      { text: `Demmy sent a fruit basket. The hero sent it back. They're friends now.`, minServes: 25 },
+      { text: `Demmy won politely. The dungeon has nominated him for a conduct award.`, minServes: 50 },
+    ],
+    partial: [
+      `Demmy and the hero both apologized so long the fight timed out.`,
+      `A draw. Demmy insisted the hero take the moral victory. And a snack.`,
+      { text: `Demmy's {item} worked perfectly. That's what upset him.`, cats: ['weapon'] },
+    ],
+    failure: [
+      `Demmy lost, and the relief on his face was enormous.`,
+      `The hero won. Demmy applauded from the floor. Genuinely.`,
+      `Demmy lost and thanked everyone involved. Twice.`,
+    ],
+    funnyFailure: [
+      `Demmy spent the whole fight apologizing for the fight. The hero left confused.`,
+      `Demmy's horns snagged his own dramatic entrance. He waved it off. Literally.`,
+      `Demmy forfeited when the hero sneezed. "Gesundheit. I concede."`,
+      { text: `Demmy practiced menacing on Slimey. Slimey asked if he was okay.`, minServes: 50 },
+    ],
+    leave: [
+      `Demmy left quietly so nobody would feel obligated. Everybody noticed.`,
+      `Demmy's break ended. Evil has a schedule and it is very reasonable.`,
+    ],
+    dismiss: [
+      `Bob said not today. Demmy agreed enthusiastically. Too enthusiastically.`,
+      `Demmy took the no as a kindness. It probably was.`,
+      { text: `Greg gestured at the door. Demmy apologized to the gesture.`, greg: true },
+    ],
+  },
+
   dragon: {
     // THE INSPECTOR (Special Visits, 2026-07-07). One flat batch on purpose: he visits once a
     // day, so minServes ladders would never unlock — every line is available from serve one.
