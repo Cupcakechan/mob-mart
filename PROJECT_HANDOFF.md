@@ -10,43 +10,59 @@ Claude or ChatGPT can parse it cold.*
 
 ## §0 — START HERE (cold boot): where the project is, and what happens next
 
-**State as of 2026-07-10 (suite: 645 green; `node test_suite.mjs` self-verifies a fresh clone):**
+**State as of 2026-07-11 (suite: 645 green; `node test_suite.mjs` self-verifies a fresh clone):**
 the MVP, the full UX roadmap, Market Day, Deep Sinks, Special Visits (the Inspector, reauthored
-1:1), the gear expansion (27 items), six door destinations, and the whole of **§14**: DOUG the
-scavenger (third worker), SCRAP (the second resource), his battle cameos, and **the RELIC FORGE**
-(the collection meta — one-of-one relics found by Doug, restored for scrap+gold, displayed in
-3 wall frames + 1 desk slot). Everything above is browser-confirmed and committed. Detail lives
-in the dated sections below (§9 art, §12–§14 systems); LESSONS.md carries the error record.
+1:1), the gear expansion (27 items), six door destinations, the whole of **§14** (DOUG the
+scavenger, SCRAP, his battle cameos, and **the RELIC FORGE** — one-of-one relics found by Doug,
+restored for scrap+gold, displayed in 3 wall frames + 1 desk slot), and **THE ECONOMY AUDIT**
+(measurement pass, 2026-07-11): `sim_economy.mjs` (the permanent balance harness, repo root) +
+`ECONOMY_AUDIT.md` (the report) are committed, with ZERO game-file changes. Everything above is
+confirmed and committed. Detail lives in the dated sections below (§9 art, §12–§14 systems,
+2026-07-11 audit); LESSONS.md carries the error record.
 
 **THE DESIGN RESET (Daniel, 2026-07-10 — read this before building anything):** passive play
-reaches millions of gold with nothing left to want. Measured: the game’s ENTIRE sink stack
-(15 licenses + 3 hires + both training ladders + all upgrades) totals **228,483 gold** — the
-observed endgame purse was 6.4× that and rising. The diagnosis is NOT “progress too fast” (the
-early/mid game is tuned by feel and good) — it is **too finite**: the desire curve has a hard
-end. The agreed answer is a locked sequence, one pass each:
+reaches millions of gold with nothing left to want. **Now MEASURED (the audit, 2026-07-11):**
+the sink stack is **228,483 gold** (reproduced exactly from live registries; +46,000 gold &
+155 scrap of relic restores on top), and the desire curve **dies at 8:18:03** of continuous
+idle play, after which the shop earns **~53k gold/hour forever** — the observed 6.4× purse is
+≈27.6 hours of post-death play, fully explained. The sharper finding: **variety dies at
+~1h50m** (every fame tier by 1:05, every license by 1:35, every perk by 0:54, every upgrade by
+3:35) — the last 77% of the curve is the two training ladders alternating plus three relic
+restores. The diagnosis stands: NOT "progress too fast" (the early game measured healthy — a
+want every 2–3 minutes across five systems for the first hour) — it is **too finite**. The
+agreed answer is a locked sequence, one pass each:
 
-**1. NEXT SESSION — THE ECONOMY AUDIT (a measurement pass; no game files change).**
-Build a headless sim harness (the suite already drives `update()` headlessly — same techniques)
-that runs a FRESH save through hours of simulated play and charts the WALL-CLOCK moment every
-want falls: each license, hire, training rung, upgrade, fame tier, relic find + restore. Output:
-a report (the unlock timeline + where the desire curve dies) and TUNING PROPOSALS — but change
-NO numbers in the audit pass itself; retuning is its own later pass, argued from this data.
-Ground rules for the next session: (a) present the sim’s POLICY DECISIONS as an options round
-FIRST and wait for Daniel’s pick — chiefly the simulated player model (e.g. pure-idle vs
-“buys the cheapest available want” vs “roadmap-greedy”), the time horizon, and the report
-format; (b) statistical results need 3× stable runs; (c) the harness itself is a deliverable
-(reusable for every future balance question). The 228,483 figure above is the starting fact.
+**1. DONE (2026-07-11) — THE ECONOMY AUDIT.** Policy picks were greedy-cheapest / event-driven
+horizon / markdown report (options round B/B/B). Full findings F1–F7 and proposals P1–P6 live
+in **`ECONOMY_AUDIT.md`**; the harness is **`sim_economy.mjs`** (repo root — run
+`node sim_economy.mjs`, seconds, bit-identical across runs). The two inert-gate findings that
+shape what's next: **Mythic falls at 1:05**, 47 minutes before the first training rung is even
+affordable (lifetime rep at death ~135k vs its 5,000 threshold), and **scrap runs a ~12×
+oversupply** (~1,860 banked vs 155 ever spent). Detail: the 2026-07-11 section at the bottom.
 
-**2. THEN — the Special-of-the-Day REPURPOSE (Daniel’s design):** relics become the BUFF
+**NEXT SESSION — ECONOMY RETUNING, pass 1.** Open with an options round over the audit's
+proposals (P1–P6, ECONOMY_AUDIT.md §5) — which lever-set to apply first is Daniel's pick. Rules
+of the retuning passes: ONE lever-set per pass; `node sim_economy.mjs` before/after is the
+acceptance test (re-run 3×, bit-identical); the audit's explicit warning holds — **do not nerf
+deep-rung prices** (P3: their pacing is the healthiest stretch; the gap is variety, not cost).
+The one-value candidate is P2 (re-seat Mythic's `tiers[6].min`, 25k–40k band); P1 sizes the
+bigger passes below.
+
+**2. THEN — the Special-of-the-Day REPURPOSE (Daniel's design):** relics become the BUFF
 CARRIERS — the Market-Day special/board concept repurposed onto the relic display (the frames).
 This is WHY the Relic Forge shipped with an empty effect slot (§14 Pass B — deliberate, so the
-audit measures a clean baseline). Scope it as an options round when reached.
+audit measures a clean baseline). The audit sized it: this pass needs to carry the game from
+roughly HOUR 2 (where variety dies), and P4's recurring scrap sink lands here (supply measured
+at 5 scrap/min). Scope it as an options round when reached.
 
-**3. THEN — the capstone candidate: PRESTIGE (“Franchise”).** Close the shop, open the next
+**3. THEN — the capstone candidate: PRESTIGE ("Franchise").** Close the shop, open the next
 location, keep the Bestiary + relic wall, earn a meta-currency that multiplies future runs;
-the six door destinations supply the theming. The audit informs its numbers. Not committed in
-detail — bring options when its turn comes. (Parked behind it: COMMISSIONS — mob orders as the
-active-play layer — and further content treadmill items: more VIPs, gear batches.)
+the six door destinations supply the theming. The audit's anchor: post-death income is ~53k
+gold/hour AND STILL CLIMBING (the milestone ladder never stops) — P1 puts the first reset
+threshold in the 150k–400k band, landing it 3–8 hours in. Not committed in detail — bring
+options when its turn comes. (Parked behind it: COMMISSIONS — mob orders as the active-play
+layer — and further content treadmill items: more VIPs, gear batches; P5's Mythic-gated
+5–10k license rung is the gear-batch hook.)
 
 **Small parked follow-ups (real, not urgent):** Doug’s door-open feel pass (playPortalOpen is a
 celebrant-only one-shot — needs re-entrancy or a second anim to let Doug open the door); Doug’s
@@ -1333,3 +1349,70 @@ REPLACED by the design reset (Daniel, 2026-07-10 — 'what is the purpose?'): re
   measured at 228,483 gold vs an observed endgame purse 6.4x that), THEN the Special-of-the-Day
   repurpose (relics become the buff carriers via the board/frames idea), with prestige/Franchise
   as the capstone candidate beyond.
+
+---
+
+## 2026-07-11 — THE ECONOMY AUDIT (§0 step 1) — AS RUN
+
+**Shipped:** `sim_economy.mjs` (repo root — the PERMANENT balance harness, deliberately named
+OUTSIDE the `test_*.mjs` ignore pattern so it commits with no gitignore change; not shipped —
+the ship folder is untouched) + `ECONOMY_AUDIT.md` (the report). **ZERO game-file changes**
+(the audit law); suite re-certified 645 green after the pass.
+
+**Policy record (Daniel's options-round picks — B/B/B):**
+- Player model = GREEDY-CHEAPEST: every sim-second, restock first (operating cost), then buy the
+  single cheapest affordable unbought want per currency (gold: hire/license/upgrade/training/
+  relic restore; rep: perks). One authored exception mirroring the tutorial: manual serves only
+  until Bob is hired, then hands-off. Yields the EARLIEST-POSSIBLE fall time per want (the lower
+  envelope) — a human buys slower, so real wall-clock runs longer, but the SHAPE is
+  policy-independent, and the shape is the finding.
+- Horizon = EVENT-DRIVEN: run to the last want, +60-min tail (measures the post-death
+  accumulation rate), 48h hard cap (cap-hit exits non-zero).
+- Report = ECONOMY_AUDIT.md; the harness's printed tables feed it (timeline transcription
+  DIFF-VERIFIED against the run output — the landing-zone law applied to docs).
+
+**Harness mechanics (for every future balance question):** drives the real `update()` headlessly
+(the suite's technique) at dt 0.1s; `Math.random` swapped for seeded mulberry32 per run — output
+is BIT-IDENTICAL across runs (verified 3×; determinism IS the stability proof, the statistical
+band is the 5-seed min–max spread). Baseline is CALENDAR-FREE (`marketDayKey` never set → Market
+Day + Inspector unarmed, their own headless convention). The want inventory derives LIVE from
+the registries (74 purchases today) — new content auto-joins the audit. Dials at the top of the
+file (SEEDS / DT / POLICY_SEC / TAIL_SEC / CAP_SEC). **Re-run after ANY economy retune;
+before/after runs are the retuning passes' acceptance test.**
+
+**Headline findings (F1–F7 in full in ECONOMY_AUDIT.md §4):**
+- Desire curve DIES at **8:18:03** median (spread 8:06:38–8:19:08); post-death **884 gold/min
+  ≈ 53k/hour**, still climbing (977 by the tail's end — the milestone ladder never stops). The
+  observed 1.46M purse ≈ 27.6h of post-death play: the runaway is fully explained.
+- **Variety dies at ~1h50m:** all fame tiers by 1:05, all hires by 1:30, all licenses by 1:35
+  (Knight Helm — "the top-shelf goal" — falls 95 minutes in), all perks by 0:54, all upgrades by
+  3:35. From 1:52 (first training rung) the curve is 77% training metronome + 3 restores; from
+  3:55 it is PURELY ten deep rungs + the final restore (~4.4h of two alternating buttons).
+- **The Mythic gate is INERT:** falls at 1:05, 47 min BEFORE the first training rung is
+  affordable — the deep band's tier gate never gates anything. Lifetime rep at death ~135k vs
+  the 5,000 threshold: the whole tier ladder sits in the first ~4% of a run's rep.
+- **Scrap is a second runaway:** ~1,860 banked at death vs 155 ever spent (~12×); economically
+  dead ~2h after Doug's hire. Doug supplies 5 scrap/min.
+- **Relic finds burst, restores pace:** median seed finds all four within ~13 min of the hire
+  (math agrees: pity-TRUNCATED geometric mean is 13.7 runs ≈ 5.5 min/find, not the naive 18);
+  the RESTORES space themselves via gold (2:29 / 3:20 / 3:56 / 8:18) — the Everything Cloak
+  restore IS the death event in all five seeds.
+- **Early game verified healthy** (a want every 2–3 min across five systems for the first hour)
+  — nothing in the first ~90 minutes needs touching.
+
+**Proposals (P1–P6, full text ECONOMY_AUDIT.md §5 — NOT applied; each retune is its own pass):**
+P1 size repurpose/prestige from the measured rates (prestige's first-reset anchor: 150k–400k
+against ~53k/h); P2 re-seat Mythic's `tiers[6].min` (25k–40k band candidate — the ONE-VALUE
+retune; re-place it with the harness); P3 do NOT nerf deep-rung prices (healthiest pacing on the
+curve — the gap is variety, not cost); P4 recurring scrap sink at the repurpose (sized vs 5
+scrap/min); P5 a Mythic-gated 5–10k license rung for future gear batches; P6 find pacing is a
+feel call (chancePerRun 1/18 → ~1/45 spaces finds ~18 min apart, if wanted).
+
+**Pass learnings:** (a) statistical claims in a report get PROBE-VERIFIED before shipping — the
+F5 numbers looked too fast, a Doug-alone isolation probe showed the mechanic sound and MY
+expectation wrong (the pity floor truncates the geometric: mean 13.7 runs, not 18); (b) machine
+tables transcribed into a doc get diff-verified against the source output, whitespace-normalized
+— same law as scripted edits: verify the landing, not the intention.
+
+**NEXT:** economy retuning pass 1 — open with an options round over P1–P6 (Daniel's pick), one
+lever-set per pass, harness before/after as acceptance.
