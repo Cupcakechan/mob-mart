@@ -185,3 +185,18 @@
   off-by-one magnets; prefer single-line anchored removals over counted multi-line splices.
 - Route: universal method candidate (the scripted-edits section — "deletions have landing
   zones too; audit the survivors"). Pairs with 2026-07-05 "landing-zone checks, not exit codes".
+
+## 2026-07-10 — `node --check` passed a file whose ES-module parse failed (the doubled brace)
+- What broke: a display-fix splice left a doubled `}` in drawRelicWall. `node --check` PASSED;
+  the suite’s module-import health section failed with "Unexpected token ’}’" — the game would
+  not have booted.
+- Root cause: two layers. (1) The splice re-added a close brace its survivors already provided
+  (the survivor-audit lesson’s sibling — the audit printed the block’s HEAD, not its closes).
+  (2) `node --check` parses in SCRIPT mode; the file’s real parse gate is the ES-MODULE parse,
+  and the two grammars disagree on some errors — a green --check is NOT proof the module loads.
+- Plug: delivery verification now runs the ESM import itself (`node --input-type=module -e
+  "await import(file)"`) alongside --check — the suite’s module-health section remains the
+  backstop and is what caught this. Survivor audits must print a spliced block through its
+  CLOSING braces, not just its opening lines.
+- Route: universal method candidate (the check-before-delivering section — "the fast check’s
+  limits" now include parse-mode divergence). Pairs with the 2026-07-10 survivor-audit entry.

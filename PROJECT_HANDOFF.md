@@ -508,7 +508,7 @@ intro + bubble quip). Gold milestone lines now land as staggered beats (2.5s dia
 @25 AND @50 ladder batches live, goldens @100, two hygiene laws suite-pinned (no second person;
 consumable verbs must fit the whole roster — the Rusty Key is a consumable). Save
 `mobmart.save.v1`, additive schema, clamped merges. Suite: **`test_suite.mjs` at repo root,
-617 assertions green** — a fresh clone self-verifies with `node test_suite.mjs`. Suite doctrine
+645 assertions green** — a fresh clone self-verifies with `node test_suite.mjs`. Suite doctrine
 (batch-1 lesson): EXACT-MATH tests pin the trio shelf via `pinTrioShelf`; RULE tests derive from
 live registries — never hand-type a roster-dependent number; exact batch totals live only in the
 NEWEST batch's section. New modules since the items phase: `src/data/fametrack.js` (registry-
@@ -1185,7 +1185,7 @@ flipped to `pixelScale === 1`. Files: monsters.js + main.js + test_suite.mjs + t
 - **Special "visits"** design (high-rep rare customers) — deferred.
 ---
 
-## §14 — THE SCRAP SYSTEM + DOUG (design doc 2026-07-08 — **PASS A SHIPPED 2026-07-10**, Pass B pending)
+## §14 — THE SCRAP SYSTEM + DOUG (design doc 2026-07-08 — **PASS A + PASS B SHIPPED 2026-07-10**)
 
 The "new to obtain" lane (Daniel's call: gold is the only currency and too easily gained). Scrap is
 a SCARCE second resource with a sink gold cannot buy, gated behind a third worker.
@@ -1250,5 +1250,30 @@ else. Reuses the item + license + shelf system → bounded, and scrap stays the 
   10 (frames 9-12); dragon unchanged (footPad 14 holds).
 - The DOUG.height incident → LESSONS 2026-07-10: a scripted deletion ate the neighbor line;
   NaN geometry renders as silent invisibility; the plug is the survivor audit.
-- NEXT: **Pass B — the forge** (the scrap sink: special objects + their 64×64 icons; confirm the
-  working model above before build).
+
+**PASS B — THE RELIC FORGE, AS BUILT (shipped 2026-07-10; suite 645).** The working model was
+REPLACED by the design reset (Daniel, 2026-07-10 — 'what is the purpose?'): relics are
+**ONE-OF-ONES nobody can buy** — the collection meta, not more shelf stock. The loop:
+- FIND: Doug's runs roll a find — chancePerRun 1/18 + a pity floor at 25 runs (RELIC_FIND,
+  relics.js) — in CURATED order (RELIC_ORDER: key, magnet, potion, cloak); each find is a
+  designed beat and a milestone-gold log line. Debug: set chancePerRun to 1, revert before commit.
+- FORGE: a section in the Workers panel (no new tab — the 5-tab budget), visible once Doug is
+  hired: ??? -> found (card + priced Restore) -> on display. Restoring costs SCRAP + GOLD — the
+  two currencies' first shared sink (20⚙+3k up to 60⚙+25k; all TUNABLE, recalibrate at the audit).
+- DISPLAY: 3 wall frames + 1 desk slot. THE STAGING MATH (three live corrections, all measured):
+  the desk gap between Greg's documented hover box (434-546+sway) and Bob (676) is 125px — room
+  for exactly ONE 64px object; frame v1's border box was itself 64×64 (window too small — Daniel
+  re-authored at 96×96, window >= 64) and the draw now uses the sprite's NATURAL size so any
+  re-author is a pure art drop (suite pins only 'square, >= 80'); desk objects base at y448
+  (the surface starts at 413.8 — the sprite-box top 353 floats objects on the wall).
+- THE ASSIGNMENT LAW (Daniel's catch): frames fill LEFT-TO-RIGHT in FIND ORDER and the desk goes
+  to the object that naturally lives on a desk (the potion) — an empty frame between filled ones
+  reads as 'the object fell out'. Recorded in relics.js; future relic batches inherit it.
+- NO EFFECTS BY DESIGN: the effect slot stays empty for the Special-of-the-Day repurpose (the
+  circle-back step) so the ECONOMY AUDIT measures a clean baseline. Voice: RELIC_VOICE
+  (results.js) — found/restored/ambient; ambient fires on 5% of serves. Suite section 58.
+- NEXT (locked order, Daniel 2026-07-10): **the ECONOMY AUDIT** (headless sim of a fresh passive
+  save — chart when each unlock falls, find where the desire curve dies; total sink stack
+  measured at 228,483 gold vs an observed endgame purse 6.4x that), THEN the Special-of-the-Day
+  repurpose (relics become the buff carriers via the board/frames idea), with prestige/Franchise
+  as the capstone candidate beyond.
