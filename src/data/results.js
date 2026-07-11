@@ -517,14 +517,14 @@ export const RELIC_VOICE = {
       ],
     },
     hero_magnet: {
-      restored: `The Hero Magnet sits on the counter. It points at the door. Everyone noticed.`,
+      restored: `The Hero Magnet hangs framed on the wall. It points at the door. The frame helps nobody.`,
       ambient: [
         `The Hero Magnet twitched. The whole queue took one step back.`,
         `Batty asked if the Hero Magnet works. Bob said "only on heroes." Long silence.`,
       ],
     },
     yesterday_potion: {
-      restored: `The Yesterday Potion is on display. It is always about to spill. It never does.`,
+      restored: `The Yesterday Potion stands on the counter. Always about to spill. It never does.`,
       ambient: [
         `Froggo sniffed the Yesterday Potion and got homesick for last week.`,
         `The Yesterday Potion glowed briefly. Tuesday, probably.`,

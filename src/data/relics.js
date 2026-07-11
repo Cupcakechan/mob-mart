@@ -13,7 +13,10 @@
 // THREE wall frames in the band between the board's bottom (246) and the counter top (~353):
 // two left of Bob (clear of the shelf, ends 372), one RIGHT of Bob above Doug's corner — his
 // head grazes its bottom when home (drawn in front: spatially correct; he's out ~70% of the
-// cycle — Doug idles under his own trophy). spot.x is the CENTER. Frames draw at the sprite's
+// cycle — Doug idles under his own trophy). spot.x is the CENTER. ASSIGNMENT LAW (2026-07-10,
+// Daniel's catch): frames fill LEFT-TO-RIGHT in FIND ORDER, and the desk slot goes to the one
+// object that naturally lives on a desk (the potion — it is literally shopware). Mid-progression
+// must never show an empty frame BETWEEN filled ones — it reads as 'the object fell out'.
 // NATURAL size (scene.js) so the frame re-author (window >= 64 needed; the v1 border box was
 // itself 64x64) drops in with zero code changes.
 
@@ -26,19 +29,19 @@ export const RELICS = {
   },
   hero_magnet: {
     id: 'hero_magnet', displayName: 'The Hero Magnet', spriteId: 'relic_hero_magnet',
-    spot: { kind: 'counter', x: 612 },   // the ONE desk slot (the Greg-Bob gap)
+    spot: { kind: 'frame', x: 556, topY: 250 },   // frame 2 — find #2 (a framed magnet: museum-piece gag)
     restoreCost: { scrap: 30, gold: 6000 },
     card: 'Points away from the door. Bob insists.',
   },
   yesterday_potion: {
     id: 'yesterday_potion', displayName: 'The Yesterday Potion', spriteId: 'relic_yesterday_potion',
-    spot: { kind: 'frame', x: 862, topY: 250 },   // the third frame — over Doug's corner
+    spot: { kind: 'counter', x: 612 },   // the ONE desk slot (the Greg-Bob gap) — the potion IS shopware
     restoreCost: { scrap: 45, gold: 12000 },
     card: 'Tastes like last Tuesday.',
   },
   everything_cloak: {
     id: 'everything_cloak', displayName: 'The Everything Cloak', spriteId: 'relic_everything_cloak',
-    spot: { kind: 'frame', x: 556, topY: 250 },
+    spot: { kind: 'frame', x: 862, topY: 250 },   // frame 3 — over Doug's corner (find #4)
     restoreCost: { scrap: 60, gold: 25000 },
     card: 'Made of all the other cloaks.',
   },
