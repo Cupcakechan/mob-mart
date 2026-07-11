@@ -553,8 +553,8 @@ const DOUG = {
                        // line was once eaten by a neighboring splice and Doug vanished — a missing
                        // height NaNs every draw coordinate and canvas silently draws NOTHING.
   footPadWalk: 10,     // MEASURED (pngjs, walk frames: 9-12) — soles on the walk line
-  footPadIdle: 12,     // PROVISIONAL — idle strip pending re-measure (walk's standing frames sit
-                       //   at 12); a one-value dial if his idle feet float or sink on sight
+  footPadIdle: 9,      // MEASURED (pngjs, 2026-07-10 recolor re-measure): uniform 9 across all six
+                       //   idle frames — resolves the launch-day PROVISIONAL 12 (feet sat 3px low)
   fadeSec: 0.45,       // threshold melt — the last/first beats of the out/back legs (alpha ramp)
   // walkSec + idleFrac now live in the WORKERS.scavenger registry (promoted 2026-07-10): the
   // battle-cameo gate (isDougOut, game.js) must share this exact clock — one source of truth.

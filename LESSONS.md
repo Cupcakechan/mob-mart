@@ -166,3 +166,22 @@
 - Route: dev-method skill candidate (art-integration reference): "size specs enumerate every
   on-screen reference; oversized characters author at 1:1; asset dimensions are a suite-pinned
   contract, not a comment."
+
+
+## 2026-07-10 — A scripted DELETION ate the neighbor line (DOUG.height): NaN geometry is silently invisible
+- What broke: after the celebrant-floor-grammar fix, Doug stopped rendering entirely — idle
+  included. No error anywhere.
+- Root cause: the edit script spliced TWO lines to retire the one-line `doorFeetY` field; the
+  second removed line was its neighbor `height: 160`. `DOUG.height` → undefined → box NaN →
+  every draw coordinate NaN — and canvas SILENTLY draws nothing (no throw, no console noise).
+- Verification gap it exposed: three guards all passed — `node --check` (the file stayed valid
+  syntax), the suite (headless; cannot exercise canvas draws), and the landing-zone check
+  (which verified only the INSERTED block). A scripted deletion has a landing zone too: the
+  SURVIVORS. Nothing audited what remained around the removal.
+- Plug: fix = restore `height: 160` (the line now carries a warning comment). Guard = the
+  SURVIVOR AUDIT — every `DOUG.*` reference in scene.js checked field-by-field against the
+  config block (all defined). Rule: after any scripted splice/deletion, read the BLOCK THAT
+  REMAINS and verify each field its consumers reference still exists — splice counts are
+  off-by-one magnets; prefer single-line anchored removals over counted multi-line splices.
+- Route: universal method candidate (the scripted-edits section — "deletions have landing
+  zones too; audit the survivors"). Pairs with 2026-07-05 "landing-zone checks, not exit codes".

@@ -391,6 +391,7 @@ takes the measured-footPad path. Roster id `dragon` cannot collide with the mark
 | Froggo (4th customer, Pass 4b) | 128×128/frame (permanent convention) | shared 4-frame idle @6fps + walk strip | `frog.png`, `frog_idle.png`, `frog_walk_happy.png` (the walk is authored as a GRUMPY STOMP — naming kept by convention, mismatch intended) | **ALL IN** (2026-07-04) — `footPad` 15 MEASURED, `spriteScale` 1.1 (content 76% of frame) |
 | Slimey / Batty / Skele (customers) | 128×128/frame (PERMANENT convention — see the Option-3 scrub note above) | shared 4-frame idle strips (6fps) | statics `slime.png` etc. + `slime_idle.png` etc. | **ALL IN** (statics + all three idle strips, 2026-07-03); drawn 88px (`QUEUE.size`), Slimey/Skele `spriteScale` 1.15, `footPad` MEASURED slime 18 / skeleton 12 (grounding pass), Batty `flying: true` (padding = hover altitude) |
 | Bob (mimic merchant) | 160×160/frame | idle 6f · serve 6f (one-shot) | `mimic_merchant.png` (static fallback), `bob_idle.png`, `bob_serve.png` (6-frame strips) | **IN** - **160px on-screen, drawn 1:1** (`BOB.height` 160; art is 160/frame, no upscale = crisp), feet anchored to `COUNTER.baseY` − 82 (lifted onto a "stool", 2026-07-08) |
+| Doug (the Scavenger) | 160×160/frame | idle 6f · walk 6f (walk reused FLIPPED for the return) | `doug.png` (static fallback), `doug_idle.png`, `doug_walk_happy.png` (960×160 strips) | **IN** (Pass A 2026-07-10; recolored same day, dims suite-pinned) — drawn 1:1, `footPad` MEASURED idle 9 / walk 10, home x870 behind the counter, trip staged in the celebrants’ floor grammar |
 | Counter / desk | ~480px wide (author 2× ≈ 960 for crisp) | static | `counter.png` | **IN** — 480px (`COUNTER.width`), base at H*0.74 (~533) + contact shadow |
 | Battle door (ex-portal) | **160×160/frame**, 4 frames → **640×160 strip**; frame 0 CLOSED → 3 OPEN; **frame 0 must be pixel-identical across variants** | one-shot open/hold/close on paid serve; destination re-rolled per opening | `portal_glow.png` (base/void), `portal_glow_mountain/_forest/_dungeon.png` (destination variants — a new biome = one strip + one `DOOR_VARIANTS` entry), `portal.png` (static fallback) | **IN** — 320px on-screen (2×); bottom = `FLOOR_Y + 6` (art has 3px bottom padding ×2 scale) |
 | Shop backdrop | 1280×720, **seam at y=462** | optional torch flicker later | `shop_bg.png` | **IN (WIP)** — iterating |
@@ -507,7 +508,7 @@ intro + bubble quip). Gold milestone lines now land as staggered beats (2.5s dia
 @25 AND @50 ladder batches live, goldens @100, two hygiene laws suite-pinned (no second person;
 consumable verbs must fit the whole roster — the Rusty Key is a consumable). Save
 `mobmart.save.v1`, additive schema, clamped merges. Suite: **`test_suite.mjs` at repo root,
-569 assertions green** — a fresh clone self-verifies with `node test_suite.mjs`. Suite doctrine
+617 assertions green** — a fresh clone self-verifies with `node test_suite.mjs`. Suite doctrine
 (batch-1 lesson): EXACT-MATH tests pin the trio shelf via `pinTrioShelf`; RULE tests derive from
 live registries — never hand-type a roster-dependent number; exact batch totals live only in the
 NEWEST batch's section. New modules since the items phase: `src/data/fametrack.js` (registry-
@@ -1184,7 +1185,7 @@ flipped to `pixelScale === 1`. Files: monsters.js + main.js + test_suite.mjs + t
 - **Special "visits"** design (high-rep rare customers) — deferred.
 ---
 
-## §14 — THE SCRAP SYSTEM + DOUG (design doc, 2026-07-08 — LOCKED, art in progress)
+## §14 — THE SCRAP SYSTEM + DOUG (design doc 2026-07-08 — **PASS A SHIPPED 2026-07-10**, Pass B pending)
 
 The "new to obtain" lane (Daniel's call: gold is the only currency and too easily gained). Scrap is
 a SCARCE second resource with a sink gold cannot buy, gated behind a third worker.
@@ -1223,3 +1224,31 @@ else. Reuses the item + license + shelf system → bounded, and scrap stays the 
    Scrap is inert until B, so fold ONE object into A as a proof, or run A→B back-to-back.
 
 **Art (Daniel):** Doug idle + walk (160×160, 6-frame, 960×160 each); 64×64 icons for special objects.
+
+**PASS A — AS BUILT (shipped 2026-07-10; suite 617).** Matches the doc above, with these notes:
+- Doug live: Beloved gate (tier 3), 1200g, 24s runs × 2 scrap, offline BOUNDED at 3 runs (6 max
+  per absence). Choreography dials (idleFrac 0.3, walkSec 2.6) were PROMOTED into the WORKERS
+  registry — the draw (scene.js) and the cameo gate (game.js) share one clock.
+- The trickleSpeed LEAK: Swift Wings was scoped to the restock role — unscoped it would have
+  silently sped Doug’s runs. Suite-pinned regression.
+- HUD deviation from the doc: the scrap chip follows the TEXT-GLYPH convention (⚙); icon_scrap
+  stays reserved. The chip broke the 2026-07-07 HUD width budget (the bottom-bar lesson replayed)
+  → the row is now LEFT-ANCHORED, the market chip docks at top:68 (fully below the row), budget
+  re-measured at the CSS site. **A 4th chip does NOT fit — redesign, don’t shrink.**
+- Staging, three fixes: the DOOR moved to the wall layer (drawn with the wall, before all
+  characters — Doug approaches in FRONT and melts through, fadeSec 0.45; the shared
+  playPortalOpen stays celebrant-only); home x870 (clear of the door’s span, whole body behind
+  the desk — window 867-876 documented at the config); his trip speaks the CELEBRANTS’ floor
+  grammar (contact plane COUNTER.baseY → doorway climb to PORTAL.baseY with CELEBRATE.depthScale
+  — legPos() stages it, sinkFrac/enterFrac are the dials).
+- BATTLE CAMEOS (same day): `{ dougOut: true }` lines in the battle tiers fire ONLY while he is
+  beyond the door (isDougOut, game.js — same registry clock as the draw). Touchstones + grammar
+  in the bible (McGucket / BMO / Tree Trunks; Doug is never the subject — he IS the bathos).
+  The template-schema pin now recognizes FOUR tag kinds (cats | minServes | greg | dougOut).
+- footPads MEASURED at the 2026-07-10 art recolor (dragon + doug refreshed, dims unchanged,
+  frame-size pins green): doug idle 9 (uniform — resolves the launch-day PROVISIONAL 12), walk
+  10 (frames 9-12); dragon unchanged (footPad 14 holds).
+- The DOUG.height incident → LESSONS 2026-07-10: a scripted deletion ate the neighbor line;
+  NaN geometry renders as silent invisibility; the plug is the survivor audit.
+- NEXT: **Pass B — the forge** (the scrap sink: special objects + their 64×64 icons; confirm the
+  working model above before build).
