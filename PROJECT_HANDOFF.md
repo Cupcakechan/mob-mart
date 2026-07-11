@@ -57,14 +57,14 @@ economy effects in the scarce carrier slots); 6. **Commissions** (deadlines); 7.
 depth** (parties, offline party management); 8. **Franchise** (rule-changing prestige,
 six-door factions — designed last, against what the harness measures then).
 
-**NEXT — one open dial, then the fork.** (a) **THE DROP-RATE RETUNE (open — Daniel's pick):**
-browser feel says drops land too fast at N=4–6 (~2–3 materials/min roster-wide). Proposal on
-the table: slime 10 / bat 10 / rat 10 / skeleton 12 / beetle 12 / Froggo 15 (~1/min), with
-**DETERMINISM KEPT** — rarity and randomness are independent levers, D1 stands, and "gold is
-always given" is already true (drops ride on top of payment, never replace it). One lever-set,
-six registry values, no suite pins on N (§59 derives), harness 3× before/after; expect the
-blind-vs-aware acceptance gap to NARROW until expeditions supply volume — correct behavior,
-noted in advance. (b) **THE FORK (Daniel's pick):** Spider + Demon as faucet customers (small
+**NEXT — THE FORK (Daniel's pick).** The drop-rate retune is **DONE** (2026-07-11, same day:
+the six Ns → 10/10/10/12/12/15, ~2.5× rarer, determinism kept; suite 701 holds — §59 derives N;
+harness 3× stable). Measured effects: aware death 8:32 → **10:22** (material scarcity slows
+sword uptime — the reform now holds the curve ~2h past the audit baseline), the blind penalty
+narrowed to **+1:22** (predicted in advance; expeditions re-widen it), acceptance still PASS.
+New Pass B ledger item: post-death aware ≈ blind (583 vs 597 gold/min) — the sword's PURE-GOLD
+trade margin is thin at current recipe bands; its value is throughput + the sale (recipe-band
+dial when Pass B opens). **The fork:** Spider + Demon as faucet customers (small
 passes) or straight to **MARKET PASS B** — which also wants his two §13 calls: the Inspector's
 drop design (proposal: Dragon Scale per visit, Seal only on a top-grade inspection) and the
 basic-vs-trade tier line (current candidates: Greater Flask + Knight Helm join the sword;

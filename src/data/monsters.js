@@ -16,8 +16,9 @@ export const MONSTERS = {
     anim: { frames: 4, fps: 6 },   // idle wobble: slime_idle.png on the SHARED contract (4x128 ->
                                    // 512x128 strip); strip absent -> static slime.png (graceful)
     categoryWeights: { consumable: 3, weapon: 2, armor: 1 },   // the flask fan, by category
-    material: 'slime_core', materialEveryNServes: 4,   // Trade Market Pass A: drop law is
-                         // servedNow % N === 0 (game.js) — deterministic, plannable, throttled
+    material: 'slime_core', materialEveryNServes: 10,   // drop law: servedNow % N === 0 (game.js)
+                         // — deterministic, plannable, throttled. All six Ns RETUNED ~2.5× on
+                         // 2026-07-11 (Daniel: 4–6 felt like confetti; ~1 material/min roster-wide now)
   },
   bat: {
     id:'bat', displayName:'Batty', spriteId:'bat', combatMod:-1, budgetRange:[12,22],
@@ -26,7 +27,7 @@ export const MONSTERS = {
     anim: { frames: 4, fps: 6 },   // idle wing-flap: bat_idle.png, 4x128 -> 512x128 strip (optional
                                    // field — absent = static <id>.png, then the placeholder rect)
     categoryWeights: { armor: 3, consumable: 2, weapon: 1 },   // the armor lover, by category
-    material: 'echo_fang', materialEveryNServes: 4,
+    material: 'echo_fang', materialEveryNServes: 10,
   },
   skeleton: {
     id:'skeleton', displayName:'Skele', spriteId:'skeleton', combatMod:1, budgetRange:[12,24],
@@ -34,7 +35,7 @@ export const MONSTERS = {
     footPad: 12,         // MEASURED (2026-07-03): transparent rows below the feet in skeleton.png
     anim: { frames: 4, fps: 6 },   // idle rattle/sway: skeleton_idle.png, SHARED contract as above
     categoryWeights: { weapon: 3, armor: 2, consumable: 1 },   // sword guy, by category
-    material: 'femur_charm', materialEveryNServes: 5,
+    material: 'femur_charm', materialEveryNServes: 12,
   },
   frog: {
     id:'frog', displayName:'Froggo', spriteId:'frog', combatMod:0, budgetRange:[16,30],
@@ -54,7 +55,7 @@ export const MONSTERS = {
                                    // but its authored content is a grumpy stomp — Froggo marching
                                    // to battle annoyed IS the joke; do not "fix" the mismatch.
     categoryWeights: { consumable: 3, weapon: 2, armor: 1 },
-    material: 'bogstone_bauble', materialEveryNServes: 6,   // premium customer, stingier drop
+    material: 'bogstone_bauble', materialEveryNServes: 15,   // premium customer, stingier drop
     itemBias: { greater_flask: 3, iron_sword: 2 },   // the tier-2 customer: once licensed, his
                                                      // signature goods dominate WITHIN the category
                                                      // (pre-license the unlock filter hides them).
@@ -88,7 +89,7 @@ export const MONSTERS = {
                                    // absent -> static -> placeholder, never a crash
     categoryWeights: { consumable: 2, weapon: 2, armor: 2 },   // omnivorous scrounger — anything
                                                                // unattended is interesting
-    material: 'stolen_trinket', materialEveryNServes: 4,   // the scrounger sheds loot readily
+    material: 'stolen_trinket', materialEveryNServes: 10,   // the scrounger sheds loot readily
     itemBias: { rusty_key: 3, tattered_shirt: 2 },   // signature loves: a THIEF craves the key,
                                                      // and the cheapest shirt is peak scrounger
   },
@@ -109,7 +110,7 @@ export const MONSTERS = {
     anim: { frames: 4, fps: 6 },   // idle strip, shared 4x128 contract; strips authored, incoming
     categoryWeights: { armor: 4, weapon: 2, consumable: 1 },   // armor-first by a wide margin
     itemBias: { wooden_shield: 2, iron_buckler: 2 },           // signature loves: MORE shell
-    material: 'carapace_shard', materialEveryNServes: 5,
+    material: 'carapace_shard', materialEveryNServes: 12,
   },
 
   dragon: {
