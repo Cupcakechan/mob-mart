@@ -141,6 +141,14 @@ export function serveCurrent(state) {
   const c = state.queue[0];
   const monster = MONSTERS[c.monsterId];
   const item = ITEMS[c.wantedItemId];
+  // THE OVERSTOCKER (reform 3b): a bulkBuyer serve moves TWO units when the shelf holds two and
+  // the purse covers double — one visit, one fight, one report, DOUBLE the sale. Checked against
+  // basePrice like every affordability rule (payout mults never price anyone out), and against
+  // LIVE stock so a shelf of one sells one (graceful degrade, never a block). Registry-driven:
+  // the flag lives on the monster row; specials never carry it.
+  const units = (monster.bulkBuyer === true
+    && (state.items[c.wantedItemId]?.stock ?? 0) >= 2
+    && c.budget >= item.basePrice * 2) ? 2 : 1;
 
   // Milestone bonuses (Regulars' Loyalty) multiply the PAYOUT, never the price — affordability
   // above keeps checking basePrice, so loyalty growth can never lock customers out. This sale pays
@@ -152,8 +160,10 @@ export function serveCurrent(state) {
   // price, so a demand spike can never price a customer out. x1 when no event is active.
   // Bob's Salesmanship (Deep Sinks) is a FLAT tip added AFTER the rounded product — linear
   // production against exponential training costs, and payout-side like everything else here.
-  let goldGain = Math.round(item.basePrice * itemGoldMult(state, c.wantedItemId) * globalGoldMult(state)
-    * marketPayoutMult(state, item.category)) + sumWorkerEffect(state, 'saleTip');
+  let goldGain = (Math.round(item.basePrice * itemGoldMult(state, c.wantedItemId) * globalGoldMult(state)
+    * marketPayoutMult(state, item.category)) + sumWorkerEffect(state, 'saleTip')) * units;
+  // ^ bulk pays the FULL per-unit formula per unit, tip included — the same per-unit convention
+  //   the offline sim uses; rep below stays PER VISIT (rep rewards service, not volume).
   let finalRepGain = repGain;
   // THE INSPECTION (Special Visits): the dragon grades the shelf AS HE SEES IT — computed before
   // his own unit leaves it (the decrement below), which is also the fiction: he inspected, THEN
@@ -166,7 +176,7 @@ export function serveCurrent(state) {
     pushLog(state, { text: visitGradeLine(Math.round(g.fullness * 100), g.tip),
       repDelta: 0, tier: 'market' });
   }
-  state.items[c.wantedItemId].stock -= 1;                       // hand over the item
+  state.items[c.wantedItemId].stock -= units;                   // hand over the item(s) — bulk moves two
   state.gold += goldGain;                                       // take payment (base + loyalty on top)
   const prevTierIdx = reputationTier(fameOf(state)).index;      // tier BEFORE this sale's fame lands —
   // captured before EITHER rep write: fameOf falls back to state.reputation when lifetimeRep is
@@ -216,10 +226,17 @@ export function serveCurrent(state) {
 
   // Lifetime ledger + crossing announcements (gold lines in the log, above the battle line).
   const prevEvery = everythingTier(state);
-  const soldNow = (state.stats.itemSales[c.wantedItemId] ?? 0) + 1;
+  const soldNow = (state.stats.itemSales[c.wantedItemId] ?? 0) + units;
   const servedNow = (state.stats.monsterServes[c.monsterId] ?? 0) + 1;
   state.stats.itemSales[c.wantedItemId] = soldNow;
   state.stats.monsterServes[c.monsterId] = servedNow;
+  // Bulk skip-guard: a two-unit sale can jump OVER a breakpoint (249 -> 251 skips 250). The
+  // MULTIPLIER math is immune (crossedCount derives from the total), but the announce line
+  // would vanish — so the skipped count speaks first, then the landing count as always.
+  if (units === 2 && ITEM_BREAKPOINTS.includes(soldNow - 1)) {
+    pushLog(state, { text: milestoneLine('item', { count: soldNow - 1, item: item.displayName }),
+      repDelta: 0, tier: 'milestone', monsterId: monster.id });
+  }
   // MONSTER MATERIALS (reform Pass A): the serve faucet. Deterministic drop law — every Nth
   // serve of a family sheds its identity material (servedNow % N === 0; N per family, registry-
   // driven) — plannable on purpose (the legibility law: "two more slimes until a Core").

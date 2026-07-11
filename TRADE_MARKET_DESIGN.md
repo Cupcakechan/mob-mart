@@ -41,8 +41,8 @@ serve Skele ──────────────▶ Lucky Femur Charm    �
 serve Froggo ─────────────▶ Bogstone Bauble      ─┼─ capped ─▶   stock items
 serve Ratty ──────────────▶ Stolen Trinket       ─┤  stores   RELIC RESTORES (hard)
 serve Beetley ────────────▶ Polished Carapace    ─┤            scrap + gold + materials
-serve a spider (upcoming) ▶ Silk Bundle          ─┤          COMMISSIONS (later)
-serve a demon (upcoming) ─▶ Infernal Ember       ─┤            N trade-tier items by deadline
+serve Leggsy ─────────────▶ Silk Bundle          ─┤          COMMISSIONS (later)
+serve Demmy ──────────────▶ Infernal Ember       ─┤            N trade-tier items by deadline
 Inspector visits (VIP,   ─▶ Dragon Scale and/or  ─┤
  Pass B — see §3/§13)        Inspector's Seal     ┤
 EXPEDITIONS (targeted, ───▶ (the door/party you  ─┤
@@ -77,7 +77,7 @@ the Pass A recon):**
 | Bogstone Bauble | Froggo | **LIVE** (Pass A) |
 | Stolen Trinket | Ratty — live customer (the thief, 2026-07-05) | **LIVE** (Pass A) |
 | Polished Carapace Shard | Beetley — live customer (2026-07-05) | **LIVE** (Pass A) |
-| Silk Bundle | Spider — upcoming customer | lands with the customer |
+| Silk Bundle | Leggsy the spider — live customer (reform step 3b, 2026-07-11) | **LIVE** |
 | Infernal Ember | Demmy the demon — live customer (reform step 3a, 2026-07-11) | **LIVE** |
 | Dragon Scale | the Inspector — VIP drop | Pass B; drop design **OPEN** (§13) |
 | Inspector's Seal | the Inspector — VIP drop | Pass B; drop design **OPEN** (§13) |
@@ -202,12 +202,12 @@ One system per pass, §14's A/B precedent where a pass is large:
 2. **Market Pass B** — the full first trade tier, forecast, per-offer limits, and the board's
    SECOND ROW design (the daily-special / Market-Day-event presence — cut from Pass A as
    clutter; design it properly here or retire it).
-3. **Spider + Demon** — 3a **Demmy DONE (2026-07-11)**: the Apologetic Menace (combatMod +2,
-   the victory-as-apology register, top budget [20,36], iron_sword signature — the market's
-   demand engine; ember faucet N 15). 3b **Leggsy the spider NEXT**: the Overstocker —
-   `bulkBuyer` quirk (one serve buys TWO units when stock and budget allow), budget [14,28],
-   bandages + zip_tonic signatures, silk faucet N 12; art fully in (footPad 12,
-   spriteScale 1.05 PROVISIONAL).
+3. **Spider + Demon — DONE (2026-07-11, two passes).** 3a **Demmy**: the Apologetic Menace
+   (combatMod +2, the victory-as-apology register, top budget [20,36], iron_sword signature —
+   the market's demand engine; ember faucet N 15). 3b **Leggsy**: the Overstocker —
+   `bulkBuyer` quirk shipped (one serve buys TWO units when stock and budget allow; skip-guard
+   keeps jumped breakpoint lines speaking), budget [14,28], bandages + zip_tonic signatures,
+   silk faucet N 12, footPad 12, spriteScale 1.05 PROVISIONAL (Daniel's screenshot decides).
 4. **Expeditions MVP** — one monster, one door, one slot.
 5. **Relic rework** — hard restores + economy effects in the carrier slots.
 6. **Commissions.**

@@ -2911,7 +2911,7 @@ console.log('M4 auto-serve worker — smoke test\n');
   // no multiplier (the sizing saga's rule). On-screen ~132 visible, level with Bob, ~1.4x a mob.
   ok(d?.special === true && d.pixelScale === 1 && d.footPad === 14,
      'visits: the Inspector ships special, drawn 1:1 at pixelScale 1, measured footPad 14');
-  ok(MONSTER_IDS.length === 8, 'visits: eight on the roster (updated at the Demmy batch — §60 carries the live exact)');
+  ok(MONSTER_IDS.length === 9, 'visits: nine on the roster (updated at the Leggsy batch — §61 carries the live exact)');
 
   // (a2) FRAME-SIZE CONTRACT (the sizing-saga plug, 2026-07-08): a pixelScale VIP draws at
   // frame x pixelScale, so a re-export at a different frame size silently changes on-screen
@@ -3560,11 +3560,12 @@ console.log('M4 auto-serve worker — smoke test\n');
   ok(d.itemBias?.iron_sword === 3, 'demmy: the trade item leads his signature loves (the demand engine)');
   ok(d.footPad === 10 && d.spriteScale === undefined,
     'demmy: footPad 10 MEASURED; trio-class mass, no scale (the Beetley precedent)');
-  ok(MONSTER_IDS.length === 8 && MONSTER_IDS[6] === 'demon' && MONSTER_IDS[7] === 'dragon',
-    'demmy: roster EXACT eight; demon slots before the special dragon row');
-  ok(MONSTER_IDS.filter((id) => !MONSTERS[id].special && MONSTERS[id].material).length === 7
-     && eligibleMaterialIds().length === 7 && eligibleMaterialIds().includes('infernal_ember'),
-    'demmy: SEVEN live faucets — ember is eligible for recipes from day one');
+  ok(MONSTER_IDS.length >= 8 && MONSTER_IDS[6] === 'demon'
+     && MONSTER_IDS[MONSTER_IDS.length - 1] === 'dragon',
+    'demmy: demon at slot six; the special dragon row stays LAST (exact roster count lives in the newest batch)');
+  ok(MONSTER_IDS.filter((id) => !MONSTERS[id].special && MONSTERS[id].material).length >= 7
+     && eligibleMaterialIds().includes('infernal_ember'),
+    'demmy: ember joined the live faucets and is recipe-eligible (exact faucet count: newest batch)');
 
   // Spawn membership: with the rest of the roster parked in-queue, only demon remains eligible.
   {
@@ -3588,6 +3589,96 @@ console.log('M4 auto-serve worker — smoke test\n');
       'demmy: exactly ONE golden line, a 100-serve privilege');
     ok(Object.values(tiers).flat().every((t) => (typeof t === 'string' ? t : t.text).length <= 80),
       'demmy: every line respects the 80-char log budget');
+  }
+}
+
+// 61. LEGGSY the spider (reform step 3b, 2026-07-11) — the Overstocker; roster/faucet exacts live here --
+// The bulkBuyer quirk: ONE serve moves TWO units when the shelf holds two and the purse covers
+// double — one visit, one fight, one report, DOUBLE the sale. First demand-side pressure on
+// stock depth. Exact-total doctrine: newest batch, so roster NINE / faucets EIGHT pin here.
+{
+  const { MONSTERS, MONSTER_IDS } = await import('./src/data/monsters.js');
+  const { MATERIALS } = await import('./src/data/materials.js');
+  const { eligibleMaterialIds } = await import('./src/data/trademarket.js');
+  const { MONSTER_RESULTS } = await import('./src/data/results.js');
+  const { ITEM_BREAKPOINTS } = await import('./src/data/milestones.js');
+
+  const L = MONSTERS.spider;
+  ok(!!L && L.displayName === 'Leggsy' && L.bulkBuyer === true && L.special === undefined,
+    'leggsy: registry row present, bulkBuyer flagged, a NORMAL customer');
+  ok(L.combatMod === 0 && L.budgetRange[0] === 14 && L.budgetRange[1] === 28,
+    'leggsy: identity pins (mod 0, budget [14,28])');
+  ok(L.material === 'silk_bundle' && L.materialEveryNServes === 12 && !!MATERIALS.silk_bundle,
+    'leggsy: silk faucet paired, N 12');
+  ok(L.itemBias?.bandages === 3 && L.footPad === 12 && L.spriteScale === 1.05,
+    'leggsy: bandages lead the signatures; footPad 12 MEASURED; scale 1.05 PROVISIONAL');
+  ok(MONSTER_IDS.length === 9 && MONSTER_IDS[7] === 'spider' && MONSTER_IDS[8] === 'dragon',
+    'leggsy: roster EXACT nine; spider before the special dragon row');
+  ok(MONSTER_IDS.filter((id) => !MONSTERS[id].special && MONSTERS[id].material).length === 8
+     && eligibleMaterialIds().length === 8 && eligibleMaterialIds().includes('silk_bundle'),
+    'leggsy: EIGHT live faucets — silk is recipe-eligible from day one');
+  ok(Object.values(MONSTERS).filter((m) => m.bulkBuyer === true).length === 1,
+    'leggsy: the only bulk buyer (the quirk stays hers until a row says otherwise)');
+
+  // The bulk math, both ways. A parked shop (shopState) + a hand-built Leggsy at the counter.
+  {
+    const s = shopState();
+    s.items.bandages.stock = 5;
+    s.queue = [customer('spider', 'bandages', 28)];   // budget 28 >= 2x6: bulk fires
+    const g0 = s.gold, sold0 = s.stats.itemSales.bandages;
+    ok(serveCurrent(s) === true, 'bulk: the serve completes');
+    ok(s.items.bandages.stock === 3, 'bulk: TWO units left the shelf');
+    ok(s.stats.itemSales.bandages === sold0 + 2, 'bulk: the ledger counts both units');
+    ok(s.gold - g0 === 12, 'bulk: exactly 2x the unit payout banked (2x6, no mults on a fresh save)');
+    ok(s.stats.monsterServes.spider === 1, 'bulk: ONE visit on the serve ledger (rep rewards service)');
+  }
+  {
+    const s = shopState();
+    s.items.bandages.stock = 1;                        // shelf of one: graceful degrade, never a block
+    s.queue = [customer('spider', 'bandages', 28)];
+    serveCurrent(s);
+    ok(s.items.bandages.stock === 0 && s.stats.itemSales.bandages === 1,
+      'bulk: a single-unit shelf sells ONE (degrade, not deadlock)');
+  }
+  {
+    const s = shopState();
+    s.items.bandages.stock = 5;
+    s.queue = [customer('spider', 'bandages', 11)];    // 11 < 12: covers one, not two
+    serveCurrent(s);
+    ok(s.items.bandages.stock === 4, 'bulk: a purse that covers one buys ONE');
+  }
+  {
+    const s = shopState();                             // a non-bulk monster never doubles
+    s.items.bandages.stock = 5;
+    s.queue = [customer('slime', 'bandages', 99)];
+    serveCurrent(s);
+    ok(s.items.bandages.stock === 4, 'bulk: the flag gates the branch — Slimey buys one');
+  }
+  {
+    // The skip-guard: a bulk sale jumping OVER a breakpoint still announces it (mult math is
+    // total-derived either way; the LINE is what the guard protects).
+    const bp = ITEM_BREAKPOINTS[0];
+    const s = shopState();
+    s.items.bandages.stock = 5;
+    s.stats.itemSales.bandages = bp - 1;               // next bulk sale lands on bp+1, skipping bp
+    s.queue = [customer('spider', 'bandages', 28)];
+    serveCurrent(s);
+    ok(s.stats.itemSales.bandages === bp + 1
+       && s.log.some((l) => l.tier === 'milestone' && l.text.includes(String(bp))),
+      `bulk: jumping over the ${bp}-sale breakpoint still speaks its milestone line`);
+  }
+  // Line ladder shape: five tiers + leave + dismiss; exactly ONE golden at 100; budgets hold.
+  {
+    const tiers = MONSTER_RESULTS.spider ?? {};
+    ok(['excellent', 'success', 'partial', 'failure', 'funnyFailure', 'leave', 'dismiss']
+      .every((t) => Array.isArray(tiers[t]) && tiers[t].length >= 2),
+      'leggsy: every tier authored');
+    const objs = Object.values(tiers).flat().filter((t) => typeof t !== 'string');
+    const goldens = objs.filter((t) => t.golden === true);
+    ok(goldens.length === 1 && goldens[0].minServes === 100,
+      'leggsy: exactly ONE golden line, a 100-serve privilege');
+    ok(Object.values(tiers).flat().every((t) => (typeof t === 'string' ? t : t.text).length <= 80),
+      'leggsy: every line respects the 80-char log budget');
   }
 }
 

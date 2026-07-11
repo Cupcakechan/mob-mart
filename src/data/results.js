@@ -480,6 +480,54 @@ export const MONSTER_RESULTS = {
     ],
   },
 
+  // LEGGSY (reform step 3b, 2026-07-11) — the OVERSTOCKER. Desperately earnest bulk shopping:
+  // eight legs, eight of everything, thrilled about pairs (the bulkBuyer quirk is the mechanic;
+  // these lines are its voice). combatMod 0 — tangles everyone, loses on points, takes notes.
+  // Ladder: base + @25/@50 (exactly three @50, the batch pin) + ONE golden at 100.
+  spider: {
+    excellent: [
+      `Leggsy won by hugging. Eight arms is a tactical advantage.`,
+      `Leggsy webbed the hero politely and asked about his day. Victory, somehow.`,
+      `The hero blinked first. Leggsy has six spares. No contest.`,
+      { text: `Leggsy won and knitted the hero a get-well sock. Then seven more.`, minServes: 25 },
+      { text: `Leggsy's rematch record is perfect. The heroes keep coming back. Friends?`, minServes: 50 },
+      { text: `Leggsy caught the hero's sword, both axes, and a compliment. Kept them all.`,
+        minServes: 100, golden: true },
+    ],
+    success: [
+      `Leggsy won on points. The points got tangled in web. Everything does.`,
+      `Leggsy wrapped it up. The fight, the hero, a snack for later.`,
+      `A narrow win. Leggsy celebrated with all eight fists. Carefully.`,
+      { text: `Leggsy sells her old webs at the door now. Bob pretends not to notice.`, minServes: 25 },
+      { text: `Leggsy won and measured the hero for a sweater. He has been warned.`, minServes: 50 },
+    ],
+    partial: [
+      `A draw. Leggsy shook hands until everyone lost count.`,
+      `Leggsy retreated upward. The ceiling is technically not losing.`,
+      { text: `Leggsy's {item} fit four legs beautifully. The other four voted to flee.`, cats: ['armor'] },
+    ],
+    failure: [
+      `Leggsy lost track of which legs were fighting. The hero used the confusion.`,
+      `The hero won. Leggsy waved goodbye with everything she had. It took a while.`,
+      `Leggsy lost and left a gratitude web on the dungeon door.`,
+    ],
+    funnyFailure: [
+      `Leggsy tied her own legs together mid-charge. All of them. Impressive, really.`,
+      `Leggsy paused to count the hero's legs. Two?! The pity cost her the fight.`,
+      `Leggsy tried to look big. She is big. The hero ran. Draw declared by default.`,
+      { text: `Leggsy brought a second {item} to the fight. As a gift. It confused everyone.`, minServes: 50 },
+    ],
+    leave: [
+      `Leggsy scuttled off. Eight legs, zero patience left.`,
+      `Leggsy left a small web in the queue. Holding her spot. It works on Bob.`,
+    ],
+    dismiss: [
+      `Bob said not today. Leggsy nodded with every eye. All of them understood.`,
+      `Leggsy took the no gracefully and exited through the ceiling.`,
+      { text: `Greg pointed at the door. Leggsy pointed at it with four arms. Agreement!`, greg: true },
+    ],
+  },
+
   dragon: {
     // THE INSPECTOR (Special Visits, 2026-07-07). One flat batch on purpose: he visits once a
     // day, so minServes ladders would never unlock — every line is available from serve one.

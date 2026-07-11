@@ -155,6 +155,9 @@ loadSprite('beetle_walk_happy', 'assets/sprites/beetle_walk_happy.png'); // auth
 loadSprite('demon', 'assets/sprites/demon.png');                  // Demmy (reform step 3a, 2026-07-11) —
 loadSprite('demon_idle', 'assets/sprites/demon_idle.png');        //   same contract; ALL THREE landed
 loadSprite('demon_walk_happy', 'assets/sprites/demon_walk_happy.png'); // with the identity pass (measured).
+loadSprite('spider', 'assets/sprites/spider.png');                // Leggsy (reform step 3b, 2026-07-11) —
+loadSprite('spider_idle', 'assets/sprites/spider_idle.png');      //   same contract; ALL THREE landed
+loadSprite('spider_walk_happy', 'assets/sprites/spider_walk_happy.png'); // with the sprites push (measured).
 loadSprite('dragon', 'assets/sprites/dragon.png');                // THE INSPECTOR (Special Visits, 2026-07-07) —
 loadSprite('dragon_idle', 'assets/sprites/dragon_idle.png');      //   same contract; all three authored + measured
 loadSprite('dragon_walk_happy', 'assets/sprites/dragon_walk_happy.png'); // (footPad 14, ~82% tall fill, drawn 1:1 at pixelScale 1).

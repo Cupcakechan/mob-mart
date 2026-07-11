@@ -134,6 +134,30 @@ export const MONSTERS = {
     material: 'infernal_ember', materialEveryNServes: 15,   // premium-rare, the Froggo logic
   },
 
+  spider: {
+    id:'spider', displayName:'Leggsy', spriteId:'spider', combatMod:0, budgetRange:[14,28],
+    bulkBuyer: true,     // THE OVERSTOCKER QUIRK (reform 3b, Daniel picked Option 2, 2026-07-11):
+                         // one serve buys TWO units when the shelf holds >= 2 and the purse covers
+                         // double — eight legs, eight of everything. The serve-path branch in
+                         // game.js reads this flag (registry-driven, the thief precedent): a
+                         // future bulk mob joins the mechanic with one field. First demand-side
+                         // pressure on STOCK DEPTH — Extra Shelf, restock cadence, and the
+                         // market's daily sword supply all matter more with her in the pool.
+    spriteScale: 1.05,   // PROVISIONAL (2026-07-11): content 79-80% of frame (pngjs) sits between
+                         // Froggo/Ratty's 76% (-> 1.1) and Beetley's 85% (-> 1.0); her leg span
+                         // carries width the vertical scan can't see. Daniel's screenshot decides.
+    footPad: 12,         // MEASURED (2026-07-11, pngjs): static + idle uniform 12; walk 12-14
+                         // (±2 — the Froggo-class variance, negligible).
+    // Comic lever: DESPERATELY EARNEST BULK SHOPPING — too many legs, too many needs, buys in
+    // pairs and is thrilled about it. combatMod 0: tangles everyone in web, loses on points.
+    // Economy note: double sales on 1/8 of spawns — one tuning look owed after feel (the
+    // Froggo/Demmy precedent).
+    anim: { frames: 4, fps: 6 },   // idle + walk strips IN (2026-07-11), shared 4x128 contract
+    categoryWeights: { consumable: 3, armor: 2, weapon: 1 },   // leg maintenance first
+    itemBias: { bandages: 3, zip_tonic: 2 },   // signature loves: bandages BY THE PAIR is the joke
+    material: 'silk_bundle', materialEveryNServes: 12,
+  },
+
   dragon: {
     id: 'dragon', displayName: 'The Inspector', spriteId: 'dragon', combatMod: 1,
     budgetRange: [200, 400],   // the once-a-day whale: buys anything on the shelf, fame-scaled
@@ -162,4 +186,4 @@ export const MONSTERS = {
   },
 };
 
-export const MONSTER_IDS = ['slime', 'bat', 'skeleton', 'frog', 'rat', 'beetle', 'demon', 'dragon'];
+export const MONSTER_IDS = ['slime', 'bat', 'skeleton', 'frog', 'rat', 'beetle', 'demon', 'spider', 'dragon'];
