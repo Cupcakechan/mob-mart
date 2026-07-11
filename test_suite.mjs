@@ -1343,12 +1343,12 @@ console.log('M4 auto-serve worker — smoke test\n');
   for (const arr of Object.values(GENERIC_RESULTS)) everyTemplate.push(...arr);
   for (const tiers of Object.values(MONSTER_RESULTS))
     for (const arr of Object.values(tiers)) everyTemplate.push(...arr);
-  // Three tag kinds since the Greg voice pass: cats (item-aware), minServes (loyalty ladder),
-  // and greg (hire-gated staff voice); a template may carry any combination. Guards per kind.
+  // Four tag kinds since the cameo pass (2026-07-10): cats (item-aware), minServes (loyalty
+  // ladder), greg (hire-gated staff voice), and dougOut (out-on-a-run cameos); any combination.
   const tagged = everyTemplate.filter((t) => typeof t !== 'string');
   ok(tagged.every((t) => typeof t.text === 'string'
-       && (Array.isArray(t.cats) || Number.isInteger(t.minServes) || t.greg === true)),
-     'templates: every object template has text + at least one tag (cats | minServes | greg)');
+       && (Array.isArray(t.cats) || Number.isInteger(t.minServes) || t.greg === true || t.dougOut === true)),
+     'templates: every object template has text + at least one tag (cats | minServes | greg | dougOut)');
   const catTagged = tagged.filter((t) => t.cats !== undefined);
   ok(catTagged.length >= 12, `item-aware: cats-tagged templates exist (${catTagged.length})`);
   ok(catTagged.every((t) => Array.isArray(t.cats) && t.cats.length > 0
@@ -3214,6 +3214,34 @@ console.log('M4 auto-serve worker — smoke test\n');
      'doug: hire lines ride the registry beat (zero new game.js wiring)');
   ok(DOUG_RETURN_LINES.length >= 4 && DOUG_RETURN_LINES.every((t) => t.includes('Doug') && !/\byou\b/i.test(t)),
      'doug: return quips — his register, no second-person');
+
+  // Battle cameos (§14 cameo pass): dougOut-tagged lines live in the battle tiers, read as his
+  // register, and the gate holds — no cameo can fire while he's home.
+  {
+    const { GENERIC_RESULTS } = await import('./src/data/results.js');
+    const { logLine } = await import('./src/messages.js');
+    const { isDougOut } = await import('./src/game.js');
+    const cameos = ['excellent', 'success', 'partial', 'failure']
+      .flatMap((t) => GENERIC_RESULTS[t].filter((x) => typeof x !== 'string' && x.dougOut === true));
+    ok(cameos.length >= 5 && cameos.every((x) => x.text.includes('Doug')
+         && !/\byou\b/i.test(x.text) && x.text.length <= 90),
+       'cameos: >=5 dougOut lines across the battle tiers — Doug-voiced, pool-hygienic, log-width');
+
+    // The gate window (one clock with the draw): home-idle no, gone yes, walking-back no, unhired no.
+    const g = shopState(); g.workers.scavenger.owned = true;
+    const I = WORKERS.scavenger.baseInterval;
+    g.workers.scavenger.timer = I;      ok(!isDougOut(g), 'cameos: not out while idling at home');
+    g.workers.scavenger.timer = I / 2;  ok(isDougOut(g),  'cameos: out mid-run (the gone window)');
+    g.workers.scavenger.timer = 1;      ok(!isDougOut(g), 'cameos: not out while walking back in');
+    ok(!isDougOut(shopState()), 'cameos: never out when unhired');
+
+    // The filter: dougOut false NEVER deals a cameo (Doug appears in no other battle template);
+    // dougOut true deals one within a few hundred draws (statistical — pool share ~10%+).
+    let leaked = false, seen = false;
+    for (let i = 0; i < 300; i++) if (logLine('slime', 'excellent', { name: 'S' }).text.includes('Doug')) leaked = true;
+    for (let i = 0; i < 500 && !seen; i++) if (logLine('slime', 'excellent', { name: 'S', dougOut: true }).text.includes('Doug')) seen = true;
+    ok(!leaked && seen, 'cameos: the dougOut gate holds shut when home and opens when he is out');
+  }
 
   // Art contract (the dragon lesson, worker edition): 160px frames, whole-frame strips.
   // existsSync-guarded — pins activate as each PNG lands in assets/sprites/.

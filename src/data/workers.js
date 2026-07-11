@@ -71,6 +71,11 @@ export const WORKERS = {
                                   //     scrapPerRun. BOUNDED like Greg's reserve refills — a COUNT,
                                   //     never time-derived: an overnight absence adds 6 scrap, not
                                   //     hundreds (the §14 runaway guard).
+    idleFrac: 0.3,                // <-- choreography, PROMOTED to data (2026-07-10): fraction of the
+    walkSec: 2.6,                 //     interval spent home + seconds per walk leg. TWO consumers
+                                  //     share these — drawScavenger (scene.js) stages the trip, and
+                                  //     isDougOut (game.js) gates his battle-cameo lines — so the
+                                  //     gag can never fire while he's visibly standing at home.
   },
 };
 

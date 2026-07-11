@@ -20,7 +20,7 @@ const lastPicked = new Map();
 // log — the 100-serve payoff Daniel wanted memorable. `serves` = the monster's lifetime serve
 // count INCLUDING the current one; templates tagged minServes (?? 0) only fire at/after it, so
 // loyalty pays out in comedy and the Bestiary pips double as new-material markers.
-export function logLine(monsterId, tier, { name = 'Someone', item = 'something', itemId = null, serves = 0, gregHired = false } = {}) {
+export function logLine(monsterId, tier, { name = 'Someone', item = 'something', itemId = null, serves = 0, gregHired = false, dougOut = false } = {}) {
   const cat = ITEMS[itemId]?.category ?? null;
   const pool = (GENERIC_RESULTS[tier] ?? []).concat(MONSTER_RESULTS[monsterId]?.[tier] ?? [])
     .filter((t) => {
@@ -29,7 +29,10 @@ export function logLine(monsterId, tier, { name = 'Someone', item = 'something',
       // Greg-voiced templates ({ greg: true }) exist only once he's hired — pre-hire, the shop's
       // worst employee hasn't been employed yet (voice pass, 2026-07-05).
       const greg = typeof t === 'string' ? false : (t.greg === true);
-      return (!cats?.length || (cat !== null && cats.includes(cat))) && min <= serves && (!greg || gregHired);
+      // Doug cameos ({ dougOut: true }) fire only while the scavenger is beyond the door — he
+      // and the battle share the same 'out there' (§14 cameo pass, 2026-07-10).
+      const doug = typeof t === 'string' ? false : (t.dougOut === true);
+      return (!cats?.length || (cat !== null && cats.includes(cat))) && min <= serves && (!greg || gregHired) && (!doug || dougOut);
     })
     .map((t) => (typeof t === 'string'
       ? { text: t, golden: false }

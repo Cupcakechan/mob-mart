@@ -198,7 +198,8 @@ export function serveCurrent(state) {
   // serves INCLUDES this one (the ledger increments below): the 25th serve draws from the 25-batch.
   const { text, golden } = logLine(monster.id, tier, { name: monster.displayName,
     item: item.displayName, itemId: c.wantedItemId,
-    serves: (state.stats.monsterServes[c.monsterId] ?? 0) + 1 });
+    serves: (state.stats.monsterServes[c.monsterId] ?? 0) + 1,
+    dougOut: isDougOut(state) });   // Doug's battle cameos exist only while he's out there (§14)
   // Battle-report timing (Daniel, 2026-07-04): the RESULT line lands when the celebrant ENTERS the
   // battle door — not at the counter. The fight is decided here (same math, same moment) but the
   // report is queued; delivery = the render's door-entry event (main.js wires it) OR the fallback
@@ -624,6 +625,20 @@ export function buyWorkerLevel(state, id) {
   state.workers[id].level = workerLevel(state, id) + 1;
   state.uiDirty = true;
   return true;
+}
+
+// TRUE while Doug is beyond the door — the GONE window of his run: past the idle beat and the
+// walk-out, before the walk-back (same registry dials scene.js stages the trip with). Gates his
+// battle-cameo lines: he and the mob are out there for legible reasons, and the joke only lands
+// while he's visibly absent. (Reports deliver ~1-2s after the serve decides them — the ~12s gone
+// window dwarfs that, so a boundary straddle is rare and harmless.)
+export function isDougOut(state) {
+  const d = WORKERS.scavenger;
+  const w = state.workers?.scavenger;
+  if (!d || w?.owned !== true) return false;
+  const interval = d.baseInterval, walk = Math.min(d.walkSec ?? 0, interval / 4);
+  const elapsed = interval - Math.max(0, Math.min(w.timer ?? interval, interval));
+  return elapsed >= interval * (d.idleFrac ?? 0) + walk && elapsed < interval - walk;
 }
 
 export function hireWorker(state, id) {

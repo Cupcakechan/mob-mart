@@ -17,6 +17,11 @@
 
 export const GENERIC_RESULTS = {
   excellent: [
+    // Doug battle cameos ({ dougOut: true } — fire only while he's beyond the door): the battle
+    // is the epic frame, Doug is the mundane undercut. He is never the subject (bible: the cameo
+    // grammar); the fight is not his business — the hinges are.
+    { text: `{name} won! Doug looked up from a promising dumpster. Nodded. Resumed.`, dougOut: true },
+    { text: `The hero fled past Doug. Doug checked their footprints for loose change.`, dougOut: true },
     `{name} won. Nobody is more surprised than {name}.`,
     `The hero fled. {name} is as confused as everyone else.`,
     { text: `{name} swung the {item} once. Once was enough.`, cats: ['weapon'] },
@@ -33,6 +38,7 @@ export const GENERIC_RESULTS = {
     `The hero heard boss music and left. {name} takes the win.`,
   ],
   success: [
+    { text: `{name} won as Doug wandered by, dragging a door hinge. Both nodded.`, dougOut: true },
     { text: `{name} survived! The {item} has some new dents.`, cats: ['weapon', 'armor'] },
     `{name} lost gracefully but walked home unbruised.`,
     `{name} tapped out early and got orange slices. Worth it.`,
@@ -46,6 +52,8 @@ export const GENERIC_RESULTS = {
     `The hero marked {name} "optional" and moved on. Phew.`,
   ],
   partial: [
+    { text: `Both sides paused to watch Doug haul off half a ladder. Then resumed.`, dougOut: true },
+    { text: `{name} tripped over Doug's salvage pile. Doug apologized to the pile.`, dougOut: true },
     `{name} lost the fight but won a coupon. Net positive?`,
     `{name} fainted, but the {item} looked amazing doing it.`,
     `Defeated, {name} made a lifelong friend: the hero's dog.`,
@@ -59,6 +67,8 @@ export const GENERIC_RESULTS = {
     { text: `{name} used the {item} at the worst possible moment. Almost artistic.`, cats: ['consumable'] },
   ],
   failure: [
+    { text: `{name} fainted near Doug. Doug stood guard. Mostly over his good bits.`, dougOut: true },
+    { text: `The hero celebrated. Behind them, Doug quietly salvaged a horseshoe.`, dougOut: true },
     `{name} charged bravely. The hero yawned. Over fast.`,
     `{name} met a hero. The hero was better at this. Much better.`,
     `The {item} did not save {name}. It rarely does.`,

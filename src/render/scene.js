@@ -542,14 +542,22 @@ const DOUG = {
                        // 870 = 6px clear of the door, 19px clear of Bob, whole body behind the desk.
   feetY: COUNTER.baseY - 60,  // standing on the floor BEHIND the counter — less lifted than
                               // stool-Bob's -82: legs occluded, pack + head clear the desk
-  doorFeetY: FLOOR_Y - 4,     // feet at the door threshold — he drifts 'deeper' as he crosses
-  height: 160,         // NATIVE frame — drawn 1:1 (the sizing law; Bob/dragon precedent)
+  // No wall-height walk target anymore (the 2026-07-10 floor fix): his legs speak the CELEBRANT
+  // grammar — descend around the desk's end onto the contact plane (COUNTER.baseY, the same
+  // plane the marchers hold), walk the floor to the doorway, then climb to the door's base with
+  // the marchers' depth shrink (CELEBRATE.depthScale). legPos() below stages it; the fractions
+  // are the dials.
+  sinkFrac: 0.28,      // first slice of each leg: the step down/up around the desk's end
+  enterFrac: 0.62,     // where the doorway climb begins (climb spans enterFrac..1)
+  height: 160,         // NATIVE frame — drawn 1:1 (the sizing law; Bob/dragon precedent). NOTE: this
+                       // line was once eaten by a neighboring splice and Doug vanished — a missing
+                       // height NaNs every draw coordinate and canvas silently draws NOTHING.
   footPadWalk: 10,     // MEASURED (pngjs, walk frames: 9-12) — soles on the walk line
   footPadIdle: 12,     // PROVISIONAL — idle strip pending re-measure (walk's standing frames sit
                        //   at 12); a one-value dial if his idle feet float or sink on sight
-  walkSec: 2.6,        // each leg (out/back) — an unhurried gremlin shuffle over the ~155px run
   fadeSec: 0.45,       // threshold melt — the last/first beats of the out/back legs (alpha ramp)
-  idleFrac: 0.3,       // fraction of the interval spent home before departing (sorting the haul)
+  // walkSec + idleFrac now live in the WORKERS.scavenger registry (promoted 2026-07-10): the
+  // battle-cameo gate (isDougOut, game.js) must share this exact clock — one source of truth.
   placeholderColor: '#5a7a4a',   // moss-green slab if every doug sprite is absent
 };
 const DOUG_ANIMS = {
@@ -562,24 +570,42 @@ function drawScavenger(ctx, state, tMs) {
   if (!w?.owned) return;                                     // hire-gated, like Bob's arc and Greg
   const interval = WORKERS.scavenger?.baseInterval ?? 24;    // scavenge has no speed perks (scoped
                                                              //   in game.js) — this IS the clock
-  const walk = Math.min(DOUG.walkSec, interval / 4);         // degenerate-interval guard: legs never overlap
+  const walk = Math.min((WORKERS.scavenger?.walkSec ?? 2.6), interval / 4);         // degenerate-interval guard: legs never overlap
   const timer = Math.max(0, Math.min(w.timer ?? interval, interval));
   const elapsed = interval - timer;                          // 0 at run start, interval at homecoming
-  const idleSec = interval * DOUG.idleFrac;
+  const idleSec = interval * (WORKERS.scavenger?.idleFrac ?? 0.3);
   const outEnd = idleSec + walk, backStart = interval - walk;
   const dl = (a, b, t) => a + (b - a) * t;                   // local lerp
 
-  let x = DOUG.homeX, y = DOUG.feetY, mode = 'idle', flip = false, alpha = 1;
+  // Leg path (t: 0 = home, 1 = through the door), in the celebrants' floor language: down around
+  // the desk's end (its face occludes the turn — he draws before the counter), the CONTACT PLANE
+  // across the open floor, then the doorway climb with the marchers' recede-shrink.
+  const legPos = (t) => {
+    const turnX = DOUG.homeX + DOUG.sinkFrac * (PORTAL.centerX - DOUG.homeX);
+    if (t < DOUG.sinkFrac) {
+      const f = t / DOUG.sinkFrac;
+      return { x: dl(DOUG.homeX, turnX, f), y: dl(DOUG.feetY, COUNTER.baseY, f), scale: 1 };
+    }
+    if (t < DOUG.enterFrac) {
+      const f = (t - DOUG.sinkFrac) / (DOUG.enterFrac - DOUG.sinkFrac);
+      return { x: dl(turnX, PORTAL.centerX, f), y: COUNTER.baseY, scale: 1 };
+    }
+    const f = (t - DOUG.enterFrac) / (1 - DOUG.enterFrac);
+    return { x: PORTAL.centerX, y: dl(COUNTER.baseY, PORTAL.baseY, f),
+             scale: 1 + (CELEBRATE.depthScale - 1) * f };
+  };
+
+  let x = DOUG.homeX, y = DOUG.feetY, mode = 'idle', flip = false, alpha = 1, scale = 1;
   if (elapsed < idleSec) { /* home: idle, sorting the last haul */ }
-  else if (elapsed < outEnd) {                               // out-leg: home -> door (faces right, as authored)
-    const t = (elapsed - idleSec) / walk;
-    x = dl(DOUG.homeX, PORTAL.centerX, t); y = dl(DOUG.feetY, DOUG.doorFeetY, t); mode = 'walk';
-    alpha = Math.max(0, Math.min(1, (outEnd - elapsed) / DOUG.fadeSec));   // melt into the threshold
+  else if (elapsed < outEnd) {                               // out-leg (faces right, as authored)
+    const p = legPos((elapsed - idleSec) / walk);
+    x = p.x; y = p.y; scale = p.scale; mode = 'walk';
+    alpha = Math.max(0, Math.min(1, (outEnd - elapsed) / DOUG.fadeSec));   // melt into the doorway
   } else if (elapsed < backStart) {
     return;                                                  // through the door — gone scavenging
-  } else {                                                   // back-leg: door -> home, MIRRORED
-    const t = (elapsed - backStart) / walk;
-    x = dl(PORTAL.centerX, DOUG.homeX, t); y = dl(DOUG.doorFeetY, DOUG.feetY, t); mode = 'walk'; flip = true;
+  } else {                                                   // back-leg: the same path REVERSED + mirrored
+    const p = legPos(1 - (elapsed - backStart) / walk);
+    x = p.x; y = p.y; scale = p.scale; mode = 'walk'; flip = true;
     alpha = Math.max(0, Math.min(1, (elapsed - backStart) / DOUG.fadeSec));  // and melt back out
   }
 
@@ -587,10 +613,11 @@ function drawScavenger(ctx, state, tMs) {
   const spr = getSprite(cfg.spriteId) ?? getSprite('doug');  // strip -> static -> placeholder
   const box = DOUG.height;
   const footPad = mode === 'walk' ? DOUG.footPadWalk : DOUG.footPadIdle;
-  const topY = y + footPad - box;                            // content bottom (soles) rests on y
+  const bx = box * scale;                                    // the doorway recede (feet-anchored)
+  const topY = y + footPad * scale - bx;
   if (!spr) {                                                // placeholder slab (standing pattern)
     ctx.fillStyle = DOUG.placeholderColor;
-    ctx.fillRect(x - box * 0.25, topY + box * 0.2, box * 0.5, box * 0.8);
+    ctx.fillRect(x - bx * 0.25, topY + bx * 0.2, bx * 0.5, bx * 0.8);
     return;
   }
   const frames = Math.max(1, Math.round(spr.naturalWidth / spr.naturalHeight));  // aspect auto-slice
@@ -600,7 +627,7 @@ function drawScavenger(ctx, state, tMs) {
   ctx.globalAlpha = alpha;                                   // threshold fade (1 everywhere else)
   if (flip) { ctx.translate(x, 0); ctx.scale(-1, 1); ctx.translate(-x, 0); }    // instant mirror — masked
   ctx.drawImage(spr, frame * fw, 0, fw, spr.naturalHeight,                      //   by the door/counter ends
-    x - box / 2, topY, box * (fw / spr.naturalHeight), box);
+    x - bx / 2, topY, bx * (fw / spr.naturalHeight), bx);
   ctx.restore();
 }
 

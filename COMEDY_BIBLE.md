@@ -541,3 +541,13 @@ bits” / “shinies”** — never that OTHER word (the line between homage and
 the HIRE lines ride `WORKER_HIRE_LINES.scavenger`; the RETURN quips (`DOUG_RETURN_LINES`,
 results.js) fire on ~1 in 4 homecomings so the 24s cadence never spams the log. Pool-line
 hygiene applies (no second-person; suite-checked in section 57).
+
+**Battle cameos (`{ dougOut: true }`, 2026-07-10):** while Doug is beyond the door, battle-result
+lines may glimpse him — he and the mob are out there for legible reasons. Touchstones from the
+four reference shows: **Old Man McGucket** (Gravity Falls — the junk-fixated scavenger wandering
+through the plot’s explosions; the fight is not his business, the hinges are), **BMO** (Adventure
+Time — earnest self-talk, objects as peers), **Tree Trunks** (serene obliviousness amid danger),
+with Regular Show/Gumball’s background-gag grammar. The rules: Doug is NEVER the subject — the
+battle is the epic frame and Doug is the mundane undercut (he IS the bathos, placed at the END
+per the one lever); gated on `isDougOut` (game.js) so a cameo can never fire while he is visibly
+standing at home — the gate and the draw share one registry clock (workers.js dials).
