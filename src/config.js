@@ -7,6 +7,21 @@ export const CONFIG = {
     startingReputation: 0,
   },
 
+  // TRADE MARKET (reform Pass A — TRADE_MARKET_DESIGN.md). Every material/trade number is a dial
+  // here; the harness re-measures after any change (the reform's acceptance law).
+  materials: {
+    baseCap: 10,               // per-material store cap (law §4.2: hoarding must not dissolve
+                               // decisions). A full store LOSES further drops — that's the
+                               // pressure. Per-material overrides: MATERIALS[id].cap (guarded).
+    defaultEveryNServes: 5,    // fallback drop cadence when a monster row omits its own N
+  },
+  trade: {                     // daily-offer recipe bands (offerForDay, trademarket.js)
+    typesMin: 1, typesMax: 2,  // distinct materials per offer
+    unitsMin: 1, unitsMax: 2,  // units per material
+    goldMin: 30, goldMax: 90,  // the gold component (vs the retired 13g restock — trades are
+                               // meant to cost real planning, not pocket change)
+  },
+
   reputation: {
     // Option A: reputation rewards *service*, not the off-screen battle outcome.
     perSale: 2,                // rep gained per completed sale

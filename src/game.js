@@ -9,7 +9,9 @@ import { UPGRADES, upgradeLevel, upgradeCost, isMaxed, sumEffect } from './data/
 import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost,
   workerLevel, workerLevelCost, isWorkerLevelMaxed, sumWorkerEffect } from './data/workers.js';
 import { randInt, pick, weightedPick } from './utils.js';
-import { WORKER_HIRE_LINES, DOUG_RETURN_LINES, RELIC_VOICE } from './data/results.js';
+import { WORKER_HIRE_LINES, DOUG_RETURN_LINES, RELIC_VOICE, TRADE_VOICE } from './data/results.js';
+import { MATERIALS } from './data/materials.js';   // Trade Market reform Pass A (leaf registry)
+import { offersForDay, tradeDayKey, describeOffer } from './data/trademarket.js';   // (leaf, no cycle)
 import { RELICS, RELIC_ORDER, RELIC_FIND, RELIC_AMBIENT_CHANCE } from './data/relics.js';
 import { resolveCombat } from './combat.js';
 import { reputationTier } from './reputation.js';
@@ -218,6 +220,25 @@ export function serveCurrent(state) {
   const servedNow = (state.stats.monsterServes[c.monsterId] ?? 0) + 1;
   state.stats.itemSales[c.wantedItemId] = soldNow;
   state.stats.monsterServes[c.monsterId] = servedNow;
+  // MONSTER MATERIALS (reform Pass A): the serve faucet. Deterministic drop law — every Nth
+  // serve of a family sheds its identity material (servedNow % N === 0; N per family, registry-
+  // driven) — plannable on purpose (the legibility law: "two more slimes until a Core").
+  // SPECIAL rows (the Inspector) never drop here — VIP faucets are Pass B's. A capped store
+  // LOSES the drop (addMaterial returns 0): the cap is the pressure, not a suggestion.
+  if (!monster.special && monster.material) {
+    const everyN = monster.materialEveryNServes ?? CONFIG.materials?.defaultEveryNServes ?? 5;
+    if (everyN > 0 && servedNow % everyN === 0) {
+      const landed = addMaterial(state, monster.material, 1);
+      // First-ever landed drop = the discovery beat (once per material, ever — the lifetime
+      // ledger is the latch, so no new save field and no repeat after a spend-to-zero).
+      if (landed > 0 && (state.stats.materialEarned?.[monster.material] ?? 0) === 1) {
+        const mat = MATERIALS[monster.material];
+        pushLog(state, { text: pick(TRADE_VOICE.discovery)
+            .replaceAll('{monster}', monster.displayName).replaceAll('{name}', mat.displayName),
+          repDelta: 0, tier: 'milestone', monsterId: monster.id });
+      }
+    }
+  }
   if (ITEM_BREAKPOINTS.includes(soldNow)) {
     pushLog(state, { text: milestoneLine('item', { count: soldNow, item: item.displayName }),
       repDelta: 0, tier: 'milestone', monsterId: monster.id });
@@ -279,6 +300,68 @@ export function dismissCurrent(state) {
   return true;
 }
 
+// --- Monster materials + the Trade Market (reform Pass A — TRADE_MARKET_DESIGN.md) --------------
+// Currencies stay in their lanes (the reform's law 1): NOTHING here converts gold to materials
+// or back. Faucet = the serve drop in serveCurrent; sink = executeTrade below. Offer math is
+// pure and lives in data/trademarket.js; this is the stateful half (the Market Day pattern).
+
+// Per-material store cap: registry override, else the global dial. Future cap-raisers (Backroom
+// Storage's second effect, relic buffs) sum in HERE when they land — one read site to grow.
+export function materialCap(state, id) {
+  return MATERIALS[id]?.cap ?? CONFIG.materials?.baseCap ?? 10;
+}
+
+// Add up to n of a material, clamped to cap. Returns how many LANDED (0 on a full store — the
+// caller treats a lost drop as exactly that; the cap must bite or hoarding dissolves decisions).
+// The lifetime ledger counts landed units only, so discovery/mastery math never drifts from
+// what the player actually holds the history of.
+export function addMaterial(state, id, n = 1) {
+  if (!MATERIALS[id] || n <= 0) return 0;
+  state.materials ??= {};
+  const cur = state.materials[id] ?? 0;
+  const landed = Math.max(0, Math.min(n, materialCap(state, id) - cur));
+  if (landed > 0) {
+    state.materials[id] = cur + landed;
+    state.stats.materialEarned ??= {};
+    state.stats.materialEarned[id] = (state.stats.materialEarned[id] ?? 0) + landed;
+    state.uiDirty = true;
+  }
+  return landed;
+}
+
+// Today's offers for THIS state (the override seam keeps headless runs calendar-free).
+export function currentTradeOffers(state) {
+  return offersForDay(tradeDayKey(state));
+}
+
+export function canTrade(state, offer) {
+  if (!offer || !ITEMS[offer.itemId]) return false;
+  // License = the SELL gate (design §5): the board trades only goods the shop may legally sell.
+  if (!isItemUnlocked(state, offer.itemId)) return false;
+  if ((state.items[offer.itemId]?.stock ?? 0) >= effectiveMaxStock(state, offer.itemId)) return false;
+  if (state.gold < offer.gold) return false;
+  for (const [mid, n] of Object.entries(offer.materials)) {
+    if ((state.materials?.[mid] ?? 0) < n) return false;
+  }
+  return true;
+}
+
+// Execute by KEY, validated against the CURRENT day's offers — a button held across midnight
+// carries yesterday's key, finds no match, and refuses (uiDirty re-renders the fresh board);
+// nothing is ever paid at a stale rate.
+export function executeTrade(state, offerKey) {
+  const offer = currentTradeOffers(state).find((o) => o.key === offerKey);
+  if (!offer || !canTrade(state, offer)) { state.uiDirty = true; return false; }
+  state.gold -= offer.gold;
+  for (const [mid, n] of Object.entries(offer.materials)) state.materials[mid] -= n;
+  state.items[offer.itemId].stock += 1;
+  pushLog(state, { text: pick(TRADE_VOICE.trade)
+      .replaceAll('{item}', ITEMS[offer.itemId].displayName),
+    repDelta: 0, tier: 'milestone' });
+  state.uiDirty = true;
+  return true;
+}
+
 // --- Restocking (cap is base maxStock + summed maxStock upgrades) --------------
 
 // Effective stock cap for an item = its base cap plus any maxStock upgrade effects.
@@ -336,6 +419,9 @@ export function canRestock(state, itemId) {
   const slot = state.items[itemId];
   if (!item || !slot) return false;
   if (!isItemUnlocked(state, itemId)) return false;   // licensed goods only (Pass 3)
+  // Trade-tier stock NEVER gold-restocks (reform law 1) — the Market Board is its only inflow.
+  // This one gate covers restockItem, restockAll, canRestockAll, and Greg's trickleTarget.
+  if ((item.acquisition ?? 'gold') !== 'gold') return false;
   return slot.stock < effectiveMaxStock(state, itemId) && state.gold >= effectiveRestockCost(state, itemId);
 }
 
@@ -374,6 +460,7 @@ export function restockAllCost(state) {
   let total = 0;
   for (const id of ITEM_ORDER) {
     if (!isItemUnlocked(state, id)) continue;
+    if ((ITEMS[id].acquisition ?? 'gold') !== 'gold') continue;   // trade tier: not gold-fillable (reform)
     const need = Math.max(0, effectiveMaxStock(state, id) - (state.items[id]?.stock ?? 0));
     total += need * effectiveRestockCost(state, id);
   }
@@ -432,6 +519,7 @@ export function dealCrateUnits(state, units) {
     for (const id of ITEM_ORDER) {
       if (landed >= units) break;
       if (!isItemUnlocked(state, id)) continue;
+      if ((ITEMS[id].acquisition ?? 'gold') !== 'gold') continue;   // a crate can't mint trade-tier stock (reform)
       if ((state.items[id]?.stock ?? 0) >= effectiveMaxStock(state, id)) continue;
       state.items[id].stock += 1;
       landed += 1;

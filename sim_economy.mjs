@@ -36,6 +36,7 @@ import {
   buyUpgrade, canBuyUpgrade, buyPerk, canBuyPerk,
   buyWorkerLevel, canBuyWorkerLevel, restoreRelic, canRestoreRelic,
   restockAll, canRestockAll, fameOf,
+  currentTradeOffers, canTrade, executeTrade,
 } from './src/game.js';
 import { ITEMS, ITEM_ORDER } from './src/data/items.js';
 import { UPGRADES, UPGRADE_ORDER, upgradeCost, upgradeLevel } from './src/data/upgrades.js';
@@ -141,7 +142,9 @@ function cheapestPerkWant(state) {
 }
 
 // --- One seeded run ------------------------------------------------------------------------------
-function runSim(seed) {
+function runSim(seed, { tradeAware = true } = {}) {
+  // tradeAware=false is the ACCEPTANCE control (reform Pass A): a bot that ignores the Market
+  // Board entirely. If it doesn't measurably lose to the aware bot, the market isn't real yet.
   const realRandom = Math.random;
   Math.random = mulberry32(seed);
   try {
@@ -149,7 +152,7 @@ function runSim(seed) {
     s.screen = 'shop';                       // update() gates on the shop screen
     const events = [];                       // { t, kind, key, label, cost, scrap, currency }
     const samples = [];                      // { t, gold, scrap, rep, lifetime, remaining }
-    let purchased = 0, deathT = null, goldAtDeath = 0, scrapAtDeath = 0;
+    let purchased = 0, deathT = null, goldAtDeath = 0, scrapAtDeath = 0, trades = 0;
     let tierSeen = reputationTier(fameOf(s)).index;
     const foundSeen = new Set();
     let policyIn = 0, sampleIn = 0, t = 0;
@@ -182,6 +185,20 @@ function runSim(seed) {
           purchased++;
           events.push({ t, kind: 'perk', key: p.key, label: p.label, cost: p.cost, scrap: 0, currency: 'rep' });
         }
+        // 4b. THE TRADE MARKET (reform Pass A): synthetic days keep the baseline calendar-free
+        // (the override seam — trademarket.tradeDayKey), rotating rates every 24 sim-hours. The
+        // AWARE policy trades whenever today's offer is affordable and the shelf has room; the
+        // BLIND control never does. Trades are RECURRING (not wants) — they never touch the
+        // death count; their effect shows up as income (the sword sells) and stall relief.
+        s.tradeDayKeyOverride = `sim-day-${1 + Math.floor(t / 86400)}`;
+        if (tradeAware) {
+          for (let i = 0; i < 10; i++) {
+            const offer = currentTradeOffers(s)[0];
+            if (!offer || !canTrade(s, offer)) break;
+            executeTrade(s, offer.key);
+            trades++;
+          }
+        }
         // 5. Fame-tier crossings (events, not purchases — §0 asks for their wall-clock moments too).
         const idx = reputationTier(fameOf(s)).index;
         while (tierSeen < idx) {
@@ -213,7 +230,9 @@ function runSim(seed) {
     const postRate = (deathT !== null && t > deathT)
       ? (s.gold - goldAtDeath) / ((t - deathT) / 60) : null;   // net gold/min with nothing to want
     return { seed, events, samples, deathT, endT: t, goldAtDeath, scrapAtDeath,
-      goldEnd: s.gold, scrapEnd: s.scrap ?? 0, postRate, purchased };
+      goldEnd: s.gold, scrapEnd: s.scrap ?? 0, postRate, purchased, trades,
+      swordSold: s.stats.itemSales.iron_sword ?? 0,
+      matsEarned: Object.values(s.stats.materialEarned ?? {}).reduce((a, b) => a + b, 0) };
   } finally {
     Math.random = realRandom;
   }
@@ -290,7 +309,8 @@ for (const r of runs) {
   } else {
     console.log(`  seed ${r.seed}: desire curve dies at ${hms(r.deathT)}  |  purse at death ${kfmt(r.goldAtDeath)}`
       + `  |  post-death rate ${r.postRate.toFixed(0)} gold/min  |  purse +60min ${kfmt(r.goldEnd)}`
-      + `  |  scrap at death ${r.scrapAtDeath} (155 spent)`);
+      + `  |  scrap at death ${r.scrapAtDeath} (155 spent)`
+      + `  |  trades ${r.trades}, sword sold ${r.swordSold}, mats earned ${r.matsEarned}`);
   }
 }
 console.log('');
@@ -334,6 +354,28 @@ if (deaths.length) {
     + `${(OBSERVED_ENDGAME_PURSE / (rateMed * 60)).toFixed(1)} hours of post-death play at that rate`);
   console.log('');
 }
+
+// REFORM ACCEPTANCE (Pass A — TRADE_MARKET_DESIGN.md §11): the market-BLIND control against the
+// aware runs above. The blind bot never trades, so the sword shelf stays empty forever — every
+// customer who wants it stalls the queue to a patience timeout. This block is the pass's
+// pass/fail: if ignoring the market costs nothing measurable, the market isn't a system yet.
+console.log('== REFORM ACCEPTANCE — market-BLIND control (seeds 1–3) vs the aware runs above ==');
+const blind = SEEDS.slice(0, 3).map((seed) => runSim(seed, { tradeAware: false }));
+for (const b of blind) {
+  const a = runs.find((r) => r.seed === b.seed);
+  const delay = (b.deathT ?? b.endT) - (a.deathT ?? a.endT);
+  console.log(`  seed ${b.seed}: blind death ${hms(b.deathT ?? b.endT)} vs aware ${hms(a.deathT ?? a.endT)}`
+    + `  (+${hms(Math.max(0, delay))} slower)  |  sword sold ${b.swordSold} vs ${a.swordSold}`
+    + `  |  post-death ${b.postRate?.toFixed(0) ?? '-'} vs ${a.postRate?.toFixed(0) ?? '-'} gold/min`);
+}
+const delayMed = median(blind.map((b) =>
+  (b.deathT ?? b.endT) - (runs.find((r) => r.seed === b.seed).deathT ?? 0)));
+console.log(delayMed > 60
+  ? `  VERDICT: PASS — the blind bot dies ${hms(delayMed)} later and forfeits every sword sale;`
+    + ` ignoring the market finally has a price a bot can't dodge.`
+  : `  VERDICT: WEAK — median blind penalty only ${hms(Math.max(0, delayMed))}; the market's teeth`
+    + ` need retuning (sword demand or recipe value) before this pass can claim acceptance.`);
+console.log('');
 
 // Seed-1 detail: savings velocity by phase + the two curves.
 const r1 = runs[0];

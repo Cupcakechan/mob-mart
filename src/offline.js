@@ -82,8 +82,12 @@ export function computeOffline(state, nowMs) {
     // Unlicensed tier-2 items are inert offline too: live stock is 0 by construction, but the
     // backroom RESERVE would otherwise conjure sellable units for goods Bob can't legally stock.
     const unlocked = !ITEMS[id]?.license || state.licenses?.[id] === true;
+    // Trade-tier goods (reform Pass A): the reserve is a FREE-refill mechanic, so it must never
+    // mint stock the Market Board is the sole source of. LIVE shelf units the player already
+    // traded for still sell offline — that's real acquired stock, not conjured stock.
+    const goldStocked = (ITEMS[id]?.acquisition ?? 'gold') === 'gold';
     stocks[id] = unlocked ? (state.items[id]?.stock ?? 0) : 0;               // live shelf units
-    reserves[id] = unlocked ? reservePerItem * effectiveMaxStock(state, id) : 0;  // Extra Shelf compounds in
+    reserves[id] = (unlocked && goldStocked) ? reservePerItem * effectiveMaxStock(state, id) : 0;  // Extra Shelf compounds in
     goldPer[id] = Math.round((ITEMS[id]?.basePrice ?? 0) * itemGoldMult(state, id) * gMult) + saleTip;
   }
   const consumed = {};                                                       // LIVE units only (applyOffline

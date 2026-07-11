@@ -539,3 +539,33 @@ export const RELIC_VOICE = {
     },
   },
 };
+
+// --- Trade Market voice (reform Pass A — TRADE_MARKET_DESIGN.md §5) ------------------------------
+// Three pools. `discovery` fires ONCE per material (its first-ever landed drop; {monster}/{name}
+// fill), `trade` fires on every board trade ({item} fill), `board` is the sign's daily voice line
+// (picked DETERMINISTICALLY per day by trademarket.tradeBoardLine — chalked once each morning,
+// never re-rolled). Register: the market is Bob's element — a mimic-merchant finally TRADING.
+export const TRADE_VOICE = {
+  discovery: [
+    `{monster} left a {name} on the counter. Bob priced it before it stopped rolling.`,
+    `A {name}?! Bob has been waiting his whole shelf-life for one of these.`,
+    `{monster} shed a {name}. "That's worth money," Bob whispered. "That's worth MONEY."`,
+    `Bob found a {name} in the till. He is choosing not to ask questions.`,
+    `First {name} acquired. Bob wrote it on the board, then underlined it twice.`,
+  ],
+  trade: [
+    `Bob traded for the {item} like it owed him gold. It does now.`,
+    `The {item} deal closed. Bob shook his own hand.`,
+    `One {item}, acquired at today's rate. Bob calls this "the good kind of stealing."`,
+    `Bob slid the goods across the counter and the {item} slid back. Commerce!`,
+    `The {item} is on the shelf. The market got the better of nobody today. Bob checked.`,
+  ],
+  board: [
+    `Rates set at dawn. Bob licked a coin for luck.`,
+    `Today's exchange is final. Tomorrow's is a rumor.`,
+    `The market moves. Bob moves with it. Slowly. He is a chest.`,
+    `Fresh rates, same excellent chalk.`,
+    `Bob negotiated with the dawn. The dawn blinked first.`,
+    `All trades final. All chalk artisanal.`,
+  ],
+};

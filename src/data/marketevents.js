@@ -111,8 +111,9 @@ export function dayKeyOf(ms) {
 }
 
 // FNV-1a over the day key — tiny, stable, and spreads consecutive dates well. >>> 0 keeps it an
-// unsigned 32-bit int so the modulo below can never see a negative.
-function hashDayKey(key) {
+// unsigned 32-bit int so the modulo below can never see a negative. Exported since the Trade
+// Market (trademarket.js) seeds its daily offers from the same hash family — one date-math home.
+export function hashDayKey(key) {
   let h = 0x811c9dc5;
   for (let i = 0; i < key.length; i++) {
     h ^= key.charCodeAt(i);

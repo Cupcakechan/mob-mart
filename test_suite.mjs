@@ -839,14 +839,17 @@ console.log('M4 auto-serve worker — smoke test\n');
     ok(isItemUnlocked(s, 'iron_sword') === false, 'tier-2 starts locked');
     ok(canRestock(s, 'iron_sword') === false, 'locked items cannot be restocked');
     s.gold = 5000;
-    ok(canBuyLicense(s, 'iron_sword') === false, 'license gated behind Renowned (lifetime tier)');
+    // Specimen note (reform Pass A): the RESTOCK half of this block moved to greater_flask —
+    // same license cost (800) and tier (Renowned), but still gold-acquired. iron_sword is
+    // trade-tier now, and "never gold-restockable" is exactly what §59(f) pins for it.
+    ok(canBuyLicense(s, 'greater_flask') === false, 'license gated behind Renowned (lifetime tier)');
     s.lifetimeRep = 500;                              // Renowned
-    ok(canBuyLicense(s, 'iron_sword') === true && canBuyLicense(s, 'knight_helm') === false,
-       'Renowned licenses the sword; the helm waits for Legendary');
-    ok(buyLicense(s, 'iron_sword') === true && s.gold === 4200 && s.licenses.iron_sword === true,
+    ok(canBuyLicense(s, 'greater_flask') === true && canBuyLicense(s, 'knight_helm') === false,
+       'Renowned licenses the flask; the helm waits for Legendary');
+    ok(buyLicense(s, 'greater_flask') === true && s.gold === 4200 && s.licenses.greater_flask === true,
        'license purchase: -800 gold, flag set');
-    ok(canBuyLicense(s, 'iron_sword') === false, 'a license is one-time');
-    ok(canRestock(s, 'iron_sword') === true, 'licensed item becomes restockable');
+    ok(canBuyLicense(s, 'greater_flask') === false, 'a license is one-time');
+    ok(canRestock(s, 'greater_flask') === true, 'licensed item becomes restockable');
   }
 
   // Spawn filter: locked items are invisible to customers; licensing makes them wantable.
@@ -908,9 +911,11 @@ console.log('M4 auto-serve worker — smoke test\n');
     ok((lockedR.soldByItem.iron_sword ?? 0) === 0 && (lockedR.soldByItem.knight_helm ?? 0) === 0,
        'offline reserve conjures nothing for unlicensed items');
     const s2 = mk();
-    s2.licenses.iron_sword = true;
+    s2.licenses.greater_flask = true;   // specimen swap (reform Pass A): iron_sword's reserve is
+                                        // deliberately ZERO now — §59(g) pins that; the flask
+                                        // proves the licensed-gold reserve path still lives.
     const openR = computeOffline(s2, now2);
-    ok((openR.soldByItem.iron_sword ?? 0) > 0, 'licensed tier-2 sells from the backroom reserve');
+    ok((openR.soldByItem.greater_flask ?? 0) > 0, 'licensed tier-2 sells from the backroom reserve');
   }
 
   // Serving tier-2 pays its price and feeds its own milestone ladder.
@@ -978,10 +983,11 @@ console.log('M4 auto-serve worker — smoke test\n');
   {
     const s = shopState();
     s.lifetimeRep = 500; s.gold = 800;
-    buyLicense(s, 'iron_sword');                      // gold now 0
+    buyLicense(s, 'greater_flask');                   // gold now 0 (specimen swap, reform Pass A:
+                                                      // the sword never gold-fills — §59(f) pins it)
     s.gold = 5000;
     restockAll(s);
-    ok(s.items.iron_sword.stock === 5, 'licensed tier-2 fills to cap with the rest');
+    ok(s.items.greater_flask.stock === 5, 'licensed tier-2 fills to cap with the rest');
     ok(s.items.knight_helm.stock === 0, 'still-locked items get nothing');
   }
 }
@@ -3347,6 +3353,187 @@ console.log('M4 auto-serve worker — smoke test\n');
       checked++;
     }
     ok(checked >= 1, 'relic art: at least one relic PNG is pinned (guard-the-guard)');
+  }
+}
+
+// 59. THE TRADE MARKET (reform Pass A, 2026-07-11) — materials, drops, caps, offers, trades ------
+// TRADE_MARKET_DESIGN.md is the contract: gold and materials never convert; drops follow the
+// deterministic every-Nth-serve law; offers are pure functions of the day; and the trade tier
+// never gold-restocks by ANY path (restock, quote, trickle, crates, offline reserve).
+{
+  const { MATERIALS, MATERIAL_ORDER } = await import('./src/data/materials.js');
+  const { MONSTERS, MONSTER_IDS } = await import('./src/data/monsters.js');
+  const { offersForDay, eligibleMaterialIds, tradeItemIds, describeOffer, tradeBoardLine }
+    = await import('./src/data/trademarket.js');
+  const { addMaterial, materialCap, currentTradeOffers, canTrade, executeTrade,
+    canRestock, restockAll, restockAllCost, canRestockAll, trickleTarget, dealCrateUnits,
+    effectiveMaxStock } = await import('./src/game.js');
+  const { computeOffline } = await import('./src/offline.js');
+  const { CONFIG } = await import('./src/config.js');
+
+  // (a) Registry pairing — the auto-flow law's guard rails.
+  for (const id of MONSTER_IDS) {
+    const mat = MONSTERS[id].material;
+    if (mat !== undefined) ok(!!MATERIALS[mat], `market: ${id}.material '${mat}' exists in MATERIALS`);
+  }
+  ok(MONSTER_IDS.filter((id) => !MONSTERS[id].special && MONSTERS[id].material).length === 6,
+    'market: six LIVE serve faucets in Pass A (slime/bat/skeleton/frog/rat/beetle)');
+  ok(MONSTERS.dragon.material === undefined,
+    'market: the Inspector (the dragon row) has NO serve faucet — VIP drops are Pass B');
+  ok(tradeItemIds().length === 1 && tradeItemIds()[0] === 'iron_sword',
+    'market: the trade tier is exactly the Pass A proof (iron_sword)');
+  for (const id of MATERIAL_ORDER) ok(!!MATERIALS[id], `market: MATERIAL_ORDER '${id}' resolves`);
+
+  // (b) The drop law: the Nth serve of a family sheds one material; earlier serves shed none.
+  {
+    const s = shopState();
+    const N = MONSTERS.slime.materialEveryNServes ?? CONFIG.materials.defaultEveryNServes;
+    for (let i = 1; i <= N; i++) {
+      s.queue = [customer('slime', 'club', 99)];
+      s.items.club.stock = 5;
+      s.serveCooldown = 0;
+      serveCurrent(s);
+      if (i === 1) ok((s.materials.slime_core ?? 0) === 0, `market: serve 1/${N} drops nothing yet`);
+      if (i === N) ok((s.materials.slime_core ?? 0) === 1, `market: serve ${N}/${N} drops ONE core (the modulo law)`);
+    }
+    ok(s.stats.materialEarned.slime_core === 1, 'market: the lifetime ledger counted the landed drop');
+    ok(s.log.some((l) => l.text.includes('Condensed Slime Core')),
+      'market: the FIRST-ever drop speaks (discovery line, once per material)');
+  }
+
+  // (c) Cap clamp: a full store LOSES the drop; lost drops are not "earned".
+  {
+    const s = shopState();
+    const cap = materialCap(s, 'echo_fang');
+    ok(cap === (CONFIG.materials?.baseCap ?? 10), 'market: the cap reads the CONFIG dial');
+    s.materials.echo_fang = cap;
+    ok(addMaterial(s, 'echo_fang', 1) === 0 && s.materials.echo_fang === cap,
+      'market: a full store refuses the drop (the cap bites)');
+    ok((s.stats.materialEarned.echo_fang ?? 0) === 0, 'market: a LOST drop never enters the ledger');
+    ok(addMaterial(s, 'echo_fang', -3) === 0 && addMaterial(s, 'not_a_material', 1) === 0,
+      'market: addMaterial guards junk (negative n, unknown id)');
+  }
+
+  // (d) Offer purity, eligibility, bands, rotation, voice.
+  {
+    const T = CONFIG.trade;
+    const a1 = offersForDay('sim-day-1');
+    ok(JSON.stringify(a1) === JSON.stringify(offersForDay('sim-day-1')),
+      'market: same day -> byte-identical offers (pure function of the date)');
+    const eligible = new Set(eligibleMaterialIds());
+    ok(eligible.size === 6 && !eligible.has('inspectors_seal') && !eligible.has('dragon_scale'),
+      'market: eligibility = the six live faucets; reserved materials can never be demanded');
+    let badMat = 0, badBand = 0;
+    const seen = new Set([JSON.stringify(a1)]);
+    for (let d = 2; d <= 15; d++) {
+      const dayOffers = offersForDay(`sim-day-${d}`);
+      seen.add(JSON.stringify(dayOffers));
+      for (const off of dayOffers) {
+        const types = Object.keys(off.materials).length;
+        if (types < T.typesMin || types > T.typesMax) badBand++;
+        if (off.gold < T.goldMin || off.gold > T.goldMax) badBand++;
+        for (const [mid, n] of Object.entries(off.materials)) {
+          if (!eligible.has(mid)) badMat++;
+          if (n < T.unitsMin || n > T.unitsMax) badBand++;
+        }
+      }
+    }
+    ok(badMat === 0, 'market: 15 days of offers demand ONLY live-faucet materials (eligibility law)');
+    ok(badBand === 0, 'market: every recipe sits inside the CONFIG.trade bands');
+    ok(seen.size > 1, 'market: rates ROTATE across days (the anti-greedy-bot property)');
+    ok(describeOffer(a1[0]).includes('Iron Sword') && describeOffer(a1[0]).includes(`${a1[0].gold}g`),
+      'market: the shared formatter names the item and the gold component');
+    const voice = tradeBoardLine('sim-day-3');
+    ok(voice.length > 0 && voice === tradeBoardLine('sim-day-3'),
+      'market: the board voice line is deterministic per day');
+  }
+
+  // (e) Trade gates + exact execution math (built on the override seam — the headless day feed).
+  {
+    const s = shopState();
+    s.tradeDayKeyOverride = 'sim-day-7';
+    const offer = currentTradeOffers(s)[0];
+    ok(!!offer && offer.key === 'sim-day-7:iron_sword', 'market: the override seam feeds a synthetic day');
+    s.gold = 10000;
+    for (const mid of Object.keys(offer.materials)) s.materials[mid] = 50;
+    ok(canTrade(s, offer) === false, 'market: unlicensed -> no trade (the license stays the SELL gate)');
+    s.licenses.iron_sword = true;
+    const shortId = Object.keys(offer.materials)[0];
+    s.materials[shortId] = offer.materials[shortId] - 1;
+    ok(canTrade(s, offer) === false, 'market: one material short -> no trade');
+    s.materials[shortId] = offer.materials[shortId];
+    s.gold = offer.gold - 1;
+    ok(canTrade(s, offer) === false, 'market: gold short -> no trade');
+    s.gold = 10000;
+    s.items.iron_sword.stock = effectiveMaxStock(s, 'iron_sword');
+    ok(canTrade(s, offer) === false, 'market: full shelf -> no trade (stock cap holds)');
+    s.items.iron_sword.stock = 0;
+    const g0 = s.gold, mats0 = { ...s.materials };
+    ok(executeTrade(s, offer.key) === true, 'market: the trade executes');
+    ok(s.items.iron_sword.stock === 1, 'market: exactly +1 stock landed');
+    ok(s.gold === g0 - offer.gold, 'market: exactly the gold component paid');
+    let exact = true;
+    for (const [mid, n] of Object.entries(offer.materials)) {
+      if (s.materials[mid] !== mats0[mid] - n) exact = false;
+    }
+    ok(exact, 'market: exactly the recipe consumed, nothing else touched');
+    ok(s.log.some((l) => l.text.includes('Iron Sword')), 'market: the trade speaks (TRADE_VOICE)');
+    ok(executeTrade(s, 'sim-day-6:iron_sword') === false,
+      'market: a STALE offer key refuses — nothing ever pays at yesterday\'s rate');
+  }
+
+  // (f) The exclusion sweep: no gold path can fill the trade tier.
+  {
+    const s = shopState();
+    s.licenses.iron_sword = true;
+    s.gold = 100000;
+    s.items.iron_sword.stock = 0;
+    ok(canRestock(s, 'iron_sword') === false, 'exclusion: canRestock refuses the trade tier');
+    s.queue = [customer('slime', 'iron_sword', 99)];
+    ok(trickleTarget(s) !== 'iron_sword', "exclusion: Greg's trickle never targets the trade tier");
+    dealCrateUnits(s, 500);
+    ok(s.items.iron_sword.stock === 0, 'exclusion: Market Day crates cannot mint trade-tier stock');
+    restockAll(s);
+    ok(s.items.iron_sword.stock === 0, 'exclusion: Restock All never fills the trade tier');
+    // The quote prices only gold-fillable need: license everything, cap every gold item, leave
+    // the trade item empty -> the quote is 0 and the button reads "Stocked".
+    const s2 = shopState();
+    for (const id of ITEM_ORDER) if (ITEMS[id].license) s2.licenses[id] = true;
+    for (const id of ITEM_ORDER) {
+      if ((ITEMS[id].acquisition ?? 'gold') === 'gold') s2.items[id].stock = effectiveMaxStock(s2, id);
+    }
+    s2.items.iron_sword.stock = 0;
+    s2.gold = 10000;
+    ok(restockAllCost(s2) === 0, 'exclusion: the quote ignores trade-tier need (empty sword quotes 0)');
+    ok(canRestockAll(s2) === false, 'exclusion: "Stocked" stands even with the trade item empty');
+  }
+
+  // (g) Offline: the backroom reserve never conjures trade-tier units; REAL traded stock sells.
+  {
+    const s = shopState();
+    s.workers.mimic_merchant.owned = true;
+    s.licenses.iron_sword = true;
+    s.upgrades.backroom_storage = 1;              // a reserve exists for every gold item
+    s.items.iron_sword.stock = 2;                 // real, traded-for units on the shelf
+    s.lastSeen = Date.now() - 3600 * 1000;        // one hour away
+    const r = computeOffline(s, Date.now());
+    ok((r.soldByItem.iron_sword ?? 0) === 2,
+      'offline: trade-tier sales = the REAL shelf units exactly (reserve conjures nothing)');
+  }
+
+  // (h) Save round-trip + corrupt guards (the gold-guard pattern).
+  {
+    const s = shopState();
+    s.materials.slime_core = 7;
+    s.stats.materialEarned.slime_core = 9;
+    const loaded = mergeSave(createInitialState(), JSON.parse(JSON.stringify(serializeSave(s))));
+    ok(loaded.materials.slime_core === 7 && loaded.stats.materialEarned.slime_core === 9,
+      'save: material stores + the lifetime ledger round-trip');
+    const corrupt = mergeSave(createInitialState(),
+      { materials: { slime_core: -5, fake_material: 3, echo_fang: 2.9 } });
+    ok(corrupt.materials.slime_core === 0 && corrupt.materials.fake_material === undefined
+      && corrupt.materials.echo_fang === 2,
+      'save: corrupt materials clamp/drop/floor (negative -> 0, unknown -> gone, float -> int)');
   }
 }
 

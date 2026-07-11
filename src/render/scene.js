@@ -4,7 +4,7 @@
 import { CONFIG } from '../config.js';
 import { MONSTERS } from '../data/monsters.js';
 import { ITEMS, ITEM_ORDER } from '../data/items.js';
-import { MARKET_EVENTS, boardQuipFor } from '../data/marketevents.js';   // Special-of-the-Day board (leaf, no cycle)
+import { offersForDay, tradeDayKey, describeOffer } from '../data/trademarket.js';   // Market Board (reform Pass A; leaf, no cycle)
 import { sumEffect } from '../data/upgrades.js';
 import { WORKERS } from '../data/workers.js';   // Doug's scavenge clock (leaf data module, no cycle)
 import { RELICS, RELIC_ORDER } from '../data/relics.js';   // the display (§14 Pass B)
@@ -400,7 +400,8 @@ const SPECIAL_BOARD = {
                         // Clears the HUD (bottom ~62) and the fame panel (top 96). Re-tune if you change BOB.feetY.
   width: 320,           // display width -> the 640 art lands at a clean x0.5
   drawHeader: true,     // "SPECIAL OF THE DAY" in code; false once the art carries lettering
-  header: 'SPECIAL OF THE DAY',
+  header: 'MARKET BOARD',     // reform Pass A: the sign's job is today's trade now; the
+                              // Special-of-the-Day name retires into the voice line (Pass B)
   headerFont: "800 13px 'Segoe UI', system-ui, sans-serif",   // mirrors BUBBLE's family
   nameFont:   "800 14px 'Segoe UI', system-ui, sans-serif",
   quipFont:   "700 14px 'Segoe UI', system-ui, sans-serif",
@@ -423,7 +424,9 @@ const SPECIAL_BOARD = {
 };
 
 // One-shot presentation state (never saved — the render layer's usual ephemera).
-const boardFx = { chalkStartMs: 0, lastThumpMs: -1e9 };
+const boardFx = { chalkStartMs: 0, lastThumpMs: -1e9, lastBoardKey: undefined };   // lastBoardKey:
+                              // the content identity last drawn — a change (midnight rollover,
+                              // event arming) restarts the chalk write-on (reform Pass A)
 
 // The morning chalk one-shot. -1 sentinel: stamped with the real tMs on the next draw, the
 // portalAnim pattern — callers don't need a clock.
@@ -437,6 +440,10 @@ function thumpSpecialBoard(tMs) {
 
 // Greedy word-wrap into at most maxLines; a too-long tail ellipsizes on the last line. Guards a
 // future long quip — today's authored pool (<=48 chars) never trips the ellipsis.
+// NOTE (2026-07-11): maxLines must be >= 2 — the ellipsize guard fires AFTER the first push, so
+// maxLines=1 silently returns EVERY wrapped row (the board's overprint bug). A future single-row
+// caller (Pass B's designed voice row) must self-ellipsize (`while too wide, slice + '…'`) —
+// never ask this for one line.
 function wrapBoardText(ctx, text, maxW, maxLines) {
   const words = String(text).split(' ');
   const lines = [];
@@ -505,14 +512,29 @@ function drawSpecialBoard(ctx, state, tMs) {
   };
   if (B.drawHeader) line(B.header, B.header, B.headerFont, B.headerColor, B.headerY);  // painted, never chalked
 
-  const ev = MARKET_EVENTS[state?.marketEventId];
-  if (ev) {
-    ctx.font = B.quipFont;                                  // wrap measures in the quip's own font
-    const quip = boardQuipFor(ev, state.marketDayKey);
-    const rows = wrapBoardText(ctx, quip, maxW, B.maxQuipLines);
+  // MARKET BOARD content (reform Pass A): TODAY'S TRADE — the offer wrapped to two gold rows,
+  // plus one voice row. A live Market-Day EVENT (armed boots only) takes the voice row over —
+  // it's the rarer, louder thing; otherwise the trade voice speaks (deterministic per day).
+  // Content is a pure function of the day; the sign is chalked once each morning, never re-rolled.
+  const bDayKey = tradeDayKey(state);
+  const offer = offersForDay(bDayKey)[0] ?? null;             // Pass A: one trade item = one offer
+  // BOARD = CURRENT TRADES ONLY (Daniel, 2026-07-11): the voice/daily-special row is REMOVED —
+  // one ellipsized row read as clutter in browser QA. The Market-Day event keeps its log
+  // announce + payout + crate; its board presence (and any daily-special voice) is a Pass B
+  // design item (TRADE_MARKET_DESIGN.md §5/§11), not a squeezed footer here.
+  ctx.font = B.nameFont;                                      // offer rows DRAW in nameFont —
+                                                              // measure in it too (800 weight is
+                                                              // wider than 700; the overflow trap)
+  const offerRows = offer ? wrapBoardText(ctx, describeOffer(offer), maxW, 2) : [];
+  // Midnight rollover REWRITES the sign: restart the chalk when the offer changes. First sight
+  // of the session = already written (the same-day-reload fiction); playBoardChalk's -1 one-shot
+  // (the crate moment, main.js) is untouched and still wins when it fires.
+  const contentKey = offer?.key ?? '';
+  if (boardFx.lastBoardKey === undefined) boardFx.lastBoardKey = contentKey;
+  else if (boardFx.lastBoardKey !== contentKey) { boardFx.lastBoardKey = contentKey; boardFx.chalkStartMs = tMs; }
+  if (offerRows.length > 0) {
     const plan = [
-      { text: ev.displayName, font: B.nameFont, color: B.nameColor, ly: B.nameY },
-      ...rows.map((t, i) => ({ text: t, font: B.quipFont, color: B.quipColor, ly: B.quipY + i * B.quipLineH })),
+      ...offerRows.map((t, i) => ({ text: t, font: B.nameFont, color: B.nameColor, ly: B.nameY + i * B.quipLineH })),
     ];
     // Char budget across the plan: the name writes first, then the quip rows — one hand, one pass.
     let budget = Math.round(plan.reduce((n, r) => n + r.text.length, 0) * chalkP);

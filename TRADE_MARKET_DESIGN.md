@@ -37,13 +37,14 @@ the referee. Companion documents: `ECONOMY_AUDIT.md` (the measurements this refo
 FAUCETS                          MATERIALS                     SINKS
 serve a slime ────────────▶ Condensed Slime Core ─┐
 serve a bat ──────────────▶ Echo Fang            ─┤          THE TRADE MARKET (daily rates)
-serve the dragon ─────────▶ Dragon Scale         ─┤            materials + gold ⇒ trade-tier
+serve Skele ──────────────▶ Lucky Femur Charm    ─┤            materials + gold ⇒ trade-tier
 serve Froggo ─────────────▶ Bogstone Bauble      ─┼─ capped ─▶   stock items
-serve a spider (upcoming) ▶ Silk Bundle          ─┤  stores   RELIC RESTORES (hard)
-serve a demon (upcoming) ─▶ Infernal Ember       ─┤            scrap + gold + materials
-(skeleton / rat / beetle ─▶ Femur / Trinket /    ─┤          COMMISSIONS (later)
- as those customers land)   Carapace Shard       ─┤            N trade-tier items by deadline
-Inspector visits (VIP) ───▶ Inspector's Seal     ─┤
+serve Ratty ──────────────▶ Stolen Trinket       ─┤  stores   RELIC RESTORES (hard)
+serve Beetley ────────────▶ Polished Carapace    ─┤            scrap + gold + materials
+serve a spider (upcoming) ▶ Silk Bundle          ─┤          COMMISSIONS (later)
+serve a demon (upcoming) ─▶ Infernal Ember       ─┤            N trade-tier items by deadline
+Inspector visits (VIP,   ─▶ Dragon Scale and/or  ─┤
+ Pass B — see §3/§13)        Inspector's Seal     ┤
 EXPEDITIONS (targeted, ───▶ (the door/party you  ─┤
  rate-limited bursts)         chose to send)      ┘
 
@@ -65,29 +66,35 @@ a small random chance on Doug's scavenges, plus VIP visits for the Seal. Data-dr
 born a faucet** with zero extra wiring — which is what makes spider and demon (art ready) real
 additions instead of quip carriers.
 
-**The roster (Daniel's PixelLab icons — ten of them — mapping LOCKED by Daniel, 2026-07-11):**
+**The roster (Daniel's PixelLab icons — ten — mapping locked 2026-07-11; statuses CORRECTED at
+the Pass A recon):**
 
 | Material | Source | Status |
 |---|---|---|
-| Condensed Slime Core | Slimey (serve drop) | confirmed |
-| Echo Fang | Batty | confirmed |
-| Dragon Scale | the Dragon (tenth icon, authored 2026-07-11) | confirmed |
-| Bogstone Bauble | Froggo | confirmed |
-| Silk Bundle | Spider — upcoming customer | confirmed, lands with the customer |
-| Infernal Ember | Demon — upcoming customer | confirmed, lands with the customer |
-| Lucky Femur Charm | Skeleton — future customer | confirmed, lands with the customer |
-| Stolen Trinket | Rat — future customer | confirmed, lands with the customer |
-| Polished Carapace Shard | Beetle — future customer | confirmed, lands with the customer |
-| Inspector's Seal | The Inspector (VIP) | confirmed |
+| Condensed Slime Core | Slimey (serve drop) | **LIVE** (Pass A) |
+| Echo Fang | Batty | **LIVE** (Pass A) |
+| Lucky Femur Charm | Skele — live customer since launch roster | **LIVE** (Pass A) |
+| Bogstone Bauble | Froggo | **LIVE** (Pass A) |
+| Stolen Trinket | Ratty — live customer (the thief, 2026-07-05) | **LIVE** (Pass A) |
+| Polished Carapace Shard | Beetley — live customer (2026-07-05) | **LIVE** (Pass A) |
+| Silk Bundle | Spider — upcoming customer | lands with the customer |
+| Infernal Ember | Demon — upcoming customer | lands with the customer |
+| Dragon Scale | the Inspector — VIP drop | Pass B; drop design **OPEN** (§13) |
+| Inspector's Seal | the Inspector — VIP drop | Pass B; drop design **OPEN** (§13) |
 
-**The VIP pattern (this answers "what do VIPs even add"):** every VIP carries a RARE material
-dropped on visits — the Seal is the first. Whether it drops per visit or only on a PASSED
-inspection is a later dial (the passed-inspection version gives his visits real stakes). Rare
-by supply: VIP cadence makes Seals the scarce ingredient late recipes lean on (§7's hard
-restores, premium offers). Future VIPs each arrive with their own rare material. The fiction
-is airtight and free: the Inspector IS a dragon (glasses, clipboard) — the customer dragon
-sheds scales, the dragon bureaucrat stamps seals. Mapping note: the roster names three future
-customer families outright — Skeleton, Rat, Beetle — each born a faucet when its art lands.
+**Correction (2026-07-11, the Pass A recon — recorded per the artifact-wins law):** the earlier
+version of this table marked Skele/Ratty/Beetley "future customers" — they have been LIVE since
+the 2026-07-05 passes, so **Pass A shipped SIX serve faucets, not four**. And Mob Mart has
+exactly ONE dragon: the Inspector himself (`id: 'dragon', special: true`) — this doc's earlier
+"the customer dragon sheds scales, the dragon bureaucrat stamps seals" described two characters
+where the game has one. **Both dragon materials are HIS.**
+
+**The VIP pattern (this answers "what do VIPs even add"):** every VIP carries RARE material
+drops — the Inspector is the first, with a two-tier working proposal (Daniel's call, §13):
+**Dragon Scale drops per visit** (the common VIP material — a dragon sheds), **the Seal drops
+only on a top-grade inspection** (`inspectionGrade` already grades the shelves — the rare
+late-recipe chase, and it finally gives his report card stakes). Rare by supply either way: VIP
+cadence is once a day. Future VIPs each arrive with their own rare material.
 
 ## 4. The laws (these bite — same standing as the handoff's laws)
 
@@ -118,11 +125,14 @@ customer families outright — Skeleton, Rat, Beetle — each born a faucet when
 Each day it presents a small set of trade offers at that day's rates — e.g. today
 `1 Iron Buckler ⇐ 2 Lucky Femur Charms + 1 Silk Bundle + 100g`, tomorrow
 `1 Iron Buckler ⇐ 1 Polished Carapace Shard + 2 Bogstone Baubles + 50g` — plus tomorrow's
-forecast. The chalk write-on animation and the daily quip survive as the board's voice.
+forecast. The chalk write-on animation survives. **The voice/daily-special row was CUT in Pass A
+browser QA (Daniel, 2026-07-11)** — one ellipsized footer read as clutter; the board is CURRENT
+TRADES ONLY for now, and the daily-special presence (the Market-Day event's board home included)
+is a Pass B design question, not a squeezed row.
 
 **Tiering.** Early game unchanged: basic stock is pure-gold and instant. A defined top tier
-becomes TRADE-ONLY — first candidates: the 800–1200g license rung (Iron Sword, Greater Flask,
-Knight Helm), final list at the pass. Mid-tier stays gold with trade-tier gradually taking over
+becomes TRADE-ONLY — **Pass A shipped Iron Sword as the proof**; Greater Flask and Knight Helm
+convert at Pass B (final list Daniel's, §13). Mid-tier stays gold with trade-tier gradually taking over
 as the catalog grows. Licenses still gate what a shop may SELL; the market governs how
 trade-tier stock is ACQUIRED.
 
@@ -189,8 +199,9 @@ One system per pass, §14's A/B precedent where a pass is large:
 1. **Market Pass A** — MATERIALS substrate: registry + monster `material` field, serve faucets,
    caps, save fields, board rework to Market Board with ONE trade-tier item as the living proof
    (the scrap-shipped-with-Doug pattern), suite coverage.
-2. **Market Pass B** — the full first trade tier, forecast, per-offer limits, Special-of-the-Day
-   retirement into the board's voice line.
+2. **Market Pass B** — the full first trade tier, forecast, per-offer limits, and the board's
+   SECOND ROW design (the daily-special / Market-Day-event presence — cut from Pass A as
+   clutter; design it properly here or retire it).
 3. **Spider + Demon** — art-ready customers land as faucets (small passes, any time after A).
 4. **Expeditions MVP** — one monster, one door, one slot.
 5. **Relic rework** — hard restores + economy effects in the carrier slots.
@@ -220,12 +231,14 @@ single policy is optimal across days.
 
 ## 13. Open questions (Daniel)
 
-1. **RESOLVED (Daniel, 2026-07-11):** the full mapping is locked in §3 — Dragon Scale is the
-   tenth icon; Skeleton, Rat, and Beetle own Femur/Trinket/Carapace as future customers; the
-   Inspector (himself a dragon) keeps the Seal as the first VIP rare-material faucet.
-2. Confirm the first trade-tier candidates (Iron Sword / Greater Flask / Knight Helm) or name
-   your own — settled at Market Pass A's options round either way. **Nothing else gates the
-   pass: Market Pass A opens next session.**
+1. **RESOLVED, then CORRECTED (2026-07-11):** the ten-icon mapping is locked (§3). The Pass A
+   recon corrected two recorded facts: Skele/Ratty/Beetley are LIVE customers (so Pass A
+   shipped SIX serve faucets), and the game's one dragon IS the Inspector — both dragon
+   materials are his VIP drops. **The one remaining call:** the Inspector's drop design for
+   Pass B — working proposal: Dragon Scale per visit, Inspector's Seal only on a top-grade
+   inspection. Yours to confirm or reshape when Pass B opens.
+2. The first trade tier: **Pass A shipped Iron Sword as the proof** (as recommended);
+   Greater Flask + Knight Helm convert at Pass B unless you name a different set.
 
 ## 14. Not decided here
 

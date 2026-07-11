@@ -14,15 +14,18 @@ import { UPGRADES, UPGRADE_ORDER, upgradeLevel, upgradeCost, isMaxed } from '../
 import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost,
   workerLevel, workerLevelCost, isWorkerLevelMaxed } from '../data/workers.js';
 import { RELICS, RELIC_ORDER } from '../data/relics.js';   // the Forge (§14 Pass B)
+import { MATERIALS } from '../data/materials.js';           // Market Board (reform Pass A)
+import { describeOffer } from '../data/trademarket.js';
 import {
   serveBlockReason, canRestock, effectiveMaxStock, canBuyUpgrade, isUpgradeUnlocked,
   canHireWorker, effectiveWorkerInterval, isPerkUnlocked, canBuyPerk, effectiveRestockCost,
   isItemUnlocked, canBuyLicense, fameOf, restockAllCost, canRestockAll, canBuyWorkerLevel,
+  currentTradeOffers, canTrade, materialCap,
 } from '../game.js';
 import { reputationTier } from '../reputation.js';
 const reputationTierIndex = (state) => reputationTier(fameOf(state)).index;
 
-let handlers = { onServe: () => {}, onDismiss: () => {}, onRestock: () => {}, onRestockAll: () => {}, onBuyUpgrade: () => {}, onBuyPerk: () => {}, onBuyLicense: () => {}, onHireWorker: () => {}, onDirty: () => {} };
+let handlers = { onServe: () => {}, onDismiss: () => {}, onRestock: () => {}, onRestockAll: () => {}, onBuyUpgrade: () => {}, onBuyPerk: () => {}, onBuyLicense: () => {}, onHireWorker: () => {}, onTrade: () => {}, onDirty: () => {} };
 let activeCategory = 'weapon';   // shelf sub-tab (not persisted; category comes from the item registry)
 
 // Switch the shelf's category sub-tab. Shared by the tab buttons and Bob's license bubble (which
@@ -57,6 +60,13 @@ export function initPanels(root, h) {
           <button class="shelf-tab" data-cat="consumable">Consumables</button>
         </div>
         <button id="restock-all-btn" class="restock-all-btn">Restock All</button>
+      </div>
+      <div id="market-strip" class="market-strip">
+        <div class="market-offer"><span class="market-board-title">Market Board</span><span id="market-offer-text"></span></div>
+        <div class="market-row">
+          <div id="market-mats" class="market-mats"></div>
+          <button id="trade-btn" class="trade-btn">Trade</button>
+        </div>
       </div>
       <div id="item-cards" class="item-cards"></div>
     </section>
@@ -106,6 +116,7 @@ export function initPanels(root, h) {
         <div class="item-stock">Stock: <span id="stock-${id}">0</span>/<span id="max-${id}">${it.maxStock}</span></div>
         <div class="item-sold"><b id="sold-${id}">0</b> sold<span id="next-${id}"></span></div>
         <button class="restock-btn" data-item="${id}">Restock &#9670;<span id="rcost-${id}">${it.restockCost}</span></button>
+        <div class="trade-hint hidden">Trade at the Market Board</div>
         <button class="license-btn hidden" data-item="${id}"></button>
       </div>`;
   }).join('');
@@ -113,6 +124,18 @@ export function initPanels(root, h) {
     btn.addEventListener('click', () => setShelfCategory(btn.dataset.cat)));
   document.getElementById('restock-all-btn')
     .addEventListener('click', () => handlers.onRestockAll());
+  // Market Board chips (reform Pass A): one per LIVE-faucet material — built from the monster
+  // registry, so a new customer family's chip appears with zero UI wiring. Icons follow the
+  // item-icon convention (assets/sprites/<iconId>.png); a missing PNG hides itself and the
+  // count stands alone (Daniel's art lands drop-in, the graceful-fallback law).
+  document.getElementById('market-mats').innerHTML = MONSTER_IDS
+    .filter((id) => !MONSTERS[id].special && MONSTERS[id].material && MATERIALS[MONSTERS[id].material])
+    .map((id) => {
+      const m = MATERIALS[MONSTERS[id].material];
+      return `<span class="mat-chip" title="${m.displayName} &#8212; dropped by ${MONSTERS[id].displayName}"><img class="mat-icon" src="assets/sprites/${m.iconId}.png" alt="" onerror="this.style.display='none'"><b id="mat-${m.id}">0</b></span>`;
+    }).join('');
+  document.getElementById('trade-btn').addEventListener('click',
+    () => handlers.onTrade(document.getElementById('trade-btn').dataset.offer ?? ''));
 
   root.querySelectorAll('.license-btn').forEach((btn) =>
     btn.addEventListener('click', () => handlers.onBuyLicense(btn.dataset.item)));
@@ -349,6 +372,16 @@ export function renderPanels(state) {
         licenseBtn.classList.remove('attention');
       }
     }
+    // Trade-tier cards (reform Pass A): once licensed, this card's inflow is the Market Board,
+    // not gold restock. Runs AFTER the license toggle above ON PURPOSE — that block un-hides
+    // restockBtn every frame for unlocked cards, and trade must win. While still LOCKED the
+    // license button keeps the stage (the license remains the sell gate, unchanged).
+    if (restockBtn) {
+      const isTrade = (ITEMS[id].acquisition ?? 'gold') !== 'gold';
+      const showHint = isTrade && isItemUnlocked(state, id);
+      if (showHint) restockBtn.classList.add('hidden');
+      card?.querySelector('.trade-hint')?.classList.toggle('hidden', !showHint);
+    }
   }
   document.querySelectorAll('.restock-btn').forEach((btn) => {
     btn.disabled = !canRestock(state, btn.dataset.item);
@@ -368,6 +401,28 @@ export function renderPanels(state) {
     raBtn.textContent = quote > 0 ? `Restock All ◆${compactGold(quote)}` : 'Stocked';
     raBtn.title = quote >= 1000 ? `◆${quote} exact` : '';
     raBtn.disabled = !canRestockAll(state);
+  }
+
+  // Market Board strip (reform Pass A): today's offer + the material stores. The offer text and
+  // the button's dataset carry the offer KEY — executeTrade re-validates against the CURRENT
+  // day, so a button held across midnight refuses at yesterday's rate instead of paying it.
+  const mOffer = currentTradeOffers(state)[0] ?? null;
+  const offerEl = document.getElementById('market-offer-text');
+  if (offerEl) offerEl.textContent = mOffer ? describeOffer(mOffer) : 'No trades today.';
+  const tradeBtn = document.getElementById('trade-btn');
+  if (tradeBtn) {
+    tradeBtn.disabled = !mOffer || !canTrade(state, mOffer);
+    tradeBtn.dataset.offer = mOffer?.key ?? '';
+    // The block reason rides the tooltip — guidance without a layout cost (the quote's own trick).
+    tradeBtn.title = !mOffer ? ''
+      : !isItemUnlocked(state, mOffer.itemId) ? 'License required first'
+      : (state.items[mOffer.itemId]?.stock ?? 0) >= effectiveMaxStock(state, mOffer.itemId) ? 'Shelf is full'
+      : state.gold < mOffer.gold ? 'Not enough gold'
+      : '';
+  }
+  for (const mid of Object.keys(state.materials ?? {})) {
+    const el = document.getElementById(`mat-${mid}`);
+    if (el) el.textContent = `${state.materials[mid] ?? 0}/${materialCap(state, mid)}`;
   }
 
   // Attention system: the FRONT customer's sale is blocked by empty stock -> pulse exactly that

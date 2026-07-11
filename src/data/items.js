@@ -12,6 +12,11 @@ export const ITEMS = {
   metal_helmet: { id:'metal_helmet', displayName:'Metal Helmet', iconId:'metal_helmet', category:'armor',      basePrice:18, restockCost:9, startStock:2, maxStock:5, combatEffect:5 },
   hp_flask:     { id:'hp_flask',     displayName:'HP Flask',     iconId:'hp_flask',     category:'consumable', basePrice:15, restockCost:8, startStock:4, maxStock:5, combatEffect:4 },
   iron_sword:   { id:'iron_sword',   displayName:'Iron Sword',   iconId:'iron_sword',   category:'weapon',     basePrice:26, restockCost:13, startStock:0, maxStock:5, combatEffect:10,
+                  acquisition: 'trade',   // TRADE-TIER PROOF (reform Pass A): stock arrives ONLY via the
+                                          // Market Board (materials + gold at today's rate) — never gold
+                                          // restock, never crates, never offline reserve. The license
+                                          // below stays the SELL gate (TRADE_MARKET_DESIGN.md §5).
+                                          // Field is guarded everywhere: (acquisition ?? 'gold').
                   license: { cost: 800,  requiredTier: 4 } },   // Renowned
   greater_flask:{ id:'greater_flask',displayName:'Greater Flask',iconId:'greater_flask',category:'consumable', basePrice:27, restockCost:13, startStock:0, maxStock:5, combatEffect:8,
                   license: { cost: 800,  requiredTier: 4 } },   // Renowned

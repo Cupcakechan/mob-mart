@@ -1,6 +1,7 @@
 // state.js — the single mutable game-state object + screen flag. No DOM, no rendering here.
 import { CONFIG } from './config.js';
 import { ITEMS, ITEM_ORDER } from './data/items.js';
+import { MATERIAL_ORDER } from './data/materials.js';
 import { MONSTER_IDS } from './data/monsters.js';
 import { PERK_ORDER } from './data/perks.js';
 import { UPGRADE_ORDER } from './data/upgrades.js';
@@ -22,12 +23,16 @@ export function createInitialState() {
   // Lifetime ledger (persisted): fuels milestone bonuses now; the bestiary (roadmap Pass 4) and
   // Kongregate badge stats later hang off these same integers. Keyed by current registries so a
   // future item/monster auto-appears at 0.
-  const stats = { itemSales: {}, monsterServes: {},
+  const stats = { itemSales: {}, monsterServes: {}, materialEarned: {},
     everythingTierEarned: 0 };   // B2 ratchet: highest "everything" tier ever reached — persisted
                                  // so a NEW free item (laggard at 0 sales) can never regress an
                                  // earned tier; it only gates the next one. See milestones.js.
   for (const id of ITEM_ORDER) stats.itemSales[id] = 0;
   for (const id of MONSTER_IDS) stats.monsterServes[id] = 0;
+  // Trade Market (reform Pass A): current stores + LIFETIME landed drops (fuels the first-drop
+  // discovery line now; family mastery + harness acceptance later). Registry-keyed like the rest.
+  const materials = {};
+  for (const id of MATERIAL_ORDER) { materials[id] = 0; stats.materialEarned[id] = 0; }
 
   const perks = {};
   for (const id of PERK_ORDER) perks[id] = 0;   // Fame perk levels (rep-costed purchases)
@@ -42,6 +47,9 @@ export function createInitialState() {
     gold: CONFIG.economy.startingGold,
     scrap: 0,                   // SALVAGE (§14): Doug's second resource — flows only once the
                                 // scavenger is hired; spent at the forge (Pass B). Persisted.
+    materials,                  // MONSTER MATERIALS (reform Pass A): { id: count }, capped per
+                                // type (CONFIG.materials/game.js addMaterial). Persisted.
+                                // LAW: never converts to or from gold — see materials.js.
     relics: {},                 // RELIC status map (§14 Pass B): id -> 'found' | 'restored'.
                                 // Absent id = not yet found. One-of-ones; persisted.
     relicPity: 0,               // scavenge runs since the last relic find — the pity floor

@@ -616,3 +616,33 @@ body{
   border-bottom: 1px solid rgba(255, 157, 59, 0.35); padding-bottom: 4px;
 }
 .beast-next.vip { color: #ffd9a8; font-weight: 800; letter-spacing: 1px; }
+
+/* --- Market Board strip (Trade Market reform, Pass A) ------------------------------------------
+   Lives inside the Shelf panel between header and cards (the 5-tab budget holds; materials stay
+   OFF the HUD per the reform's law 4). Chips are built per LIVE faucet by panels.js; a missing
+   icon PNG hides itself and the count stands alone. */
+.market-strip {
+  background: #241a30; border: 1px solid var(--panel-edge); border-radius: 8px;
+  padding: 6px 8px; margin: 0 0 8px; display: flex; flex-direction: column; gap: 4px;
+}
+.market-board-title {
+  color: var(--gold); font-weight: 800; font-size: 11px; letter-spacing: .4px;
+  text-transform: uppercase; margin-right: 8px;
+}
+.market-offer { font-size: 12px; line-height: 1.25; color: #f6e7c8; }
+.market-row { display: flex; align-items: center; gap: 6px; }
+.market-mats { display: flex; flex-wrap: wrap; gap: 4px 8px; flex: 1; min-width: 0; }
+.mat-chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 11px; color: #cfc3e0; white-space: nowrap;
+}
+.mat-chip .mat-icon { width: 16px; height: 16px; image-rendering: pixelated; }
+.trade-btn {
+  background: #3b2a55; color: var(--gold); border: 1px solid var(--gold); border-radius: 8px;
+  padding: 5px 10px; font-weight: 800; font-size: 11px; cursor: pointer; flex-shrink: 0;
+}
+.trade-btn:disabled { color: #8f86a3; border-color: #5a4a75; cursor: default; }
+/* Trade-tier card pointer: replaces the restock button once licensed (panels.js toggles). */
+.item-card .trade-hint {
+  font-size: 10px; line-height: 1.2; color: var(--gold); opacity: .85; padding: 4px 0;
+}

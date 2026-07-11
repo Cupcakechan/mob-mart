@@ -27,6 +27,10 @@ export function mergeSave(fresh, data) {
     for (const id of Object.keys(fresh.stats.monsterServes)) {
       fresh.stats.monsterServes[id] = Math.max(0, Math.floor(numOr(data.stats.monsterServes?.[id], 0)));
     }
+    // Trade Market lifetime ledger (reform Pass A) — pre-market saves start at 0, additive.
+    for (const id of Object.keys(fresh.stats.materialEarned ?? {})) {
+      fresh.stats.materialEarned[id] = Math.max(0, Math.floor(numOr(data.stats.materialEarned?.[id], 0)));
+    }
     // B2 ratchet migration: earned tier = max of the saved field AND the tier this save had already
     // reached under the OLD rules — computed over the PINNED launch-trio basis, NOT the live
     // BASE_ITEMS. That distinction is the whole fix: if an update ships new free items, a player's
@@ -42,6 +46,14 @@ export function mergeSave(fresh, data) {
   fresh.reputation = Math.max(0, numOr(data.reputation, fresh.reputation));
   // Scrap (§14): additive schema — pre-Doug saves have no field and load as 0, same as gold's guard.
   fresh.scrap = Math.max(0, numOr(data.scrap, 0));
+  // Materials (reform Pass A): additive + registry-keyed — fresh keys only (stale ids drop),
+  // non-negative integers (a hand-edited count must never NaN the trade math). Caps are
+  // enforced at the FAUCET (addMaterial), not here — same stance as gold's unclamped merge.
+  if (data.materials && typeof data.materials === 'object') {
+    for (const id of Object.keys(fresh.materials)) {
+      fresh.materials[id] = Math.max(0, Math.floor(numOr(data.materials?.[id], 0)));
+    }
+  }
   // Relics (§14 Pass B): additive + GUARDED — only known relic ids with legal statuses survive
   // the merge (a corrupt/hand-edited save can't invent relics or statuses). Pre-relic saves: {}.
   fresh.relics = {};
@@ -127,6 +139,7 @@ export function serializeSave(state) {
     gold: state.gold,
     reputation: state.reputation,
     scrap: Math.max(0, Math.floor(state.scrap ?? 0)),   // Doug's salvage (§14) — additive field
+    materials: { ...(state.materials ?? {}) },           // monster materials (reform Pass A)
     relics: state.relics ?? {},                          // relic statuses (§14 Pass B)
     relicPity: Math.max(0, Math.floor(state.relicPity ?? 0)),
     lifetimeRep: state.lifetimeRep ?? state.reputation,
@@ -138,6 +151,7 @@ export function serializeSave(state) {
     stats: {
       itemSales: { ...(state.stats?.itemSales ?? {}) },
       monsterServes: { ...(state.stats?.monsterServes ?? {}) },
+      materialEarned: { ...(state.stats?.materialEarned ?? {}) },   // lifetime landed drops (reform)
       everythingTierEarned: state.stats?.everythingTierEarned ?? 0,   // B2 ratchet (see milestones.js)
     },
     lastSeen: Date.now(),
