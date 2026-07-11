@@ -16,53 +16,54 @@ the MVP, the full UX roadmap, Market Day, Deep Sinks, Special Visits (the Inspec
 scavenger, SCRAP, his battle cameos, and **the RELIC FORGE** — one-of-one relics found by Doug,
 restored for scrap+gold, displayed in 3 wall frames + 1 desk slot), and **THE ECONOMY AUDIT**
 (measurement pass, 2026-07-11): `sim_economy.mjs` (the permanent balance harness, repo root) +
-`ECONOMY_AUDIT.md` (the report) are committed, with ZERO game-file changes. Everything above is
+`ECONOMY_AUDIT.md` (the report) are committed, with ZERO game-file changes, plus **THE
+RETENTION RESET** (doc pass, 2026-07-11): `TRADE_MARKET_DESIGN.md` (the reform's locked
+direction) + `RETENTION_RESEARCH.md` (the genre evidence base). Everything above is
 confirmed and committed. Detail lives in the dated sections below (§9 art, §12–§14 systems,
-2026-07-11 audit); LESSONS.md carries the error record.
+2026-07-11 audit + reset); LESSONS.md carries the error record.
 
-**THE DESIGN RESET (Daniel, 2026-07-10 — read this before building anything):** passive play
-reaches millions of gold with nothing left to want. **Now MEASURED (the audit, 2026-07-11):**
-the sink stack is **228,483 gold** (reproduced exactly from live registries; +46,000 gold &
-155 scrap of relic restores on top), and the desire curve **dies at 8:18:03** of continuous
-idle play, after which the shop earns **~53k gold/hour forever** — the observed 6.4× purse is
-≈27.6 hours of post-death play, fully explained. The sharper finding: **variety dies at
-~1h50m** (every fame tier by 1:05, every license by 1:35, every perk by 0:54, every upgrade by
-3:35) — the last 77% of the curve is the two training ladders alternating plus three relic
-restores. The diagnosis stands: NOT "progress too fast" (the early game measured healthy — a
-want every 2–3 minutes across five systems for the first hour) — it is **too finite**. The
-agreed answer is a locked sequence, one pass each:
+**THE DESIGN RESET (Daniel, 2026-07-10) — MEASURED by the audit (2026-07-11):** passive play
+reaches millions with nothing left to want. The sink stack is **228,483 gold** exactly; the
+desire curve **dies at 8:18:03** of continuous idle play, then the shop earns **~53k gold/hour
+forever** (the observed 6.4× purse ≈ 27.6h of post-death play); **variety dies at ~1h50m** —
+the last 77% of the curve is the two training ladders alternating. Early game measured
+healthy. The instrument is permanent: **`sim_economy.mjs`** (repo root — seconds to run,
+bit-identical); findings F1–F7 + proposals P1–P6 in **`ECONOMY_AUDIT.md`**; detail in the two
+2026-07-11 sections at the bottom.
 
-**1. DONE (2026-07-11) — THE ECONOMY AUDIT.** Policy picks were greedy-cheapest / event-driven
-horizon / markdown report (options round B/B/B). Full findings F1–F7 and proposals P1–P6 live
-in **`ECONOMY_AUDIT.md`**; the harness is **`sim_economy.mjs`** (repo root — run
-`node sim_economy.mjs`, seconds, bit-identical across runs). The two inert-gate findings that
-shape what's next: **Mythic falls at 1:05**, 47 minutes before the first training rung is even
-affordable (lifetime rep at death ~135k vs its 5,000 threshold), and **scrap runs a ~12×
-oversupply** (~1,860 banked vs 155 ever spent). Detail: the 2026-07-11 section at the bottom.
+**THE RETENTION RESET (Daniel, 2026-07-11) — supersedes the 2026-07-10 sequence.** Root cause,
+Daniel's: **gold is a universal solvent** — every faucet pours gold, every sink accepts it,
+and stock is gold in another shape (instant unlimited restock), so "strategy" collapses to a
+timer and the greedy bot plays optimally. The reform is his TRADING model: monster-identity
+MATERIALS (one per family; independent faucets — serves, targeted expeditions, Doug, VIP
+visits) and a DAILY-ROTATING TRADE MARKET on the reworked Special board, where trade-tier
+stock costs materials + gold at rates that change every day ("there is no crafting, only
+trading" — Bob is a mimic-MERCHANT). Evidence base: **`RETENTION_RESEARCH.md`** (the ranked
+genre framework — exclusive decisions first, new verbs, rule-changing prestige). The locked
+direction, the economy LAWS (no gold↔material conversion EVER; caps; seeded + eligible +
+forecast market; materials off the HUD; split loops / nobody dies), every system sketch, and
+the disposition of all prior proposals live in **`TRADE_MARKET_DESIGN.md`** — read it together
+with this §0.
 
-**NEXT SESSION — ECONOMY RETUNING, pass 1.** Open with an options round over the audit's
-proposals (P1–P6, ECONOMY_AUDIT.md §5) — which lever-set to apply first is Daniel's pick. Rules
-of the retuning passes: ONE lever-set per pass; `node sim_economy.mjs` before/after is the
-acceptance test (re-run 3×, bit-identical); the audit's explicit warning holds — **do not nerf
-deep-rung prices** (P3: their pacing is the healthiest stretch; the gap is variety, not cost).
-The one-value candidate is P2 (re-seat Mythic's `tiers[6].min`, 25k–40k band); P1 sizes the
-bigger passes below.
+**The locked sequence (one system per pass; §14's A/B split where a pass is big):**
+1. **Market Pass A** — materials substrate + the Market Board with ONE trade-tier item as the
+living proof; 2. **Market Pass B** — the full first trade tier + the forecast; 3. **Spider +
+Demon** land as faucets (art ready); 4. **Expeditions MVP** (one monster, one door, one slot);
+5. **Relic rework** (HARD restores — scrap+gold+materials; economy effects in the scarce
+carrier slots); 6. **Commissions** (deadlines); 7. **Expedition depth** (parties, offline
+party management); 8. **Franchise** (rule-changing prestige, six-door factions — designed
+last, against what the harness measures then).
 
-**2. THEN — the Special-of-the-Day REPURPOSE (Daniel's design):** relics become the BUFF
-CARRIERS — the Market-Day special/board concept repurposed onto the relic display (the frames).
-This is WHY the Relic Forge shipped with an empty effect slot (§14 Pass B — deliberate, so the
-audit measures a clean baseline). The audit sized it: this pass needs to carry the game from
-roughly HOUR 2 (where variety dies), and P4's recurring scrap sink lands here (supply measured
-at 5 scrap/min). Scope it as an options round when reached.
-
-**3. THEN — the capstone candidate: PRESTIGE ("Franchise").** Close the shop, open the next
-location, keep the Bestiary + relic wall, earn a meta-currency that multiplies future runs;
-the six door destinations supply the theming. The audit's anchor: post-death income is ~53k
-gold/hour AND STILL CLIMBING (the milestone ladder never stops) — P1 puts the first reset
-threshold in the 150k–400k band, landing it 3–8 hours in. Not committed in detail — bring
-options when its turn comes. (Parked behind it: COMMISSIONS — mob orders as the active-play
-layer — and further content treadmill items: more VIPs, gear batches; P5's Mythic-gated
-5–10k license rung is the gear-batch hook.)
+**NEXT SESSION — MARKET PASS A.** Open with its options round (drop shape + rates, caps, offer
+count, the proof trade item, board UI direction — TRADE_MARKET_DESIGN.md §5/§14 lists the
+dials), after Daniel answers the design doc's §13 (the dragon's material; Femur/Trinket/
+Carapace owners). Acceptance for this and every reform pass: the harness grows a policy for
+the new system and the system-BLIND bot must measurably lose; the reform-level target is the
+variety-death moment (1h50m baseline) moving substantially later. Save schema stays additive;
+materials arrive registry-driven. PARKED but live: **P2 (Mythic → 40k)** — a one-value pass
+anytime (config value + two §53 suite assertions); the sweep in the reset section below showed
+death doesn't move and the goal is horizon, not a binding gate. P3 stands (don't nerf
+deep-rung prices); old P4/P5/P6 are superseded (design doc §12).
 
 **Small parked follow-ups (real, not urgent):** Doug’s door-open feel pass (playPortalOpen is a
 celebrant-only one-shot — needs re-entrancy or a second anim to let Doug open the door); Doug’s
@@ -74,7 +75,8 @@ read files from HEAD, never from memory; exact totals live only in the newest ba
 section; oversized characters author at display size, drawn 1:1, dims suite-pinned; scripted
 edits verify their landing zone AND their survivors (print spliced blocks through the CLOSING
 braces); `node --check` is script-mode — run the ESM import too; `git status` is a READ (scan
-for `deleted:`); frames fill left-to-right in find order (the relic assignment law).
+for `deleted:`); frames fill left-to-right in find order (the relic assignment law). The
+reform's ECONOMY laws live in TRADE_MARKET_DESIGN.md §4 and carry the same weight.
 
 ---
 
@@ -1416,3 +1418,62 @@ tables transcribed into a doc get diff-verified against the source output, white
 
 **NEXT:** economy retuning pass 1 — open with an options round over P1–P6 (Daniel's pick), one
 lever-set per pass, harness before/after as acceptance.
+
+---
+
+## 2026-07-11 — THE RETENTION RESET — the Mythic sweep, the research, and the Trade Market design (doc pass)
+
+**How the day went:** retuning pass 1 opened as planned with its options round — and got
+redirected into the biggest design decision since 2026-07-10. Daniel challenged
+prestige-onto-an-unchanged-loop ("what does prestige even do if the gameplay loop stays
+exactly the same?"), named the symptom precisely (spider and demon would "add nothing other
+than more quirky lines"; VIPs likewise; "we are missing a fundamental element"), commissioned
+deep genre research, and then found the root cause himself: **gold is a universal solvent**,
+and "always stocked with everything" kills commissions before they exist. His TRADING model —
+daily-rotating material+gold rates for trade-tier stock; no crafting fiction, Bob TRADES —
+became the locked direction.
+
+**The Mythic sweep (measured before the redirect; P2 PARKED, data preserved here):**
+
+| `tiers[6].min` | Mythic falls | first deep rung affordable | death |
+|---:|---:|---:|---:|
+| 5,000 (live) | 1:05 | 4:16 | 8:18 |
+| 25,000 | 2:41 | 4:20 | 8:18 |
+| 32,000 | 3:07 | 4:18 | 8:16 |
+| 40,000 | 3:35 | 4:20 | 8:20 |
+
+Death doesn't move — P2 is a HORIZON retune, not a curve extension. Even 40k opens ~45 min
+before the deep band is affordable; a literally-binding gate needs ~50k+ and creates a WANT
+DESERT (gold piling with nothing purchasable), which is worse than an inert gate. Rep is
+serve-driven, so Mythic's fall time is nearly policy-independent — real players get wider
+margins than greedy. Verdict when picked up: 40k recommended; cost is one config value + two
+§53 suite assertions (the suite pins `min === 5000` literally). Validity note: the sweep ran
+at 791ce2e; the missed ed8f243 was doc-only (verified `git show --stat`), so the data stands.
+
+**The research:** `RETENTION_RESEARCH.md` — repo-resident from this pass (also lives in the
+Claude project knowledge). Twelve reference games (Clickpocalypse II per Daniel's flag, Soda
+Dungeon, Melvor, Cookie Clicker, Realm Grinder, Antimatter, Kittens, Paperclips, AdCap as the
+cautionary case, NGU, Leaf Blower, Idle Slayer) distilled into a ranked framework: meaningful
+EXCLUSIVE decisions first (our greedy-bot-optimal audit result is the textbook
+counterexample), new VERBS unfolding over time, rule-changing prestige, discoverable
+synergies, allocation, timed active moments, collection as a support beam, legibility,
+humor/fair-F2P.
+
+**The design:** `TRADE_MARKET_DESIGN.md` — locked at DIRECTION level, all numbers deferred to
+per-pass options rounds with the harness as referee. Carries: the material roster (Daniel's
+nine PixelLab icons, source-mapped; the dragon's material is OPEN — his §13 answer gates
+Market Pass A), the six economy laws, the Trade Market spec (seeded daily rates + forecast on
+the reworked Special board), expeditions (family mastery via Bestiary counts; NOBODY DIES —
+the battle-log gag and the supply loop are split loops), hard relic restores + economy
+effects, commissions, offline party management, Franchise-as-factions, the 8-step locked
+sequence, and the disposition of P1–P6 and of the research's own pass order (inverted —
+relics are now downstream of materials).
+
+**Pass learnings:** `git pull 2>&1 | tail -1` MASKED AN ABORT — a pull can print
+"Updating x..y" and still abort on a dirty tree, leaving HEAD behind; caught only when the
+log line contradicted the pull line one command later. Standing rule now: after every pull,
+confirm `git log -1` equals the expected remote tip before any work. (Benign this time — the
+skipped commit was doc-only, verified — but only by luck.)
+
+**NEXT:** Daniel answers design doc §13 (dragon material; Femur/Trinket/Carapace owners),
+then MARKET PASS A opens with its options round.
