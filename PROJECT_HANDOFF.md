@@ -10,19 +10,20 @@ Claude or ChatGPT can parse it cold.*
 
 ## §0 — START HERE (cold boot): where the project is, and what happens next
 
-**State as of 2026-07-11 (suite: 701 green; `node test_suite.mjs` self-verifies a fresh clone):**
+**State as of 2026-07-11 (suite: 745 green; `node test_suite.mjs` self-verifies a fresh clone):**
 the MVP, the full UX roadmap, Market Day, Deep Sinks, Special Visits (the Inspector, reauthored
 1:1), the gear expansion (27 items), six door destinations, the whole of **§14** (DOUG the
 scavenger, SCRAP, his battle cameos, and **the RELIC FORGE** — one-of-one relics found by Doug,
 restored for scrap+gold, displayed in 3 wall frames + 1 desk slot), **THE ECONOMY AUDIT**
-(measurement pass, 2026-07-11): `sim_economy.mjs` (the permanent balance harness, repo root) +
-`ECONOMY_AUDIT.md` (the report), **THE RETENTION RESET** (doc pass, 2026-07-11):
-`TRADE_MARKET_DESIGN.md` (the reform's locked direction) + `RETENTION_RESEARCH.md` (the genre
-evidence base), and now **MARKET PASS A** (2026-07-11, browser-confirmed): the reform's FIRST
-SHIPPED SYSTEM — monster materials + the Trade Market, acceptance PASS (the market-blind bot
-measurably loses). All ten material icon PNGs are in the repo. Detail lives in the dated
-sections below (§9 art, §12–§14 systems, the 2026-07-11 audit / reset / Pass A sections);
-LESSONS.md carries the error record (three new 2026-07-11 entries).
+(2026-07-11): `sim_economy.mjs` + `ECONOMY_AUDIT.md`, **THE RETENTION RESET** (2026-07-11):
+`TRADE_MARKET_DESIGN.md` + `RETENTION_RESEARCH.md`, **MARKET PASS A** (2026-07-11,
+browser-confirmed, acceptance PASS): monster materials + the Trade Market, all ten icon PNGs
+in, plus **THE DROP-RATE RETUNE** (Ns ~2.5×, determinism kept) and **REFORM STEP 3 COMPLETE**
+(2026-07-11, two passes, both browser-confirmed): **DEMMY** the Apologetic Menace (the roster's
+first winner, the market's demand engine) and **LEGGSY** the Overstocker (the `bulkBuyer`
+quirk — the first demand-side pressure on stock depth). Roster NINE, faucets EIGHT. Detail
+lives in the dated sections below (§9 art, §12–§14 systems, the 2026-07-11 audit / reset /
+Pass A / step-3 sections); LESSONS.md carries the error record (three 2026-07-11 entries).
 
 **THE DESIGN RESET (Daniel, 2026-07-10) — MEASURED by the audit (2026-07-11):** passive play
 reaches millions with nothing left to want. The sink stack is **228,483 gold** exactly; the
@@ -50,27 +51,27 @@ with this §0.
 **The locked sequence (one system per pass; §14's A/B split where a pass is big):**
 1. **Market Pass A** — **DONE 2026-07-11** (materials substrate + the Market Board, Iron Sword
 as the proof; acceptance PASS — the section at the bottom); 2. **Market Pass B** — the full
-first trade tier + the forecast + the board's second-row design; 3. **Spider + Demon** land as
-faucets (icons already in the repo; sprite art gates on Daniel); 4. **Expeditions MVP** (one
-monster, one door, one slot); 5. **Relic rework** (HARD restores — scrap+gold+materials;
-economy effects in the scarce carrier slots); 6. **Commissions** (deadlines); 7. **Expedition
-depth** (parties, offline party management); 8. **Franchise** (rule-changing prestige,
-six-door factions — designed last, against what the harness measures then).
+first trade tier + the forecast + the board's second-row design (now sequenced AFTER
+expeditions — see NEXT); 3. **Spider + Demon** — **DONE 2026-07-11, both halves** (Demmy 3a +
+Leggsy 3b, the step-3 section at the bottom); 4. **Expeditions MVP** (one monster, one door,
+one slot); 5. **Relic rework** (HARD restores — scrap+gold+materials; economy effects in the
+scarce carrier slots); 6. **Commissions** (deadlines); 7. **Expedition depth** (parties,
+offline party management); 8. **Franchise** (rule-changing prestige, six-door factions —
+designed last, against what the harness measures then).
 
-**NEXT — THE FORK (Daniel's pick).** The drop-rate retune is **DONE** (2026-07-11, same day:
-the six Ns → 10/10/10/12/12/15, ~2.5× rarer, determinism kept; suite 701 holds — §59 derives N;
-harness 3× stable). Measured effects: aware death 8:32 → **10:22** (material scarcity slows
-sword uptime — the reform now holds the curve ~2h past the audit baseline), the blind penalty
-narrowed to **+1:22** (predicted in advance; expeditions re-widen it), acceptance still PASS.
-New Pass B ledger item: post-death aware ≈ blind (583 vs 597 gold/min) — the sword's PURE-GOLD
-trade margin is thin at current recipe bands; its value is throughput + the sale (recipe-band
-dial when Pass B opens). **The fork:** Spider + Demon as faucet customers (small
-passes) or straight to **MARKET PASS B** — which also wants his two §13 calls: the Inspector's
-drop design (proposal: Dragon Scale per visit, Seal only on a top-grade inspection) and the
-basic-vs-trade tier line (current candidates: Greater Flask + Knight Helm join the sword;
-600g-and-below stays gold). Acceptance law for every reform pass: the harness grows a policy
-for the new system and the system-BLIND bot must measurably lose; the reform-level target is
-the variety-death moment (1h50m baseline) moving substantially later. PARKED but live:
+**NEXT SESSION — EXPEDITIONS MVP (sequence step 4, leapfrogging step 2 on the data).** The
+acceptance trend made the call: the blind penalty narrowed **3:32 → 1:22 → 1:00 → 0:40** across
+the retune and step 3 because the market is now SUPPLY-BOUND (every traded sword sells; trades
+are capped by material income). Market Pass B would ADD demand onto a starved supply;
+expeditions are the DESIGNED supply reopener (targeted bursts, rate-limited by slots +
+duration) — so they come first, and Pass B lands after with volume to feed it. Open with the
+options round: run shape (who sponsors, fee, duration), the door → material targeting rule,
+haul sizing, the comic-mishap partial-haul law (NOBODY DIES — split loops), family mastery's
+first hook (Bestiary counts), and the harness policy (the expedition-blind bot must lose —
+this is the pass that re-widens the gap). **Pass B afterward** still wants Daniel's two §13
+calls (the Inspector's Scale/Seal drop design; the basic-vs-trade tier line) plus the
+recipe-band margin dial (post-death aware ≈ blind — 583 vs 597 gold/min — because the sword's
+pure-gold margin is thin; throughput + the sale carry its value today). PARKED but live:
 **P2 (Mythic → 40k)** — a one-value pass anytime (config value + two §53 suite assertions);
 the sweep in the reset section showed death doesn't move and the goal is horizon, not a
 binding gate. P3 stands (don't nerf deep-rung prices); old P4/P5/P6 are superseded (design
@@ -1556,3 +1557,64 @@ the pull-that-printed-Updating-but-aborted. Docs corrected in the same commit.
 **Open dials leaving this pass:** the drop-rate retune (§0 NEXT — Daniel's numbers pending);
 §13.1 the Inspector's Scale/Seal design; §13.2 the basic-vs-trade tier line. THEN the fork:
 Spider + Demon, or Market Pass B.
+
+---
+
+## 2026-07-11 — REFORM STEP 3 + THE RETUNE — Demmy, Leggsy, and the trend line (commits cf73385 / fb4ea4d / 6c8bc58)
+
+**THE DROP-RATE RETUNE (cf73385, Daniel's browser feel → his "go" on the proposal):** the six
+`materialEveryNServes` → slime 10 / bat 10 / rat 10 / skeleton 12 / beetle 12 / frog 15
+(~2.5× rarer, ~1 material/min roster-wide early). DETERMINISM KEPT — rarity and randomness are
+independent levers, and "gold always given" was already true (drops ride payment). §59 derives
+N, so the suite held at 701 untouched.
+
+**DEMMY (fb4ea4d — reform 3a, Daniel picked Option 1 + the name):** the APOLOGETIC MENACE.
+combatMod **+2** — the roster's first winner, opening the log's victory-as-apology register
+(all five tiers authored; his excellent/success lines are apologies, his failures are relief).
+Top budget **[20,36]**; weapon lead beside Skele; **iron_sword ×3 signature = the market's
+demand engine** (the organic answer to the thin sword margin the retune measured). Ember
+faucet N 15. Art: footPad 10 MEASURED, content 81–84% → trio-class, NO scale.
+
+**LEGGSY (6c8bc58 — reform 3b, Daniel picked Option 2; the name was Claude's call):** the
+OVERSTOCKER. The **`bulkBuyer` quirk** shipped: ONE serve moves TWO units when the shelf holds
+≥2 and the purse covers double — full per-unit payout including tip (the offline convention),
+ledger counts both units, ONE visit/fight/report/rep (rep rewards service), and a
+**skip-guard** speaks any breakpoint a two-unit sale jumps over (the multiplier math was
+already total-derived and immune; the LINE was what needed guarding). Graceful degrades pinned
+both ways: shelf-of-one sells one, purse-covering-one buys one, non-bulk rows never double.
+First DEMAND-SIDE pressure on stock depth. Budget [14,28]; bandages ×3 / zip_tonic ×2
+signatures (pairs of bandages IS the joke); silk faucet N 12. Art: footPad 12 MEASURED,
+spriteScale 1.05 — was PROVISIONAL, **CONFIRMED by Daniel's browser QA same day** ("size is
+right"); the registry comment still says PROVISIONAL and gets its one-word update on the next
+pass that touches monsters.js.
+
+**The suite's authoring standards earned their keep:** the 80-char log budget and the
+no-second-person hygiene pin (2026-07-05 era) caught FIVE of Claude's first-draft lines across
+the two passes — including "thank-you" tripping `\byou\b` through the hyphen. The @50 batch
+pin enforced exactly-three gated lines per new monster. Suite arc: 701 → **720** (Demmy, §60)
+→ **745** (Leggsy, §61); the exact-totals doctrine applied twice on the way (§59's and §60's
+roster/faucet exacts softened to rules as each newer batch took the pins).
+
+**The harness trend (every run 3× bit-identical):**
+
+| pass | aware death | blind penalty | reading |
+|---|---:|---:|---|
+| Market Pass A (N 4–6) | 8:32 | +3:32 | the market's teeth, first bite |
+| the retune (N 10–15) | 10:22 | +1:22 | scarcity slows sword uptime |
+| + Demmy | 12:11 | +1:00 | dilution slows milestone compounding |
+| + Leggsy | **11:20** | **+0:40** | bulk income pulls back ~50 min |
+
+The reform holds the desire curve **~3h past the audit's 8:18 baseline** with expeditions
+still unbuilt — and the narrowing penalty is the market saying it is SUPPLY-BOUND (trades
+144–175/run, every traded sword sells). That data made the sequencing call in §0: expeditions
+(the designed supply reopener) leapfrog Market Pass B.
+
+**Workflow notes:** (a) Daniel is re-fixing existing character art incrementally — expect
+ROGUE PNG diffs in `assets/sprites/` (bat_walk_happy already churned, 3467→3159 bytes); they
+are his workflow, not errors — the suite's dimension pins are the guard, and flyers' bottom
+padding (the bat's hover altitude) is his visual QA. (b) The standing pull-law caught an
+UNPUSHED Leggsy commit before this handoff recorded false state — the tell, worth knowing:
+`git log -1 --oneline` shows `(HEAD -> main)` alone when the remote is behind, and
+`(HEAD -> main, origin/main)` once the push has landed.
+
+**NEXT:** Expeditions MVP opens with its options round (§0 carries the agenda).
