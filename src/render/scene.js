@@ -7,6 +7,7 @@ import { ITEMS, ITEM_ORDER } from '../data/items.js';
 import { MARKET_EVENTS, boardQuipFor } from '../data/marketevents.js';   // Special-of-the-Day board (leaf, no cycle)
 import { sumEffect } from '../data/upgrades.js';
 import { WORKERS } from '../data/workers.js';   // Doug's scavenge clock (leaf data module, no cycle)
+import { RELICS, RELIC_ORDER } from '../data/relics.js';   // the display (§14 Pass B)
 import { getSprite } from './sprites.js';
 
 const W = CONFIG.stage.width, H = CONFIG.stage.height;
@@ -631,6 +632,56 @@ function drawScavenger(ctx, state, tMs) {
   ctx.restore();
 }
 
+// --- The Relic Display (§14 Pass B): the trophy corner, LEFT of Bob — wall frames in the empty
+// band between the Special board (bottom 246) and the counter top (~353), plus objects standing
+// on the desk. Frames appear once Doug is HIRED (the corner opens with the scavenger) and hang
+// EMPTY until each relic is restored — an empty frame is a visible want. All 1:1: the frame is
+// 80px, its content window 64px, relics 64px — authored to nest (measured, 2026-07-10).
+const RELIC_DISPLAY = {
+  relicSize: 64,       // relic art native — 1:1, centered in the frame's window
+  fallbackFrame: 96,   // code-drawn frame size when wooden_frame.png is absent
+  counterTopY: 448,    // desk-relic DRAW BASE — MEASURED (pngjs, 2026-07-10): the desk's back edge
+                       // is flat at y413.8 across the magnet's span, and the magnet art has 5px of
+                       // base padding, so 448 puts its visible base ~30px onto the desk surface.
+                       // (v1 used 402 — the sprite-box top, which floats objects on the WALL: the
+                       // counter PNG has transparent rows up top; the surface starts at ~414.)
+  // The frame draws at its NATURAL size (v1 was 80 with a 64 border box — too small for the
+  // relics; the re-author needs an inner WINDOW >= 64). Reading naturalWidth means the new
+  // frame is a pure art drop — no code retune, and the suite pins only 'square, >= 80'.
+};
+
+function drawRelicWall(ctx, state) {                       // WALL layer — called with the wall,
+  if (state.workers?.scavenger?.owned !== true) return;    //   right after the door
+  const frame = getSprite('wooden_frame');
+  for (const id of RELIC_ORDER) {
+    const r = RELICS[id];
+    if (r.spot.kind !== 'frame') continue;
+    const fs = frame?.naturalWidth ?? RELIC_DISPLAY.fallbackFrame;   // natural-size frame
+    const fx = r.spot.x - fs / 2, fy = r.spot.topY;
+    if (frame) ctx.drawImage(frame, fx, fy, fs, fs);
+    else {                                                 // graceful: a code-drawn frame
+      ctx.strokeStyle = '#6b4a2f'; ctx.lineWidth = 6;
+      ctx.strokeRect(fx + 3, fy + 3, fs - 6, fs - 6);
+    }
+    if (state.relics?.[id] === 'restored') {
+      const spr = getSprite(r.spriteId);
+      const inset = (fs - RELIC_DISPLAY.relicSize) / 2;    // centered in whatever window the art brings
+      if (spr) ctx.drawImage(spr, fx + inset, fy + inset, RELIC_DISPLAY.relicSize, RELIC_DISPLAY.relicSize);
+    }
+  }
+}
+
+function drawCounterRelics(ctx, state) {                   // DESK layer — called right after the
+  for (const id of RELIC_ORDER) {                          //   counter, so they stand ON it
+    const r = RELICS[id];
+    if (r.spot.kind !== 'counter' || state.relics?.[id] !== 'restored') continue;
+    const spr = getSprite(r.spriteId);
+    if (!spr) continue;                                    // graceful: no placeholder clutter on the desk
+    const s = RELIC_DISPLAY.relicSize;
+    ctx.drawImage(spr, r.spot.x - s / 2, RELIC_DISPLAY.counterTopY - s, s, s);
+  }
+}
+
 export function drawScene(ctx, state, tMs) {
   ctx.clearRect(0, 0, W, H);
 
@@ -643,11 +694,13 @@ export function drawScene(ctx, state, tMs) {
                                 // layer fix); celebrants + queue still draw later, so they overlap
                                 // it as before. Its content (x990-1198, measured) never meets the
                                 // counter (ends 970), so the desk corner is untouched by the move.
+  drawRelicWall(ctx, state);    // the trophy frames hang with the wall furniture (§14 Pass B)
   drawCounterShadow(ctx);       // contact shadow FIRST: grounds the desk AND Bob standing behind it
   drawBob(ctx, state, tMs);     // before the counter, so the counter front overlaps his lower body
   drawRestocker(ctx, state, tMs); // the flyer hovers left of Bob — same layer, same counter overlap
   drawScavenger(ctx, state, tMs); // Doug at the counter's right corner — in FRONT of the door, behind the desk
   drawCounter(ctx);
+  drawCounterRelics(ctx, state); // restored counter relics stand on the desk (§14 Pass B)
   drawQueue(ctx, state, tMs);
   drawCelebrants(ctx, tMs);     // served-mob ghosts: hop at the counter, then march into the door
   drawBubble(ctx, state, tMs);  // front customer's ask, pinned to the asker (hybrid stage 2)

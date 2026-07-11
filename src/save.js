@@ -2,6 +2,7 @@
 // wrapped in try/catch so a disabled/full/private-mode store degrades to a fresh game, never a crash.
 import { clamp } from './utils.js';
 import { ITEMS } from './data/items.js';
+import { RELICS } from './data/relics.js';   // merge guard: legal relic ids/statuses only
 import { UPGRADES, sumEffect } from './data/upgrades.js';
 import { PERKS } from './data/perks.js';
 import { WORKERS } from './data/workers.js';
@@ -41,6 +42,15 @@ export function mergeSave(fresh, data) {
   fresh.reputation = Math.max(0, numOr(data.reputation, fresh.reputation));
   // Scrap (§14): additive schema — pre-Doug saves have no field and load as 0, same as gold's guard.
   fresh.scrap = Math.max(0, numOr(data.scrap, 0));
+  // Relics (§14 Pass B): additive + GUARDED — only known relic ids with legal statuses survive
+  // the merge (a corrupt/hand-edited save can't invent relics or statuses). Pre-relic saves: {}.
+  fresh.relics = {};
+  if (data.relics && typeof data.relics === 'object') {
+    for (const [id, st] of Object.entries(data.relics)) {
+      if (RELICS[id] && (st === 'found' || st === 'restored')) fresh.relics[id] = st;
+    }
+  }
+  fresh.relicPity = Math.max(0, numOr(data.relicPity, 0));
   // Dual-track migration: pre-Fame saves have no lifetimeRep — seed it from current rep so every
   // tier the player had already reached stays reached. Lifetime can never be below current.
   fresh.lifetimeRep = Math.max(fresh.reputation, Math.max(0, numOr(data.lifetimeRep, 0)));
@@ -117,6 +127,8 @@ export function serializeSave(state) {
     gold: state.gold,
     reputation: state.reputation,
     scrap: Math.max(0, Math.floor(state.scrap ?? 0)),   // Doug's salvage (§14) — additive field
+    relics: state.relics ?? {},                          // relic statuses (§14 Pass B)
+    relicPity: Math.max(0, Math.floor(state.relicPity ?? 0)),
     lifetimeRep: state.lifetimeRep ?? state.reputation,
     perks: { ...(state.perks ?? {}) },
     licenses: { ...(state.licenses ?? {}) },

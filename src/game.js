@@ -9,7 +9,8 @@ import { UPGRADES, upgradeLevel, upgradeCost, isMaxed, sumEffect } from './data/
 import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost,
   workerLevel, workerLevelCost, isWorkerLevelMaxed, sumWorkerEffect } from './data/workers.js';
 import { randInt, pick, weightedPick } from './utils.js';
-import { WORKER_HIRE_LINES, DOUG_RETURN_LINES } from './data/results.js';
+import { WORKER_HIRE_LINES, DOUG_RETURN_LINES, RELIC_VOICE } from './data/results.js';
+import { RELICS, RELIC_ORDER, RELIC_FIND, RELIC_AMBIENT_CHANCE } from './data/relics.js';
 import { resolveCombat } from './combat.js';
 import { reputationTier } from './reputation.js';
 import { logLine } from './messages.js';
@@ -220,6 +221,15 @@ export function serveCurrent(state) {
   if (ITEM_BREAKPOINTS.includes(soldNow)) {
     pushLog(state, { text: milestoneLine('item', { count: soldNow, item: item.displayName }),
       repDelta: 0, tier: 'milestone', monsterId: monster.id });
+  // The display earns its keep (§14 Pass B): while restored relics are up, served mobs
+  // occasionally react to them — rare on purpose (the collection stays a garnish, not a spam).
+  {
+    const shown = RELIC_ORDER.filter((r) => state.relics?.[r] === 'restored'
+      && (RELIC_VOICE.byRelic[r]?.ambient?.length ?? 0) > 0);
+    if (shown.length && Math.random() < RELIC_AMBIENT_CHANCE) {
+      pushLog(state, { text: pick(RELIC_VOICE.byRelic[pick(shown)].ambient), repDelta: 0 });
+    }
+  }
   }
   // SPECIAL monsters (the Inspector) skip breakpoint milestones — they're off the bestiary grid,
   // and a pip celebration for a hidden card would point at nothing. servedByMonster still counts.
@@ -627,6 +637,26 @@ export function buyWorkerLevel(state, id) {
   return true;
 }
 
+// The Forge (§14 Pass B): restoring a FOUND relic consumes scrap + gold and puts it ON DISPLAY
+// permanently (state 'restored' — the draw + ambient lines key off it). No effects in this
+// pass: the effect slot stays empty for the Special-of-the-Day repurpose (post-audit).
+export function canRestoreRelic(state, id) {
+  const r = RELICS[id];
+  return !!r && state.relics?.[id] === 'found'
+    && (state.scrap ?? 0) >= r.restoreCost.scrap && state.gold >= r.restoreCost.gold;
+}
+export function restoreRelic(state, id) {
+  if (!canRestoreRelic(state, id)) return false;
+  const r = RELICS[id];
+  state.scrap -= r.restoreCost.scrap;
+  state.gold -= r.restoreCost.gold;
+  state.relics = { ...state.relics, [id]: 'restored' };
+  const line = RELIC_VOICE.byRelic[id]?.restored;
+  if (line) pushLog(state, { text: line, repDelta: 0, tier: 'milestone' });
+  state.uiDirty = true;
+  return true;
+}
+
 // TRUE while Doug is beyond the door — the GONE window of his run: past the idle beat and the
 // walk-out, before the walk-back (same registry dials scene.js stages the trip with). Gates his
 // battle-cameo lines: he and the mob are out there for legible reasons, and the joke only lands
@@ -719,6 +749,22 @@ function updateWorkers(state, dt) {
       // as a PURE FUNCTION of this timer (scene.js), so fiction and economy share one clock and
       // nothing can desync. A run is never blocked: the beyond always has junk.
       state.scrap = (state.scrap ?? 0) + (WORKERS[id].scrapPerRun ?? 0);
+      // THE FIND (§14 Pass B): rarely, a run turns up a broken RELIC instead of just scrap —
+      // chance-per-run with a pity floor, and the WHAT is curated (RELIC_ORDER), so each find
+      // is a designed beat. Pity only ticks while something is left to find.
+      {
+        const unfound = RELIC_ORDER.filter((r) => !state.relics?.[r]);
+        if (unfound.length) {
+          state.relicPity = (state.relicPity ?? 0) + 1;
+          if (Math.random() < RELIC_FIND.chancePerRun || state.relicPity >= RELIC_FIND.pityRuns) {
+            const rid = unfound[0];
+            state.relics = { ...(state.relics ?? {}), [rid]: 'found' };
+            state.relicPity = 0;
+            pushLog(state, { text: pick(RELIC_VOICE.found).replace('{relic}', RELICS[rid].displayName),
+              repDelta: 0, tier: 'milestone' });   // gold line — a find IS an event
+          }
+        }
+      }
       w.timer = effectiveWorkerInterval(state, id);
       // His register, now and then — every return would spam the log at a 24s cadence.
       if (Math.random() < 0.25 && DOUG_RETURN_LINES.length) {

@@ -1,14 +1,14 @@
 // main.js — entry point: wires DOM, scale-to-fit, input, save/load, nav, and the rAF game loop.
 import { CONFIG } from './config.js';
 import { clamp } from './utils.js';
-import { update, serveCurrent, dismissCurrent, restockItem, restockAll, buyUpgrade, buyPerk, buyLicense, hireWorker, buyWorkerLevel, deliverBattleReport, refreshMarketDay } from './game.js';
+import { update, serveCurrent, dismissCurrent, restockItem, restockAll, buyUpgrade, buyPerk, buyLicense, hireWorker, buyWorkerLevel, deliverBattleReport, refreshMarketDay, restoreRelic } from './game.js';
 import { CATEGORY_LABELS } from './data/marketevents.js';
 import { loadState, saveState, clearSave } from './save.js';
 import { computeOffline, applyOffline, formatAway } from './offline.js';
 import { drawScene, playBobServe, playPortalOpen, spawnItemFloat, spawnCelebrant, setCelebrantEnteredCallback, playGregErrand, playBoardChalk } from './render/scene.js';
 import { loadSprite } from './render/sprites.js';
 import { initHud, renderHud } from './ui/hud.js';
-import { initPanels, renderPanels } from './ui/panels.js';
+import { initPanels, renderPanels, renderForge } from './ui/panels.js';
 import { initNav } from './ui/nav.js';
 import { initKongregate } from './kongregate.js';
 
@@ -158,6 +158,11 @@ loadSprite('dragon_walk_happy', 'assets/sprites/dragon_walk_happy.png'); // (foo
 loadSprite('doug', 'assets/sprites/doug.png');                       // DOUG the Scavenger (§14 Pass A):
 loadSprite('doug_idle', 'assets/sprites/doug_idle.png');             //   160px frames drawn 1:1, 6f strips
 loadSprite('doug_walk_happy', 'assets/sprites/doug_walk_happy.png'); //   (Bob's shape); footPad measured
+loadSprite('relic_skeleton_key',    'assets/sprites/relic_skeleton_key.png');    // the Relic Display
+loadSprite('relic_hero_magnet',     'assets/sprites/relic_hero_magnet.png');     //   (§14 Pass B): 64px
+loadSprite('relic_yesterday_potion','assets/sprites/relic_yesterday_potion.png');//   objects, 1:1, nested
+loadSprite('relic_everything_cloak','assets/sprites/relic_everything_cloak.png');//   in the 80px frame
+loadSprite('wooden_frame',          'assets/sprites/wooden_frame.png');
                                                                   //   "_walk_happy" name kept by convention; the
                                                                   //   authored content will be a grumpy stomp.
 
@@ -211,6 +216,7 @@ initPanels(document.getElementById('shop-ui'), {
   onBuyPerk:    (id) => buyPerk(state, id),      // Fame perks: spends rep, never the lifetime track
   onBuyLicense: (id) => buyLicense(state, id),   // supplier licenses: one-time gold, unlocks tier-2
   onHireWorker: (id) => hireWorker(state, id),
+  onRestoreRelic: (id) => restoreRelic(state, id),                   // the Forge (§14 Pass B)
   onBuyWorkerLevel: (id) => buyWorkerLevel(state, id),  // Deep Sinks: worker training purchases
 });
 initNav(document.getElementById('nav'));           // bottom nav swaps the center panel
@@ -275,6 +281,7 @@ document.getElementById('open-shop-btn').addEventListener('click', () => {
 
 renderHud(state);
 renderPanels(state);
+renderForge(state);                                                // initial paint
 
 // Game loop: canvas redraws every frame; DOM panels re-render + autosave only when dirty (shop only,
 // so the title screen doesn't overwrite the saved lastSeen that M5 reads at boot).
@@ -311,6 +318,7 @@ function frame(now) {
   if (state.uiDirty) {
     renderHud(state);
     renderPanels(state);
+    renderForge(state);                                            // the Forge rows ride the same dirty pass
     if (state.screen === 'shop') saveState(state);
     state.uiDirty = false;
   }

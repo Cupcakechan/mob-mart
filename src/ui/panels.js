@@ -13,6 +13,7 @@ import { MONSTERS, MONSTER_IDS } from '../data/monsters.js';
 import { UPGRADES, UPGRADE_ORDER, upgradeLevel, upgradeCost, isMaxed } from '../data/upgrades.js';
 import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost,
   workerLevel, workerLevelCost, isWorkerLevelMaxed } from '../data/workers.js';
+import { RELICS, RELIC_ORDER } from '../data/relics.js';   // the Forge (§14 Pass B)
 import {
   serveBlockReason, canRestock, effectiveMaxStock, canBuyUpgrade, isUpgradeUnlocked,
   canHireWorker, effectiveWorkerInterval, isPerkUnlocked, canBuyPerk, effectiveRestockCost,
@@ -70,6 +71,10 @@ export function initPanels(root, h) {
     <section id="workers-panel" class="panel workers-panel hidden">
       <h2 class="panel-title">Workers</h2>
       <div id="worker-cards" class="worker-cards"></div>
+      <div id="forge-section" class="worker-cards hidden">
+        <div class="panel-subhead">Doug&#8217;s Forge &#8212; found relics restored here go on display, forever</div>
+        <div id="forge-rows"></div>
+      </div>
     </section>
 
     <section id="fame-panel" class="panel fame-panel hidden">
@@ -167,6 +172,19 @@ export function initPanels(root, h) {
     btn.addEventListener('click', () => handlers.onHireWorker(btn.dataset.worker)));
   root.querySelectorAll('.wrk-train').forEach((btn) =>
     btn.addEventListener('click', () => handlers.onBuyWorkerLevel(btn.dataset.worker)));
+
+  // The Forge rows (§14 Pass B): one per relic, data-driven; status text + the Restore button
+  // update at runtime (renderForge). Reuses the worker-card look — zero new CSS.
+  document.getElementById('forge-rows').innerHTML = RELIC_ORDER.map((id) => `
+    <div class="worker-card" data-relic="${id}">
+      <div class="wrk-info">
+        <div class="wrk-name" id="relicname-${id}">???</div>
+        <div class="wrk-desc" id="relicdesc-${id}">Doug hasn't found this yet.</div>
+      </div>
+      <button class="wrk-buy forge-restore hidden" data-relic="${id}">Restore</button>
+    </div>`).join('');
+  root.querySelectorAll('.forge-restore').forEach((btn) =>
+    btn.addEventListener('click', () => handlers.onRestoreRelic(btn.dataset.relic)));
 
   // Bob's hire arc: the goal chip over the empty counter routes to the remedy (the Workers tab).
   // Lives outside this root (a #stage sibling over the diorama) — same document, direct lookup.
@@ -436,7 +454,9 @@ export function renderPanels(state) {
         const secs = effectiveWorkerInterval(state, id);
         descEl.textContent = WORKERS[id].role === 'serve'
           ? `Auto-serves the front \u00b7 ~${secs.toFixed(1)}s`
-          : `Restocks 1 unit \u00b7 ~${secs.toFixed(1)}s`;    // trickle pace (no speed upgrades yet)
+          : WORKERS[id].role === 'scavenge'
+            ? `Scavenges the beyond \u00b7 ~${secs.toFixed(0)}s a run`   // (Pass A shipped the restock
+            : `Restocks 1 unit \u00b7 ~${secs.toFixed(1)}s`;            //  copy here by mistake — fixed)
       }
       if (buyBtn) { buyBtn.disabled = true; buyBtn.textContent = 'Active'; }
       // Training row (Deep Sinks): level + live effect line, and a Train button that names its
@@ -606,5 +626,40 @@ export function renderPanels(state) {
         : '';
       return `<li class="log-item ${cls}"><span class="log-text">${e.text}</span>${crown}</li>`;
     }).join('');
+  }
+}
+
+
+// The Forge's runtime face (§14 Pass B): section visibility (Doug hired), per-relic status —
+// ??? until found, name + card + priced Restore once found, 'On display' once restored. Called
+// from main.js on the same dirty pass as renderPanels (kept OUT of renderPanels: independent
+// concern, independent anchor).
+export function renderForge(state) {
+  const section = document.getElementById('forge-section');
+  if (!section) return;
+  const show = state.workers?.scavenger?.owned === true;
+  section.classList.toggle('hidden', !show);
+  if (!show) return;
+  for (const id of RELIC_ORDER) {
+    const r = RELICS[id], st = state.relics?.[id];
+    const name = document.getElementById(`relicname-${id}`);
+    const desc = document.getElementById(`relicdesc-${id}`);
+    const btn = document.querySelector(`.forge-restore[data-relic="${id}"]`);
+    if (!name || !desc || !btn) continue;
+    if (!st) {
+      name.textContent = '???';
+      desc.textContent = "Doug hasn't found this yet.";
+      btn.classList.add('hidden');
+    } else if (st === 'found') {
+      name.textContent = r.displayName;
+      desc.textContent = `${r.card} \u2014 broken. Restore: \u2699${r.restoreCost.scrap} + \u25c6${r.restoreCost.gold}`;
+      btn.classList.remove('hidden');
+      btn.disabled = !((state.scrap ?? 0) >= r.restoreCost.scrap && state.gold >= r.restoreCost.gold);
+      btn.textContent = 'Restore';
+    } else {
+      name.textContent = r.displayName;
+      desc.textContent = `${r.card} \u2014 on display.`;
+      btn.classList.add('hidden');
+    }
   }
 }

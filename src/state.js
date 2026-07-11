@@ -42,6 +42,10 @@ export function createInitialState() {
     gold: CONFIG.economy.startingGold,
     scrap: 0,                   // SALVAGE (§14): Doug's second resource — flows only once the
                                 // scavenger is hired; spent at the forge (Pass B). Persisted.
+    relics: {},                 // RELIC status map (§14 Pass B): id -> 'found' | 'restored'.
+                                // Absent id = not yet found. One-of-ones; persisted.
+    relicPity: 0,               // scavenge runs since the last relic find — the pity floor
+                                // (RELIC_FIND.pityRuns guarantees a find). Persisted.
     reputation: CONFIG.economy.startingReputation, // SPENDABLE rep balance (Fame perks draw this down)
     lifetimeRep: CONFIG.economy.startingReputation, // never decreases; drives tiers — spending can't
                                                     // cost you a gate you earned (dual-track Fame)

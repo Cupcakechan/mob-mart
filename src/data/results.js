@@ -497,3 +497,45 @@ export const DOUG_RETURN_LINES = [
   `Doug slid back through the door sideways. "The beyond has SO much junk," he said, delighted.`,
   `Doug counted his haul twice. Once out loud, once to the haul.`,
 ];
+
+// Relic voice (§14 Pass B). found: generic, {relic} template — fires as a MILESTONE-tier log
+// line the moment Doug hauls one in. byRelic: a restored announcement + ambient reactions
+// (mobs noticing the display; fired on a small per-serve chance while restored). Same laws as
+// every pool: PG, punch at the end, no second-person, log width.
+export const RELIC_VOICE = {
+  found: [
+    `Doug burst in dragging something big. "Found the {relic}!" He will not say where.`,
+    `Doug returned walking sideways with pride. The {relic}. Broken. But his.`,
+    `Doug slammed the {relic} on the counter. "For the SHOP," he hissed, protectively.`,
+  ],
+  byRelic: {
+    skeleton_key: {
+      restored: `The Skeleton Key hangs by the counter now. It opens anything, eventually.`,
+      ambient: [
+        `Skele stared at the Skeleton Key for a long time. "Grandpa?"`,
+        `A customer tried the Skeleton Key on the till. Bob laughed. Nervously.`,
+      ],
+    },
+    hero_magnet: {
+      restored: `The Hero Magnet sits on the counter. It points at the door. Everyone noticed.`,
+      ambient: [
+        `The Hero Magnet twitched. The whole queue took one step back.`,
+        `Batty asked if the Hero Magnet works. Bob said "only on heroes." Long silence.`,
+      ],
+    },
+    yesterday_potion: {
+      restored: `The Yesterday Potion is on display. It is always about to spill. It never does.`,
+      ambient: [
+        `Froggo sniffed the Yesterday Potion and got homesick for last week.`,
+        `The Yesterday Potion glowed briefly. Tuesday, probably.`,
+      ],
+    },
+    everything_cloak: {
+      restored: `The Everything Cloak is framed on the wall. It is made of all the other cloaks.`,
+      ambient: [
+        `Ratty priced the Everything Cloak from across the room. Bob moved it up a nail.`,
+        `The Everything Cloak flapped once. There is no wind in here.`,
+      ],
+    },
+  },
+};

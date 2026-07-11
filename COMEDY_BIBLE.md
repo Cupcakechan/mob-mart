@@ -551,3 +551,16 @@ with Regular Show/Gumball’s background-gag grammar. The rules: Doug is NEVER t
 battle is the epic frame and Doug is the mundane undercut (he IS the bathos, placed at the END
 per the one lever); gated on `isDougOut` (game.js) so a cameo can never fire while he is visibly
 standing at home — the gate and the draw share one registry clock (workers.js dials).
+
+---
+
+## The Relic Display (§14 Pass B, 2026-07-10)
+
+Relics are ONE-OF-ONES — nobody buys them; that is the whole joke of owning them. Voice lives
+in `RELIC_VOICE` (results.js): **found** lines (Doug’s beat — his register, milestone-gold in
+the log), one **restored** announcement each (system voice, deadpan), and **ambient** reactions
+(mobs noticing the display on a small per-serve chance — a garnish, never spam). Each relic’s
+CARD is its gag compressed to one line (the registry `card` field): the Skeleton Key “opens
+anything, eventually” — the object IS the punchline, the card just says it out loud. Rules as
+everywhere: PG, punch at the end, no second-person, log width; the mob keeps its dignity —
+reactions are curious/covetous/confused, never mocked.

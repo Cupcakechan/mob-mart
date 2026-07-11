@@ -3260,5 +3260,95 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
 }
 
+// 58. The Relic Forge (§14 Pass B) — find/restore/display: the collection meta --
+{
+  const { RELICS, RELIC_ORDER, RELIC_FIND } = await import('./src/data/relics.js');
+  const { RELIC_VOICE } = await import('./src/data/results.js');
+  const { createInitialState } = await import('./src/state.js');
+  const { update, canRestoreRelic, restoreRelic } = await import('./src/game.js');
+  const { serializeSave, mergeSave } = await import('./src/save.js');
+
+  // Registry contract: four one-of-ones, curated order, both currencies priced, unique spots.
+  ok(RELIC_ORDER.length === 4 && RELIC_ORDER.every((id) => RELICS[id]?.id === id),
+     'relics: four on the roster, order matches the registry');
+  ok(RELIC_ORDER.every((id) => RELICS[id].restoreCost.scrap > 0 && RELICS[id].restoreCost.gold > 0
+       && typeof RELICS[id].card === 'string' && RELICS[id].card.length > 0),
+     'relics: every relic prices BOTH currencies and carries its card gag');
+  const spots = RELIC_ORDER.map((id) => RELICS[id].spot.kind + ':' + RELICS[id].spot.x);
+  ok(new Set(spots).size === 4 && RELIC_ORDER.filter((id) => RELICS[id].spot.kind === 'frame').length === 3,
+     'relics: four unique display spots — three frames + the one desk slot (the Greg-Bob gap fits exactly one)');
+
+  // Fresh state + the additive save: statuses round-trip; legacy saves load empty; a corrupt
+  // save cannot invent relics or statuses (the merge guard).
+  const fresh = createInitialState();
+  ok(Object.keys(fresh.relics).length === 0 && fresh.relicPity === 0,
+     'relics: fresh state — nothing found, pity at zero');
+  const st = shopState(); st.relics = { skeleton_key: 'restored', hero_magnet: 'found' }; st.relicPity = 7;
+  const back = mergeSave(createInitialState(), JSON.parse(JSON.stringify(serializeSave(st))));
+  ok(back.relics.skeleton_key === 'restored' && back.relics.hero_magnet === 'found' && back.relicPity === 7,
+     'relics: statuses + pity survive the save round-trip');
+  const legacy = serializeSave(shopState()); delete legacy.relics; delete legacy.relicPity;
+  const merged = mergeSave(createInitialState(), legacy);
+  ok(Object.keys(merged.relics).length === 0 && merged.relicPity === 0,
+     'relics: a pre-forge save loads empty (additive schema)');
+  const corrupt = mergeSave(createInitialState(), { relics: { skeleton_key: 'banana', fake_relic: 'found' } });
+  ok(Object.keys(corrupt.relics).length === 0,
+     'relics: the merge guard drops unknown ids and illegal statuses');
+
+  // The find: pity floor is deterministic — a run at the cap ALWAYS finds; order is curated
+  // (skeleton_key first, hero_magnet second); pity resets after each find.
+  const run = shopState(); run.workers.scavenger.owned = true;
+  run.relicPity = RELIC_FIND.pityRuns - 1; run.workers.scavenger.timer = 0.1;
+  update(run, 0.2);
+  ok(run.relics.skeleton_key === 'found' && run.relicPity === 0,
+     'relics: the pity floor lands the FIRST curated relic and resets the counter');
+  run.relicPity = RELIC_FIND.pityRuns - 1; run.workers.scavenger.timer = 0.1;
+  update(run, 0.2);
+  ok(run.relics.hero_magnet === 'found' && !run.relics.yesterday_potion,
+     'relics: the second find follows the curated order');
+
+  // The Forge: unfound and underfunded both refuse; funded restore deducts EXACTLY and displays.
+  ok(!canRestoreRelic(run, 'yesterday_potion'), 'forge: an unfound relic cannot be restored');
+  run.scrap = RELICS.skeleton_key.restoreCost.scrap - 1; run.gold = 1e9;
+  ok(!canRestoreRelic(run, 'skeleton_key'), 'forge: short on scrap refuses (gold alone is not enough)');
+  run.scrap = RELICS.skeleton_key.restoreCost.scrap + 5; run.gold = RELICS.skeleton_key.restoreCost.gold + 100;
+  ok(restoreRelic(run, 'skeleton_key') && run.scrap === 5 && run.gold === 100
+       && run.relics.skeleton_key === 'restored',
+     'forge: a funded restore deducts both currencies exactly and puts it on display');
+  ok(!restoreRelic(run, 'skeleton_key'), 'forge: a restored relic cannot be restored twice');
+
+  // The voice: found templates carry {relic}; every relic has a restored line + >=2 ambient
+  // reactions; pool hygiene throughout (no second-person, log width).
+  ok(RELIC_VOICE.found.length >= 2 && RELIC_VOICE.found.every((t) => t.includes('{relic}')),
+     'relic voice: found lines exist and template the relic name');
+  ok(RELIC_ORDER.every((id) => typeof RELIC_VOICE.byRelic[id]?.restored === 'string'
+       && (RELIC_VOICE.byRelic[id]?.ambient?.length ?? 0) >= 2),
+     'relic voice: every relic carries its restored line and ambient reactions');
+  const allLines = [...RELIC_VOICE.found,
+    ...RELIC_ORDER.flatMap((id) => [RELIC_VOICE.byRelic[id].restored, ...RELIC_VOICE.byRelic[id].ambient])];
+  ok(allLines.every((t) => !/\byou\b/i.test(t) && t.length <= 95),
+     'relic voice: pool-hygienic (no second-person, log width)');
+
+  // Art contract: relics 64×64, the frame 80×80 with the 64px nest window (existsSync-guarded).
+  {
+    const { readFileSync, existsSync } = await import('node:fs');
+    const dim = (f) => { const b = readFileSync(f); return [b.readUInt32BE(16), b.readUInt32BE(20)]; };
+    let checked = 0;
+    for (const id of RELIC_ORDER) {
+      const p = `./assets/sprites/${RELICS[id].spriteId}.png`;
+      if (!existsSync(p)) continue;
+      const [w, h] = dim(p);
+      ok(w === 64 && h === 64, `relic art: ${RELICS[id].spriteId} is 64×64 (${w}×${h})`);
+      checked++;
+    }
+    if (existsSync('./assets/sprites/wooden_frame.png')) {
+      const [w, h] = dim('./assets/sprites/wooden_frame.png');
+      ok(w === h && w >= 80, `relic art: the frame is square and >= 80 (${w}×${h}; the re-author lands drop-in)`);
+      checked++;
+    }
+    ok(checked >= 1, 'relic art: at least one relic PNG is pinned (guard-the-guard)');
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
