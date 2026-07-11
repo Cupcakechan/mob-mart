@@ -6,7 +6,63 @@ Repo: https://github.com/Cupcakechan/mob-mart
 session before doing any work. Update it as decisions change. Kept self-contained so a fresh
 Claude or ChatGPT can parse it cold.*
 
-**Status (current):** **M1–M6 MVP COMPLETE; idle roadmap Passes 1–4b SHIPPED**, plus spawn
+---
+
+## §0 — START HERE (cold boot): where the project is, and what happens next
+
+**State as of 2026-07-10 (suite: 645 green; `node test_suite.mjs` self-verifies a fresh clone):**
+the MVP, the full UX roadmap, Market Day, Deep Sinks, Special Visits (the Inspector, reauthored
+1:1), the gear expansion (27 items), six door destinations, and the whole of **§14**: DOUG the
+scavenger (third worker), SCRAP (the second resource), his battle cameos, and **the RELIC FORGE**
+(the collection meta — one-of-one relics found by Doug, restored for scrap+gold, displayed in
+3 wall frames + 1 desk slot). Everything above is browser-confirmed and committed. Detail lives
+in the dated sections below (§9 art, §12–§14 systems); LESSONS.md carries the error record.
+
+**THE DESIGN RESET (Daniel, 2026-07-10 — read this before building anything):** passive play
+reaches millions of gold with nothing left to want. Measured: the game’s ENTIRE sink stack
+(15 licenses + 3 hires + both training ladders + all upgrades) totals **228,483 gold** — the
+observed endgame purse was 6.4× that and rising. The diagnosis is NOT “progress too fast” (the
+early/mid game is tuned by feel and good) — it is **too finite**: the desire curve has a hard
+end. The agreed answer is a locked sequence, one pass each:
+
+**1. NEXT SESSION — THE ECONOMY AUDIT (a measurement pass; no game files change).**
+Build a headless sim harness (the suite already drives `update()` headlessly — same techniques)
+that runs a FRESH save through hours of simulated play and charts the WALL-CLOCK moment every
+want falls: each license, hire, training rung, upgrade, fame tier, relic find + restore. Output:
+a report (the unlock timeline + where the desire curve dies) and TUNING PROPOSALS — but change
+NO numbers in the audit pass itself; retuning is its own later pass, argued from this data.
+Ground rules for the next session: (a) present the sim’s POLICY DECISIONS as an options round
+FIRST and wait for Daniel’s pick — chiefly the simulated player model (e.g. pure-idle vs
+“buys the cheapest available want” vs “roadmap-greedy”), the time horizon, and the report
+format; (b) statistical results need 3× stable runs; (c) the harness itself is a deliverable
+(reusable for every future balance question). The 228,483 figure above is the starting fact.
+
+**2. THEN — the Special-of-the-Day REPURPOSE (Daniel’s design):** relics become the BUFF
+CARRIERS — the Market-Day special/board concept repurposed onto the relic display (the frames).
+This is WHY the Relic Forge shipped with an empty effect slot (§14 Pass B — deliberate, so the
+audit measures a clean baseline). Scope it as an options round when reached.
+
+**3. THEN — the capstone candidate: PRESTIGE (“Franchise”).** Close the shop, open the next
+location, keep the Bestiary + relic wall, earn a meta-currency that multiplies future runs;
+the six door destinations supply the theming. The audit informs its numbers. Not committed in
+detail — bring options when its turn comes. (Parked behind it: COMMISSIONS — mob orders as the
+active-play layer — and further content treadmill items: more VIPs, gear batches.)
+
+**Small parked follow-ups (real, not urgent):** Doug’s door-open feel pass (playPortalOpen is a
+celebrant-only one-shot — needs re-entrancy or a second anim to let Doug open the door); Doug’s
+Deep-Sinks training ladder; the HUD compact-numbers option (7-digit gold); the itch.io
+dual-publish decision; dragon idle footPad measures 13 vs registry 14 (1px — negligible, noted).
+
+**Standing laws that bite (the short list; LESSONS.md has the full record):** artifact wins —
+read files from HEAD, never from memory; exact totals live only in the newest batch’s suite
+section; oversized characters author at display size, drawn 1:1, dims suite-pinned; scripted
+edits verify their landing zone AND their survivors (print spliced blocks through the CLOSING
+braces); `node --check` is script-mode — run the ESM import too; `git status` is a READ (scan
+for `deleted:`); frames fill left-to-right in find order (the relic assignment law).
+
+---
+
+**Status (ARCHIVED 2026-07-04 snapshot — superseded by §0 above; kept for the record):** **M1–M6 MVP COMPLETE; idle roadmap Passes 1–4b SHIPPED**, plus spawn
 director, serve celebration, shelf v3, Bestiary (4a + v2 showcase), grounding, crisp canvas —
 and the ITEMS PHASE (2026-07-04, all browser-confirmed + committed): **(a) Pass 4b — Froggo the
 grumpy frog** (fourth customer, Option-2 identity: combatMod 0, budget [16,30], tier-2-leaning
@@ -48,7 +104,7 @@ with the Rat. **Option-3 art polish: SCRUBBED** (see §9 — the 128px-frame + M
 convention is PERMANENT, do not resurrect).
 **Workflow note: NO DevLog for Mob Mart** — Daniel opted out (2026-07-03). Skip the DevLog draft
 step at feature completion for this project.
-**Last updated:** 2026-07-04 — items phase closed (batch 2, wiggle, line-unlock/golden, economy session); UX roadmap agreed.
+**Last updated:** 2026-07-10 — §14 complete (Doug + scrap + cameos + the Relic Forge); §0 added as the cold-boot front door; NEXT = the economy audit (spec in §0).
 
 ---
 
