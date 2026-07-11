@@ -1151,7 +1151,13 @@ console.log('M4 auto-serve worker — smoke test\n');
       if (ITEMS[c.wantedItemId]?.license) frogWantedLocked = true;
     }
     Math.random = realRandom;
-    ok(seen > 40, `frog spawns at a real rate (uniform pick; saw ${seen}/400)`);
+    // Floor DERIVES from the live spawnable roster (frozen `> 40` went flaky at nine monsters —
+    // expected 400/8 = 50, and a routine -1.5σ draw of 40 failed ~1 run in 15). Four sigma
+    // under the uniform expectation: fails only on a genuinely broken picker, never on luck.
+    const spawnable = MONSTER_IDS.filter((id) => !MONSTERS[id].special).length;
+    const expect = 400 / spawnable;
+    const floor = Math.floor(expect - 4 * Math.sqrt(400 * (1 / spawnable) * (1 - 1 / spawnable)));
+    ok(seen > floor, `frog spawns at a real rate (uniform pick; saw ${seen}/400, floor ${floor} @ 4σ)`);
     ok(!frogWantedLocked, 'pre-license: frog never wants a locked tier-2 item (filter holds)');
   }
 
