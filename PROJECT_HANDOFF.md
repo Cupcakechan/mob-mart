@@ -10,17 +10,19 @@ Claude or ChatGPT can parse it cold.*
 
 ## §0 — START HERE (cold boot): where the project is, and what happens next
 
-**State as of 2026-07-11 (suite: 645 green; `node test_suite.mjs` self-verifies a fresh clone):**
+**State as of 2026-07-11 (suite: 701 green; `node test_suite.mjs` self-verifies a fresh clone):**
 the MVP, the full UX roadmap, Market Day, Deep Sinks, Special Visits (the Inspector, reauthored
 1:1), the gear expansion (27 items), six door destinations, the whole of **§14** (DOUG the
 scavenger, SCRAP, his battle cameos, and **the RELIC FORGE** — one-of-one relics found by Doug,
-restored for scrap+gold, displayed in 3 wall frames + 1 desk slot), and **THE ECONOMY AUDIT**
+restored for scrap+gold, displayed in 3 wall frames + 1 desk slot), **THE ECONOMY AUDIT**
 (measurement pass, 2026-07-11): `sim_economy.mjs` (the permanent balance harness, repo root) +
-`ECONOMY_AUDIT.md` (the report) are committed, with ZERO game-file changes, plus **THE
-RETENTION RESET** (doc pass, 2026-07-11): `TRADE_MARKET_DESIGN.md` (the reform's locked
-direction) + `RETENTION_RESEARCH.md` (the genre evidence base). Everything above is
-confirmed and committed. Detail lives in the dated sections below (§9 art, §12–§14 systems,
-2026-07-11 audit + reset); LESSONS.md carries the error record.
+`ECONOMY_AUDIT.md` (the report), **THE RETENTION RESET** (doc pass, 2026-07-11):
+`TRADE_MARKET_DESIGN.md` (the reform's locked direction) + `RETENTION_RESEARCH.md` (the genre
+evidence base), and now **MARKET PASS A** (2026-07-11, browser-confirmed): the reform's FIRST
+SHIPPED SYSTEM — monster materials + the Trade Market, acceptance PASS (the market-blind bot
+measurably loses). All ten material icon PNGs are in the repo. Detail lives in the dated
+sections below (§9 art, §12–§14 systems, the 2026-07-11 audit / reset / Pass A sections);
+LESSONS.md carries the error record (three new 2026-07-11 entries).
 
 **THE DESIGN RESET (Daniel, 2026-07-10) — MEASURED by the audit (2026-07-11):** passive play
 reaches millions with nothing left to want. The sink stack is **228,483 gold** exactly; the
@@ -46,26 +48,33 @@ the disposition of all prior proposals live in **`TRADE_MARKET_DESIGN.md`** — 
 with this §0.
 
 **The locked sequence (one system per pass; §14's A/B split where a pass is big):**
-1. **Market Pass A** — materials substrate + the Market Board with ONE trade-tier item as the
-living proof; 2. **Market Pass B** — the full first trade tier + the forecast; 3. **Spider +
-Demon** land as faucets (art ready); 4. **Expeditions MVP** (one monster, one door, one slot);
-5. **Relic rework** (HARD restores — scrap+gold+materials; economy effects in the scarce
-carrier slots); 6. **Commissions** (deadlines); 7. **Expedition depth** (parties, offline
-party management); 8. **Franchise** (rule-changing prestige, six-door factions — designed
-last, against what the harness measures then).
+1. **Market Pass A** — **DONE 2026-07-11** (materials substrate + the Market Board, Iron Sword
+as the proof; acceptance PASS — the section at the bottom); 2. **Market Pass B** — the full
+first trade tier + the forecast + the board's second-row design; 3. **Spider + Demon** land as
+faucets (icons already in the repo; sprite art gates on Daniel); 4. **Expeditions MVP** (one
+monster, one door, one slot); 5. **Relic rework** (HARD restores — scrap+gold+materials;
+economy effects in the scarce carrier slots); 6. **Commissions** (deadlines); 7. **Expedition
+depth** (parties, offline party management); 8. **Franchise** (rule-changing prestige,
+six-door factions — designed last, against what the harness measures then).
 
-**NEXT SESSION — MARKET PASS A.** Open with its options round (drop shape + rates, caps, offer
-count, the proof trade item, board UI direction — TRADE_MARKET_DESIGN.md §5/§14 lists the
-dials) — §13 is ANSWERED (2026-07-11: Dragon Scale is the tenth icon; Skeleton, Rat, and
-Beetle own Femur/Trinket/Carapace as future customers; the Inspector — himself a dragon —
-keeps the Seal as the first VIP rare-material faucet), so nothing gates the pass. Acceptance
-for this and every reform pass: the harness grows a policy for
-the new system and the system-BLIND bot must measurably lose; the reform-level target is the
-variety-death moment (1h50m baseline) moving substantially later. Save schema stays additive;
-materials arrive registry-driven. PARKED but live: **P2 (Mythic → 40k)** — a one-value pass
-anytime (config value + two §53 suite assertions); the sweep in the reset section below showed
-death doesn't move and the goal is horizon, not a binding gate. P3 stands (don't nerf
-deep-rung prices); old P4/P5/P6 are superseded (design doc §12).
+**NEXT — one open dial, then the fork.** (a) **THE DROP-RATE RETUNE (open — Daniel's pick):**
+browser feel says drops land too fast at N=4–6 (~2–3 materials/min roster-wide). Proposal on
+the table: slime 10 / bat 10 / rat 10 / skeleton 12 / beetle 12 / Froggo 15 (~1/min), with
+**DETERMINISM KEPT** — rarity and randomness are independent levers, D1 stands, and "gold is
+always given" is already true (drops ride on top of payment, never replace it). One lever-set,
+six registry values, no suite pins on N (§59 derives), harness 3× before/after; expect the
+blind-vs-aware acceptance gap to NARROW until expeditions supply volume — correct behavior,
+noted in advance. (b) **THE FORK (Daniel's pick):** Spider + Demon as faucet customers (small
+passes) or straight to **MARKET PASS B** — which also wants his two §13 calls: the Inspector's
+drop design (proposal: Dragon Scale per visit, Seal only on a top-grade inspection) and the
+basic-vs-trade tier line (current candidates: Greater Flask + Knight Helm join the sword;
+600g-and-below stays gold). Acceptance law for every reform pass: the harness grows a policy
+for the new system and the system-BLIND bot must measurably lose; the reform-level target is
+the variety-death moment (1h50m baseline) moving substantially later. PARKED but live:
+**P2 (Mythic → 40k)** — a one-value pass anytime (config value + two §53 suite assertions);
+the sweep in the reset section showed death doesn't move and the goal is horizon, not a
+binding gate. P3 stands (don't nerf deep-rung prices); old P4/P5/P6 are superseded (design
+doc §12).
 
 **Small parked follow-ups (real, not urgent):** Doug’s door-open feel pass (playPortalOpen is a
 celebrant-only one-shot — needs re-entrancy or a second anim to let Doug open the door); Doug’s
@@ -1482,3 +1491,68 @@ customers owning Femur / Trinket / Carapace; the Inspector — himself a dragon,
 clipboard — keeps the Seal as the first VIP rare-material faucet (drop-per-visit vs
 drop-on-passed-inspection is a later dial). This also closes the ancient "rat still an open
 call" note from the §13 art record: the rat is in, as a thief.
+
+---
+
+## 2026-07-11 — MARKET PASS A — AS BUILT (the reform's first shipped system; suite 645 → 701)
+
+**The build (18 files; commit 3bd9307):** the materials substrate + the Trade Market, per
+TRADE_MARKET_DESIGN.md with Daniel's B/A/A/A options-round picks (per-Nth-serve drops / flat
+CONFIG caps / board + Shelf-panel-strip surface / Iron Sword as the proof).
+- **Registries:** `src/data/materials.js` (all ten materials; six live) + `material` /
+  `materialEveryNServes` fields on the six live monster rows (slime 4, bat 4, rat 4,
+  skeleton 5, beetle 5, frog 6 — RETUNE PENDING, see §0). A new customer family becomes a
+  faucet by one registry field — the auto-flow law held.
+- **The drop law** (serveCurrent): `servedNow % N === 0` sheds one material — deterministic and
+  plannable; SPECIAL rows never drop (the Inspector's faucet is Pass B). First-ever landed drop
+  per material speaks a TRADE_VOICE discovery line (the lifetime ledger `stats.materialEarned`
+  is the latch — no new save flag). A FULL store LOSES the drop; lost drops never enter the
+  ledger (the cap must bite — CONFIG.materials.baseCap 10, per-material override guarded).
+- **The market** (`src/data/trademarket.js`, pure): offers are a pure function of
+  (dayKey, itemId) via the board's own FNV hash family — no Math.random anywhere in the file;
+  recipes draw ONLY from live-faucet materials (eligibility law); bands are CONFIG.trade dials
+  (1–2 types × 1–2 units + 30–90g). `state.tradeDayKeyOverride` (transient) is the headless
+  seam — the calendar-free baseline law holds with zero arming.
+- **The proof:** iron_sword `acquisition: 'trade'` — the license stays the SELL gate; stock
+  arrives only via `executeTrade` (validated against the CURRENT day's offers by key, so a
+  button held across midnight refuses at yesterday's rate). **The exclusion sweep:** canRestock
+  is the single gate (restockItem / restockAll / canRestockAll / Greg's trickle inherit), plus
+  the three bypass sites the recon flagged — restockAllCost (the quote), dealCrateUnits
+  (Market Day crates), and the OFFLINE BACKROOM RESERVE (real traded shelf stock still sells;
+  the reserve conjures nothing).
+- **Surfaces:** the canvas board is the MARKET BOARD — header + today's offer, chalk rewrite on
+  midnight rollover, and (Daniel's browser-QA call) **CURRENT TRADES ONLY**: the voice /
+  daily-special row was CUT as clutter; the Market-Day event keeps its log/payout/crate and
+  gets a designed board home (or retirement) at Pass B. The Shelf panel gained the Market
+  strip: offer text, per-material `n/cap` chips (auto-built from the monster registry; icons
+  drop-in via the item convention), Trade button with block-reason tooltips. Materials stay
+  OFF the HUD (law 4). All ten icon PNGs are IN (the reserved four wait for their faucets).
+- **QA fixes shipped inside the pass:** the board voice-row OVERPRINT (probe-confirmed root
+  cause: `wrapBoardText`'s ellipsize guard fires after the first push, so `maxLines=1` returns
+  every wrapped row — the trap is now documented at the function; single-row callers must
+  self-ellipsize) and a font-mismatch overflow (offer rows measured in quipFont, drawn in the
+  wider nameFont — measurement now font-correct).
+
+**Suite 701** (645 + 56, section 59): registry pairing, the drop law, cap clamp + honest
+ledger, offer purity / eligibility / bands / rotation, exact trade math + the stale-key
+refusal, the full exclusion sweep, offline reserve, save round-trip + corrupt guards. Three
+old license tests were RE-POINTED to greater_flask as their specimen (same 800 / Renowned
+math) — iron_sword's new behavior is §59's to pin, per the derive-don't-pin doctrine.
+
+**ACCEPTANCE — PASS (the reform's first measured proof):** the harness grew the market-aware
+policy plus a market-BLIND control (`runSim(seed, { tradeAware:false })`), synthetic
+`sim-day-N` keys rotating every 24 sim-hours. The blind bot dies **3:32 later** (median;
+11:52–12:25 vs 8:19–8:55), forfeits **all ~350–400 sword sales**, and its post-death rate
+craters to **~545 vs ~870 gold/min** (the queue-stall tax of an empty trade shelf). For the
+first time, ignoring a system costs the optimal player. Aware median death moved 8:18 → 8:32:
+trades are a genuine RECURRING gold sink (~360–410 per run). 3× bit-identical.
+
+**Corrections recorded (LESSONS.md, 2026-07-11 ×3):** the design doc had marked Skele / Ratty /
+Beetley "future customers" (LIVE since 2026-07-05 — so Pass A shipped SIX faucets, not four)
+and imagined a second dragon (the game's one dragon IS the Inspector; both dragon materials
+are his, drop design = §13.1, Pass B). Also entered: the unterminated-heredoc silent no-op and
+the pull-that-printed-Updating-but-aborted. Docs corrected in the same commit.
+
+**Open dials leaving this pass:** the drop-rate retune (§0 NEXT — Daniel's numbers pending);
+§13.1 the Inspector's Scale/Seal design; §13.2 the basic-vs-trade tier line. THEN the fork:
+Spider + Demon, or Market Pass B.

@@ -200,3 +200,53 @@
   CLOSING braces, not just its opening lines.
 - Route: universal method candidate (the check-before-delivering section — "the fast check’s
   limits" now include parse-mode divergence). Pairs with the 2026-07-10 survivor-audit entry.
+
+## 2026-07-11 — Registry facts written from memory in a DOC pass: three live customers marked "future", a second dragon invented
+- What broke: TRADE_MARKET_DESIGN.md §3 (and the handoff lines quoting it) shipped two false
+  registry facts — Skele/Ratty/Beetley labeled "future customers" (all three LIVE since the
+  2026-07-05 passes) and a "customer dragon sheds scales / dragon bureaucrat stamps seals"
+  fiction describing TWO characters where monsters.js has ONE (`id:'dragon'` IS the Inspector,
+  `special:true`). Committed and pushed before the error surfaced.
+- Root cause: the doc pass ran on conversational memory + shorthand instead of a registry read —
+  "artifact wins over memory" was applied to code passes but not to the DOC that describes the
+  code. Worse, the contradiction was already in hand: the same session cited the handoff's "rat
+  open call — closed, the rat is in" while typing "Rat — future customer" two lines later. Two
+  contradictory beliefs, unreconciled, is a STOP signal that wasn't treated as one.
+- Caught: the Market Pass A code recon (the mandatory monsters.js read) — before any code built
+  on the wrong roster. Upside of the miss: Pass A shipped SIX live faucets, not four.
+- Plug: doc passes get the same recon as code passes — any registry-derived claim (rosters,
+  fields, counts, statuses) is READ from the registry at writing time, never recalled; and a
+  detected self-contradiction halts the paragraph until resolved.
+- Route: universal method candidate (verify-don't-assume — add "applies to documents about the
+  code, not just the code").
+
+## 2026-07-11 — An unterminated inline heredoc made a whole edit script a silent no-op (returncode 0)
+- What broke: a chained shell command opening a heredoc that was never terminated — the shell
+  swallowed the entire monsters.js edit script as heredoc body, executed nothing, and returned
+  0 with NO output. The file was untouched; nothing failed loudly.
+- Root cause: multi-line edit logic inlined into a chained bash command; heredoc terminators
+  across `&&`/`||` chains are a parsing minefield, and "exit 0" is meaningless when the payload
+  never ran.
+- Caught: empty stdout from a command that should have printed its landing report — treated as
+  a failure signal in itself; a `git diff --stat` read confirmed zero changes before retrying.
+- Plug: multi-line scripted edits go through a SCRIPT FILE (create → run → delete), never an
+  inline chained heredoc; every edit script must PRINT its landing report, and silence where
+  output was expected is a red flag regardless of exit code. Pairs with 2026-07-05
+  "landing-zone checks, not exit codes".
+- Route: universal method candidate (scripted-edits section — "no inline heredocs; scripts are
+  files; silence is failure").
+
+## 2026-07-11 — `git pull | tail -1` printed "Updating x..y" while the pull ABORTED; HEAD stayed a commit behind
+- What broke: with a dirty working tree, `git pull 2>&1 | tail -1` showed the optimistic
+  "Updating 791ce2e..ed8f243" line — the abort message ("Please move or remove them…") was cut
+  off by the tail — and work continued at the OLD head for several turns, including a tuning
+  sweep.
+- Root cause: piping a pull through `tail -1` selects whichever line comes last, not the
+  verdict; and the very next command's `git log -1` output CONTRADICTED the pull line and was
+  read past.
+- Caught: the same contradiction, on the second look. Benign only by luck — `git show --stat`
+  proved the missed commit was doc-only, so the sweep's data stood.
+- Plug: after EVERY pull, `git log -1` must equal the expected remote tip before any work; never
+  truncate a pull's output; a contradiction between two adjacent command outputs is a stop
+  signal, not noise.
+- Route: universal method candidate (git section, the mirror-side of "git status is a READ").
