@@ -431,6 +431,20 @@ const boardFx = { chalkStartMs: 0, lastThumpMs: -1e9, lastBoardKey: undefined };
                               // the content identity last drawn — a change (midnight rollover,
                               // event arming) restarts the chalk write-on (reform Pass A)
 
+// The board's stage-space hit box (the Market overlay pass, D6-B): DERIVED from the draw
+// constants so a board re-hang moves the click target with it — never hand-copy these numbers.
+// Height = display width × the art's 220/640 aspect (the same 110-tall box the text lines are
+// measured against). main.js converts client coords to stage coords and asks pointOnBoard.
+export function boardHitRect() {
+  const w = SPECIAL_BOARD.width;
+  const h = Math.round(w * (220 / 640));
+  return { x: SPECIAL_BOARD.centerX - w / 2, y: SPECIAL_BOARD.topY, w, h };
+}
+export function pointOnBoard(x, y) {
+  const r = boardHitRect();
+  return x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+}
+
 // The morning chalk one-shot. -1 sentinel: stamped with the real tMs on the next draw, the
 // portalAnim pattern — callers don't need a clock.
 export function playBoardChalk() { boardFx.chalkStartMs = -1; }

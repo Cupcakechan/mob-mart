@@ -5,10 +5,11 @@ import { update, serveCurrent, dismissCurrent, restockItem, restockAll, buyUpgra
 import { CATEGORY_LABELS } from './data/marketevents.js';
 import { loadState, saveState, clearSave } from './save.js';
 import { computeOffline, applyOffline, formatAway } from './offline.js';
-import { drawScene, playBobServe, playPortalOpen, spawnItemFloat, spawnCelebrant, setCelebrantEnteredCallback, playGregErrand, playBoardChalk } from './render/scene.js';
+import { drawScene, playBobServe, playPortalOpen, spawnItemFloat, spawnCelebrant, setCelebrantEnteredCallback, playGregErrand, playBoardChalk, pointOnBoard } from './render/scene.js';
 import { loadSprite } from './render/sprites.js';
 import { initHud, renderHud } from './ui/hud.js';
 import { initPanels, renderPanels, renderForge } from './ui/panels.js';
+import { initMarket, renderMarket, openMarket } from './ui/market.js';   // Trade Market overlay (D6-B)
 import { initNav } from './ui/nav.js';
 import { initKongregate } from './kongregate.js';
 
@@ -244,9 +245,30 @@ initPanels(document.getElementById('shop-ui'), {
   onBuyLicense: (id) => buyLicense(state, id),   // supplier licenses: one-time gold, unlocks tier-2
   onHireWorker: (id) => hireWorker(state, id),
   onRestoreRelic: (id) => restoreRelic(state, id),                   // the Forge (§14 Pass B)
-  onTrade: (offerKey) => executeTrade(state, offerKey),              // Market Board (reform Pass A)
+  onOpenMarket: () => { openMarket(); renderMarket(state); },        // D6-B: the strip's door
   onExpedition: (id) => startExpedition(state, id),                  // Expeditions MVP (reform step 4)
   onBuyWorkerLevel: (id) => buyWorkerLevel(state, id),  // Deep Sinks: worker training purchases
+});
+
+// Trade Market overlay (D6-B pulled forward — Daniel's Option 2): the offer list's new home.
+// onTrade moved here with the rows; executeTrade re-validates the key against the CURRENT day
+// (the midnight guard), so a stale open overlay can never trade yesterday's rates.
+initMarket(document.getElementById('market-overlay'), {
+  onTrade: (offerKey) => executeTrade(state, offerKey),
+  onDirty: () => { state.uiDirty = true; },
+});
+
+// Market Board click (D6-B): the sign IS the market's front door. Client → stage coords divide
+// out the scale-to-fit transform via the canvas's own on-screen rect (the transform is baked
+// into getBoundingClientRect), so the test holds at any window size. Shop screen only — the
+// title's canvas is not a shopfront. Zero-size guard: a hidden canvas divides by zero.
+canvas.addEventListener('click', (e) => {
+  if (state.screen !== 'shop') return;
+  const r = canvas.getBoundingClientRect();
+  if (r.width === 0 || r.height === 0) return;
+  const sx = (e.clientX - r.left) / r.width * CONFIG.stage.width;
+  const sy = (e.clientY - r.top) / r.height * CONFIG.stage.height;
+  if (pointOnBoard(sx, sy)) { openMarket(); renderMarket(state); }
 });
 initNav(document.getElementById('nav'));           // bottom nav swaps the center panel
 
@@ -348,6 +370,7 @@ function frame(now) {
     renderHud(state);
     renderPanels(state);
     renderForge(state);                                            // the Forge rows ride the same dirty pass
+    renderMarket(state);                                           // no-op while the overlay is closed
     if (state.screen === 'shop') saveState(state);
     state.uiDirty = false;
   }

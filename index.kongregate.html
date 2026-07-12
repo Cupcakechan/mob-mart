@@ -7,7 +7,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mob Mart</title>
-  <link rel="stylesheet" href="style.css?v=7" />
+  <link rel="stylesheet" href="style.css?v=8" />
   <!-- Kongregate JavaScript API - defines window.kongregateAPI; src/kongregate.js no-ops without it -->
   <script src="https://cdn1.kongregate.com/javascripts/kongregate_api.js"></script>
 </head>
@@ -77,6 +77,11 @@
         <button id="menu-close-btn" class="menu-close">Close</button>
       </div>
     </div>
+
+    <!-- Trade Market overlay (D6-B pulled forward, 2026-07-12 — Daniel's Option 2): content is
+         built by src/ui/market.js. z14: above the panels, below the menu (15) and the away modal
+         (20). The sim keeps RUNNING under it — the menu overlay's idle-honest law. -->
+    <div id="market-overlay" class="market-overlay hidden"></div>
 
     <!-- "While you were away" modal (M5) — shown over the title on return when Bob earned something -->
     <div id="offline-modal" class="offline-overlay hidden">

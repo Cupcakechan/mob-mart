@@ -15,17 +15,16 @@ import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost,
   workerLevel, workerLevelCost, isWorkerLevelMaxed } from '../data/workers.js';
 import { RELICS, RELIC_ORDER } from '../data/relics.js';   // the Forge (§14 Pass B)
 import { MATERIALS, MATERIAL_ORDER } from '../data/materials.js';  // Trade Market (reform Pass B)
-import { tradeItemIds } from '../data/trademarket.js';
 import {
   serveBlockReason, canRestock, effectiveMaxStock, canBuyUpgrade, isUpgradeUnlocked,
   canHireWorker, effectiveWorkerInterval, isPerkUnlocked, canBuyPerk, effectiveRestockCost,
   isItemUnlocked, canBuyLicense, fameOf, restockAllCost, canRestockAll, canBuyWorkerLevel,
-  currentTradeOffers, canTrade, materialCap, canStartExpedition,
+  currentTradeOffers, materialCap, canStartExpedition,
 } from '../game.js';
 import { reputationTier } from '../reputation.js';
 const reputationTierIndex = (state) => reputationTier(fameOf(state)).index;
 
-let handlers = { onServe: () => {}, onDismiss: () => {}, onRestock: () => {}, onRestockAll: () => {}, onBuyUpgrade: () => {}, onBuyPerk: () => {}, onBuyLicense: () => {}, onHireWorker: () => {}, onTrade: () => {}, onDirty: () => {} };
+let handlers = { onServe: () => {}, onDismiss: () => {}, onRestock: () => {}, onRestockAll: () => {}, onBuyUpgrade: () => {}, onBuyPerk: () => {}, onBuyLicense: () => {}, onHireWorker: () => {}, onOpenMarket: () => {}, onDirty: () => {} };
 let activeCategory = 'weapon';   // shelf sub-tab (not persisted; category comes from the item registry)
 
 // Switch the shelf's category sub-tab. Shared by the tab buttons and Bob's license bubble (which
@@ -62,8 +61,7 @@ export function initPanels(root, h) {
         <button id="restock-all-btn" class="restock-all-btn">Restock All</button>
       </div>
       <div id="market-strip" class="market-strip">
-        <div class="market-offer"><span class="market-board-title">Trade Market</span><span id="market-count"></span></div>
-        <div id="market-offers" class="market-offers"></div>
+        <div class="market-offer"><span class="market-board-title">Trade Market</span><span id="market-count"></span><button id="open-market-btn" class="open-market-btn">Open Market</button></div>
         <div class="market-row">
           <div id="market-mats" class="market-mats"></div>
         </div>
@@ -124,16 +122,11 @@ export function initPanels(root, h) {
     btn.addEventListener('click', () => setShelfCategory(btn.dataset.cat)));
   document.getElementById('restock-all-btn')
     .addEventListener('click', () => handlers.onRestockAll());
-  // Trade Market list (Pass B, D6-A): one ROW per trade-tier item, built ONCE — the tier is
-  // static per session (registry-driven), only each row's recipe/affordability changes daily.
-  // The clickable-board overlay is the named FOLLOW-UP surface (design doc); this list is the
-  // proven content it will relocate.
-  document.getElementById('market-offers').innerHTML = tradeItemIds().map((itemId) =>
-    `<div class="offer-row" data-item-row="${itemId}" data-cat="${ITEMS[itemId].category}">
-       <span class="offer-text" id="offer-text-${itemId}"></span><button
-       class="offer-trade" data-item="${itemId}">Trade</button></div>`).join('');
-  document.querySelectorAll('.offer-trade').forEach((btn) =>
-    btn.addEventListener('click', () => handlers.onTrade(btn.dataset.offer ?? '')));
+  // Trade Market (D6-B overlay pass): the offer LIST relocated to src/ui/market.js's overlay —
+  // the strip keeps chips + the Open Market door (the design doc's sketch, verbatim). The strip's
+  // one-line icon-only rows couldn't teach material names; the overlay's full-name rows can.
+  document.getElementById('open-market-btn')
+    .addEventListener('click', () => handlers.onOpenMarket());
   // Material chips: one per SOURCED material — serve faucets AND the Inspector's VIP drops
   // (material/gradeMaterial on any row), in MATERIAL_ORDER. A new source auto-appears.
   const sourced = new Set();
@@ -422,38 +415,12 @@ export function renderPanels(state) {
     raBtn.disabled = !canRestockAll(state);
   }
 
-  // Trade Market list (Pass B + UI-fix): fill every row ICONICALLY — material icons instead of
-  // names ("Knight Helm ⇐ [trinket]1 [carapace]1 + 34g"), one line, no wrapping. Icons tint by
-  // have/need via a wrapper class; the Trade button's dataset carries the offer KEY (executeTrade
-  // re-validates against the CURRENT day — the midnight guard, unchanged).
+  // Trade Market (D6-B overlay pass): the row fill + category filter moved to market.js's
+  // renderMarket — the overlay shows ALL of today's offers with full names (space exists there).
+  // The strip keeps only the count line as the door's label.
   const offers = currentTradeOffers(state);
   const countEl = document.getElementById('market-count');
   if (countEl) countEl.textContent = offers.length > 0 ? `${offers.length} trades posted today` : 'No trades today.';
-  for (const offer of offers) {
-    const textEl = document.getElementById(`offer-text-${offer.itemId}`);
-    const btn = document.querySelector(`.offer-trade[data-item="${offer.itemId}"]`);
-    if (!textEl || !btn) continue;
-    const parts = Object.entries(offer.materials).map(([mid, n]) => {
-      const has = (state.materials?.[mid] ?? 0) >= n;
-      const m = MATERIALS[mid];
-      return `<span class="offer-mat ${has ? 'mat-ok' : 'mat-short'}"><img class="offer-mat-icon"`
-        + ` src="assets/sprites/${m?.iconId ?? mid}.png" alt="" onerror="this.style.display='none'">${n}</span>`;
-    });
-    const goldOk = state.gold >= offer.gold;
-    textEl.innerHTML = `<b>${ITEMS[offer.itemId].displayName}</b> ⇐ ${parts.join('')}`
-      + `<span class="${goldOk ? 'mat-ok' : 'mat-short'}"> ${offer.gold}g</span>`;
-    btn.disabled = !canTrade(state, offer);
-    btn.dataset.offer = offer.key;
-    btn.title = !isItemUnlocked(state, offer.itemId) ? 'License required first'
-      : (state.items[offer.itemId]?.stock ?? 0) >= effectiveMaxStock(state, offer.itemId) ? 'Shelf is full'
-      : !goldOk ? 'Not enough gold'
-      : btn.disabled ? 'Missing materials' : '';
-  }
-  // The shelf's category tabs govern the TRADE LIST too (Daniel, Pass B UI-fix): show only this
-  // category's offers, same filter that hides shelf cards (renderPanels' card loop). Keeps the
-  // list to a few short rows as the tier grows — and future-proofs the overlay that will host it.
-  document.querySelectorAll('#market-offers .offer-row').forEach((row) =>
-    row.classList.toggle('hidden', row.dataset.cat !== activeCategory));
   for (const mid of Object.keys(state.materials ?? {})) {
     const el = document.getElementById(`mat-${mid}`);
     if (el) {

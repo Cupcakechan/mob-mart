@@ -3924,5 +3924,63 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
 }
 
+// ================= SECTION 64 — the Trade Market OVERLAY (D6-B pulled forward, 2026-07-12) =====
+// The relocation pass: the offer list moved from the Shop strip to a dedicated overlay opened by
+// the canvas board (hit-tested) or the strip's Open Market button. Exact tier totals stay §63's;
+// this section owns the hit-rect derivation law, the FULL-NAME row law, and the wiring pins.
+{
+  // (a) The board hit rect DERIVES from the draw constants — inside the stage, non-degenerate,
+  // and the point test agrees with the rect (center hits, outside misses).
+  const { boardHitRect, pointOnBoard } = await import('./src/render/scene.js');
+  const r = boardHitRect();
+  ok(r.w > 0 && r.h > 0, 'overlay: board hit rect has area');
+  ok(r.x >= 0 && r.y >= 0 && r.x + r.w <= 1280 && r.y + r.h <= 720,
+    'overlay: hit rect sits inside the 1280x720 stage');
+  ok(pointOnBoard(r.x + r.w / 2, r.y + r.h / 2), 'overlay: the board center hits');
+  ok(!pointOnBoard(0, 0) && !pointOnBoard(r.x - 1, r.y) && !pointOnBoard(r.x, r.y + r.h + 1),
+    'overlay: points outside the rect miss');
+
+  // (b) The FULL-NAME row law (this pass's reason to exist): every recipe material renders its
+  // registry displayName — the strip's icon-only rows taught nothing. Derived from the live
+  // registries via a fixed sim-day, never hand-typed.
+  const { offerRowHtml } = await import('./src/ui/market.js');
+  const { offersForDay } = await import('./src/data/trademarket.js');
+  const { MATERIALS: MATS64 } = await import('./src/data/materials.js');
+  const { ITEMS: ITEMS64 } = await import('./src/data/items.js');
+  const offers64 = offersForDay('sim-day-4');
+  ok(offers64.length > 0, 'overlay: sim-day-4 posts offers (the fixture day)');
+  for (const off of offers64) {
+    const html = offerRowHtml(off, { gold: 0, materials: {} });
+    ok(html.includes(ITEMS64[off.itemId].displayName),
+      `overlay: ${off.itemId} row carries the item display name`);
+    for (const mid of Object.keys(off.materials))
+      ok(html.includes(MATS64[mid].displayName),
+        `overlay: ${off.itemId} row spells out '${MATS64[mid].displayName}' (the full-name law)`);
+    ok(html.includes(`${off.gold}g`), `overlay: ${off.itemId} row carries the gold component`);
+  }
+  const probe = offers64[0];
+  ok(offerRowHtml(probe, { gold: 0, materials: {} }).includes('mat-short'),
+    'overlay: empty pockets tint short');
+  const fullPockets = { gold: 1e9, materials: Object.fromEntries(Object.keys(probe.materials).map((m) => [m, 999])) };
+  ok(!offerRowHtml(probe, fullPockets).includes('mat-short'), 'overlay: full pockets never tint short');
+  ok(offerRowHtml(null, { gold: 0 }) === '', 'overlay: a null offer yields empty html (guard)');
+
+  // (c) Wiring pins (the §63f house pattern — text, not behavior, where headless can't reach):
+  // the scoped .hidden override (the overlay sets its own display — the cascade-tie law), the
+  // shell's overlay root, the strip's door, the pure relocation, and the derived hit test.
+  const { readFileSync: rf64 } = await import('node:fs');
+  const css64 = rf64('./style.css', 'utf8');
+  ok(css64.includes('.market-overlay.hidden'),
+    'overlay: style.css carries the scoped .market-overlay.hidden override (the cascade-tie law)');
+  ok(rf64('./index.html', 'utf8').includes('id="market-overlay"'),
+    'overlay: the shell carries the overlay root');
+  const pnl64 = rf64('./src/ui/panels.js', 'utf8');
+  ok(pnl64.includes('open-market-btn'), 'overlay: the strip keeps its Open Market door');
+  ok(!pnl64.includes('id="market-offers"'),
+    'overlay: the strip no longer hosts the offer list (the pure-relocation law)');
+  ok(rf64('./src/main.js', 'utf8').includes('pointOnBoard'),
+    'overlay: the canvas click routes through the DERIVED hit test, never hand-copied numbers');
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

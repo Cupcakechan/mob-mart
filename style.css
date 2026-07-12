@@ -629,7 +629,12 @@ body{
   color: var(--gold); font-weight: 800; font-size: 11px; letter-spacing: .4px;
   text-transform: uppercase; margin-right: 8px;
 }
-.market-offer { font-size: 12px; line-height: 1.25; color: #f6e7c8; }
+.market-offer { display: flex; align-items: center; font-size: 12px; line-height: 1.25; color: #f6e7c8; }
+.open-market-btn {
+  margin-left: auto; background: #3b2a55; color: var(--gold); border: 1px solid var(--gold);
+  border-radius: 6px; padding: 3px 10px; font-weight: 800; font-size: 10px; cursor: pointer; flex-shrink: 0;
+}
+.open-market-btn:hover { background: #4a3568; }
 .market-row { display: flex; align-items: center; gap: 6px; }
 .market-mats { display: flex; flex-wrap: wrap; gap: 2px 7px; flex: 1; min-width: 0; }
 .mat-chip {
@@ -658,8 +663,9 @@ body{
 }
 .beast-send:disabled { color: #8f86a3; border-color: #5a4a75; cursor: default; }
 
-/* --- Trade Market offer list (Pass B, D6-A; iconic rows, category-filtered) -------------------- */
-.market-offers { display: flex; flex-direction: column; gap: 2px; max-height: 130px; overflow-y: auto; }
+/* --- Trade Market offer rows (Pass B classes, REUSED by the D6-B overlay — the strip no longer
+   hosts them; .offer-row.hidden stays: the cascade-tie law's pin, and the overlay may filter
+   later) ------------------------------------------------------------------------------------- */
 .offer-row { display: flex; align-items: center; gap: 6px; }
 .offer-row.hidden { display: none; }  /* THE FILTER FIX: .offer-row's display:flex (appended late)
    ties .hidden's specificity and wins by order — the exact trap .item-card.hidden already
@@ -676,3 +682,35 @@ body{
   padding: 2px 8px; font-weight: 800; font-size: 10px; cursor: pointer; flex-shrink: 0;
 }
 .offer-trade:disabled { color: #8f86a3; border-color: #5a4a75; cursor: default; }
+
+/* --- Trade Market OVERLAY (D6-B pulled forward — Daniel's Option 2, 2026-07-12). z14: above the
+   panels, below the menu (15) and the away modal (20). The sim keeps running under it — the menu
+   overlay's idle-honest law. Sets its own display, so it CARRIES the scoped .hidden override
+   (the cascade-tie law; §64 text-pins it). ---------------------------------------------------- */
+.market-overlay{
+  position:absolute;inset:0;z-index:14;display:flex;align-items:center;justify-content:center;
+  background:rgba(10,7,16,.72);
+}
+.market-overlay.hidden{display:none;}
+.market-card{
+  width:660px;max-height:560px;display:flex;flex-direction:column;
+  background:var(--panel-bg);border:2px solid var(--panel-edge);border-radius:14px;
+  padding:14px 18px;box-shadow:0 8px 0 rgba(0,0,0,.45);
+}
+.market-head{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.market-title{margin:0;color:var(--gold);font-size:16px;font-weight:800;letter-spacing:1px;text-transform:uppercase;}
+.market-day{color:#8a7fa0;font-size:12px;flex:1;}
+.market-close{width:auto;margin:0;padding:6px 14px;}   /* the menu-close look, inline-sized */
+.market-special{
+  background:#241a30;border:1px solid var(--gold);border-radius:8px;padding:6px 10px;
+  margin-bottom:8px;display:flex;align-items:center;gap:8px;
+}
+.special-badge{color:var(--gold);font-weight:800;font-size:10px;letter-spacing:.6px;text-transform:uppercase;flex-shrink:0;}
+.market-offer-list{display:flex;flex-direction:column;gap:4px;overflow-y:auto;flex:1;min-height:0;}
+.market-offer-list .offer-row{padding:3px 4px;border-bottom:1px solid #3a2c50;}
+.market-offer-list .offer-row:last-child{border-bottom:none;}
+.market-card .offer-text{font-size:13px;}
+.market-card .offer-mat-icon{width:18px;height:18px;}   /* full-width surface: past the board's 17px */
+.market-foot{margin-top:8px;display:flex;flex-direction:column;gap:4px;}
+.market-forecast{color:#cfc3e0;font-size:12px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
+.market-forecast .offer-mat-icon{width:15px;height:15px;}
