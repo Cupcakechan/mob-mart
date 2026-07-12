@@ -21,6 +21,14 @@ export const CONFIG = {
     goldMultMin: 1.2,          // gold component = round(basePrice × [multMin..multMax]) — derived
     goldMultMax: 3.5,          // per item (D5-A, Pass B): a helm recipe prices like a helm, a
                                // tonic like a tonic; THE margin dial the harness flagged.
+    feature: {                 // the daily SPECIAL's discount (Daniel's Option 3, 2026-07-12):
+                               // the featured offer trades below the posted band ON PURPOSE —
+                               // gold discounts alone decay (gold is the runaway currency, the
+                               // audit's oldest finding), so the special also cuts materials.
+      goldMult: 0.6,           // featured gold = round(band gold × this). <1 always.
+      matUnitsOff: 1,          // units off the featured offer's LARGEST material stack, clamped
+                               // to min 1 — an all-1s recipe gets the gold cut alone.
+    },
   },
   expedition: {                // EXPEDITIONS MVP (reform step 4 — one monster, one door, one slot)
     fee: 25,                   // gold, paid at departure. The fee prices it as a SERVICE — the

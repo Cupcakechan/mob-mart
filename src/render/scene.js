@@ -4,7 +4,7 @@
 import { CONFIG } from '../config.js';
 import { MONSTERS } from '../data/monsters.js';
 import { ITEMS, ITEM_ORDER } from '../data/items.js';
-import { offersForDay, tradeDayKey, describeOffer, describeOfferSegments, featuredOffer, forecastDayKey } from '../data/trademarket.js';   // Market Board (reform Pass B; leaf, no cycle)
+import { boardLines } from '../data/trademarket.js';   // Market Board sale sign (leaf, no cycle)
 import { sumEffect } from '../data/upgrades.js';
 import { WORKERS } from '../data/workers.js';   // Doug's scavenge clock (leaf data module, no cycle)
 import { RELICS, RELIC_ORDER } from '../data/relics.js';   // the display (§14 Pass B)
@@ -577,19 +577,18 @@ function drawSpecialBoard(ctx, state, tMs) {
   };
   if (B.drawHeader) line(B.header, B.header, B.headerFont, B.headerColor, B.headerY);  // painted, never chalked
 
-  const bDayKey = tradeDayKey(state);
-  const offer = featuredOffer(bDayKey);                       // Pass B: the sign ADVERTISES one of
-                                                              // today's ten (deterministic pick);
-                                                              // the full list sells in the Shop tab
-  // BOARD = ICONIC HEADLINE + FORECAST (Pass B UI-fix, Daniel A+A): materials render as ICONS
-  // ("Iron Sword ⇐ [ember]2 + 32g"), which fits both rows without truncation — the same icon
-  // asset the Shop list uses. Row 1 = today's featured offer (gold text); row 2 = tomorrow's
-  // (chalk text). Icons draw at cap height, counted small in the write-on budget.
-  const headSegs = offer ? describeOfferSegments(offer) : [];
-  const fcOffer = featuredOffer(forecastDayKey(state));
-  const fcSegs = fcOffer ? [{ t: 'text', s: 'Tomorrow: ' }, ...describeOfferSegments(fcOffer)] : [];
-  // Chalk rewrite keys on both offers.
-  const contentKey = `${offer?.key ?? ''}|${fcOffer?.key ?? ''}`;
+  // BOARD = SALE SIGN (Daniel's Option 2, 2026-07-12): the board is FOR THE PLAYER, not the
+  // lore — it advertises, the overlay informs. Two short text lines ("TODAY: Silver Key — 40%
+  // OFF" / "Tomorrow: Spiked Club"), derived in trademarket.js's boardLines from the live dials
+  // and registries. Structurally immune to recipe-length overflow — the bug class the iconic
+  // rows kept re-shipping. drawOfferRow stays: it renders text segments today and is the ticker
+  // pass's likely renderer. Fonts: nameFont/quipFont are the one-value size dials if Daniel
+  // wants bigger lettering now that the lines are short.
+  const L = boardLines(state);
+  const headSegs = L.today ? [{ t: 'text', s: L.today }] : [];
+  const fcSegs = L.tomorrow ? [{ t: 'text', s: L.tomorrow }] : [];
+  // Chalk rewrite keys on both offers (boardLines carries the composed key).
+  const contentKey = L.contentKey;
   if (boardFx.lastBoardKey === undefined) boardFx.lastBoardKey = contentKey;
   else if (boardFx.lastBoardKey !== contentKey) { boardFx.lastBoardKey = contentKey; boardFx.chalkStartMs = tMs; }
   if (headSegs.length > 0 || fcSegs.length > 0) {

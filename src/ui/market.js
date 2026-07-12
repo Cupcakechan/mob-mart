@@ -34,21 +34,25 @@ export function closeMarket() {
 }
 
 // One offer as HTML — the FULL-NAME form ("Iron Buckler ⇐ [icon] 2 Polished Carapace Shard + 40g"),
-// have/need tinting per component. PURE (string in-out) so the suite proves the full-name law
-// headlessly; renderMarket assigns it into the static rows. Icon fallback: onerror hides the img,
-// the name still teaches (the strip's icon-only rows had no such net — that gap is WHY this pass).
+// have/need tinting per component. A FEATURED offer renders the deal: the cut stack's original
+// count and the original gold struck through beside the live values. PURE (string in-out) so the
+// suite proves the full-name and was/now laws headlessly; renderMarket assigns it into the static
+// rows. Icon fallback: onerror hides the img, the name still teaches.
 export function offerRowHtml(offer, state) {
   if (!offer) return '';
   const parts = Object.entries(offer.materials).map(([mid, n]) => {
     const has = (state.materials?.[mid] ?? 0) >= n;
     const m = MATERIALS[mid];
+    const orig = offer.origMaterials?.[mid];
+    const was = orig !== undefined && orig !== n ? `<s class="offer-was">${orig}</s> ` : '';
     return `<span class="offer-mat ${has ? 'mat-ok' : 'mat-short'}"><img class="offer-mat-icon"`
       + ` src="assets/sprites/${m?.iconId ?? mid}.png" alt="" onerror="this.style.display='none'">`
-      + `${n} ${m?.displayName ?? mid}</span>`;
+      + `${was}${n} ${m?.displayName ?? mid}</span>`;
   });
   const goldOk = (state.gold ?? 0) >= offer.gold;
+  const goldWas = offer.featured ? `<s class="offer-was">${offer.origGold}g</s> ` : '';
   return `<b>${ITEMS[offer.itemId]?.displayName ?? offer.itemId}</b> ⇐ ${parts.join('')}`
-    + `<span class="${goldOk ? 'mat-ok' : 'mat-short'}"> + ${offer.gold}g</span>`;
+    + `<span class="${goldOk ? 'mat-ok' : 'mat-short'}"> + ${goldWas}${offer.gold}g</span>`;
 }
 
 export function initMarket(root, h) {
@@ -122,6 +126,7 @@ export function renderMarket(state) {
     const btn = rootEl.querySelector(`.offer-trade[data-item="${offer.itemId}"]`);
     if (!textEl || !btn) continue;
     textEl.innerHTML = offerRowHtml(offer, state);
+    textEl.closest('.offer-row')?.classList.toggle('featured', !!offer.featured);   // the deal's row glows
     const goldOk = state.gold >= offer.gold;
     btn.disabled = !canTrade(state, offer);
     btn.dataset.offer = offer.key;

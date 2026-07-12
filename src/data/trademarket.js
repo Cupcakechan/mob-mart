@@ -72,18 +72,44 @@ export function offerForDay(dayKey, itemId) {
 }
 
 // The whole board for a day — one offer per trade-tier item (Pass A ships one item; Pass B's
-// full tier flows through with zero changes here).
+// full tier flows through with zero changes here). The DAILY SPECIAL (the discount pass —
+// Daniel's Option 3): the featured pick is marked and discounted HERE, on the offer object
+// itself, so the board, the overlay, the list row, and executeTrade all read ONE price and can
+// never disagree. Originals ride along (origGold / origMaterials) for the was/now display.
 export function offersForDay(dayKey) {
-  return tradeItemIds().map((id) => offerForDay(dayKey, id)).filter(Boolean);
+  const offers = tradeItemIds().map((id) => offerForDay(dayKey, id)).filter(Boolean);
+  if (offers.length > 0) applyFeatureDiscount(offers[hashDayKey(`feature:${dayKey}`) % offers.length]);
+  return offers;
+}
+
+// Gold × goldMult ALWAYS; one unit off the LARGEST material stack where a stack > 1 exists
+// (ties break on insertion order — deterministic, it's the seeded build order), clamped to
+// min 1. All-1s recipes get the gold cut alone (the recipes are 1-2 units, so the material
+// cut is lumpy by nature — that's the Market-Day escalation hook, not a bug).
+function applyFeatureDiscount(offer) {
+  const F = CONFIG.trade?.feature ?? {};
+  offer.featured = true;
+  offer.origGold = offer.gold;
+  offer.gold = Math.round(offer.gold * (F.goldMult ?? 0.6));
+  let big = null;
+  for (const [mid, n] of Object.entries(offer.materials)) {
+    if (n > 1 && (big === null || n > offer.materials[big])) big = mid;
+  }
+  if (big !== null) {
+    offer.origMaterials = { ...offer.materials };
+    offer.materials[big] = Math.max(1, offer.materials[big] - (F.matUnitsOff ?? 1));
+  }
 }
 
 // "Iron Sword ⇐ 2× Echo Fang + 1× Bogstone Bauble + 60g" — the one formatter every surface
-// (board, panel, log, harness report) shares, so the offer always reads identically.
+// (board, panel, log, harness report) shares, so the offer always reads identically. A featured
+// offer appends "(was Ng)" — the sign SELLS the deal (Daniel's Pass B ask).
 export function describeOffer(offer) {
   if (!offer) return '';
   const parts = Object.entries(offer.materials)
     .map(([id, n]) => `${n}× ${MATERIALS[id]?.displayName ?? id}`);
-  return `${ITEMS[offer.itemId]?.displayName ?? offer.itemId} ⇐ ${parts.join(' + ')} + ${offer.gold}g`;
+  const was = offer.featured ? ` (was ${offer.origGold}g)` : '';
+  return `${ITEMS[offer.itemId]?.displayName ?? offer.itemId} ⇐ ${parts.join(' + ')} + ${offer.gold}g${was}`;
 }
 
 // The ICONIC form (Pass B UI-fix): the same offer as a segment list, materials as ICON refs
@@ -99,6 +125,9 @@ export function describeOfferSegments(offer) {
     if (i < mats.length - 1) segs.push({ t: 'text', s: ' + ' });
   });
   segs.push({ t: 'text', s: ` + ${offer.gold}g` });
+  if (offer.featured) segs.push({ t: 'text', s: ` (was ${offer.origGold}g)` });   // the deal, chalked —
+                                                              // a text segment, so the board's
+                                                              // write-on needs zero new draw code
   return segs;
 }
 
@@ -108,6 +137,23 @@ export function tradeBoardLine(dayKey) {
   const pool = TRADE_VOICE?.board ?? [];
   if (pool.length === 0) return '';
   return pool[hashDayKey(`voice:${dayKey}`) % pool.length];
+}
+
+// The SALE SIGN (board rework — Daniel's Option 2, 2026-07-12: "the board is for the player,
+// not the lore" — it ADVERTISES; the overlay informs). Two plain text lines, no recipes:
+// "TODAY: Silver Key — 40% OFF" / "Tomorrow: Spiked Club". The percent DERIVES from the live
+// goldMult dial — and it's ad copy for the GOLD cut only; the material cut makes the real deal
+// deeper, so the sign undersells, never oversells. Returns the contentKey the chalk write-on
+// re-keys on, so scene.js needs ONE call per draw (it previously made two).
+export function boardLines(state) {
+  const t = featuredOffer(tradeDayKey(state));
+  const f = featuredOffer(forecastDayKey(state));
+  const pct = Math.round((1 - (CONFIG.trade?.feature?.goldMult ?? 0.6)) * 100);
+  return {
+    today: t ? `TODAY: ${ITEMS[t.itemId]?.displayName ?? t.itemId} — ${pct}% OFF` : '',
+    tomorrow: f ? `Tomorrow: ${ITEMS[f.itemId]?.displayName ?? f.itemId}` : '',
+    contentKey: `${t?.key ?? ''}|${f?.key ?? ''}`,
+  };
 }
 
 // TOMORROW's key (Pass B, the forecast — law 3's planning surface). Live play adds a calendar
@@ -122,10 +168,8 @@ export function forecastDayKey(state) {
   return dayKeyOf(Date.now() + 86400000);
 }
 
-// The board headline's FEATURED offer — one of today's ten, picked deterministically per day
-// (the full list lives in the Shop tab; the sign advertises, the counter sells).
+// The board headline's FEATURED offer — the day's discounted special, marked by offersForDay
+// (one hash, one mark, one price; this just finds it).
 export function featuredOffer(dayKey) {
-  const offers = offersForDay(dayKey);
-  if (offers.length === 0) return null;
-  return offers[hashDayKey(`feature:${dayKey}`) % offers.length];
+  return offersForDay(dayKey).find((o) => o.featured) ?? null;
 }

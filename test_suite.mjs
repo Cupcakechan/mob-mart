@@ -3845,14 +3845,17 @@ console.log('M4 auto-serve worker — smoke test\n');
   ok((ITEMS.bandages.acquisition ?? 'gold') === 'gold' && (ITEMS.club.acquisition ?? 'gold') === 'gold',
     'passB: the license-free basics stay gold forever');
 
-  // (b) Derived recipe gold: every offer's gold sits inside basePrice × the mult band.
+  // (b) Derived recipe gold: every offer's PRE-DISCOUNT gold sits inside basePrice × the mult
+  // band. (Softened for the daily special — the discount pass legally prices the featured offer
+  // BELOW the band floor; its exact laws live in the newest batch, §65.)
   {
     const lo = CONFIG.trade.goldMultMin, hi = CONFIG.trade.goldMultMax;
     let bad = 0;
     for (let d = 1; d <= 10; d++) {
       for (const off of offersForDay(`sim-day-${d}`)) {
+        const g = off.origGold ?? off.gold;
         const bp = ITEMS[off.itemId].basePrice;
-        if (off.gold < Math.round(bp * lo) || off.gold > Math.round(bp * hi)) bad++;
+        if (g < Math.round(bp * lo) || g > Math.round(bp * hi)) bad++;
       }
     }
     ok(bad === 0, 'passB: 10 days × 10 offers — every gold component derives from its item\'s value');
@@ -3980,6 +3983,101 @@ console.log('M4 auto-serve worker — smoke test\n');
     'overlay: the strip no longer hosts the offer list (the pure-relocation law)');
   ok(rf64('./src/main.js', 'utf8').includes('pointOnBoard'),
     'overlay: the canvas click routes through the DERIVED hit test, never hand-copied numbers');
+}
+
+// ============ SECTION 65 — the DAILY SPECIAL discount (Pass B of the overlay arc, Option 3) ====
+// Daniel's call: gold discounts alone decay (gold is the runaway currency), so the special cuts
+// BOTH — gold × feature.goldMult, plus one unit off the largest material stack where one exists.
+// The discount lives on the offer object in offersForDay (one price, every surface); this section
+// owns its exact laws. All expectations DERIVE from the live CONFIG dials, never hand-typed.
+{
+  const { offersForDay: off65, featuredOffer: feat65, describeOffer: desc65, describeOfferSegments: segs65 }
+    = await import('./src/data/trademarket.js');
+  const { CONFIG: CFG65 } = await import('./src/config.js');
+  const { offerRowHtml: row65 } = await import('./src/ui/market.js');
+  const F = CFG65.trade.feature;
+  ok(F && F.goldMult > 0 && F.goldMult < 1, 'special: goldMult is a real discount (0 < mult < 1)');
+  ok((F.matUnitsOff ?? 1) >= 1, 'special: matUnitsOff cuts at least one unit');
+
+  let cutDays = 0, all1sDays = 0;
+  for (let d = 1; d <= 40; d++) {
+    const offers = off65(`sim-day-${d}`);
+    const featured = offers.filter((o) => o.featured);
+    ok(featured.length === 1, `special: sim-day-${d} marks exactly ONE featured offer`);
+    const f = featured[0];
+    ok(f.gold === Math.round(f.origGold * F.goldMult),
+      `special: sim-day-${d} featured gold = round(orig × ${F.goldMult}) (derived, one dial)`);
+    ok(feat65(`sim-day-${d}`).key === f.key, 'special: featuredOffer finds the marked one (one hash, one mark)');
+    for (const n of Object.values(f.materials)) ok(n >= 1, 'special: no stack ever cut below 1 (the clamp law)');
+    if (f.origMaterials) {
+      cutDays++;
+      const cutMids = Object.keys(f.origMaterials).filter((m) => f.origMaterials[m] !== f.materials[m]);
+      ok(cutMids.length === 1, 'special: exactly one stack takes the cut');
+      ok(f.origMaterials[cutMids[0]] - f.materials[cutMids[0]] === Math.min(F.matUnitsOff, f.origMaterials[cutMids[0]] - 1),
+        'special: the cut is matUnitsOff deep, clamp respected');
+      ok(Object.values(f.origMaterials).every((n) => n <= f.origMaterials[cutMids[0]]),
+        'special: the cut lands on the LARGEST stack');
+    } else {
+      all1sDays++;
+      ok(Object.values(f.materials).every((n) => n === 1),
+        'special: no origMaterials means an all-1s recipe (the gold-only fallback)');
+    }
+    for (const o of offers) if (!o.featured) {
+      ok(o.origGold === undefined && o.origMaterials === undefined,
+        'special: non-featured offers carry no discount fields (the mark is exclusive)');
+    }
+  }
+  ok(cutDays > 0, `special: the material cut occurs in 40 days (found ${cutDays}) — guard-the-guard`);
+  // (all-1s fallback days may legitimately be zero at current unit bands; counted, not required)
+
+  // Determinism survives the mutation-in-place: two calls, identical JSON.
+  ok(JSON.stringify(off65('sim-day-7')) === JSON.stringify(off65('sim-day-7')),
+    'special: offersForDay stays a pure function of the day key');
+
+  // The displays sell the deal: the shared describers append the was-price; the overlay row
+  // strikes the original gold (and the cut stack's count where one was cut).
+  const f7 = feat65('sim-day-7');
+  ok(desc65(f7).includes(`(was ${f7.origGold}g)`), 'special: describeOffer appends the was-price');
+  ok(segs65(f7).some((s) => s.t === 'text' && s.s.includes(`(was ${f7.origGold}g)`)),
+    'special: the iconic segments carry the was-price (describer contract; the ticker\'s likely consumer)');
+  const html65 = row65(f7, { gold: 0, materials: {} });
+  ok(html65.includes(`<s class="offer-was">${f7.origGold}g</s>`), 'special: the overlay row strikes the original gold');
+  if (f7.origMaterials) {
+    const cut = Object.keys(f7.origMaterials).find((m) => f7.origMaterials[m] !== f7.materials[m]);
+    ok(html65.includes(`<s class="offer-was">${f7.origMaterials[cut]}</s>`),
+      'special: the overlay row strikes the cut stack\'s original count');
+  }
+}
+
+// ================== SECTION 66 — the Market Board SALE SIGN (board rework, Option 2) ==========
+// The board advertises, the overlay informs (Daniel's framing): two short derived lines, no
+// recipes — structurally immune to the recipe-length overflow class. Every expectation derives
+// from the live registries and dials.
+{
+  const { boardLines: bl66, featuredOffer: feat66, tradeDayKey: tdk66, forecastDayKey: fdk66 }
+    = await import('./src/data/trademarket.js');
+  const { CONFIG: CFG66 } = await import('./src/config.js');
+  const { ITEMS: ITEMS66 } = await import('./src/data/items.js');
+  const pct66 = Math.round((1 - CFG66.trade.feature.goldMult) * 100);
+  for (const d of [1, 7, 23]) {
+    const s = { tradeDayKeyOverride: `sim-day-${d}` };
+    const L = bl66(s);
+    const t = feat66(tdk66(s)), f = feat66(fdk66(s));
+    ok(L.today === `TODAY: ${ITEMS66[t.itemId].displayName} — ${pct66}% OFF`,
+      `sign: sim-day-${d} today line derives from the featured item + the live dial`);
+    ok(L.tomorrow === `Tomorrow: ${ITEMS66[f.itemId].displayName}`,
+      `sign: sim-day-${d} tomorrow line is the tease — name only, no recipe (the overflow law)`);
+    ok(!L.today.includes('⇐') && !L.tomorrow.includes('⇐'),
+      `sign: sim-day-${d} no recipe glyphs on the sign — the board advertises, the overlay informs`);
+    ok(L.contentKey === `${t.key}|${f.key}`,
+      `sign: sim-day-${d} contentKey composes both offer keys (the chalk re-write trigger)`);
+  }
+  // The scene consumes boardLines, not the recipe segments (the wiring pin, §64's style).
+  const { readFileSync: rf66 } = await import('node:fs');
+  const scene66 = rf66('./src/render/scene.js', 'utf8');
+  ok(scene66.includes('boardLines'), 'sign: scene.js renders the sale sign via boardLines');
+  ok(!scene66.includes('describeOfferSegments'),
+    'sign: scene.js no longer builds recipe segments for the board (the ad, not the data)');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

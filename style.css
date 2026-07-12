@@ -714,3 +714,7 @@ body{
 .market-foot{margin-top:8px;display:flex;flex-direction:column;gap:4px;}
 .market-forecast{color:#cfc3e0;font-size:12px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
 .market-forecast .offer-mat-icon{width:15px;height:15px;}
+.offer-was{color:#8f86a3;font-weight:700;}   /* the struck original — dim, never tinted have/need */
+.market-offer-list .offer-row.featured{
+  border:1px solid var(--gold);border-radius:6px;background:rgba(255,207,74,.08);
+}
