@@ -161,6 +161,13 @@ export const MONSTERS = {
   dragon: {
     id: 'dragon', displayName: 'The Inspector', spriteId: 'dragon', combatMod: 1,
     budgetRange: [200, 400],   // the once-a-day whale: buys anything on the shelf, fame-scaled
+    material: 'dragon_scale',          // VIP DROPS (Pass B, §13.1 as Daniel picked): the Scale
+    gradeMaterial: 'inspectors_seal',  // rides EVERY visit; the SEAL only a TOP-GRADE inspection
+                         // (CONFIG.visits.sealFullness). BOTH stay out of trade recipes forever —
+                         // eligibleMaterialIds filters special rows — and out of the serve-drop
+                         // law (its !special guard): the inspection block in game.js is their
+                         // only faucet. The Seal is RESERVED for relic restores (Daniel,
+                         // 2026-07-11); the Scale for future premium sinks.
     special: true,       // SPECIAL VISITS (Option 2, Daniel 2026-07-07): NEVER in the normal spawn
                          // pool, the bestiary grid, or breakpoint milestones — he arrives only via
                          // trySpawnVisit (once per calendar day at Legendary+). Consumers filter on

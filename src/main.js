@@ -114,6 +114,20 @@ loadSprite('portal_glow_tavern', 'assets/sprites/portal_glow_tavern.png');  //  
 loadSprite('portal_glow_castle', 'assets/sprites/portal_glow_castle.png');  //   (committed with this pass)
 loadSprite('bob_idle',  'assets/sprites/bob_idle.png');   // 6-frame horizontal strip
 loadSprite('bob_serve', 'assets/sprites/bob_serve.png');  // 6-frame horizontal strip
+// MATERIAL icons (Trade Market): the Shop-tab chips load these as <img>, but the CANVAS board
+// (drawImage in scene.js, via getSprite) needs them registered HERE too — the pairing law, and
+// the exact bug the graceful "×n" fallback hid in Pass B. Explicit literals (not a loop) so the
+// suite's loadSprite('literal') pairing scan can see every one.
+loadSprite('slime_core',      'assets/sprites/slime_core.png');
+loadSprite('echo_fang',       'assets/sprites/echo_fang.png');
+loadSprite('femur_charm',     'assets/sprites/femur_charm.png');
+loadSprite('stolen_trinket',  'assets/sprites/stolen_trinket.png');
+loadSprite('carapace_shard',  'assets/sprites/carapace_shard.png');
+loadSprite('bogstone_bauble', 'assets/sprites/bogstone_bauble.png');
+loadSprite('dragon_scale',    'assets/sprites/dragon_scale.png');
+loadSprite('inspectors_seal', 'assets/sprites/inspectors_seal.png');
+loadSprite('silk_bundle',     'assets/sprites/silk_bundle.png');
+loadSprite('infernal_ember',  'assets/sprites/infernal_ember.png');
 loadSprite('club',         'assets/sprites/club.png');         // item icons (64x64) — used by the
 loadSprite('metal_helmet', 'assets/sprites/metal_helmet.png'); // canvas purchase float; the DOM
 loadSprite('hp_flask',     'assets/sprites/hp_flask.png');     // shelf cards load the same files

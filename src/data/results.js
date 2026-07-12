@@ -695,3 +695,19 @@ export const EXPEDITION_VOICE = {
     `{name} bartered half the haul at {dest} for directions. {n} {mat} remain.`,
   ],
 };
+
+// --- The Inspector's drop voice (Pass B, §13.1) --------------------------------------------------
+// The Scale rides every visit (a dragon sheds); the Seal ONLY a top-grade inspection — the rare
+// line, and it should feel like passing an exam. Both tier 'market' (instant) at the call site.
+export const INSPECTOR_VOICE = {
+  scale: [
+    `The Inspector left a Dragon Scale on the counter. Standard shedding, he says.`,
+    `A Dragon Scale, dislodged mid-inspection. Bob filed it under "assets."`,
+    `The Inspector molted, professionally. One Dragon Scale, gleaming.`,
+  ],
+  seal: [
+    `TOP MARKS. The Inspector stamped an official Seal. Bob framed the moment.`,
+    `A perfect inspection! The Seal hit the counter like a gavel. Approved.`,
+    `The Inspector's Seal, awarded. He almost smiled. Almost.`,
+  ],
+};

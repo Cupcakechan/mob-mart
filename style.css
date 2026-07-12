@@ -623,7 +623,7 @@ body{
    icon PNG hides itself and the count stands alone. */
 .market-strip {
   background: #241a30; border: 1px solid var(--panel-edge); border-radius: 8px;
-  padding: 6px 8px; margin: 0 0 8px; display: flex; flex-direction: column; gap: 4px;
+  padding: 4px 8px; margin: 0 0 6px; display: flex; flex-direction: column; gap: 2px;
 }
 .market-board-title {
   color: var(--gold); font-weight: 800; font-size: 11px; letter-spacing: .4px;
@@ -631,10 +631,10 @@ body{
 }
 .market-offer { font-size: 12px; line-height: 1.25; color: #f6e7c8; }
 .market-row { display: flex; align-items: center; gap: 6px; }
-.market-mats { display: flex; flex-wrap: wrap; gap: 4px 8px; flex: 1; min-width: 0; }
+.market-mats { display: flex; flex-wrap: wrap; gap: 2px 7px; flex: 1; min-width: 0; }
 .mat-chip {
-  display: inline-flex; align-items: center; gap: 3px;
-  font-size: 11px; color: #cfc3e0; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 2px;
+  font-size: 10px; color: #cfc3e0; white-space: nowrap;
 }
 .mat-chip .mat-icon { width: 16px; height: 16px; image-rendering: pixelated; }
 .trade-btn {
@@ -642,9 +642,10 @@ body{
   padding: 5px 10px; font-weight: 800; font-size: 11px; cursor: pointer; flex-shrink: 0;
 }
 .trade-btn:disabled { color: #8f86a3; border-color: #5a4a75; cursor: default; }
-/* Trade-tier card pointer: replaces the restock button once licensed (panels.js toggles). */
+/* Trade-tier card pointer: replaces the restock button once licensed (panels.js toggles).
+   Dark ink on the tan card — the gold-on-tan version was near-invisible (Daniel's QA, Pass B). */
 .item-card .trade-hint {
-  font-size: 10px; line-height: 1.2; color: var(--gold); opacity: .85; padding: 4px 0;
+  font-size: 10px; line-height: 1.2; color: #6b4a1e; font-weight: 700; padding: 4px 0;
 }
 
 /* --- Expedition Job Card row (reform step 4 MVP; the Bestiary grid cards) ---------------------- */
@@ -656,3 +657,22 @@ body{
   margin-left: auto;
 }
 .beast-send:disabled { color: #8f86a3; border-color: #5a4a75; cursor: default; }
+
+/* --- Trade Market offer list (Pass B, D6-A; iconic rows, category-filtered) -------------------- */
+.market-offers { display: flex; flex-direction: column; gap: 2px; max-height: 130px; overflow-y: auto; }
+.offer-row { display: flex; align-items: center; gap: 6px; }
+.offer-row.hidden { display: none; }  /* THE FILTER FIX: .offer-row's display:flex (appended late)
+   ties .hidden's specificity and wins by order — the exact trap .item-card.hidden already
+   solves. Every hideable element that sets its own display needs this scoped override. */
+.offer-text { font-size: 12px; line-height: 1.3; color: #f6e7c8; flex: 1; min-width: 0;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 2px; }
+.offer-text b { margin-right: 3px; }
+.offer-mat { display: inline-flex; align-items: center; gap: 1px; font-weight: 700; margin: 0 2px; }
+.offer-mat-icon { width: 15px; height: 15px; image-rendering: pixelated; }
+.offer-text .mat-ok { color: #9fdc8a; }
+.offer-text .mat-short { color: #e08a8a; }
+.offer-trade {
+  background: #3b2a55; color: var(--gold); border: 1px solid var(--gold); border-radius: 6px;
+  padding: 2px 8px; font-weight: 800; font-size: 10px; cursor: pointer; flex-shrink: 0;
+}
+.offer-trade:disabled { color: #8f86a3; border-color: #5a4a75; cursor: default; }

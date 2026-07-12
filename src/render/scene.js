@@ -4,7 +4,7 @@
 import { CONFIG } from '../config.js';
 import { MONSTERS } from '../data/monsters.js';
 import { ITEMS, ITEM_ORDER } from '../data/items.js';
-import { offersForDay, tradeDayKey, describeOffer } from '../data/trademarket.js';   // Market Board (reform Pass A; leaf, no cycle)
+import { offersForDay, tradeDayKey, describeOffer, describeOfferSegments, featuredOffer, forecastDayKey } from '../data/trademarket.js';   // Market Board (reform Pass B; leaf, no cycle)
 import { sumEffect } from '../data/upgrades.js';
 import { WORKERS } from '../data/workers.js';   // Doug's scavenge clock (leaf data module, no cycle)
 import { RELICS, RELIC_ORDER } from '../data/relics.js';   // the display (§14 Pass B)
@@ -405,10 +405,13 @@ const SPECIAL_BOARD = {
   headerFont: "800 13px 'Segoe UI', system-ui, sans-serif",   // mirrors BUBBLE's family
   nameFont:   "800 14px 'Segoe UI', system-ui, sans-serif",
   quipFont:   "700 14px 'Segoe UI', system-ui, sans-serif",
-  headerColor: '#f6e7c8', nameColor: '#ffcf4a', quipColor: '#f6e7c8',
-  shade: 'rgba(0,0,0,.35)',   // 1px offset under every glyph — legibility over the wood grain
+  headerColor: '#f6e7c8', nameColor: '#ffd75e', quipColor: '#f6e7c8',   // name nudged brighter
+  shade: 'rgba(0,0,0,.6)',    // 1px offset under every glyph — deepened from .35 for legibility
+                              // of the gold recipe row on the mid-tone wood (Daniel's QA, Pass B)
   padX: 14,                   // text inset from the board's side edges
   headerY: 13, nameY: 37, quipY: 61,  // line TOPS, from the board's top (110-tall display box)
+  nameIconPx: 20, quipIconPx: 17,     // recipe-icon glyph size per row — UPSIZED (Daniel's QA:
+                                      // 16/13 read too small on the plank); centered on the text line
   quipLineH: 19, maxQuipLines: 2,     // quips are authored <=48 chars -> two 14px lines always fit
   plank: '#8a5a30', plankEdge: '#5b3a24',   // fallback colors (wall_shelf family)
   // Life pass (Option 2, Daniel 2026-07-07) — BOTH motions are event-driven on purpose (the
@@ -510,39 +513,84 @@ function drawSpecialBoard(ctx, state, tMs) {
     ctx.fillStyle = B.shade; ctx.fillText(text, lx + 1, y + ly + 1);
     ctx.fillStyle = color;   ctx.fillText(text, lx, y + ly);
   };
+  // ONE offer row of mixed text + icon segments, revealed by a shared char budget (the write-on).
+  // Measures the full row first to center it, then lays segments L→R; icons draw at `size` px
+  // and are clipped by the same budget as text (so the sign writes itself icons-and-all). Returns
+  // the budget left for the next row. A missing icon PNG falls back to "×n" text (graceful law).
+  const drawOfferRow = (segs, font, color, ly, size, textPx, budget, centerX, rowMaxW) => {
+    ctx.font = font;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    const iconW = size + 2;                                    // icon glyph + a hair of spacing
+    const partOf = (s) => s.t === 'text' ? s.s : `${s.n}`;     // count text drawn beside an icon
+    // Full row width (for centering): text runs + icon glyph + its count digits.
+    let full = 0;
+    for (const s of segs) {
+      if (s.t === 'text') full += ctx.measureText(s.s).width;
+      else full += iconW + ctx.measureText(partOf(s)).width;
+    }
+    let penX = centerX - Math.min(full, rowMaxW) / 2;
+    let left = budget;
+    for (const s of segs) {
+      if (left <= 0) break;
+      if (s.t === 'text') {
+        const take = Math.min(s.s.length, left); left -= take;
+        const str = s.s.slice(0, take);
+        ctx.fillStyle = B.shade; ctx.fillText(str, penX + 1, y + ly + 1);
+        ctx.fillStyle = color;   ctx.fillText(str, penX, y + ly);
+        penX += ctx.measureText(s.s).width;                   // advance by FULL seg (stable layout)
+      } else {
+        left -= 3;                                            // an icon costs ~3 budget (matches weigh)
+        const spr = getSprite(s.iconId);
+        if (spr) {
+          // CENTER the icon on the text line (Daniel's QA: icon sat low of the numbers) — the
+          // glyph's vertical middle matches the text's (top-baseline text spans ~textPx tall).
+          const iy = y + ly + (textPx - size) / 2;
+          try { ctx.drawImage(spr, penX, iy, size, size); } catch { /* mid-load frame: skip */ }
+          penX += iconW;
+          const cnt = `${s.n}`;
+          ctx.fillStyle = B.shade; ctx.fillText(cnt, penX + 1, y + ly + 1);
+          ctx.fillStyle = color;   ctx.fillText(cnt, penX, y + ly);
+          penX += ctx.measureText(cnt).width;
+        } else {                                              // no art yet: "×n" text fallback
+          const t = `×${s.n}`;
+          ctx.fillStyle = color; ctx.fillText(t, penX, y + ly);
+          penX += ctx.measureText(t).width;
+        }
+      }
+    }
+    return left;
+  };
   if (B.drawHeader) line(B.header, B.header, B.headerFont, B.headerColor, B.headerY);  // painted, never chalked
 
-  // MARKET BOARD content (reform Pass A): TODAY'S TRADE — the offer wrapped to two gold rows,
-  // plus one voice row. A live Market-Day EVENT (armed boots only) takes the voice row over —
-  // it's the rarer, louder thing; otherwise the trade voice speaks (deterministic per day).
-  // Content is a pure function of the day; the sign is chalked once each morning, never re-rolled.
   const bDayKey = tradeDayKey(state);
-  const offer = offersForDay(bDayKey)[0] ?? null;             // Pass A: one trade item = one offer
-  // BOARD = CURRENT TRADES ONLY (Daniel, 2026-07-11): the voice/daily-special row is REMOVED —
-  // one ellipsized row read as clutter in browser QA. The Market-Day event keeps its log
-  // announce + payout + crate; its board presence (and any daily-special voice) is a Pass B
-  // design item (TRADE_MARKET_DESIGN.md §5/§11), not a squeezed footer here.
-  ctx.font = B.nameFont;                                      // offer rows DRAW in nameFont —
-                                                              // measure in it too (800 weight is
-                                                              // wider than 700; the overflow trap)
-  const offerRows = offer ? wrapBoardText(ctx, describeOffer(offer), maxW, 2) : [];
-  // Midnight rollover REWRITES the sign: restart the chalk when the offer changes. First sight
-  // of the session = already written (the same-day-reload fiction); playBoardChalk's -1 one-shot
-  // (the crate moment, main.js) is untouched and still wins when it fires.
-  const contentKey = offer?.key ?? '';
+  const offer = featuredOffer(bDayKey);                       // Pass B: the sign ADVERTISES one of
+                                                              // today's ten (deterministic pick);
+                                                              // the full list sells in the Shop tab
+  // BOARD = ICONIC HEADLINE + FORECAST (Pass B UI-fix, Daniel A+A): materials render as ICONS
+  // ("Iron Sword ⇐ [ember]2 + 32g"), which fits both rows without truncation — the same icon
+  // asset the Shop list uses. Row 1 = today's featured offer (gold text); row 2 = tomorrow's
+  // (chalk text). Icons draw at cap height, counted small in the write-on budget.
+  const headSegs = offer ? describeOfferSegments(offer) : [];
+  const fcOffer = featuredOffer(forecastDayKey(state));
+  const fcSegs = fcOffer ? [{ t: 'text', s: 'Tomorrow: ' }, ...describeOfferSegments(fcOffer)] : [];
+  // Chalk rewrite keys on both offers.
+  const contentKey = `${offer?.key ?? ''}|${fcOffer?.key ?? ''}`;
   if (boardFx.lastBoardKey === undefined) boardFx.lastBoardKey = contentKey;
   else if (boardFx.lastBoardKey !== contentKey) { boardFx.lastBoardKey = contentKey; boardFx.chalkStartMs = tMs; }
-  if (offerRows.length > 0) {
-    const plan = [
-      ...offerRows.map((t, i) => ({ text: t, font: B.nameFont, color: B.nameColor, ly: B.nameY + i * B.quipLineH })),
+  if (headSegs.length > 0 || fcSegs.length > 0) {
+    // "Weight" of a plan = text chars + a small fixed cost per icon, so the single write-on
+    // budget (chalkP across the whole sign) reveals both rows left-to-right as before.
+    const ICON_COST = 3;                                       // an icon+count ≈ 3 chars of budget
+    const weigh = (segs) => segs.reduce((n, s) => n + (s.t === 'text' ? s.s.length : ICON_COST), 0);
+    const rows = [
+      { segs: headSegs, font: B.nameFont, color: B.nameColor, ly: B.nameY, size: B.nameIconPx ?? 20, textPx: 14 },
+      { segs: fcSegs, font: B.quipFont, color: B.quipColor, ly: B.quipY + B.quipLineH, size: B.quipIconPx ?? 17, textPx: 14 },
     ];
-    // Char budget across the plan: the name writes first, then the quip rows — one hand, one pass.
-    let budget = Math.round(plan.reduce((n, r) => n + r.text.length, 0) * chalkP);
-    for (const r of plan) {
-      const take = Math.min(r.text.length, budget);
-      budget -= take;
-      if (take <= 0) break;
-      line(r.text.slice(0, take), r.text, r.font, r.color, r.ly);
+    let budget = Math.round(rows.reduce((n, r) => n + weigh(r.segs), 0) * chalkP);
+    for (const r of rows) {
+      if (budget <= 0) break;
+      budget = drawOfferRow(r.segs, r.font, r.color, r.ly, r.size, r.textPx, budget, cx, maxW);
     }
   }
   ctx.restore();

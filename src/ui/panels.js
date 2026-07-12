@@ -14,8 +14,8 @@ import { UPGRADES, UPGRADE_ORDER, upgradeLevel, upgradeCost, isMaxed } from '../
 import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost,
   workerLevel, workerLevelCost, isWorkerLevelMaxed } from '../data/workers.js';
 import { RELICS, RELIC_ORDER } from '../data/relics.js';   // the Forge (§14 Pass B)
-import { MATERIALS } from '../data/materials.js';           // Market Board (reform Pass A)
-import { describeOffer } from '../data/trademarket.js';
+import { MATERIALS, MATERIAL_ORDER } from '../data/materials.js';  // Trade Market (reform Pass B)
+import { tradeItemIds } from '../data/trademarket.js';
 import {
   serveBlockReason, canRestock, effectiveMaxStock, canBuyUpgrade, isUpgradeUnlocked,
   canHireWorker, effectiveWorkerInterval, isPerkUnlocked, canBuyPerk, effectiveRestockCost,
@@ -62,10 +62,10 @@ export function initPanels(root, h) {
         <button id="restock-all-btn" class="restock-all-btn">Restock All</button>
       </div>
       <div id="market-strip" class="market-strip">
-        <div class="market-offer"><span class="market-board-title">Market Board</span><span id="market-offer-text"></span></div>
+        <div class="market-offer"><span class="market-board-title">Trade Market</span><span id="market-count"></span></div>
+        <div id="market-offers" class="market-offers"></div>
         <div class="market-row">
           <div id="market-mats" class="market-mats"></div>
-          <button id="trade-btn" class="trade-btn">Trade</button>
         </div>
       </div>
       <div id="item-cards" class="item-cards"></div>
@@ -124,18 +124,29 @@ export function initPanels(root, h) {
     btn.addEventListener('click', () => setShelfCategory(btn.dataset.cat)));
   document.getElementById('restock-all-btn')
     .addEventListener('click', () => handlers.onRestockAll());
-  // Market Board chips (reform Pass A): one per LIVE-faucet material — built from the monster
-  // registry, so a new customer family's chip appears with zero UI wiring. Icons follow the
-  // item-icon convention (assets/sprites/<iconId>.png); a missing PNG hides itself and the
-  // count stands alone (Daniel's art lands drop-in, the graceful-fallback law).
-  document.getElementById('market-mats').innerHTML = MONSTER_IDS
-    .filter((id) => !MONSTERS[id].special && MONSTERS[id].material && MATERIALS[MONSTERS[id].material])
-    .map((id) => {
-      const m = MATERIALS[MONSTERS[id].material];
-      return `<span class="mat-chip" title="${m.displayName} &#8212; dropped by ${MONSTERS[id].displayName}"><img class="mat-icon" src="assets/sprites/${m.iconId}.png" alt="" onerror="this.style.display='none'"><b id="mat-${m.id}">0</b></span>`;
+  // Trade Market list (Pass B, D6-A): one ROW per trade-tier item, built ONCE — the tier is
+  // static per session (registry-driven), only each row's recipe/affordability changes daily.
+  // The clickable-board overlay is the named FOLLOW-UP surface (design doc); this list is the
+  // proven content it will relocate.
+  document.getElementById('market-offers').innerHTML = tradeItemIds().map((itemId) =>
+    `<div class="offer-row" data-item-row="${itemId}" data-cat="${ITEMS[itemId].category}">
+       <span class="offer-text" id="offer-text-${itemId}"></span><button
+       class="offer-trade" data-item="${itemId}">Trade</button></div>`).join('');
+  document.querySelectorAll('.offer-trade').forEach((btn) =>
+    btn.addEventListener('click', () => handlers.onTrade(btn.dataset.offer ?? '')));
+  // Material chips: one per SOURCED material — serve faucets AND the Inspector's VIP drops
+  // (material/gradeMaterial on any row), in MATERIAL_ORDER. A new source auto-appears.
+  const sourced = new Set();
+  for (const id of MONSTER_IDS) {
+    if (MONSTERS[id].material) sourced.add(MONSTERS[id].material);
+    if (MONSTERS[id].gradeMaterial) sourced.add(MONSTERS[id].gradeMaterial);
+  }
+  document.getElementById('market-mats').innerHTML = MATERIAL_ORDER
+    .filter((mid) => sourced.has(mid))
+    .map((mid) => {
+      const m = MATERIALS[mid];
+      return `<span class="mat-chip" title="${m.displayName}"><img class="mat-icon" src="assets/sprites/${m.iconId}.png" alt="" onerror="this.style.display='none'"><b id="mat-${m.id}">0</b></span>`;
     }).join('');
-  document.getElementById('trade-btn').addEventListener('click',
-    () => handlers.onTrade(document.getElementById('trade-btn').dataset.offer ?? ''));
 
   root.querySelectorAll('.license-btn').forEach((btn) =>
     btn.addEventListener('click', () => handlers.onBuyLicense(btn.dataset.item)));
@@ -411,26 +422,45 @@ export function renderPanels(state) {
     raBtn.disabled = !canRestockAll(state);
   }
 
-  // Market Board strip (reform Pass A): today's offer + the material stores. The offer text and
-  // the button's dataset carry the offer KEY — executeTrade re-validates against the CURRENT
-  // day, so a button held across midnight refuses at yesterday's rate instead of paying it.
-  const mOffer = currentTradeOffers(state)[0] ?? null;
-  const offerEl = document.getElementById('market-offer-text');
-  if (offerEl) offerEl.textContent = mOffer ? describeOffer(mOffer) : 'No trades today.';
-  const tradeBtn = document.getElementById('trade-btn');
-  if (tradeBtn) {
-    tradeBtn.disabled = !mOffer || !canTrade(state, mOffer);
-    tradeBtn.dataset.offer = mOffer?.key ?? '';
-    // The block reason rides the tooltip — guidance without a layout cost (the quote's own trick).
-    tradeBtn.title = !mOffer ? ''
-      : !isItemUnlocked(state, mOffer.itemId) ? 'License required first'
-      : (state.items[mOffer.itemId]?.stock ?? 0) >= effectiveMaxStock(state, mOffer.itemId) ? 'Shelf is full'
-      : state.gold < mOffer.gold ? 'Not enough gold'
-      : '';
+  // Trade Market list (Pass B + UI-fix): fill every row ICONICALLY — material icons instead of
+  // names ("Knight Helm ⇐ [trinket]1 [carapace]1 + 34g"), one line, no wrapping. Icons tint by
+  // have/need via a wrapper class; the Trade button's dataset carries the offer KEY (executeTrade
+  // re-validates against the CURRENT day — the midnight guard, unchanged).
+  const offers = currentTradeOffers(state);
+  const countEl = document.getElementById('market-count');
+  if (countEl) countEl.textContent = offers.length > 0 ? `${offers.length} trades posted today` : 'No trades today.';
+  for (const offer of offers) {
+    const textEl = document.getElementById(`offer-text-${offer.itemId}`);
+    const btn = document.querySelector(`.offer-trade[data-item="${offer.itemId}"]`);
+    if (!textEl || !btn) continue;
+    const parts = Object.entries(offer.materials).map(([mid, n]) => {
+      const has = (state.materials?.[mid] ?? 0) >= n;
+      const m = MATERIALS[mid];
+      return `<span class="offer-mat ${has ? 'mat-ok' : 'mat-short'}"><img class="offer-mat-icon"`
+        + ` src="assets/sprites/${m?.iconId ?? mid}.png" alt="" onerror="this.style.display='none'">${n}</span>`;
+    });
+    const goldOk = state.gold >= offer.gold;
+    textEl.innerHTML = `<b>${ITEMS[offer.itemId].displayName}</b> ⇐ ${parts.join('')}`
+      + `<span class="${goldOk ? 'mat-ok' : 'mat-short'}"> ${offer.gold}g</span>`;
+    btn.disabled = !canTrade(state, offer);
+    btn.dataset.offer = offer.key;
+    btn.title = !isItemUnlocked(state, offer.itemId) ? 'License required first'
+      : (state.items[offer.itemId]?.stock ?? 0) >= effectiveMaxStock(state, offer.itemId) ? 'Shelf is full'
+      : !goldOk ? 'Not enough gold'
+      : btn.disabled ? 'Missing materials' : '';
   }
+  // The shelf's category tabs govern the TRADE LIST too (Daniel, Pass B UI-fix): show only this
+  // category's offers, same filter that hides shelf cards (renderPanels' card loop). Keeps the
+  // list to a few short rows as the tier grows — and future-proofs the overlay that will host it.
+  document.querySelectorAll('#market-offers .offer-row').forEach((row) =>
+    row.classList.toggle('hidden', row.dataset.cat !== activeCategory));
   for (const mid of Object.keys(state.materials ?? {})) {
     const el = document.getElementById(`mat-${mid}`);
-    if (el) el.textContent = `${state.materials[mid] ?? 0}/${materialCap(state, mid)}`;
+    if (el) {
+      el.textContent = `${state.materials[mid] ?? 0}`;        // count only — compact (Daniel's QA)
+      const chip = el.closest('.mat-chip');
+      if (chip) chip.title = `${MATERIALS[mid]?.displayName ?? mid}: ${state.materials[mid] ?? 0}/${materialCap(state, mid)}`;
+    }
   }
 
   // Expeditions (reform step 4): the Job Card row per grid family — lifetime runs, the live

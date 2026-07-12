@@ -18,8 +18,9 @@ export const CONFIG = {
   trade: {                     // daily-offer recipe bands (offerForDay, trademarket.js)
     typesMin: 1, typesMax: 2,  // distinct materials per offer
     unitsMin: 1, unitsMax: 2,  // units per material
-    goldMin: 30, goldMax: 90,  // the gold component (vs the retired 13g restock — trades are
-                               // meant to cost real planning, not pocket change)
+    goldMultMin: 1.2,          // gold component = round(basePrice × [multMin..multMax]) — derived
+    goldMultMax: 3.5,          // per item (D5-A, Pass B): a helm recipe prices like a helm, a
+                               // tonic like a tonic; THE margin dial the harness flagged.
   },
   expedition: {                // EXPEDITIONS MVP (reform step 4 — one monster, one door, one slot)
     fee: 25,                   // gold, paid at departure. The fee prices it as a SERVICE — the
@@ -141,6 +142,8 @@ export const CONFIG = {
     tipPerFullness: 100,       // gold at 100% shelf fullness (scales linearly with fullness)
     tipPerCategory: 25,        // gold per category with stock >= 1 (variety pays)
     fameBonus: 25,             // flat lifetime-rep bonus on serving him (a VIP's word travels)
+    sealFullness: 0.9,         // TOP-GRADE line (Pass B, §13.1): an inspection at/above this
+                               // fullness drops the Inspector's Seal — the report card's stakes
   },
 
   workers: {

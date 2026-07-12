@@ -102,6 +102,13 @@ console.log('M4 auto-serve worker — smoke test\n');
       if (!consumers.has(m[1])) consumers.set(m[1], file);
     }
   }
+  // MATERIAL iconIds reach the canvas board via getSprite(seg.iconId) — a VARIABLE, invisible to
+  // the literal scan (the Pass B board-icon bug: registrations were missing and the graceful
+  // "×n" fallback hid it). The registry IS the consumer list; every iconId must be registered.
+  {
+    const { MATERIALS, MATERIAL_ORDER } = await import('./src/data/materials.js');
+    for (const mid of MATERIAL_ORDER) consumers.set(MATERIALS[mid].iconId, 'trademarket board (getSprite)');
+  }
   // Guard the guard: zero consumers means the regexes rotted, not that the code went clean.
   ok(consumers.size >= 1, `pairing scan found sprite consumers (found ${consumers.size})`);
   ok(consumers.has('portal_glow_mountain'),
@@ -839,17 +846,21 @@ console.log('M4 auto-serve worker — smoke test\n');
     ok(isItemUnlocked(s, 'iron_sword') === false, 'tier-2 starts locked');
     ok(canRestock(s, 'iron_sword') === false, 'locked items cannot be restocked');
     s.gold = 5000;
-    // Specimen note (reform Pass A): the RESTOCK half of this block moved to greater_flask —
-    // same license cost (800) and tier (Renowned), but still gold-acquired. iron_sword is
-    // trade-tier now, and "never gold-restockable" is exactly what §59(f) pins for it.
-    ok(canBuyLicense(s, 'greater_flask') === false, 'license gated behind Renowned (lifetime tier)');
-    s.lifetimeRep = 500;                              // Renowned
-    ok(canBuyLicense(s, 'greater_flask') === true && canBuyLicense(s, 'knight_helm') === false,
-       'Renowned licenses the flask; the helm waits for Legendary');
-    ok(buyLicense(s, 'greater_flask') === true && s.gold === 4200 && s.licenses.greater_flask === true,
-       'license purchase: -800 gold, flag set');
-    ok(canBuyLicense(s, 'greater_flask') === false, 'a license is one-time');
-    ok(canRestock(s, 'greater_flask') === true, 'licensed item becomes restockable');
+    // Specimen DERIVES (Pass B doctrine fix): greater_flask joined the trade tier, breaking the
+    // Pass A swap — so the subject is now "the first licensed item that still gold-restocks",
+    // and every number below reads from ITS registry row. No future tier move can break this.
+    const spec = ITEM_ORDER.find((id) => ITEMS[id].license && (ITEMS[id].acquisition ?? 'gold') === 'gold');
+    ok(!!spec, 'a licensed gold-acquired item exists to test the license flow');
+    const lic = ITEMS[spec].license;
+    s.lifetimeRep = 0;                                // tier 0: everything tier-gated
+    ok(canBuyLicense(s, spec) === false, 'license gated behind its fame tier (lifetime tier)');
+    s.lifetimeRep = 1e9;                              // every tier passed
+    ok(canBuyLicense(s, spec) === true, 'the tier passed licenses the specimen');
+    const g0 = s.gold;
+    ok(buyLicense(s, spec) === true && s.gold === g0 - lic.cost && s.licenses[spec] === true,
+       'license purchase: exactly the registry cost, flag set');
+    ok(canBuyLicense(s, spec) === false, 'a license is one-time');
+    ok(canRestock(s, spec) === true, 'licensed item becomes restockable');
   }
 
   // Spawn filter: locked items are invisible to customers; licensing makes them wantable.
@@ -911,11 +922,12 @@ console.log('M4 auto-serve worker — smoke test\n');
     ok((lockedR.soldByItem.iron_sword ?? 0) === 0 && (lockedR.soldByItem.knight_helm ?? 0) === 0,
        'offline reserve conjures nothing for unlicensed items');
     const s2 = mk();
-    s2.licenses.greater_flask = true;   // specimen swap (reform Pass A): iron_sword's reserve is
-                                        // deliberately ZERO now — §59(g) pins that; the flask
-                                        // proves the licensed-gold reserve path still lives.
+    // Derived specimen (Pass B): the first licensed item still gold-acquired — the reserve path
+    // must live for gold goods; the trade tier's zero-reserve is §59(g)'s pin.
+    const spec2 = ITEM_ORDER.find((id) => ITEMS[id].license && (ITEMS[id].acquisition ?? 'gold') === 'gold');
+    s2.licenses[spec2] = true;
     const openR = computeOffline(s2, now2);
-    ok((openR.soldByItem.greater_flask ?? 0) > 0, 'licensed tier-2 sells from the backroom reserve');
+    ok((openR.soldByItem[spec2] ?? 0) > 0, 'licensed tier-2 sells from the backroom reserve');
   }
 
   // Serving tier-2 pays its price and feeds its own milestone ladder.
@@ -982,12 +994,14 @@ console.log('M4 auto-serve worker — smoke test\n');
   // Licensed tier-2 joins the pool; caps are respected.
   {
     const s = shopState();
-    s.lifetimeRep = 500; s.gold = 800;
-    buyLicense(s, 'greater_flask');                   // gold now 0 (specimen swap, reform Pass A:
-                                                      // the sword never gold-fills — §59(f) pins it)
+    const spec = ITEM_ORDER.find((id) => ITEMS[id].license && (ITEMS[id].acquisition ?? 'gold') === 'gold');
+    s.lifetimeRep = 1e9;
+    s.gold = ITEMS[spec].license.cost;
+    buyLicense(s, spec);                              // gold now 0 (derived specimen, Pass B —
+                                                      // the trade tier never gold-fills; §59(f))
     s.gold = 5000;
     restockAll(s);
-    ok(s.items.greater_flask.stock === 5, 'licensed tier-2 fills to cap with the rest');
+    ok(s.items[spec].stock === 5, 'licensed tier-2 fills to cap with the rest');
     ok(s.items.knight_helm.stock === 0, 'still-locked items get nothing');
   }
 }
@@ -3385,10 +3399,10 @@ console.log('M4 auto-serve worker — smoke test\n');
   const liveFaucets = MONSTER_IDS.filter((id) => !MONSTERS[id].special && MONSTERS[id].material);
   ok(liveFaucets.length >= 6,
     'market: at least the Pass A six serve faucets are live (the exact count lives in the newest batch — §60)');
-  ok(MONSTERS.dragon.material === undefined,
-    'market: the Inspector (the dragon row) has NO serve faucet — VIP drops are Pass B');
-  ok(tradeItemIds().length === 1 && tradeItemIds()[0] === 'iron_sword',
-    'market: the trade tier is exactly the Pass A proof (iron_sword)');
+  ok(MONSTERS.dragon.special === true,
+    'market: the dragon row stays special — the serve-drop law\'s !special guard covers his materials');
+  ok(tradeItemIds().includes('iron_sword') && tradeItemIds().length >= 1,
+    'market: the Pass A proof stays in the tier (exact tier size lives in the newest batch — §63)');
   for (const id of MATERIAL_ORDER) ok(!!MATERIALS[id], `market: MATERIAL_ORDER '${id}' resolves`);
 
   // (b) The drop law: the Nth serve of a family sheds one material; earlier serves shed none.
@@ -3807,6 +3821,106 @@ console.log('M4 auto-serve worker — smoke test\n');
       { expedition: { monsterId: 'slime', dest: 'x', remaining: 1e9 } });
     ok(clamped.expedition.remaining === E.durationSec,
       'expedition: an edited clock clamps into the config band');
+  }
+}
+
+// 63. MARKET PASS B (2026-07-11) — the full tier, derived recipe gold, the Inspector's drops,
+// the forecast. Newest batch: the tier/eligibility EXACTS live here (§59 now derives).
+{
+  const { MONSTERS } = await import('./src/data/monsters.js');
+  const { tradeItemIds, eligibleMaterialIds, offersForDay, forecastDayKey, featuredOffer }
+    = await import('./src/data/trademarket.js');
+  const { effectiveMaxStock } = await import('./src/game.js');
+  const { CONFIG } = await import('./src/config.js');
+
+  // (a) The tier line, exactly as Daniel confirmed: ten trade, base + workman's goods gold.
+  const TIER = ['iron_sword', 'greater_flask', 'knight_helm', 'quiver', 'zip_tonic',
+    'iron_buckler', 'iron_gauntlet', 'silver_key', 'spiked_club', 'iron_shield'];
+  const tier = tradeItemIds();
+  ok(tier.length === 10 && TIER.every((id) => tier.includes(id)),
+    'passB: the trade tier is EXACTLY the confirmed ten');
+  for (const id of ['murk_tonic', 'leather_bracer', 'pickaxe', 'map', 'salt']) {
+    ok((ITEMS[id].acquisition ?? 'gold') === 'gold', `passB: ${id} stays gold (workman's goods)`);
+  }
+  ok((ITEMS.bandages.acquisition ?? 'gold') === 'gold' && (ITEMS.club.acquisition ?? 'gold') === 'gold',
+    'passB: the license-free basics stay gold forever');
+
+  // (b) Derived recipe gold: every offer's gold sits inside basePrice × the mult band.
+  {
+    const lo = CONFIG.trade.goldMultMin, hi = CONFIG.trade.goldMultMax;
+    let bad = 0;
+    for (let d = 1; d <= 10; d++) {
+      for (const off of offersForDay(`sim-day-${d}`)) {
+        const bp = ITEMS[off.itemId].basePrice;
+        if (off.gold < Math.round(bp * lo) || off.gold > Math.round(bp * hi)) bad++;
+      }
+    }
+    ok(bad === 0, 'passB: 10 days × 10 offers — every gold component derives from its item\'s value');
+    ok(offersForDay('sim-day-1').length === 10, 'passB: ten offers posted per day (one per tier item)');
+  }
+
+  // (c) The Inspector's drops: Scale per visit; Seal ONLY at top grade; both recipe-excluded.
+  ok(MONSTERS.dragon.material === 'dragon_scale' && MONSTERS.dragon.gradeMaterial === 'inspectors_seal',
+    'passB: the dragon row carries both VIP drops (registry-driven)');
+  ok(!eligibleMaterialIds().includes('dragon_scale') && !eligibleMaterialIds().includes('inspectors_seal'),
+    'passB: the Inspector\'s materials NEVER enter trade recipes (reserved — Seal is for relics)');
+  {
+    const s = shopState();
+    for (const id of ITEM_ORDER) s.items[id].stock = 0;   // empty shelves: fullness 0, no seal
+    s.items.club.stock = 5;
+    s.queue = [customer('dragon', 'club', 999)];
+    s.serveCooldown = 0;
+    serveCurrent(s);
+    ok(s.materials.dragon_scale === 1, 'passB: a visit drops ONE Dragon Scale (standard shedding)');
+    ok((s.materials.inspectors_seal ?? 0) === 0, 'passB: a shabby inspection earns NO Seal');
+    // Now a top-grade shelf: fill every unlocked item to cap before he walks in.
+    const s2 = shopState();
+    for (const id of ITEM_ORDER) {
+      if (!ITEMS[id].license) s2.items[id].stock = effectiveMaxStock(s2, id);
+    }
+    s2.queue = [customer('dragon', 'club', 999)];
+    s2.serveCooldown = 0;
+    serveCurrent(s2);
+    ok(s2.materials.inspectors_seal === 1, 'passB: a TOP-GRADE inspection stamps the Seal');
+    ok(s2.materials.dragon_scale === 1, 'passB: the Scale rides that visit too');
+    ok(s2.log.some((l) => l.text.includes('Seal')), 'passB: the Seal moment speaks');
+  }
+
+  // (d) The forecast: deterministic tomorrow, both key branches; the featured pick is stable.
+  ok(forecastDayKey({ tradeDayKeyOverride: 'sim-day-7' }) === 'sim-day-8',
+    'passB: the synthetic-day branch increments (headless forecast)');
+  ok(typeof forecastDayKey({}) === 'string' && forecastDayKey({}).length >= 8,
+    'passB: the live branch yields a calendar key');
+  {
+    const f1 = featuredOffer('sim-day-4'), f2 = featuredOffer('sim-day-4');
+    ok(!!f1 && JSON.stringify(f1) === JSON.stringify(f2)
+       && offersForDay('sim-day-4').some((o) => o.key === f1.key),
+      'passB: the featured offer is deterministic and one of the day\'s ten');
+  }
+
+  // (e) The iconic segment form (Pass B UI-fix — the board + list both render it): text/icon
+  // parts, one icon per material with its count, gold in the tail.
+  {
+    const { describeOfferSegments } = await import('./src/data/trademarket.js');
+    const off = offersForDay('sim-day-4').find((o) => o.itemId === 'iron_sword');
+    const segs = describeOfferSegments(off);
+    const icons = segs.filter((s) => s.t === 'icon');
+    ok(icons.length === Object.keys(off.materials).length,
+      'passB: one icon segment per recipe material');
+    ok(icons.every((s) => s.iconId && s.n >= 1 && s.mid),
+      'passB: each icon segment carries its art id, count, and material id');
+    ok(segs.some((s) => s.t === 'text' && s.s.includes(`${off.gold}g`)),
+      'passB: the gold component rides a trailing text segment');
+    ok(describeOfferSegments(null).length === 0, 'passB: a null offer yields no segments (guard)');
+  }
+  // (f) The cascade guard: .offer-row sets its own display, so it MUST carry a scoped .hidden
+  // override — the specificity TIE-BREAK bug (late display:flex beats the global .hidden by
+  // order) shipped once and cost a full QA round. Text-pin, the Kongregate-subsequence style.
+  {
+    const { readFileSync } = await import('node:fs');
+    const css = readFileSync('./style.css', 'utf8');
+    ok(css.includes('.offer-row.hidden'),
+      'passB: style.css carries the scoped .offer-row.hidden override (the cascade-tie fix)');
   }
 }
 

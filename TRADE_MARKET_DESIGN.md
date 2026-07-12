@@ -131,10 +131,14 @@ TRADES ONLY for now, and the daily-special presence (the Market-Day event's boar
 is a Pass B design question, not a squeezed row.
 
 **Tiering.** Early game unchanged: basic stock is pure-gold and instant. A defined top tier
-becomes TRADE-ONLY — **Pass A shipped Iron Sword as the proof**; Greater Flask and Knight Helm
-convert at Pass B (final list Daniel's, §13). Mid-tier stays gold with trade-tier gradually taking over
-as the catalog grows. Licenses still gate what a shop may SELL; the market governs how
-trade-tier stock is ACQUIRED.
+becomes TRADE-ONLY — **the line SHIPPED at Pass B (Daniel, 2026-07-11): base objects and
+workman's goods stay GOLD; upgrades and premium no-base goods TRADE.** The ten: Iron Sword,
+Greater Flask, Knight Helm, Quiver, Zip Tonic, Iron Buckler, Iron Gauntlet, Silver Key, Spiked
+Club, Iron Shield. Gold keeps the twelve license-free basics plus the five workmanlike
+licensed goods (Leather Bracer, Murk Tonic, Pickaxe, Map, Salt). Future "higher end, no base"
+objects (Daniel authors at will) land with one `acquisition:'trade'` field each. Licenses
+still gate what a shop may SELL; the market governs how trade-tier stock is ACQUIRED. Recipe
+gold DERIVES from item value (basePrice × CONFIG.trade mult band — the margin dial).
 
 **Mechanics at direction level** (all counts/limits are pass dials): N offers per day; optional
 per-offer daily stock ("3 available today") as a scarcity dial; recipes cost 1–3 material types
@@ -208,9 +212,14 @@ One system per pass, §14's A/B precedent where a pass is large:
 1. **Market Pass A** — MATERIALS substrate: registry + monster `material` field, serve faucets,
    caps, save fields, board rework to Market Board with ONE trade-tier item as the living proof
    (the scrap-shipped-with-Doug pattern), suite coverage.
-2. **Market Pass B** — the full first trade tier, forecast, per-offer limits, and the board's
-   SECOND ROW design (the daily-special / Market-Day-event presence — cut from Pass A as
-   clutter; design it properly here or retire it).
+2. **Market Pass B — DONE (2026-07-11).** The ten-item tier (§5), value-derived recipe gold,
+   the board's headline + FORECAST second row (D3-A — the daily-special question resolved:
+   the second row IS tomorrow), the Shop-tab offer list (D6-A; the overlay is §13b's named
+   follow-up), the Inspector's Scale/Seal drops (§13.1), per-offer limits deferred (D4-B).
+   **The acceptance metric EVOLVED here:** with a substantially perpetual economy, death time
+   stopped measuring "losing" (the aware bot's ~150k recurring recipe spend delays its finite
+   checklist while its economy runs hotter) — verdicts now read the POST-EXHAUSTION RATE
+   ADVANTAGE: aware +20% over market-blind, +17% over expedition-blind at ship.
 3. **Spider + Demon — DONE (2026-07-11, two passes).** 3a **Demmy**: the Apologetic Menace
    (combatMod +2, the victory-as-apology register, top budget [20,36], iron_sword signature —
    the market's demand engine; ember faucet N 15). 3b **Leggsy**: the Overstocker —
@@ -243,16 +252,28 @@ single policy is optimal across days.
   no forge room needed (trading replaced crafting). "Mini-games" — the standing rule survives:
   only if the output feeds this economy.
 
-## 13. Open questions (Daniel)
+## 13. Open questions (Daniel) — ALL RESOLVED (Pass B, 2026-07-11)
 
-1. **RESOLVED, then CORRECTED (2026-07-11):** the ten-icon mapping is locked (§3). The Pass A
-   recon corrected two recorded facts: Skele/Ratty/Beetley are LIVE customers (so Pass A
-   shipped SIX serve faucets), and the game's one dragon IS the Inspector — both dragon
-   materials are his VIP drops. **The one remaining call:** the Inspector's drop design for
-   Pass B — working proposal: Dragon Scale per visit, Inspector's Seal only on a top-grade
-   inspection. Yours to confirm or reshape when Pass B opens.
-2. The first trade tier: **Pass A shipped Iron Sword as the proof** (as recommended);
-   Greater Flask + Knight Helm convert at Pass B unless you name a different set.
+1. **The Inspector's drops — SHIPPED as proposed:** Dragon Scale per visit; the Seal only on a
+   top-grade inspection (`CONFIG.visits.sealFullness`, 90%). Both registry-driven on his row
+   (`material` / `gradeMaterial`) and PERMANENTLY recipe-excluded (the eligibility law's
+   `!special` filter) — **the Seal is reserved for RELIC RESTORES** (Daniel's call; the relic
+   rework consumes it), the Scale for future premium sinks.
+2. **The tier line — SHIPPED:** the ten-item tier per §5 (base/workman gold; upgrades/premium
+   trade), confirmed row by row by Daniel.
+
+## 13b. Named future passes (from Pass B's rounds — parked with intent)
+
+- **The Trade Market overlay (D6-B):** the canvas board becomes CLICKABLE and opens a dedicated
+  Trade Market surface; the Shop tab keeps chips + an "Open" button. A pure RELOCATION of the
+  shipped offer list — needs canvas hit-testing + an overlay component. Daniel's sketch;
+  option C (a true Market room/screen) stays parked behind it.
+- **The churn pass (fill-to-cap trading):** Daniel's observation — "trade a sword, someone buys
+  it, you're out again." Throughput IS the design (the margin lives there), but single-unit
+  trading against 5-stock shelves is busywork at scale. The likely shape: a per-offer
+  fill-to-cap button (one click, as many trades as materials + shelf room allow — same
+  economics, less clicking). NEED-TO-DO, timing on Daniel's feel + the sword-uptime numbers.
+- **Worker wages** (§0 of the handoff): the first perpetual gold drain — its own options round.
 
 ## 14. Not decided here
 

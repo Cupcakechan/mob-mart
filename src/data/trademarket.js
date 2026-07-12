@@ -50,8 +50,9 @@ function mulberry32(seed) {
 }
 
 // One item's offer for one day: 1–2 distinct eligible materials at 1–2 units each, plus a gold
-// component — all bands are CONFIG.trade dials. Returns null when no faucet exists yet (a fresh
-// registry state) — the board says "no trades today" instead of demanding the unearnable.
+// component DERIVED from the item's own value (Pass B: round(basePrice × [multMin..multMax]) —
+// a helm recipe prices like a helm; the margin dial the harness flagged). Returns null when no
+// faucet exists yet — the board says "no trades today" instead of demanding the unearnable.
 export function offerForDay(dayKey, itemId) {
   const pool = eligibleMaterialIds();
   if (pool.length === 0 || !ITEMS[itemId]) return null;
@@ -65,7 +66,8 @@ export function offerForDay(dayKey, itemId) {
     const mid = bag.splice(Math.floor(rng() * bag.length), 1)[0];
     materials[mid] = span(T.unitsMin ?? 1, T.unitsMax ?? 2);
   }
-  const gold = span(T.goldMin ?? 30, T.goldMax ?? 90);
+  const multLo = T.goldMultMin ?? 1.2, multHi = T.goldMultMax ?? 3.5;
+  const gold = Math.round(ITEMS[itemId].basePrice * (multLo + rng() * (multHi - multLo)));
   return { itemId, materials, gold, key: `${dayKey}:${itemId}` };
 }
 
@@ -84,10 +86,46 @@ export function describeOffer(offer) {
   return `${ITEMS[offer.itemId]?.displayName ?? offer.itemId} ⇐ ${parts.join(' + ')} + ${offer.gold}g`;
 }
 
+// The ICONIC form (Pass B UI-fix): the same offer as a segment list, materials as ICON refs
+// instead of names — the compact form the board and the Shop list both render. Segment kinds:
+// { t:'text', s } literal chalk/label text; { t:'icon', iconId, n } an icon with its count.
+// Text-only surfaces still call describeOffer; this is for the pictographic layouts.
+export function describeOfferSegments(offer) {
+  if (!offer) return [];
+  const segs = [{ t: 'text', s: `${ITEMS[offer.itemId]?.displayName ?? offer.itemId} ⇐ ` }];
+  const mats = Object.entries(offer.materials);
+  mats.forEach(([id, n], i) => {
+    segs.push({ t: 'icon', iconId: MATERIALS[id]?.iconId ?? id, n, mid: id });
+    if (i < mats.length - 1) segs.push({ t: 'text', s: ' + ' });
+  });
+  segs.push({ t: 'text', s: ` + ${offer.gold}g` });
+  return segs;
+}
+
 // The board's daily voice line — deterministic per day (chalked once each morning, the sign's
 // own law), picked from TRADE_VOICE.board by the same hash family as everything else here.
 export function tradeBoardLine(dayKey) {
   const pool = TRADE_VOICE?.board ?? [];
   if (pool.length === 0) return '';
   return pool[hashDayKey(`voice:${dayKey}`) % pool.length];
+}
+
+// TOMORROW's key (Pass B, the forecast — law 3's planning surface). Live play adds a calendar
+// day; the harness/test override increments its synthetic counter — deterministic both ways,
+// and the fallback ('+1' suffix) still yields a stable, distinct tomorrow for odd overrides.
+export function forecastDayKey(state) {
+  const o = state?.tradeDayKeyOverride;
+  if (o) {
+    const m = /^sim-day-(\d+)$/.exec(o);
+    return m ? `sim-day-${Number(m[1]) + 1}` : `${o}+1`;
+  }
+  return dayKeyOf(Date.now() + 86400000);
+}
+
+// The board headline's FEATURED offer — one of today's ten, picked deterministically per day
+// (the full list lives in the Shop tab; the sign advertises, the counter sells).
+export function featuredOffer(dayKey) {
+  const offers = offersForDay(dayKey);
+  if (offers.length === 0) return null;
+  return offers[hashDayKey(`feature:${dayKey}`) % offers.length];
 }

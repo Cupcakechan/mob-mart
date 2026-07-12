@@ -9,7 +9,7 @@ import { UPGRADES, upgradeLevel, upgradeCost, isMaxed, sumEffect } from './data/
 import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost,
   workerLevel, workerLevelCost, isWorkerLevelMaxed, sumWorkerEffect } from './data/workers.js';
 import { randInt, pick, weightedPick } from './utils.js';
-import { WORKER_HIRE_LINES, DOUG_RETURN_LINES, RELIC_VOICE, TRADE_VOICE,
+import { WORKER_HIRE_LINES, DOUG_RETURN_LINES, RELIC_VOICE, TRADE_VOICE, INSPECTOR_VOICE,
   EXPEDITION_VOICE, EXPEDITION_DESTINATIONS } from './data/results.js';
 import { MATERIALS } from './data/materials.js';   // Trade Market reform Pass A (leaf registry)
 import { offersForDay, tradeDayKey, describeOffer } from './data/trademarket.js';   // (leaf, no cycle)
@@ -176,6 +176,17 @@ export function serveCurrent(state) {
     finalRepGain += CONFIG.visits?.fameBonus ?? 0;
     pushLog(state, { text: visitGradeLine(Math.round(g.fullness * 100), g.tip),
       repDelta: 0, tier: 'market' });
+    // VIP MATERIAL DROPS (Pass B, §13.1 as picked): the Scale rides EVERY visit; the SEAL only
+    // a TOP-GRADE inspection (sealFullness) — the report card's stakes. Registry-driven off the
+    // row's material/gradeMaterial fields; the eligibility law (!special) keeps both out of
+    // trade recipes FOREVER — the Seal is reserved for relic restores (Daniel, 2026-07-11).
+    if (monster.material && addMaterial(state, monster.material, 1) > 0) {
+      pushLog(state, { text: pick(INSPECTOR_VOICE.scale), repDelta: 0, tier: 'market' });
+    }
+    if (monster.gradeMaterial && g.fullness >= (CONFIG.visits?.sealFullness ?? 0.9)
+        && addMaterial(state, monster.gradeMaterial, 1) > 0) {
+      pushLog(state, { text: pick(INSPECTOR_VOICE.seal), repDelta: 0, tier: 'market' });
+    }
   }
   state.items[c.wantedItemId].stock -= units;                   // hand over the item(s) — bulk moves two
   state.gold += goldGain;                                       // take payment (base + loyalty on top)

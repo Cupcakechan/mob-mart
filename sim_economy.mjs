@@ -195,28 +195,29 @@ function runSim(seed, { tradeAware = true, expeditionAware = true } = {}) {
         // death count; their effect shows up as income (the sword sells) and stall relief.
         s.tradeDayKeyOverride = `sim-day-${1 + Math.floor(t / 86400)}`;
         if (tradeAware) {
-          for (let i = 0; i < 10; i++) {
-            const offer = currentTradeOffers(s)[0];
-            if (!offer || !canTrade(s, offer)) break;
-            executeTrade(s, offer.key);
-            trades++;
+          // Pass B: TEN offers a day — the aware bot works the whole board, not offers[0].
+          for (const offer of currentTradeOffers(s)) {
+            for (let i = 0; i < 10; i++) {
+              if (!canTrade(s, offer)) break;
+              executeTrade(s, offer.key);
+              trades++;
+            }
           }
         }
-        // 4c. EXPEDITIONS (reform step 4): the decision loop the reform wants — read today's
-        // offer, find the recipe material the stores are SHORTEST on, send that family. No
-        // deficit -> no run (fees aren't burned idly). The slot + clock do the rate limiting.
+        // 4c. EXPEDITIONS (reform step 4): the decision loop — scan EVERY offer's recipe (Pass B),
+        // find the material the stores are SHORTEST on across the whole board, send that family.
+        // No deficit -> no run (fees aren't burned idly). The slot + clock do the rate limiting.
         if (expeditionAware && !s.expedition) {
-          const offer = currentTradeOffers(s)[0];
-          if (offer) {
-            let target = null, worst = 0;
+          let target = null, worst = 0;
+          for (const offer of currentTradeOffers(s)) {
             for (const [mid, n] of Object.entries(offer.materials)) {
               const deficit = n - (s.materials?.[mid] ?? 0);
               if (deficit > worst) { worst = deficit; target = mid; }
             }
-            if (target) {
-              const fam = MONSTER_IDS.find((id) => !MONSTERS[id].special && MONSTERS[id].material === target);
-              if (fam && startExpedition(s, fam)) runsSent++;
-            }
+          }
+          if (target) {
+            const fam = MONSTER_IDS.find((id) => !MONSTERS[id].special && MONSTERS[id].material === target);
+            if (fam && startExpedition(s, fam)) runsSent++;
           }
         }
         // 5. Fame-tier crossings (events, not purchases — §0 asks for their wall-clock moments too).
@@ -375,47 +376,53 @@ if (deaths.length) {
   console.log('');
 }
 
-// REFORM ACCEPTANCE (Pass A — TRADE_MARKET_DESIGN.md §11): the market-BLIND control against the
-// aware runs above. The blind bot never trades, so the sword shelf stays empty forever — every
-// customer who wants it stalls the queue to a patience timeout. This block is the pass's
-// pass/fail: if ignoring the market costs nothing measurable, the market isn't a system yet.
+// REFORM ACCEPTANCE (metric EVOLVED at Pass B): with ten trade items the economy is
+// substantially PERPETUAL — the aware bot spends ~150k gold on recipes (the reform's recurring
+// sink working at scale), which DELAYS its finite-checklist completion. Death time stopped
+// measuring "losing"; the verdict now reads the POST-EXHAUSTION RATE ADVANTAGE (the economy a
+// player is left running forever) plus the forfeited tier sales. Death deltas print SIGNED.
 console.log('== REFORM ACCEPTANCE — market-BLIND control (seeds 1–3) vs the aware runs above ==');
 const blind = SEEDS.slice(0, 3).map((seed) => runSim(seed, { tradeAware: false }));
+const signed = (x) => `${x < 0 ? '-' : '+'}${hms(Math.abs(x))}`;
 for (const b of blind) {
   const a = runs.find((r) => r.seed === b.seed);
   const delay = (b.deathT ?? b.endT) - (a.deathT ?? a.endT);
   console.log(`  seed ${b.seed}: blind death ${hms(b.deathT ?? b.endT)} vs aware ${hms(a.deathT ?? a.endT)}`
-    + `  (+${hms(Math.max(0, delay))} slower)  |  sword sold ${b.swordSold} vs ${a.swordSold}`
+    + `  (${signed(delay)})  |  sword sold ${b.swordSold} vs ${a.swordSold}`
     + `  |  post-death ${b.postRate?.toFixed(0) ?? '-'} vs ${a.postRate?.toFixed(0) ?? '-'} gold/min`);
 }
-const delayMed = median(blind.map((b) =>
-  (b.deathT ?? b.endT) - (runs.find((r) => r.seed === b.seed).deathT ?? 0)));
-console.log(delayMed > 60
-  ? `  VERDICT: PASS — the blind bot dies ${hms(delayMed)} later and forfeits every sword sale;`
-    + ` ignoring the market finally has a price a bot can't dodge.`
-  : `  VERDICT: WEAK — median blind penalty only ${hms(Math.max(0, delayMed))}; the market's teeth`
-    + ` need retuning (sword demand or recipe value) before this pass can claim acceptance.`);
+const rateAdvMed = median(blind.map((b) => {
+  const a = runs.find((r) => r.seed === b.seed);
+  return (a.postRate ?? 0) / Math.max(1, b.postRate ?? 0) - 1;
+}));
+console.log(rateAdvMed > 0.10
+  ? `  VERDICT: PASS — the aware economy runs ${(rateAdvMed * 100).toFixed(0)}% hotter forever`
+    + ` (and the blind shop forfeits every tier sale); ignoring the market is a permanent tax.`
+  : `  VERDICT: WEAK — aware rate advantage only ${(rateAdvMed * 100).toFixed(0)}%; the market's`
+    + ` teeth need retuning before this pass can claim acceptance.`);
 console.log('');
 
-// STEP-4 ACCEPTANCE: the EXPEDITION-blind control (trades, never sends). The pre-expedition
-// penalty had narrowed to +0:40 (supply-bound market); this system exists to re-widen it —
-// if the expedition-blind bot doesn't lose ground, the supply valve isn't real yet.
+// STEP-4 ACCEPTANCE — same evolved metric: the expedition-blind bot trades but never sends;
+// its supply-starved tier must run measurably colder than the full player's.
 console.log('== STEP-4 ACCEPTANCE — expedition-BLIND control (seeds 1–3) vs the full-aware runs ==');
 const expBlind = SEEDS.slice(0, 3).map((seed) => runSim(seed, { expeditionAware: false }));
 for (const b of expBlind) {
   const a = runs.find((r) => r.seed === b.seed);
   const delay = (b.deathT ?? b.endT) - (a.deathT ?? a.endT);
   console.log(`  seed ${b.seed}: exp-blind death ${hms(b.deathT ?? b.endT)} vs full ${hms(a.deathT ?? a.endT)}`
-    + `  (+${hms(Math.max(0, delay))} slower)  |  sword sold ${b.swordSold} vs ${a.swordSold}`
+    + `  (${signed(delay)})  |  sword sold ${b.swordSold} vs ${a.swordSold}`
+    + `  |  post-death ${b.postRate?.toFixed(0) ?? '-'} vs ${a.postRate?.toFixed(0) ?? '-'} gold/min`
     + `  |  runs 0 vs ${a.runsSent}`);
 }
-const expDelayMed = median(expBlind.map((b) =>
-  (b.deathT ?? b.endT) - (runs.find((r) => r.seed === b.seed).deathT ?? 0)));
-console.log(expDelayMed > 60
-  ? `  VERDICT: PASS — skipping expeditions costs ${hms(expDelayMed)}; the supply valve re-widened`
-    + ` the gap past the pre-expedition +0:40.`
-  : `  VERDICT: WEAK — expedition-blind penalty only ${hms(Math.max(0, expDelayMed))}; the valve`
-    + ` needs a bigger haul or a shorter clock before step 4 can claim acceptance.`);
+const expRateAdvMed = median(expBlind.map((b) => {
+  const a = runs.find((r) => r.seed === b.seed);
+  return (a.postRate ?? 0) / Math.max(1, b.postRate ?? 0) - 1;
+}));
+console.log(expRateAdvMed > 0.10
+  ? `  VERDICT: PASS — the full economy runs ${(expRateAdvMed * 100).toFixed(0)}% hotter than the`
+    + ` expedition-starved one; the supply valve is load-bearing.`
+  : `  VERDICT: WEAK — rate advantage only ${(expRateAdvMed * 100).toFixed(0)}%; the valve needs`
+    + ` a bigger haul or a shorter clock before step 4 can claim acceptance.`);
 console.log('');
 
 // Seed-1 detail: savings velocity by phase + the two curves.

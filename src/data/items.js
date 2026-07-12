@@ -18,9 +18,9 @@ export const ITEMS = {
                                           // below stays the SELL gate (TRADE_MARKET_DESIGN.md §5).
                                           // Field is guarded everywhere: (acquisition ?? 'gold').
                   license: { cost: 800,  requiredTier: 4 } },   // Renowned
-  greater_flask:{ id:'greater_flask',displayName:'Greater Flask',iconId:'greater_flask',category:'consumable', basePrice:27, restockCost:13, startStock:0, maxStock:5, combatEffect:8,
+  greater_flask:{ id:'greater_flask', acquisition:'trade',displayName:'Greater Flask',iconId:'greater_flask',category:'consumable', basePrice:27, restockCost:13, startStock:0, maxStock:5, combatEffect:8,
                   license: { cost: 800,  requiredTier: 4 } },   // Renowned
-  knight_helm:  { id:'knight_helm',  displayName:'Knight Helm',  iconId:'knight_helm',  category:'armor',      basePrice:26, restockCost:15, startStock:0, maxStock:5, combatEffect:9,
+  knight_helm:  { id:'knight_helm', acquisition:'trade',  displayName:'Knight Helm',  iconId:'knight_helm',  category:'armor',      basePrice:26, restockCost:15, startStock:0, maxStock:5, combatEffect:9,
                   license: { cost: 1200, requiredTier: 5 } },   // Legendary — the top-shelf goal
 
   // --- Batch 1 (items phase, 2026-07-04): FREE TIER. Priced <= the roster's MINIMUM budget roll
@@ -43,18 +43,18 @@ export const ITEMS = {
                   license: { cost: 150, requiredTier: 2 } },   // Trusted
   pickaxe:       { id:'pickaxe',        displayName:'Pickaxe',        iconId:'pickaxe',        category:'weapon',     basePrice:16, restockCost:8,  startStock:0, maxStock:5, combatEffect:6,
                   license: { cost: 200, requiredTier: 2 } },   // Trusted
-  quiver:        { id:'quiver',         displayName:'Quiver of Arrows', iconId:'quiver',       category:'weapon',     basePrice:20, restockCost:10, startStock:0, maxStock:5, combatEffect:7,
+  quiver:        { id:'quiver', acquisition:'trade',         displayName:'Quiver of Arrows', iconId:'quiver',       category:'weapon',     basePrice:20, restockCost:10, startStock:0, maxStock:5, combatEffect:7,
                   license: { cost: 300, requiredTier: 3 } },   // Beloved
-  zip_tonic:     { id:'zip_tonic',      displayName:'Zip Tonic',      iconId:'zip_tonic',      category:'consumable', basePrice:22, restockCost:11, startStock:0, maxStock:5, combatEffect:7,
+  zip_tonic:     { id:'zip_tonic', acquisition:'trade',      displayName:'Zip Tonic',      iconId:'zip_tonic',      category:'consumable', basePrice:22, restockCost:11, startStock:0, maxStock:5, combatEffect:7,
                   license: { cost: 300, requiredTier: 3 } },   // Beloved
 
   // --- Batch 2 (chain tops, 2026-07-04): an "upgrade chain" is NAMING + PRICING, not a mechanic —
   // each top is just a pricier licensed row that strictly beats its base on eff AND price (the
   // chain invariant, suite-pinned). Slotted into the license-cost gap between Beloved 300 and
   // Renowned 800. (Optional \`upgradeOf\` field deferred until the shop UI ever groups chains.)
-  iron_buckler:  { id:'iron_buckler',   displayName:'Iron Buckler',   iconId:'iron_buckler',   category:'armor',      basePrice:18, restockCost:9,  startStock:0, maxStock:5, combatEffect:6,
+  iron_buckler:  { id:'iron_buckler', acquisition:'trade',   displayName:'Iron Buckler',   iconId:'iron_buckler',   category:'armor',      basePrice:18, restockCost:9,  startStock:0, maxStock:5, combatEffect:6,
                   license: { cost: 300, requiredTier: 3 } },   // Beloved — chain top of Wooden Shield (8/eff 3)
-  iron_gauntlet: { id:'iron_gauntlet',  displayName:'Iron Gauntlet',  iconId:'iron_gauntlet',  category:'armor',      basePrice:24, restockCost:12, startStock:0, maxStock:5, combatEffect:8,
+  iron_gauntlet: { id:'iron_gauntlet', acquisition:'trade',  displayName:'Iron Gauntlet',  iconId:'iron_gauntlet',  category:'armor',      basePrice:24, restockCost:12, startStock:0, maxStock:5, combatEffect:8,
                   license: { cost: 500, requiredTier: 4 } },   // Renowned — chain top of Leather Bracer (14/eff 5)
 
   // --- Batch 3a (leather starter set, 2026-07-08): FREE TIER slot-fillers, all priced <= 10.
@@ -72,11 +72,11 @@ export const ITEMS = {
   // beat their base on eff + price (the chain invariant), plus two standalone curios. All start
   // empty (startStock 0) and unlock at a fame rung. Licensed => they do NOT join the everything
   // laggard ladder (that stays the free set), so they add reach without diluting the global tier.
-  silver_key:  { id:'silver_key',  displayName:'Silver Key',  iconId:'silver_key',  category:'consumable', basePrice:20, restockCost:10, startStock:0, maxStock:5, combatEffect:3,
+  silver_key:  { id:'silver_key', acquisition:'trade',  displayName:'Silver Key',  iconId:'silver_key',  category:'consumable', basePrice:20, restockCost:10, startStock:0, maxStock:5, combatEffect:3,
                  license: { cost: 200, requiredTier: 2 } },   // Trusted -- chain top of Rusty Key (10/eff 1)
-  spiked_club: { id:'spiked_club', displayName:'Spiked Club', iconId:'spiked_club', category:'weapon',     basePrice:24, restockCost:12, startStock:0, maxStock:5, combatEffect:9,
+  spiked_club: { id:'spiked_club', acquisition:'trade', displayName:'Spiked Club', iconId:'spiked_club', category:'weapon',     basePrice:24, restockCost:12, startStock:0, maxStock:5, combatEffect:9,
                  license: { cost: 300, requiredTier: 3 } },   // Beloved -- chain top of Club (12/eff 6)
-  iron_shield: { id:'iron_shield', displayName:'Iron Shield', iconId:'iron_shield', category:'armor',      basePrice:32, restockCost:16, startStock:0, maxStock:5, combatEffect:9,
+  iron_shield: { id:'iron_shield', acquisition:'trade', displayName:'Iron Shield', iconId:'iron_shield', category:'armor',      basePrice:32, restockCost:16, startStock:0, maxStock:5, combatEffect:9,
                  license: { cost: 600, requiredTier: 4 } },   // Renowned -- chain top of Iron Buckler (18/eff 6): 3-link w/ Wooden Shield
   map:         { id:'map',         displayName:'Map',         iconId:'map',         category:'consumable', basePrice:18, restockCost:9,  startStock:0, maxStock:5, combatEffect:1,
                  license: { cost: 150, requiredTier: 2 } },   // Trusted -- standalone curio
