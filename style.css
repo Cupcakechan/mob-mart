@@ -470,13 +470,6 @@ body{
   color: #ffd9a8;
   background: rgba(255, 157, 59, 0.07);
 }
-/* The market chip DOCKS top-right under the Menu button, absolute against the .hud band (band
-   right edge = stage x1264, so right:0/top:52 lands the chip at stage right:16, y68 — below
-   Menu's bottom ~56, above the door's top ~150, and right of the fame panel's edge at x960:
-   the widest compact label, "Consumables +50%" ~213px, still starts past x1050). */
-.hud-chip.market { position: absolute; top: 68px; right: 0; padding: 8px 14px; }
-.hud-icon.market { color: #ff9d3b; font-size: 16px; }
-.hud-market-text { color: #ffd9a8; font-weight: 700; font-size: 14px; letter-spacing: .3px; white-space: nowrap; }
 
 /* --- Fame track panel (UX roadmap 2): the "unlock tree". Fame is LINEAR, so it's a vertical
    TRACK — one node per tier on a spine, unlock chips fanned under each, registry-scanned in

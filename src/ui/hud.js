@@ -2,8 +2,6 @@
 import { formatGold } from '../utils.js';
 import { reputationTier } from '../reputation.js';
 import { nextTierInfo } from '../data/fametrack.js';
-import { CONFIG } from '../config.js';
-import { MARKET_EVENTS, marketBannerText, marketBannerCompact } from '../data/marketevents.js';
 
 export function initHud(root) {
   root.innerHTML = `
@@ -23,10 +21,6 @@ export function initHud(root) {
       <span class="hud-icon scrap" aria-hidden="true">&#9881;</span>
       <span class="hud-label">Scrap</span>
       <span class="hud-value" id="hud-scrap">0</span>
-    </div>
-    <div class="hud-chip market hidden" id="hud-market-chip" title="Today's market: demand pays a bonus">
-      <span class="hud-icon market" aria-hidden="true">&#9788;</span>
-      <span class="hud-market-text" id="hud-market">&mdash;</span>
     </div>`;
 }
 
@@ -61,20 +55,9 @@ export function renderHud(state) {
     scrapVal.textContent = Math.floor(state.scrap ?? 0);
   }
 
-  // Market Day banner (compact since the layout pass, 2026-07-07): the chip shows the actionable
-  // fact ("Armor +50%"); the full "Falling Rock Season · Armor +50%" rides the tooltip — the
-  // event NAME also lives in the log line, Bob's bubble, and the away modal. Hidden only when no
-  // event is derived (a headless state or pre-boot frame) — every calendar day has one. The mult
-  // resolves registry-override ?? CONFIG here so the formatters stay pure.
-  const chip = document.getElementById('hud-market-chip');
-  const marketText = document.getElementById('hud-market');
-  if (chip && marketText) {
-    const ev = MARKET_EVENTS[state.marketEventId];
-    chip.classList.toggle('hidden', !ev);
-    if (ev) {
-      const mult = ev.payoutMult ?? CONFIG.market?.payoutMult ?? 1;
-      marketText.textContent = marketBannerCompact(ev, mult);
-      chip.title = marketBannerText(ev, mult);
-    }
-  }
+  // Market Day HUD chip RETIRED (Daniel, 2026-07-12): the floating "Weapons +50%" pill was
+  // redundant chrome once the board, forecast, and ticker carried the market's story — and it
+  // hovered awkwardly over the wall art. The EVENT SYSTEM is untouched: payouts still multiply,
+  // the morning log line + Bob's bubble still announce, and the away modal still leads with the
+  // day's market. The chip's markup/CSS live in git history if it ever earns its spot back.
 }

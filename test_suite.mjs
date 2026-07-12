@@ -4558,5 +4558,25 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
 }
 
+// ============= SECTION 71 — Market Day HUD chip RETIRED (Daniel, 2026-07-12) ==================
+// The floating "Weapons +50%" pill leaves the HUD — the board/forecast/ticker carry the market's
+// story now. The EVENT SYSTEM stays: this section pins BOTH directions (chip absent, announce
+// surfaces present) so a future HUD pass can't half-resurrect it and an overzealous cleanup
+// can't take the announcements with it.
+{
+  const { readFileSync: rf71 } = await import('node:fs');
+  const hud = rf71('./src/ui/hud.js', 'utf8');
+  ok(!hud.includes('hud-market-chip') && !hud.includes('marketBannerCompact'),
+    'chip retirement: hud.js renders no Market Day chip and imports no banner formatter');
+  ok(!rf71('./style.css', 'utf8').includes('.hud-chip.market'),
+    'chip retirement: the chip\'s CSS left with it (no dead selectors)');
+  const game71 = rf71('./src/game.js', 'utf8');
+  ok(game71.includes('marketAnnounceLine') && game71.includes('marketBubbleLine'),
+    'chip retirement: the event still speaks — morning log line + Bob\'s bubble survive');
+  const { marketBannerCompact: mbc71 } = await import('./src/data/marketevents.js');
+  ok(typeof mbc71 === 'function',
+    'chip retirement: the pure formatter stays exported (tested above; the chip may return)');
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
