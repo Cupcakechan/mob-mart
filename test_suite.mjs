@@ -4144,5 +4144,41 @@ console.log('M4 auto-serve worker — smoke test\n');
   ok(rf67('./src/main.js', 'utf8').includes('mousemove'), 'rider: the board hit rect drives the hover cursor');
 }
 
+// ============ SECTION 68 — Greg's GOLD-ONLY bubble (the Greg-chip fix, Option-2 retirement) ====
+// The shipped bug: the bubble quoted a gold restock for material-made stock. The first fix (a
+// trade-mode door) proved a nag — trade outages are the STEADY STATE under single-unit trading,
+// so Greg cycled the tier forever. Retirement law: Greg reports only what a gold click can fix;
+// the filter lives on BOTH sides (the render target pick and the game-side cycle trigger).
+{
+  const { gregBubbleFor: gb68 } = await import('./src/ui/panels.js');
+  const { ITEMS: I68 } = await import('./src/data/items.js');
+  const { effectiveRestockCost: erc68 } = await import('./src/game.js');
+  const tradeId = Object.keys(I68).find((id) => (I68[id].acquisition ?? 'gold') !== 'gold');
+  const goldId = Object.keys(I68).find((id) => (I68[id].acquisition ?? 'gold') === 'gold');
+  ok(!!tradeId && !!goldId, 'greg: both acquisition kinds exist in the registry (fixture)');
+
+  const s = shopState();
+  s.gold = 1e9;
+  ok(gb68(s, tradeId) === null,
+    'greg: a trade target yields NO bubble (the retirement law — never a quote, never a nag)');
+  const g = gb68(s, goldId);
+  ok(g && g.html.includes(`Restock &#9670; ${erc68(s, goldId)}`),
+    'greg: a gold target quotes the live effective cost (derived, never hand-typed)');
+  ok(!g.html.includes('Trade at the Market'), 'greg: the door mode is fully retired');
+  s.gold = 0;
+  ok(gb68(s, goldId).clickable === false, 'greg: a broke shop cannot click-restock (affordability gate intact)');
+
+  // BOTH filter sides carry the predicate (wiring pins): the game-side cycle trigger and the
+  // render-side target pick each exclude trade acquisition — one side alone leaves either a
+  // ghost window (cycle fires, nothing shows) or the original nag.
+  const { readFileSync: rf68 } = await import('node:fs');
+  const game68 = rf68('./src/game.js', 'utf8');
+  ok(/anyOut[\s\S]{0,220}acquisition/.test(game68),
+    'greg: the cycle trigger counts gold-restockable outages only');
+  const pnl68 = rf68('./src/ui/panels.js', 'utf8');
+  ok(/const isOut[\s\S]{0,120}acquisition/.test(pnl68),
+    'greg: the render target pick excludes the trade tier');
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

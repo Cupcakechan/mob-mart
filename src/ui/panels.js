@@ -36,6 +36,18 @@ function setShelfCategory(cat) {
   handlers.onDirty();                              // re-render so the card filter applies now
 }
 
+// Greg's bubble content — PURE (suite-tested, the offerRowHtml precedent). GOLD-ONLY since the
+// Option-2 retirement (Daniel, 2026-07-12): trade outages are the STEADY STATE under single-unit
+// trading (the churn finding), so a bubble on them is a permanent nag pointing at a door the
+// player often can't afford — the real fix is the parked fill-to-cap pass, not a messenger.
+// Greg reports only what he can fix; that's his job title. Returns NULL for a trade target
+// (defense in depth — the target filters below are the primary law; a null hides the bubble).
+export function gregBubbleFor(state, target) {
+  if ((ITEMS[target]?.acquisition ?? 'gold') !== 'gold') return null;
+  return { clickable: canRestock(state, target),
+    html: `${ITEMS[target].displayName} out &mdash; <b>Restock &#9670; ${effectiveRestockCost(state, target)}</b>` };
+}
+
 export function initPanels(root, h) {
   handlers = h;
   root.innerHTML = `
@@ -233,7 +245,7 @@ export function initPanels(root, h) {
 
   // Greg's restock bubble: click = restock the named item, straight through the same handler the
   // shelf buttons use (game-side canRestock guards double-fire; the render re-picks the next
-  // most-urgent item on the resulting dirty pass).
+  // most-urgent item on the resulting dirty pass). Gold-only since the Option-2 retirement.
   document.getElementById('greg-bubble')?.addEventListener('click', function () {
     if (this.dataset.item) handlers.onRestock(this.dataset.item);
   });
@@ -596,6 +608,9 @@ export function renderPanels(state) {
   // Greg is hired AND something unlocked is out. The target re-derives per render: a mid-show
   // restock retargets to the next out item or hides early. Anchored at Greg's HOME (fixed CSS) —
   // he may be mid-errand under an active bubble; that's his post reporting, and it's brief.
+  // TWO-SIDED gold-only filter since the Option-2 retirement (Daniel, 2026-07-12): the target
+  // pick here AND the cycle trigger in game.js share the acquisition predicate (cross-referenced
+  // there) — trade outages are the steady state and no longer summon Greg.
   const gregBubble = document.getElementById('greg-bubble');
   if (gregBubble) {
     const showing = (state.gregBubble?.showFor ?? 0) > 0 && isWorkerOwned(state, 'restocker');
@@ -607,19 +622,19 @@ export function renderPanels(state) {
       gregBubble.dataset.item = '';
       gregBubble.textContent = quip;
     } else {
-      const isOut = (id) => isItemUnlocked(state, id) && state.items[id].stock === 0;
+      const isOut = (id) => (ITEMS[id].acquisition ?? 'gold') === 'gold'
+        && isItemUnlocked(state, id) && state.items[id].stock === 0;
       const front = state.queue[0]?.wantedItemId;
       const target = showing
         ? ((front && isOut(front)) ? front : ITEM_ORDER.find(isOut) ?? null)
         : null;
-      gregBubble.classList.toggle('hidden', !target);
-      if (target) {
-        const affordable = canRestock(state, target);
-        gregBubble.disabled = !affordable;
-        gregBubble.classList.toggle('affordable', affordable);
+      const b = target ? gregBubbleFor(state, target) : null;
+      gregBubble.classList.toggle('hidden', !b);
+      if (b) {
+        gregBubble.disabled = !b.clickable;
+        gregBubble.classList.toggle('affordable', b.clickable);
         gregBubble.dataset.item = target;
-        gregBubble.innerHTML =
-          `${ITEMS[target].displayName} out &mdash; <b>Restock &#9670; ${effectiveRestockCost(state, target)}</b>`;
+        gregBubble.innerHTML = b.html;
       }
     }
   }

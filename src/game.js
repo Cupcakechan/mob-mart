@@ -1072,8 +1072,12 @@ export function update(state, dt) {
   gb.cycleIn -= dt;
   if (gb.cycleIn <= 0) {
     gb.cycleIn = CONFIG.gregBubble?.cycleSec ?? 45;
+    // GOLD-ONLY (the Option-2 retirement, Daniel 2026-07-12 — mirrored in renderPanels' isOut):
+    // trade-tier outages are the steady state under single-unit trading, so counting them here
+    // made the cycle fire forever. Greg reports only what a gold click can fix.
     const anyOut = state.workers?.restocker?.owned === true
-      && ITEM_ORDER.some((id) => isItemUnlocked(state, id) && state.items[id].stock === 0);
+      && ITEM_ORDER.some((id) => (ITEMS[id].acquisition ?? 'gold') === 'gold'
+        && isItemUnlocked(state, id) && state.items[id].stock === 0);
     if (anyOut && gb.showFor <= 0) {
       gb.showFor = CONFIG.gregBubble?.showSec ?? 10;
       state.uiDirty = true;
