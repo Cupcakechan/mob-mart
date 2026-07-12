@@ -665,3 +665,33 @@ export const TRADE_VOICE = {
     `All trades final. All chalk artisanal.`,
   ],
 };
+
+// --- Expedition voice (reform step 4 MVP) --------------------------------------------------------
+// Fills: {name} family, {dest} destination, {n} haul count, {mat} material name. Departures fire
+// at startExpedition; returns/mishaps at resolve (game.js). NOBODY DIES out there — a mishap is
+// a pratfall with a lighter bag, and the register is FIELD-TRIP, not war (split-loops law).
+export const EXPEDITION_DESTINATIONS = ['the mountain pass', 'the deep forest', 'the old dungeon',
+  'the desert road', 'the tavern district', 'the castle grounds'];   // the six doors' flavor names
+
+export const EXPEDITION_VOICE = {
+  depart: [
+    `{name} left for {dest} with a list, a lunch, and enormous confidence.`,
+    `Expedition to {dest}: one {name}, zero maps. Bob waved anyway.`,
+    `{name} marched off to {dest}. The lunch was packed first. Priorities.`,
+    `{name} took the door to {dest}. The door approved. Probably.`,
+  ],
+  return: [
+    `{name} returned from {dest} with {n} {mat}. Nobody asks how.`,
+    `Back from {dest}: {name}, triumphant, carrying {n} {mat} and a leaf.`,
+    `{name} delivered {n} {mat} from {dest}. Invoice written in crayon.`,
+    `{n} {mat}, straight from {dest}. {name} wants a sticker. Bob has stickers.`,
+    `{name} came back from {dest} with {n} {mat} and a new favorite rock.`,
+  ],
+  mishap: [
+    `{name} tripped at {dest}. Only {n} {mat} survived. The story is longer.`,
+    `Slight detour at {dest}. {name} salvaged {n} {mat} and most of the dignity.`,
+    `{name} got lost at {dest}, made friends, and still hauled {n} {mat} home.`,
+    `The bag opened at {dest}. {n} {mat} made it back. So did {name}. Mostly.`,
+    `{name} bartered half the haul at {dest} for directions. {n} {mat} remain.`,
+  ],
+};

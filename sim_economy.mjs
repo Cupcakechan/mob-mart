@@ -37,7 +37,9 @@ import {
   buyWorkerLevel, canBuyWorkerLevel, restoreRelic, canRestoreRelic,
   restockAll, canRestockAll, fameOf,
   currentTradeOffers, canTrade, executeTrade,
+  startExpedition,
 } from './src/game.js';
+import { MONSTERS, MONSTER_IDS } from './src/data/monsters.js';
 import { ITEMS, ITEM_ORDER } from './src/data/items.js';
 import { UPGRADES, UPGRADE_ORDER, upgradeCost, upgradeLevel } from './src/data/upgrades.js';
 import { PERKS, PERK_ORDER, perkCost, perkLevel } from './src/data/perks.js';
@@ -142,9 +144,10 @@ function cheapestPerkWant(state) {
 }
 
 // --- One seeded run ------------------------------------------------------------------------------
-function runSim(seed, { tradeAware = true } = {}) {
-  // tradeAware=false is the ACCEPTANCE control (reform Pass A): a bot that ignores the Market
-  // Board entirely. If it doesn't measurably lose to the aware bot, the market isn't real yet.
+function runSim(seed, { tradeAware = true, expeditionAware = true } = {}) {
+  // tradeAware=false is Pass A's ACCEPTANCE control; expeditionAware=false is step 4's — a bot
+  // that trades but never sends supply runs. Each blind bot must measurably lose to the full
+  // player, or the system it ignores isn't real yet.
   const realRandom = Math.random;
   Math.random = mulberry32(seed);
   try {
@@ -152,7 +155,7 @@ function runSim(seed, { tradeAware = true } = {}) {
     s.screen = 'shop';                       // update() gates on the shop screen
     const events = [];                       // { t, kind, key, label, cost, scrap, currency }
     const samples = [];                      // { t, gold, scrap, rep, lifetime, remaining }
-    let purchased = 0, deathT = null, goldAtDeath = 0, scrapAtDeath = 0, trades = 0;
+    let purchased = 0, deathT = null, goldAtDeath = 0, scrapAtDeath = 0, trades = 0, runsSent = 0;
     let tierSeen = reputationTier(fameOf(s)).index;
     const foundSeen = new Set();
     let policyIn = 0, sampleIn = 0, t = 0;
@@ -199,6 +202,23 @@ function runSim(seed, { tradeAware = true } = {}) {
             trades++;
           }
         }
+        // 4c. EXPEDITIONS (reform step 4): the decision loop the reform wants — read today's
+        // offer, find the recipe material the stores are SHORTEST on, send that family. No
+        // deficit -> no run (fees aren't burned idly). The slot + clock do the rate limiting.
+        if (expeditionAware && !s.expedition) {
+          const offer = currentTradeOffers(s)[0];
+          if (offer) {
+            let target = null, worst = 0;
+            for (const [mid, n] of Object.entries(offer.materials)) {
+              const deficit = n - (s.materials?.[mid] ?? 0);
+              if (deficit > worst) { worst = deficit; target = mid; }
+            }
+            if (target) {
+              const fam = MONSTER_IDS.find((id) => !MONSTERS[id].special && MONSTERS[id].material === target);
+              if (fam && startExpedition(s, fam)) runsSent++;
+            }
+          }
+        }
         // 5. Fame-tier crossings (events, not purchases — §0 asks for their wall-clock moments too).
         const idx = reputationTier(fameOf(s)).index;
         while (tierSeen < idx) {
@@ -230,7 +250,7 @@ function runSim(seed, { tradeAware = true } = {}) {
     const postRate = (deathT !== null && t > deathT)
       ? (s.gold - goldAtDeath) / ((t - deathT) / 60) : null;   // net gold/min with nothing to want
     return { seed, events, samples, deathT, endT: t, goldAtDeath, scrapAtDeath,
-      goldEnd: s.gold, scrapEnd: s.scrap ?? 0, postRate, purchased, trades,
+      goldEnd: s.gold, scrapEnd: s.scrap ?? 0, postRate, purchased, trades, runsSent,
       swordSold: s.stats.itemSales.iron_sword ?? 0,
       matsEarned: Object.values(s.stats.materialEarned ?? {}).reduce((a, b) => a + b, 0) };
   } finally {
@@ -310,7 +330,7 @@ for (const r of runs) {
     console.log(`  seed ${r.seed}: desire curve dies at ${hms(r.deathT)}  |  purse at death ${kfmt(r.goldAtDeath)}`
       + `  |  post-death rate ${r.postRate.toFixed(0)} gold/min  |  purse +60min ${kfmt(r.goldEnd)}`
       + `  |  scrap at death ${r.scrapAtDeath} (155 spent)`
-      + `  |  trades ${r.trades}, sword sold ${r.swordSold}, mats earned ${r.matsEarned}`);
+      + `  |  trades ${r.trades}, sword sold ${r.swordSold}, mats earned ${r.matsEarned}, runs ${r.runsSent}`);
   }
 }
 console.log('');
@@ -375,6 +395,27 @@ console.log(delayMed > 60
     + ` ignoring the market finally has a price a bot can't dodge.`
   : `  VERDICT: WEAK — median blind penalty only ${hms(Math.max(0, delayMed))}; the market's teeth`
     + ` need retuning (sword demand or recipe value) before this pass can claim acceptance.`);
+console.log('');
+
+// STEP-4 ACCEPTANCE: the EXPEDITION-blind control (trades, never sends). The pre-expedition
+// penalty had narrowed to +0:40 (supply-bound market); this system exists to re-widen it —
+// if the expedition-blind bot doesn't lose ground, the supply valve isn't real yet.
+console.log('== STEP-4 ACCEPTANCE — expedition-BLIND control (seeds 1–3) vs the full-aware runs ==');
+const expBlind = SEEDS.slice(0, 3).map((seed) => runSim(seed, { expeditionAware: false }));
+for (const b of expBlind) {
+  const a = runs.find((r) => r.seed === b.seed);
+  const delay = (b.deathT ?? b.endT) - (a.deathT ?? a.endT);
+  console.log(`  seed ${b.seed}: exp-blind death ${hms(b.deathT ?? b.endT)} vs full ${hms(a.deathT ?? a.endT)}`
+    + `  (+${hms(Math.max(0, delay))} slower)  |  sword sold ${b.swordSold} vs ${a.swordSold}`
+    + `  |  runs 0 vs ${a.runsSent}`);
+}
+const expDelayMed = median(expBlind.map((b) =>
+  (b.deathT ?? b.endT) - (runs.find((r) => r.seed === b.seed).deathT ?? 0)));
+console.log(expDelayMed > 60
+  ? `  VERDICT: PASS — skipping expeditions costs ${hms(expDelayMed)}; the supply valve re-widened`
+    + ` the gap past the pre-expedition +0:40.`
+  : `  VERDICT: WEAK — expedition-blind penalty only ${hms(Math.max(0, expDelayMed))}; the valve`
+    + ` needs a bigger haul or a shorter clock before step 4 can claim acceptance.`);
 console.log('');
 
 // Seed-1 detail: savings velocity by phase + the two curves.

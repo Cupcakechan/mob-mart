@@ -21,6 +21,15 @@ export const CONFIG = {
     goldMin: 30, goldMax: 90,  // the gold component (vs the retired 13g restock — trades are
                                // meant to cost real planning, not pocket change)
   },
+  expedition: {                // EXPEDITIONS MVP (reform step 4 — one monster, one door, one slot)
+    fee: 25,                   // gold, paid at departure. The fee prices it as a SERVICE — the
+                               // real constraint is the slot + the clock (law: never a converter)
+    durationSec: 60,           // one run's wall-clock length (ticks live; away time credits at boot)
+    haul: 3,                   // materials on a clean return — ~30+ serves' worth of one family,
+                               // the targeted burst that makes choosing WHO to send a decision
+    mishapChance: 0.25,        // comic mishap on return: HALF haul rounded up, never zero,
+                               // NEVER death (split-loops law — the battle log's gag is untouched)
+  },
 
   reputation: {
     // Option A: reputation rewards *service*, not the off-screen battle outcome.

@@ -3688,5 +3688,127 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
 }
 
+// 62. EXPEDITIONS MVP (reform step 4, 2026-07-11) — one monster, one door, one slot ---------------
+// The targeted-supply loop: family pick IS the targeting; fee is a service price; a mishap is
+// half haul rounded up, never zero, NEVER death (split loops — the battle log's gag untouched).
+{
+  const { MONSTERS, MONSTER_IDS } = await import('./src/data/monsters.js');
+  const { canStartExpedition, startExpedition, resolveExpedition } = await import('./src/game.js');
+  const { EXPEDITION_VOICE, EXPEDITION_DESTINATIONS } = await import('./src/data/results.js');
+  const { CONFIG } = await import('./src/config.js');
+  const E = CONFIG.expedition;
+  ok(!!E && E.fee > 0 && E.durationSec > 0 && E.haul > 0 && E.mishapChance >= 0 && E.mishapChance < 1,
+    'expedition: the config block exists with sane dials');
+  ok(EXPEDITION_DESTINATIONS.length === 6, 'expedition: six door destinations (the flavor law)');
+  ok(Object.values(EXPEDITION_VOICE).flat().every((t) => t.length <= 80),
+    'expedition: every voice line respects the 80-char log budget');
+
+  // Gates.
+  {
+    const s = shopState();
+    s.gold = E.fee - 1;
+    ok(canStartExpedition(s, 'slime') === false, 'expedition: fee-short refuses');
+    s.gold = E.fee;
+    ok(canStartExpedition(s, 'dragon') === false, 'expedition: the Inspector NEVER runs errands (special)');
+    ok(canStartExpedition(s, 'nonsense') === false, 'expedition: unknown family refuses');
+    ok(canStartExpedition(s, 'slime') === true, 'expedition: a funded slime run is a go');
+  }
+
+  // Start effects + the one-slot law.
+  {
+    const s = shopState();
+    s.gold = 100;
+    ok(startExpedition(s, 'bat') === true, 'expedition: starts');
+    ok(s.gold === 100 - E.fee, 'expedition: exactly the fee paid');
+    ok(s.expedition?.monsterId === 'bat' && s.expedition.remaining === E.durationSec
+       && EXPEDITION_DESTINATIONS.includes(s.expedition.dest),
+      'expedition: the slot carries family, a real destination, the full clock');
+    ok(s.log.some((l) => l.text.includes('Batty')), 'expedition: the departure speaks');
+    ok(canStartExpedition(s, 'slime') === false && startExpedition(s, 'slime') === false,
+      'expedition: ONE slot — a second run refuses while the first is out');
+  }
+
+  // Resolve, both paths (Math.random forced — the mishap die is the only RNG in the system).
+  {
+    const real = Math.random;
+    const s = shopState();
+    s.gold = 100;
+    startExpedition(s, 'slime');
+    s.expedition.remaining = 0.05;
+    Math.random = () => 0.99;                          // above mishapChance: clean return
+    update(s, 0.1);
+    Math.random = real;
+    ok(s.expedition === null, 'expedition: the tick at zero resolves and frees the slot');
+    ok(s.materials.slime_core === E.haul, `expedition: clean return lands the FULL haul (${E.haul})`);
+    ok(s.stats.expeditions.slime === 1, 'expedition: the run ledger counts the family');
+    ok(s.log.some((l) => l.text.includes(`${E.haul} Condensed Slime Core`)),
+      'expedition: the return line reports the haul');
+  }
+  {
+    const real = Math.random;
+    const s = shopState();
+    s.gold = 100;
+    startExpedition(s, 'frog');
+    s.expedition.remaining = 0;
+    Math.random = () => 0.0;                           // below mishapChance: the pratfall
+    update(s, 0.1);
+    Math.random = real;
+    const half = Math.ceil(E.haul / 2);
+    ok(s.materials.bogstone_bauble === half,
+      `expedition: a mishap lands HALF rounded up (${half}) — never zero, never death`);
+    ok(s.stats.expeditions.frog === 1, 'expedition: a mishap still counts as a run');
+  }
+
+  // Cap interplay: the store clamps; the ledger stays honest (the addMaterial law, unchanged).
+  {
+    const real = Math.random;
+    const s = shopState();
+    s.gold = 100;
+    s.materials.echo_fang = (CONFIG.materials?.baseCap ?? 10) - 1;   // room for ONE
+    startExpedition(s, 'bat');
+    s.expedition.remaining = 0;
+    Math.random = () => 0.99;
+    update(s, 0.1);
+    Math.random = real;
+    ok(s.materials.echo_fang === (CONFIG.materials?.baseCap ?? 10),
+      'expedition: a nearly-full store clamps the haul at cap (the cap law bites bursts too)');
+  }
+
+  // The away credit: main.js subtracts the absence; the first tick resolves. Modeled here.
+  {
+    const real = Math.random;
+    const s = shopState();
+    s.gold = 100;
+    startExpedition(s, 'rat');
+    s.expedition.remaining = Math.max(0, s.expedition.remaining - 3600);   // an hour away
+    Math.random = () => 0.99;
+    update(s, 0.1);
+    Math.random = real;
+    ok(s.expedition === null && s.materials.stolen_trinket === E.haul,
+      'expedition: a run that finished while away completes on the first tick after boot');
+  }
+
+  // Save: an in-flight run round-trips; corruption drops the run, never crashes.
+  {
+    const s = shopState();
+    s.gold = 100;
+    startExpedition(s, 'beetle');
+    s.expedition.remaining = 17.5;
+    s.stats.expeditions.beetle = 4;
+    const loaded = mergeSave(createInitialState(), JSON.parse(JSON.stringify(serializeSave(s))));
+    ok(loaded.expedition?.monsterId === 'beetle' && Math.abs(loaded.expedition.remaining - 17.5) < 0.01
+       && loaded.stats.expeditions.beetle === 4,
+      'expedition: an in-flight run + the ledger round-trip the save');
+    const corrupt = mergeSave(createInitialState(),
+      { expedition: { monsterId: 'dragon', remaining: 1e9 } });
+    ok(corrupt.expedition === null,
+      'expedition: a corrupt run (special/unknown family) drops whole — fee gone, crash never');
+    const clamped = mergeSave(createInitialState(),
+      { expedition: { monsterId: 'slime', dest: 'x', remaining: 1e9 } });
+    ok(clamped.expedition.remaining === E.durationSec,
+      'expedition: an edited clock clamps into the config band');
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

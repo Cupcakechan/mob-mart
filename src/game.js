@@ -9,7 +9,8 @@ import { UPGRADES, upgradeLevel, upgradeCost, isMaxed, sumEffect } from './data/
 import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost,
   workerLevel, workerLevelCost, isWorkerLevelMaxed, sumWorkerEffect } from './data/workers.js';
 import { randInt, pick, weightedPick } from './utils.js';
-import { WORKER_HIRE_LINES, DOUG_RETURN_LINES, RELIC_VOICE, TRADE_VOICE } from './data/results.js';
+import { WORKER_HIRE_LINES, DOUG_RETURN_LINES, RELIC_VOICE, TRADE_VOICE,
+  EXPEDITION_VOICE, EXPEDITION_DESTINATIONS } from './data/results.js';
 import { MATERIALS } from './data/materials.js';   // Trade Market reform Pass A (leaf registry)
 import { offersForDay, tradeDayKey, describeOffer } from './data/trademarket.js';   // (leaf, no cycle)
 import { RELICS, RELIC_ORDER, RELIC_FIND, RELIC_AMBIENT_CHANCE } from './data/relics.js';
@@ -375,6 +376,59 @@ export function executeTrade(state, offerKey) {
   pushLog(state, { text: pick(TRADE_VOICE.trade)
       .replaceAll('{item}', ITEMS[offer.itemId].displayName),
     repDelta: 0, tier: 'milestone' });
+  state.uiDirty = true;
+  return true;
+}
+
+// --- Expeditions MVP (reform step 4 — one monster, one door, one slot) ---------------------------
+// The targeted-supply loop: the player picks the FAMILY (that IS the targeting — send slimes,
+// get Cores), pays a gold fee (a SERVICE price; the real constraint is the slot + the clock,
+// law §4.1), and the run returns a material burst. A mishap is a pratfall with a lighter bag —
+// half haul rounded up, never zero, NEVER death (the split-loops law: the battle log's
+// dying-and-returning gag is a different fiction and stays untouched).
+
+export function canStartExpedition(state, monsterId) {
+  const m = MONSTERS[monsterId];
+  if (!m || m.special || !m.material) return false;   // faucet families only; never the Inspector
+  if (state.expedition) return false;                  // MVP: ONE slot, one run at a time
+  return state.gold >= (CONFIG.expedition?.fee ?? 25);
+}
+
+export function startExpedition(state, monsterId) {
+  if (!canStartExpedition(state, monsterId)) return false;
+  state.gold -= CONFIG.expedition?.fee ?? 25;
+  const dest = pick(EXPEDITION_DESTINATIONS);
+  state.expedition = { monsterId, dest, remaining: CONFIG.expedition?.durationSec ?? 60 };
+  pushLog(state, { text: pick(EXPEDITION_VOICE.depart)
+      .replaceAll('{name}', MONSTERS[monsterId].displayName).replaceAll('{dest}', dest),
+    repDelta: 0, tier: 'market', monsterId });   // 'market' = instant (the grade-line precedent:
+                                                 // event announcements bypass the milestone stagger)
+  state.stats.expeditions ??= {};   // pre-step-4 saves: the ledger seeds lazily
+  state.uiDirty = true;
+  return true;
+}
+
+// Resolve on the tick that hits zero (update below; main.js credits away time at boot). The
+// LINE reports the haul; a capped store losing part of it is the cap law working silently.
+export function resolveExpedition(state) {
+  const run = state.expedition;
+  if (!run) return false;
+  state.expedition = null;
+  const monster = MONSTERS[run.monsterId];
+  if (!monster?.material) { state.uiDirty = true; return false; }   // corrupt-run guard: never crash
+  const E = CONFIG.expedition ?? {};
+  const full = E.haul ?? 3;
+  const mishap = Math.random() < (E.mishapChance ?? 0.25);
+  const haul = mishap ? Math.ceil(full / 2) : full;
+  addMaterial(state, monster.material, haul);
+  state.stats.expeditions ??= {};
+  state.stats.expeditions[run.monsterId] = (state.stats.expeditions[run.monsterId] ?? 0) + 1;
+  pushLog(state, { text: pick(mishap ? EXPEDITION_VOICE.mishap : EXPEDITION_VOICE.return)
+      .replaceAll('{name}', monster.displayName)
+      .replaceAll('{dest}', run.dest ?? 'the doors')
+      .replaceAll('{n}', String(haul))
+      .replaceAll('{mat}', MATERIALS[monster.material]?.displayName ?? ''),
+    repDelta: 0, tier: 'market', monsterId: run.monsterId });   // instant, like the departure
   state.uiDirty = true;
   return true;
 }
@@ -920,6 +974,16 @@ export function update(state, dt) {
   if (state.serveCooldown > 0) {                    // count down the post-sale counter cooldown
     state.serveCooldown = Math.max(0, state.serveCooldown - dt);
     if (state.serveCooldown === 0) state.uiDirty = true;  // re-enable the Serve button
+  }
+
+  // EXPEDITIONS (reform step 4): the ONE slot's clock. Live ticking only — main.js credits away
+  // time at boot, and this tick resolves whatever hit zero. The whole-second edge marks uiDirty
+  // so the Bestiary countdown updates at 1Hz without a 60fps panel re-render.
+  if (state.expedition) {
+    const before = Math.ceil(state.expedition.remaining);
+    state.expedition.remaining -= dt;
+    if (Math.ceil(state.expedition.remaining) !== before) state.uiDirty = true;
+    if (state.expedition.remaining <= 0) resolveExpedition(state);
   }
 
   // Market Day rollover (leave-it-open players): once the LOCAL calendar flips, re-derive the

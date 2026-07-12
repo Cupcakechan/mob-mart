@@ -23,12 +23,12 @@ export function createInitialState() {
   // Lifetime ledger (persisted): fuels milestone bonuses now; the bestiary (roadmap Pass 4) and
   // Kongregate badge stats later hang off these same integers. Keyed by current registries so a
   // future item/monster auto-appears at 0.
-  const stats = { itemSales: {}, monsterServes: {}, materialEarned: {},
+  const stats = { itemSales: {}, monsterServes: {}, materialEarned: {}, expeditions: {},
     everythingTierEarned: 0 };   // B2 ratchet: highest "everything" tier ever reached — persisted
                                  // so a NEW free item (laggard at 0 sales) can never regress an
                                  // earned tier; it only gates the next one. See milestones.js.
   for (const id of ITEM_ORDER) stats.itemSales[id] = 0;
-  for (const id of MONSTER_IDS) stats.monsterServes[id] = 0;
+  for (const id of MONSTER_IDS) { stats.monsterServes[id] = 0; stats.expeditions[id] = 0; }
   // Trade Market (reform Pass A): current stores + LIFETIME landed drops (fuels the first-drop
   // discovery line now; family mastery + harness acceptance later). Registry-keyed like the rest.
   const materials = {};
@@ -50,6 +50,9 @@ export function createInitialState() {
     materials,                  // MONSTER MATERIALS (reform Pass A): { id: count }, capped per
                                 // type (CONFIG.materials/game.js addMaterial). Persisted.
                                 // LAW: never converts to or from gold — see materials.js.
+    expedition: null,           // EXPEDITIONS MVP (reform step 4): the ONE slot. Null, or
+                                // { monsterId, dest, remaining } — PERSISTED (a reload resumes
+                                // the clock; main.js credits away time at boot). See game.js.
     relics: {},                 // RELIC status map (§14 Pass B): id -> 'found' | 'restored'.
                                 // Absent id = not yet found. One-of-ones; persisted.
     relicPity: 0,               // scavenge runs since the last relic find — the pity floor

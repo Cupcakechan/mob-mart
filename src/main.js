@@ -1,7 +1,7 @@
 // main.js — entry point: wires DOM, scale-to-fit, input, save/load, nav, and the rAF game loop.
 import { CONFIG } from './config.js';
 import { clamp } from './utils.js';
-import { update, serveCurrent, dismissCurrent, restockItem, restockAll, buyUpgrade, buyPerk, buyLicense, hireWorker, buyWorkerLevel, deliverBattleReport, refreshMarketDay, restoreRelic, executeTrade } from './game.js';
+import { update, serveCurrent, dismissCurrent, restockItem, restockAll, buyUpgrade, buyPerk, buyLicense, hireWorker, buyWorkerLevel, deliverBattleReport, refreshMarketDay, restoreRelic, executeTrade, startExpedition } from './game.js';
 import { CATEGORY_LABELS } from './data/marketevents.js';
 import { loadState, saveState, clearSave } from './save.js';
 import { computeOffline, applyOffline, formatAway } from './offline.js';
@@ -34,6 +34,13 @@ initKongregate();
 // lastSeen, so a reload can't collect the same window twice. Modal only shows when there's actually
 // something to report (quick reloads and worker-less/empty-shelf returns stay silent).
 const offline = computeOffline(state, Date.now());
+// Expeditions (reform step 4): an in-flight run's clock also ran while away — credit the FULL
+// absence (uncapped: a 60s run should not need Bob's offline hours to finish), floor at 0, and
+// the first update() tick resolves it. Deliberately BEFORE the modal: the return line lands in
+// the log under the away summary, exactly where a "while you were out" event belongs.
+if (state.expedition) {
+  state.expedition.remaining = Math.max(0, state.expedition.remaining - offline.awaySec);
+}
 if ((offline.sales > 0 || (offline.scrap ?? 0) > 0) && offline.awaySec >= CONFIG.offline.minAwaySec) {  // scrap-only absences show too (§14)
   applyOffline(state, offline);
   saveState(state);
@@ -224,6 +231,7 @@ initPanels(document.getElementById('shop-ui'), {
   onHireWorker: (id) => hireWorker(state, id),
   onRestoreRelic: (id) => restoreRelic(state, id),                   // the Forge (§14 Pass B)
   onTrade: (offerKey) => executeTrade(state, offerKey),              // Market Board (reform Pass A)
+  onExpedition: (id) => startExpedition(state, id),                  // Expeditions MVP (reform step 4)
   onBuyWorkerLevel: (id) => buyWorkerLevel(state, id),  // Deep Sinks: worker training purchases
 });
 initNav(document.getElementById('nav'));           // bottom nav swaps the center panel

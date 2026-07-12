@@ -20,7 +20,7 @@ import {
   serveBlockReason, canRestock, effectiveMaxStock, canBuyUpgrade, isUpgradeUnlocked,
   canHireWorker, effectiveWorkerInterval, isPerkUnlocked, canBuyPerk, effectiveRestockCost,
   isItemUnlocked, canBuyLicense, fameOf, restockAllCost, canRestockAll, canBuyWorkerLevel,
-  currentTradeOffers, canTrade, materialCap,
+  currentTradeOffers, canTrade, materialCap, canStartExpedition,
 } from '../game.js';
 import { reputationTier } from '../reputation.js';
 const reputationTierIndex = (state) => reputationTier(fameOf(state)).index;
@@ -259,6 +259,8 @@ export function initPanels(root, h) {
         <div class="beast-info">
           <div class="beast-name" id="beast-name-${id}">${m.displayName}</div>
           <div class="beast-sub" id="beast-sub-${id}"></div>
+          <div class="beast-exp-row"><span class="beast-exp" id="beast-exp-${id}"></span><button
+            class="beast-send" data-beast="${id}">Send &#9670;${CONFIG.expedition?.fee ?? 25}</button></div>
         </div>
         <div class="beast-progress">
           <div class="beast-pips" id="beast-pips-${id}">${pips}</div>
@@ -266,6 +268,12 @@ export function initPanels(root, h) {
         </div>
       </div>`;
   }).join('');
+
+  // Expeditions (reform step 4): the grid cards are the JOB CARDS (Daniel, 2026-07-11 — a pure
+  // lore Bestiary is a later, separate surface). One binding pass; VIP cards never carry the
+  // button (the grid filter above already excludes specials).
+  document.querySelectorAll('.beast-send').forEach((btn) =>
+    btn.addEventListener('click', () => handlers.onExpedition(btn.dataset.beast)));
 
   // VIP VISITORS (Daniel, 2026-07-08): special rows DO get bestiary entries — their own section
   // under the grid, not rows in it. Same card system, same discovered/silhouette reveal (a mystery
@@ -423,6 +431,23 @@ export function renderPanels(state) {
   for (const mid of Object.keys(state.materials ?? {})) {
     const el = document.getElementById(`mat-${mid}`);
     if (el) el.textContent = `${state.materials[mid] ?? 0}/${materialCap(state, mid)}`;
+  }
+
+  // Expeditions (reform step 4): the Job Card row per grid family — lifetime runs, the live
+  // countdown on the away family (update() marks dirty at 1Hz), and the Send button with its
+  // block reason on the tooltip (the strip's own trick).
+  for (const id of MONSTER_IDS) {
+    const expEl = document.getElementById(`beast-exp-${id}`);
+    const sendBtn = document.querySelector(`.beast-send[data-beast="${id}"]`);
+    if (!expEl || !sendBtn) continue;
+    const away = state.expedition?.monsterId === id;
+    const runs = state.stats?.expeditions?.[id] ?? 0;
+    expEl.textContent = away ? `away ${Math.max(0, Math.ceil(state.expedition.remaining))}s`
+      : runs > 0 ? `${runs} run${runs === 1 ? '' : 's'}` : '';
+    sendBtn.disabled = !canStartExpedition(state, id);
+    sendBtn.title = away ? 'Already out there'
+      : state.expedition ? 'One expedition at a time'
+      : state.gold < (CONFIG.expedition?.fee ?? 25) ? 'Not enough gold' : '';
   }
 
   // Attention system: the FRONT customer's sale is blocked by empty stock -> pulse exactly that

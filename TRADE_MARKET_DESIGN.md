@@ -155,8 +155,17 @@ fee prices it as a service, not a converter (law 1). Returns are a material burs
 run; failure is a comic mishap with a partial haul — never death (law 5) — and every departure/
 return is battle-log/board comedy material (the Doug-cameo grammar extends naturally).
 
-**MVP first:** a single sponsored monster ("a supply run"), one door, one slot. Parties, multi-
-slot, and door-specific hazards come later. **Family mastery** is the competence axis: the
+**MVP SHIPPED (2026-07-11, step 4):** a single sponsored family ("a supply run") — the family
+pick IS the targeting; one slot; fee 25g / 60s / haul 3 / mishap 25% → half-rounded-up (all
+CONFIG.expedition dials). The surface is the Bestiary grid card ("the Job Card" — **Daniel's
+standing note, 2026-07-11: this is temporary by intent; a REAL Bestiary — pure lore, a brief
+description per beast — is a wanted later surface**, at which point the expedition console
+moves to its own home). Destinations are the six doors' flavor names on the log lines. Away
+time credits the clock at boot. **Harness finding at ship:** the 60s/25g pacing lets the
+OPTIMAL player run continuously (~50 runs/hour), restoring death to the audit baseline for the
+full-aware bot while both blind bots lose 3h+ — the decision layer is real; the pacing dial
+(durationSec first) is wide open and tunes on Daniel's browser feel. Parties, multi-slot, and
+door-specific hazards come later. **Family mastery** is the competence axis: the
 Bestiary's existing serve counts (plus a new expedition count) make the FAMILY better at runs —
 "slimes have completed 40 expeditions" — wiring our biggest pure-collection silo directly into
 progression without touching the everyone-dies gag. **Doug** gains one line: a small chance his

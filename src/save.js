@@ -1,7 +1,9 @@
 // save.js — localStorage persistence. Versioned key, every field default-filled on load, all I/O
 // wrapped in try/catch so a disabled/full/private-mode store degrades to a fresh game, never a crash.
 import { clamp } from './utils.js';
+import { CONFIG } from './config.js';               // expedition merge clamps into the config band
 import { ITEMS } from './data/items.js';
+import { MONSTERS } from './data/monsters.js';      // expedition merge: live-faucet families only
 import { RELICS } from './data/relics.js';   // merge guard: legal relic ids/statuses only
 import { UPGRADES, sumEffect } from './data/upgrades.js';
 import { PERKS } from './data/perks.js';
@@ -31,6 +33,10 @@ export function mergeSave(fresh, data) {
     for (const id of Object.keys(fresh.stats.materialEarned ?? {})) {
       fresh.stats.materialEarned[id] = Math.max(0, Math.floor(numOr(data.stats.materialEarned?.[id], 0)));
     }
+    // Expedition run ledger (reform step 4) — same guard family.
+    for (const id of Object.keys(fresh.stats.expeditions ?? {})) {
+      fresh.stats.expeditions[id] = Math.max(0, Math.floor(numOr(data.stats.expeditions?.[id], 0)));
+    }
     // B2 ratchet migration: earned tier = max of the saved field AND the tier this save had already
     // reached under the OLD rules — computed over the PINNED launch-trio basis, NOT the live
     // BASE_ITEMS. That distinction is the whole fix: if an update ships new free items, a player's
@@ -52,6 +58,20 @@ export function mergeSave(fresh, data) {
   if (data.materials && typeof data.materials === 'object') {
     for (const id of Object.keys(fresh.materials)) {
       fresh.materials[id] = Math.max(0, Math.floor(numOr(data.materials?.[id], 0)));
+    }
+  }
+  // Expeditions MVP (reform step 4): an in-flight run persists — GUARDED: the monster must be a
+  // live faucet family (a stale/hand-edited id drops the run whole, fee already spent, no crash),
+  // and `remaining` clamps into the config band so an edited 1e9 can't park the slot forever.
+  fresh.expedition = null;
+  if (data.expedition && typeof data.expedition === 'object') {
+    const m = MONSTERS[data.expedition.monsterId];
+    if (m && !m.special && m.material) {
+      fresh.expedition = {
+        monsterId: data.expedition.monsterId,
+        dest: typeof data.expedition.dest === 'string' ? data.expedition.dest : 'the doors',
+        remaining: clamp(numOr(data.expedition.remaining, 0), 0, CONFIG.expedition?.durationSec ?? 60),
+      };
     }
   }
   // Relics (§14 Pass B): additive + GUARDED — only known relic ids with legal statuses survive
@@ -140,6 +160,10 @@ export function serializeSave(state) {
     reputation: state.reputation,
     scrap: Math.max(0, Math.floor(state.scrap ?? 0)),   // Doug's salvage (§14) — additive field
     materials: { ...(state.materials ?? {}) },           // monster materials (reform Pass A)
+    expedition: state.expedition
+      ? { monsterId: state.expedition.monsterId, dest: state.expedition.dest,
+          remaining: Math.max(0, state.expedition.remaining ?? 0) }
+      : null,                                            // the ONE expedition slot (reform step 4)
     relics: state.relics ?? {},                          // relic statuses (§14 Pass B)
     relicPity: Math.max(0, Math.floor(state.relicPity ?? 0)),
     lifetimeRep: state.lifetimeRep ?? state.reputation,
@@ -152,6 +176,7 @@ export function serializeSave(state) {
       itemSales: { ...(state.stats?.itemSales ?? {}) },
       monsterServes: { ...(state.stats?.monsterServes ?? {}) },
       materialEarned: { ...(state.stats?.materialEarned ?? {}) },   // lifetime landed drops (reform)
+      expeditions: { ...(state.stats?.expeditions ?? {}) },          // lifetime runs per family (step 4)
       everythingTierEarned: state.stats?.everythingTierEarned ?? 0,   // B2 ratchet (see milestones.js)
     },
     lastSeen: Date.now(),
