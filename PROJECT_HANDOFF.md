@@ -10,28 +10,30 @@ Claude or ChatGPT can parse it cold.*
 
 ## §0 — START HERE (cold boot): where the project is, and what happens next
 
-**State as of 2026-07-12, end of THE MARKET ARC session (suite: 1551 green; `node test_suite.mjs`
-self-verifies a fresh clone):** the MVP, the full UX roadmap, Market Day, Deep Sinks, Special
-Visits (the Inspector, reauthored 1:1), the gear expansion (27 items), six door destinations, the
-whole of **§14** (DOUG, SCRAP, **the RELIC FORGE**), **THE ECONOMY AUDIT** (`sim_economy.mjs` +
-`ECONOMY_AUDIT.md`), **THE RETENTION RESET** (`TRADE_MARKET_DESIGN.md` + `RETENTION_RESEARCH.md`),
-**MARKET PASS A**, **THE DROP-RATE RETUNE**, **REFORM STEP 3** (DEMMY + LEGGSY — roster nine,
-faucets eight), **EXPEDITIONS MVP** (reform step 4), **MARKET PASS B** (the ten-item trade tier,
-value-derived recipe gold, the Inspector's Scale/Seal drops — Seal reserved for relics), and now
-**THE MARKET ARC** (2026-07-12, five passes, all browser-confirmed — the dated arc section at the
-bottom): the D6-B **TRADE MARKET OVERLAY** pulled forward (full-name offer rows; the canvas board
-CLICKABLE via the derived hit rect; the strip slimmed to chips + Open Market), the **DAILY
-SPECIAL** discount (Daniel's Option 3 — gold ×0.6 AND one unit off the largest stack, applied ON
-the offer object so every surface reads one price), the board reworked to a **SALE SIGN**
-(Daniel's framing: the board advertises, the overlay informs — "TODAY: <item> — 40% OFF" derived
-from the live dial), the **LED TICKER** (REAL day-over-day movement + `TRADE_VOICE.ticker` quips;
-full-bleed crawl at the overlay's base), the two riders (card trade-hint = a Market door; board
-hover cursor), and **GREG GOLD-ONLY** (the two-mode door shipped and retired same-day — the
-steady-state lesson). **Acceptance re-certified at the discount pass, 3× bit-identical: aware
-+24% over market-blind (was +20%), +22% over expedition-blind (was +17%); aware death 26:07
-(from 26:43 — cheaper trades free gold for sinks sooner; a wash, not a regression).** LESSONS.md
-gained three 2026-07-12 entries (the cancelled checkpoint, the half-run shell chain, the
-steady-state messenger).
+**State as of 2026-07-12, end of the RELIC REWORK session (suite: 1611 green; `node
+test_suite.mjs` self-verifies a fresh clone):** the MVP, the full UX roadmap, Market Day, Deep
+Sinks, Special Visits (the Inspector, reauthored 1:1), the gear expansion (27 items), six door
+destinations, the whole of **§14** (DOUG, SCRAP, the RELIC FORGE), **THE ECONOMY AUDIT**
+(`sim_economy.mjs` + `ECONOMY_AUDIT.md`), **THE RETENTION RESET** (`TRADE_MARKET_DESIGN.md` +
+`RETENTION_RESEARCH.md`), **MARKET PASS A**, **THE DROP-RATE RETUNE**, **REFORM STEP 3** (DEMMY
++ LEGGSY — roster nine, faucets eight), **EXPEDITIONS MVP** (step 4), **MARKET PASS B** (the
+ten-item trade tier; the Inspector's Scale/Seal drops), **THE MARKET ARC** (2026-07-12, five
+passes — the overlay D6-B, the daily special, the sale sign, the LED ticker + riders, Greg
+gold-only; the arc's dated section below), and now **REFORM STEP 5 — THE RELIC REWORK**
+(2026-07-12, browser-confirmed, commit 51e2ec3): HARD restores (Daniel's table — scrap ×3 to
+60/90/135/180, gold to 5k/10k/20k/40k, material lines + **ONE Inspector's Seal EACH**), four
+effects that literalize the card gags (Key: mishaps halved; Magnet: +1 combat score; Potion:
+the market honors yesterday's better gold — yesterday's special included; Cloak: +2 every
+material cap), the **SEAL SLOPE** (min(1, fullness/0.9) replaces the top-grade cliff —
+Daniel's 24/7-monitoring fix; the 0.9+ guarantee preserved), and the **PRESTIGE LAW recorded
+as BINDING**: relics carry over through prestige (step 8 must honor it). The instrument grew
+with the economy: sim_economy models the daily inspection (real grade + slope, seeded dice),
+the aware policy hoards found-relic lines (the reserve rule) and targets expeditions at
+restore deficits, horizon 48h → **168h**. **Verdicts 3× bit-identical: aware +34% over
+market-blind, +29% over expedition-blind (from +24%/+22%); median desire-curve death 96:00
+(spread 72–96h, quantized to inspection days — the relic arc IS the endgame clock now, from
+26:07 pre-rework).** LESSONS.md gained two entries (the instrument's missing dragon; the
+fixture that guessed at fullness).
 
 **THE DESIGN RESET (Daniel, 2026-07-10) — MEASURED by the audit (2026-07-11):** passive play
 reaches millions with nothing left to want. The sink stack is **228,483 gold** exactly; the
@@ -66,35 +68,46 @@ Inspector's Seal; economy effects in the scarce carrier slots); 6. **Commissions
 (rule-changing prestige, six-door factions — designed last, against what the harness
 measures then).
 
-**NEXT SESSION — RELIC REWORK (reform step 5), opening with its options round:** HARD restores
-(scrap + gold + MATERIALS incl. the reserved Inspector's Seal), economy effects in the 3 wall
-frames + desk slot, restore-cost shape. The 2026-07-12 UI round that stood in front of it is
-COMPLETE (the price-color fix + the whole Market arc — the sessions' dated sections below).
+**NEXT SESSION — COMMISSIONS (reform step 6), opening with its options round.** The locked
+sequence's next entry: DEADLINES — timed orders as the next decision layer. No design exists
+yet beyond the sequence line; the round starts from TRADE_MARKET_DESIGN.md §6-8's direction +
+RETENTION_RESEARCH.md's ranked framework. Cold-boot ritual applies as always: this doc in
+full, the dev-method skill, sync-and-certify (suite must read **1611** at HEAD).
 
-**NEW PARKED ITEMS (this session, Daniel's asks — both want their own sessions):**
-  (a) **Scarcity → dismissals → Rep bleed.** Trade-tier scarcity has customers leaving more
-      (visible as −1 clusters in the Battle Results log — Daniel's screenshot evidence,
-      2026-07-12). Not necessarily bad, but the dismissal economics predate the reform and need
-      a revisit. Approach when opened: measure the dismissal RATE in sim_economy before/after
-      the reform first, then tune from numbers (rep cost shape, or want-substitution when trade
-      stock is dry). Interacts with the fill-to-cap churn pass (§13b), which is now DOUBLY
-      motivated — Greg's trade-mode retirement leans on it as the real answer to trade outages.
-  (b) **COMEDY BIBLE ANALYSIS.** Daniel wants a dedicated review pass on the bible itself — the
-      voice spec, pool coverage and staleness, and how the new market-era voices (ticker,
-      trade, board, expedition) sit against the original four-cast design. A reading/design
-      session, not a code pass.
-  (c) **LAYERED MARKET DEPTH (Daniel, 2026-07-12, post-arc): "a simple system at a surface
-      level, but then a complex system — some players love complexity."** An exploration round
-      AFTER the relic rework: the simple layer stays "trade what glows"; the deep layer plays
-      the rates. Existing seeds to build the round on: the forecast (the surface plan hook),
-      §5's unexercised dials (per-offer daily stock; the parked materials-only and
-      material→material swap offers), and the ticker's REAL movement data — a rate-trend a
-      complexity player could genuinely trade on. Design-first session; interacts with the
-      churn pass and (a) above.
+**THREE MEASURED FINDINGS from the relic rework, for Daniel's judgment (raise them BEFORE
+building anything that touches the economy):**
+  (i)   **The trade-vs-hoard sign flip.** The market-blind bot now COMPLETES its checklist ~a
+        day earlier than the aware one (it never spends materials on trades, so it hoards
+        restores by default) while earning permanently less (+34% rate gap). Trading delays
+        your relics but pays forever. Possibly good tension, possibly confusing — Daniel has
+        NOT ruled on it yet.
+  (ii)  **Purse at death is now ~1M+** (was ~20 gold): 3-4 days of income dwarfs the 303k sink
+        stack. WORKER WAGES (the parked first perpetual drain) is now urgent, and step 8's
+        prestige math should assume a millionaire at reset.
+  (iii) **The desire curve is quantized to inspection days** (72-96h, the Seal cadence). More
+        VIPs = more Seal-class sources = a smoother curve — Daniel already flagged this as the
+        long-term shape ("as we add more VIPs and Relics, it will change").
 
-**Standing behind step 5, unchanged:** §13b's churn/fill-to-cap pass (the overlay half of §13b
-SHIPPED this session) and §0's older parked list (expedition pacing + fame-tier fee discounts,
-WORKER WAGES, the Job Board's real home, P2 Mythic → 40k).
+**THE PARKED QUEUE (order is Daniel's call, raised when he asks):**
+  (a) **Scarcity → dismissals → Rep bleed** — measure the dismissal rate in sim before/after
+      the reform first; screenshot evidence 2026-07-12; interacts with (c).
+  (b) **COMEDY BIBLE ANALYSIS** — Daniel's dedicated review session on the bible itself
+      (voice spec, pool coverage, the market-era voices vs the four-cast design). Reading/
+      design, not code.
+  (c) **The churn / fill-to-cap pass** (design doc §13b) — doubly motivated: Greg's trade-mode
+      retirement leans on it, and single-unit trading is the root of (a)'s steady-state
+      outages.
+  (d) **LAYERED MARKET DEPTH** (Daniel: simple surface, complex depth) — seeds: the forecast,
+      §5's dials (per-offer stock; material↔material swaps), the ticker's real movement, and
+      now the Yesterday Potion (the first depth mechanic SHIPPED).
+  (e) **WORKER WAGES** — promoted by finding (ii); its own options round before any numbers.
+  (f) Standing small: expedition pacing + fame-tier fee discounts; the Job Board's real home
+      (pure-lore Bestiary); P2 Mythic → 40k one-value pass; Doug's door-open feel pass; the
+      HUD compact-numbers option; the itch dual-publish decision.
+
+**Steps 7-8 behind all of it:** Expedition depth (parties, offline management), then Franchise
+(rule-changing prestige, six-door factions — designed against what the harness measures then,
+and BOUND by the prestige law: restored relics carry over).
 
 **PARKED, in Daniel's own words (2026-07-11, post-step-4):** (a) **expedition pacing retune**
 — "up the gold charge," plus FAME-TIER DISCOUNTS on the fee (fame already carries budget
@@ -1816,3 +1829,50 @@ overlay's Trade buttons re-validate offer keys against the CURRENT day (executeT
 adds fill-to-cap.
 
 **NEXT:** the relic rework's options round (§0 carries the agenda and the new parked items).
+
+---
+
+## 2026-07-12 — THE RELIC REWORK (reform step 5; suite 1551 → 1611; commit 51e2ec3)
+
+**Daniel's design calls, in his words where it matters:** Option 2 of the round ("the gag IS
+the effect"); scrap ×3 "at least" with gold and materials raised; **all four require the Seal**
+("as we add more VIPs and Relics, it will change"); **"Relics should be end-game items that
+will carry over in Prestige"** (the BINDING law, recorded in relics.js's header, §0, and here);
+and the Seal cliff → slope ("players don't know when an inspector comes... may feel frustrated
+in missing out since they can['t] monitor the game 24h").
+
+**The locked table (relics.js — §69's exact pins):** Key ⚙60+◆5k + 6 Femur Charm + 6 Echo Fang;
+Magnet ⚙90+◆10k + 8 Stolen Trinket + 5 Silk Bundle; Potion ⚙135+◆20k + 8 Slime Core +
+6 Bogstone Bauble; Cloak ⚙180+◆40k + 8 Carapace Shard + 8 Infernal Ember — plus **1 Seal
+each**. Cap law: every line ≤ the BASE cap (a cost can never require its own effect); §69 pins
+it. Totals: 465 scrap / 75k gold / 55 units + 4 Seals.
+
+**The effects (relicEffects() in game.js — guarded folds, future relics cost zero wiring):**
+Key = mishapChanceMult 0.5 (the roll site); Magnet = combatBonus +1 (resolveCombat's new
+guarded third param); Potion = yesterdayRates (currentTradeOffers swaps to yesterday's offer
+where its GOLD is lower — yesterday's SPECIAL price included, that IS the gag; imported offers
+drop the featured mark, carry rateDay:'yesterday' for the overlay's tag, keep yesterday's key
+— the midnight guard holds); Cloak = capBonus +2 (materialCap). The Forge shows each
+effectCard once displayed — the rule is visible where it was earned.
+
+**The Seal slope:** sealChance = min(1, fullness / sealFullness) at the inspection —
+0.9+ keeps the old guarantee EXACTLY, half-stocked ≈ 50%, empty earns nothing. §63's old cliff
+tests survive at the slope's fixed points; §69 owns the middle with dice DERIVED from the live
+inspectionGrade (the guessed-dice lesson).
+
+**THE INSTRUMENT'S SESSION (read the two LESSONS entries):** the first sim run capped all five
+seeds at 48h with exactly 4 wants left — **sim_economy's world had never spawned the dragon**,
+so the Seal had no source (the missing-dragon lesson: when a pass changes what a resource
+GATES, sweep the world-model consumers). Fixes, all in sim_economy.mjs: (1) a once-per-sim-day
+inspection at Legendary+ through the REAL grade + slope on the seeded die; (2) **the reserve
+rule** — the aware bot hoards found-relic material lines (the greedy drain was spending them
+on trades forever); (3) expedition targeting includes found-relic restore deficits; (4)
+CAP_SEC 48h → 168h (the arc is a ≥4-day project BY DESIGN). Verdicts then: **PASS +34% /
+PASS +29%, 3× bit-identical; median death 96:00 (72–96h), quantized to inspection days.**
+
+**The three findings** live in §0's NEXT block — the trade-vs-hoard sign flip (Daniel has NOT
+ruled), the ~1M purse at death (worker wages promoted), and the inspection-day quantization
+(more VIPs will smooth it, per Daniel's own note).
+
+**NEXT:** Commissions (step 6) opens with its options round — §0 carries the full agenda and
+the parked queue.

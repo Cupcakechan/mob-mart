@@ -327,3 +327,37 @@ assets; the half-applied-fix staleness heuristic).
   building a message/attention beat on a condition, check the condition's duty cycle at steady
   state — an always-true trigger disqualifies the surface, not just the wording.
 - Route: GI candidate (design-side sibling of the attention/motion laws).
+
+## 2026-07-12 — The instrument's missing dragon: a world-model consumer the rework exposed
+- What happened: the relic rework Seal-gated all four restores; the first sim run capped EVERY
+  seed at 48h with exactly 4 wants left. sim_economy's world had never spawned the dragon — the
+  Seal had NO source in the instrument, so the new endgame was unmeasurable (the "-100%" verdict
+  was an artifact of incomplete runs, not a regression).
+- Root cause: the same class as the Greg-chip bug, one layer up — a reform changed what a
+  currency GATES, and a consumer of the old world-model (here the instrument's world itself,
+  there the message layer) was never re-audited. VIP visits were "flavor + a drop" when the sim
+  was written; the rework made them load-bearing.
+- Verification gap: nothing asks "does the instrument's world contain every faucet the wants
+  now depend on?" The cap-hit report caught it loudly (the non-zero exit did its job).
+- Plug: the sim now models the daily inspection through the REAL inspectionGrade + slope on the
+  seeded die, plus the reserve rule and restore-aware expedition targeting (a goal-visible
+  player hoards); horizon 48h→168h to contain the designed 4-day arc. Rule to encode: when a
+  pass changes what a resource GATES, sweep every world-model and message-layer consumer of
+  that resource — the code guards were all correct both times; the MODELS lagged.
+- Route: GI candidate (sibling of the steady-state-messenger entry; possibly one merged rule).
+
+## 2026-07-12 — The fixture that guessed at fullness instead of deriving it
+- What happened: §69's mid-slope Seal test hand-picked dice (0.45/0.99) against an ASSUMED
+  half-stock fullness; the real inspectionGrade math over the fixture landed below the guessed
+  chance and the test failed green code. Same session, second instance: a renderForge
+  str_replace anchor included an invented else-branch line and missed.
+- Root cause: expectations authored from a mental model of the computation instead of from the
+  computation. The suite's own doctrine (rule tests derive from live registries) already covers
+  registry DATA; this extends it to derived MATH.
+- Plug: the test now computes fullness via the exported inspectionGrade on its own fixture and
+  forces dice at chance ±0.01 — the expectation derives from the same function the game runs,
+  plus a guard-the-guard that the fixture actually sits mid-slope. Rule to encode: a forced-dice
+  test derives its threshold from the live formula over its own fixture, never from arithmetic
+  done in the author's head.
+- Route: skill reference (test-doctrine section — "derive from live registries" extended to
+  derived math).
