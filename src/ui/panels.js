@@ -19,7 +19,7 @@ import {
   serveBlockReason, canRestock, effectiveMaxStock, canBuyUpgrade, isUpgradeUnlocked,
   canHireWorker, effectiveWorkerInterval, isPerkUnlocked, canBuyPerk, effectiveRestockCost,
   isItemUnlocked, canBuyLicense, fameOf, restockAllCost, canRestockAll, canBuyWorkerLevel,
-  currentTradeOffers, materialCap, canStartExpedition,
+  currentTradeOffers, materialCap, canStartExpedition, canRestoreRelic,
 } from '../game.js';
 import { reputationTier } from '../reputation.js';
 const reputationTierIndex = (state) => reputationTier(fameOf(state)).index;
@@ -747,14 +747,22 @@ export function renderForge(state) {
       desc.textContent = "Doug hasn't found this yet.";
       btn.classList.add('hidden');
     } else if (st === 'found') {
+      // HARD restores (the rework): the cost line spells out every currency — scrap, gold,
+      // and the material lines incl. the Seal (full display names; the Forge card wraps).
+      // Affordability is game.js's canRestoreRelic — the one source, so the button and the
+      // click guard can never disagree.
+      const mats = Object.entries(r.restoreCost.materials ?? {})
+        .map(([mid, n]) => `${n} ${MATERIALS[mid]?.displayName ?? mid}`).join(' + ');
       name.textContent = r.displayName;
-      desc.textContent = `${r.card} \u2014 broken. Restore: \u2699${r.restoreCost.scrap} + \u25c6${r.restoreCost.gold}`;
+      desc.textContent = `${r.card} \u2014 broken. Restore: \u2699${r.restoreCost.scrap}`
+        + ` + \u25c6${r.restoreCost.gold}${mats ? ` + ${mats}` : ''}`;
       btn.classList.remove('hidden');
-      btn.disabled = !((state.scrap ?? 0) >= r.restoreCost.scrap && state.gold >= r.restoreCost.gold);
+      btn.disabled = !canRestoreRelic(state, id);
       btn.textContent = 'Restore';
     } else {
       name.textContent = r.displayName;
-      desc.textContent = `${r.card} \u2014 on display.`;
+      desc.textContent = `${r.card} \u2014 on display. ${r.effectCard ?? ''}`;   // the rework:
+                                       // the effect is player-visible RIGHT where it was earned
       btn.classList.add('hidden');
     }
   }

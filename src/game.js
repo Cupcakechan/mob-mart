@@ -12,7 +12,7 @@ import { randInt, pick, weightedPick } from './utils.js';
 import { WORKER_HIRE_LINES, DOUG_RETURN_LINES, RELIC_VOICE, TRADE_VOICE, INSPECTOR_VOICE,
   EXPEDITION_VOICE, EXPEDITION_DESTINATIONS } from './data/results.js';
 import { MATERIALS } from './data/materials.js';   // Trade Market reform Pass A (leaf registry)
-import { offersForDay, tradeDayKey, describeOffer } from './data/trademarket.js';   // (leaf, no cycle)
+import { offersForDay, tradeDayKey, yesterdayKey, describeOffer } from './data/trademarket.js';   // (leaf, no cycle)
 import { RELICS, RELIC_ORDER, RELIC_FIND, RELIC_AMBIENT_CHANCE } from './data/relics.js';
 import { resolveCombat } from './combat.js';
 import { reputationTier } from './reputation.js';
@@ -183,7 +183,13 @@ export function serveCurrent(state) {
     if (monster.material && addMaterial(state, monster.material, 1) > 0) {
       pushLog(state, { text: pick(INSPECTOR_VOICE.scale), repDelta: 0, tier: 'market' });
     }
-    if (monster.gradeMaterial && g.fullness >= (CONFIG.visits?.sealFullness ?? 0.9)
+    // THE SEAL SLOPE (relic rework, Daniel 2026-07-12): the top-grade CLIFF punished players
+    // who can't monitor 24/7 — the visit is unschedulable, so missing 0.9 fullness was a hard
+    // zero with no decision behind it. Now a CHANCE scaling with fullness at visit time:
+    // min(1, fullness / sealFullness) — 0.9+ keeps the old guarantee exactly, half-stocked
+    // ≈ 50%, an empty shop still earns nothing. Math.random is the forced-dice seam (§69).
+    const sealChance = Math.min(1, g.fullness / (CONFIG.visits?.sealFullness ?? 0.9));
+    if (monster.gradeMaterial && Math.random() < sealChance
         && addMaterial(state, monster.gradeMaterial, 1) > 0) {
       pushLog(state, { text: pick(INSPECTOR_VOICE.seal), repDelta: 0, tier: 'market' });
     }
@@ -219,7 +225,8 @@ export function serveCurrent(state) {
     }
   }
 
-  const { tier } = resolveCombat(monster, item);               // off-screen fight -> outcome tier
+  const { tier } = resolveCombat(monster, item, relicEffects(state).combatBonus);   // off-screen fight -> outcome
+                                                               // tier; the Hero Magnet's +1 rides here
   // serves INCLUDES this one (the ledger increments below): the 25th serve draws from the 25-batch.
   const { text, golden } = logLine(monster.id, tier, { name: monster.displayName,
     item: item.displayName, itemId: c.wantedItemId,
@@ -337,7 +344,7 @@ export function dismissCurrent(state) {
 // Per-material store cap: registry override, else the global dial. Future cap-raisers (Backroom
 // Storage's second effect, relic buffs) sum in HERE when they land — one read site to grow.
 export function materialCap(state, id) {
-  return MATERIALS[id]?.cap ?? CONFIG.materials?.baseCap ?? 10;
+  return (MATERIALS[id]?.cap ?? CONFIG.materials?.baseCap ?? 10) + relicEffects(state).capBonus;   // the Everything Cloak holds +2 of everything
 }
 
 // Add up to n of a material, clamped to cap. Returns how many LANDED (0 on a full store — the
@@ -360,7 +367,21 @@ export function addMaterial(state, id, n = 1) {
 
 // Today's offers for THIS state (the override seam keeps headless runs calendar-free).
 export function currentTradeOffers(state) {
-  return offersForDay(tradeDayKey(state));
+  const today = offersForDay(tradeDayKey(state));
+  if (!relicEffects(state).yesterdayRates) return today;
+  // THE YESTERDAY POTION (relic rework): each item trades at whichever day's offer has the
+  // LOWER GOLD — yesterday's special price included (that IS the gag: it tastes like last
+  // Tuesday). An imported offer DROPS its featured mark and discount fields (today's special
+  // keeps the only glow — §69 pins one-featured) and carries rateDay:'yesterday' for the
+  // overlay's tag. Its key stays yesterday's: executeTrade validates against THIS list, so
+  // the midnight guard holds unchanged (a two-day-old key matches nothing).
+  const yest = offersForDay(yesterdayKey(state));
+  return today.map((t) => {
+    const y = yest.find((o) => o.itemId === t.itemId);
+    if (!y || y.gold >= t.gold) return t;
+    const { featured, origGold, origMaterials, ...rest } = y;
+    return { ...rest, rateDay: 'yesterday' };
+  });
 }
 
 export function canTrade(state, offer) {
@@ -429,7 +450,7 @@ export function resolveExpedition(state) {
   if (!monster?.material) { state.uiDirty = true; return false; }   // corrupt-run guard: never crash
   const E = CONFIG.expedition ?? {};
   const full = E.haul ?? 3;
-  const mishap = Math.random() < (E.mishapChance ?? 0.25);
+  const mishap = Math.random() < (E.mishapChance ?? 0.25) * relicEffects(state).mishapChanceMult;   // the Skeleton Key: doors open for you
   const haul = mishap ? Math.ceil(full / 2) : full;
   addMaterial(state, monster.material, haul);
   state.stats.expeditions ??= {};
@@ -810,16 +831,40 @@ export function buyWorkerLevel(state, id) {
 // The Forge (§14 Pass B): restoring a FOUND relic consumes scrap + gold and puts it ON DISPLAY
 // permanently (state 'restored' — the draw + ambient lines key off it). No effects in this
 // pass: the effect slot stays empty for the Special-of-the-Day repurpose (post-audit).
+// The active relic effects, folded (the rework, 2026-07-12 — Daniel's "the gag IS the effect").
+// Guarded reads: a relic with no effect field folds to the identity, so future batches cost
+// zero wiring here. Cheap enough to call at every hook site (four rows).
+export function relicEffects(state) {
+  const out = { mishapChanceMult: 1, combatBonus: 0, capBonus: 0, yesterdayRates: false };
+  for (const id of RELIC_ORDER) {
+    if (state.relics?.[id] !== 'restored') continue;
+    const e = RELICS[id].effect ?? {};
+    out.mishapChanceMult *= e.mishapChanceMult ?? 1;
+    out.combatBonus += e.combatBonus ?? 0;
+    out.capBonus += e.capBonus ?? 0;
+    out.yesterdayRates ||= e.yesterdayRates === true;
+  }
+  return out;
+}
+
 export function canRestoreRelic(state, id) {
   const r = RELICS[id];
-  return !!r && state.relics?.[id] === 'found'
-    && (state.scrap ?? 0) >= r.restoreCost.scrap && state.gold >= r.restoreCost.gold;
+  if (!r || state.relics?.[id] !== 'found') return false;
+  if ((state.scrap ?? 0) < r.restoreCost.scrap || state.gold < r.restoreCost.gold) return false;
+  // HARD restores (the rework): materials incl. the Inspector's Seal — every line guarded.
+  for (const [mid, n] of Object.entries(r.restoreCost.materials ?? {})) {
+    if ((state.materials?.[mid] ?? 0) < n) return false;
+  }
+  return true;
 }
 export function restoreRelic(state, id) {
   if (!canRestoreRelic(state, id)) return false;
   const r = RELICS[id];
   state.scrap -= r.restoreCost.scrap;
   state.gold -= r.restoreCost.gold;
+  for (const [mid, n] of Object.entries(r.restoreCost.materials ?? {})) {
+    state.materials[mid] -= n;                 // canRestoreRelic proved every line covered
+  }
   state.relics = { ...state.relics, [id]: 'restored' };
   const line = RELIC_VOICE.byRelic[id]?.restored;
   if (line) pushLog(state, { text: line, repDelta: 0, tier: 'milestone' });

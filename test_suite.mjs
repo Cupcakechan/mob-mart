@@ -3334,8 +3334,12 @@ console.log('M4 auto-serve worker — smoke test\n');
      'relics: the second find follows the curated order');
 
   // The Forge: unfound and underfunded both refuse; funded restore deducts EXACTLY and displays.
+  // (Softened for the relic rework: restores now also cost MATERIALS — granted here from the
+  // live registry so this section keeps owning the scrap/gold math; §69 owns the material laws.)
   ok(!canRestoreRelic(run, 'yesterday_potion'), 'forge: an unfound relic cannot be restored');
   run.scrap = RELICS.skeleton_key.restoreCost.scrap - 1; run.gold = 1e9;
+  run.materials ??= {};
+  for (const [mid, n] of Object.entries(RELICS.skeleton_key.restoreCost.materials ?? {})) run.materials[mid] = n;
   ok(!canRestoreRelic(run, 'skeleton_key'), 'forge: short on scrap refuses (gold alone is not enough)');
   run.scrap = RELICS.skeleton_key.restoreCost.scrap + 5; run.gold = RELICS.skeleton_key.restoreCost.gold + 100;
   ok(restoreRelic(run, 'skeleton_key') && run.scrap === 5 && run.gold === 100
@@ -3869,11 +3873,16 @@ console.log('M4 auto-serve worker — smoke test\n');
     'passB: the Inspector\'s materials NEVER enter trade recipes (reserved — Seal is for relics)');
   {
     const s = shopState();
-    for (const id of ITEM_ORDER) s.items[id].stock = 0;   // empty shelves: fullness 0, no seal
+    for (const id of ITEM_ORDER) s.items[id].stock = 0;   // near-empty shelves (the club below
+                                       // stocks for the serve, so fullness is small, NOT zero)
     s.items.club.stock = 5;
     s.queue = [customer('dragon', 'club', 999)];
     s.serveCooldown = 0;
-    serveCurrent(s);
+    // Softened for the relic rework's SEAL SLOPE: sub-guarantee fullness is a CHANCE now, so
+    // the die is forced HIGH — the rule this section keeps is "a shabby shelf never guarantees
+    // the Seal"; the slope's own math lives in §69.
+    const realRand = Math.random;
+    try { Math.random = () => 0.99; serveCurrent(s); } finally { Math.random = realRand; }
     ok(s.materials.dragon_scale === 1, 'passB: a visit drops ONE Dragon Scale (standard shedding)');
     ok((s.materials.inspectors_seal ?? 0) === 0, 'passB: a shabby inspection earns NO Seal');
     // Now a top-grade shelf: fill every unlocked item to cap before he walks in.
@@ -4178,6 +4187,163 @@ console.log('M4 auto-serve worker — smoke test\n');
   const pnl68 = rf68('./src/ui/panels.js', 'utf8');
   ok(/const isOut[\s\S]{0,120}acquisition/.test(pnl68),
     'greg: the render target pick excludes the trade tier');
+}
+
+// ============= SECTION 69 — THE RELIC REWORK (reform step 5 — "the gag IS the effect") ========
+// Daniel's locked table (2026-07-12): scrap ×3, gold raised, materials + ONE Seal each; four
+// effects that literalize the card gags; the Seal cliff becomes a fullness slope; relics carry
+// over in Prestige (a DOC law for step 8 — nothing mechanical to pin yet). Exact cost pins live
+// HERE (the newest batch); older sections softened to rules.
+{
+  const { RELICS: R69, RELIC_ORDER: RO69 } = await import('./src/data/relics.js');
+  const { relicEffects, canRestoreRelic: crr69, restoreRelic: rr69, materialCap: mc69,
+    currentTradeOffers: cto69, serveCurrent: sc69, effectiveMaxStock } = await import('./src/game.js');
+  const { resolveCombat: rc69 } = await import('./src/combat.js');
+  const { CONFIG: C69 } = await import('./src/config.js');
+  const { MATERIALS: M69 } = await import('./src/data/materials.js');
+  const { MONSTERS } = await import('./src/data/monsters.js');
+
+  // (a) The cost table — the newest batch's EXACT pins (Daniel's locked numbers).
+  const TABLE = { skeleton_key: [60, 5000], hero_magnet: [90, 10000],
+    yesterday_potion: [135, 20000], everything_cloak: [180, 40000] };
+  for (const id of RO69) {
+    const r = R69[id];
+    ok(r.restoreCost.scrap === TABLE[id][0] && r.restoreCost.gold === TABLE[id][1],
+      `relicwork: ${id} costs ⚙${TABLE[id][0]} + ◆${TABLE[id][1]} (the locked table)`);
+    ok((r.restoreCost.materials?.inspectors_seal ?? 0) === 1,
+      `relicwork: ${id} requires exactly ONE Inspector's Seal (the current-batch law)`);
+    for (const [mid, n] of Object.entries(r.restoreCost.materials)) {
+      ok(!!M69[mid], `relicwork: ${id} cost line '${mid}' resolves in the registry`);
+      ok(n <= (C69.materials?.baseCap ?? 10),
+        `relicwork: ${id} needs ${n} ${mid} — under the BASE cap (a cost can never require its own effect)`);
+    }
+    ok(!!r.effect && !!r.effectCard, `relicwork: ${id} carries an effect + its player-visible card`);
+  }
+
+  // (b) relicEffects folds guardedly: identity with none restored; the full set with all four.
+  const none = shopState();
+  const idn = relicEffects(none);
+  ok(idn.mishapChanceMult === 1 && idn.combatBonus === 0 && idn.capBonus === 0 && idn.yesterdayRates === false,
+    'relicwork: no restored relics fold to the identity');
+  const all = shopState();
+  all.relics = Object.fromEntries(RO69.map((id) => [id, 'restored']));
+  const fx = relicEffects(all);
+  ok(fx.mishapChanceMult === 0.5 && fx.combatBonus === 1 && fx.capBonus === 2 && fx.yesterdayRates === true,
+    'relicwork: all four fold to the slate (0.5 / +1 / +2 / yesterday)');
+
+  // (c) The Seal SLOPE — dice DERIVED from the live grade math (inspectionGrade is the same
+  // function the serve uses), forced ±0.01 around the crafted shop's chance. Fixed points
+  // (0 and >=0.9) are §63's surviving cliff tests; this owns the middle.
+  {
+    const { inspectionGrade } = await import('./src/game.js');
+    const mkShop = () => {
+      const s = shopState();
+      for (const id of ITEM_ORDER) s.items[id].stock = 0;
+      for (const id of ITEM_ORDER) if (!ITEMS[id].license) s.items[id].stock = Math.floor(effectiveMaxStock(s, id) / 2);
+      s.queue = [customer('dragon', 'club', 999)];
+      s.items.club.stock = Math.max(s.items.club.stock, 1);
+      s.serveCooldown = 0;
+      return s;
+    };
+    const probe = mkShop();
+    const chance = Math.min(1, inspectionGrade(probe).fullness / (C69.visits?.sealFullness ?? 0.9));
+    ok(chance > 0.05 && chance < 0.95,
+      `relicwork: the mid-slope fixture sits mid-slope (chance ${chance.toFixed(2)}) — guard-the-guard`);
+    const real = Math.random;
+    try {
+      Math.random = () => chance - 0.01;              // just under: the Seal drops
+      const sLow = mkShop(); sc69(sLow);
+      const gotLow = (sLow.materials.inspectors_seal ?? 0);
+      Math.random = () => chance + 0.01;              // just over: same shelf, no Seal
+      const sHigh = mkShop(); sc69(sHigh);
+      const gotHigh = (sHigh.materials.inspectors_seal ?? 0);
+      ok(gotLow === 1 && gotHigh === 0,
+        `relicwork: the slope pays mid-fullness by CHANCE (under → ${gotLow}, over → ${gotHigh})`);
+    } finally { Math.random = real; }
+  }
+
+  // (d) The four effects, each on forced state.
+  {
+    // Skeleton Key: a die between the halved and original mishap chance returns CLEAN.
+    const { startExpedition, resolveExpedition, canStartExpedition } = await import('./src/game.js');
+    const s = shopState();
+    s.relics = { skeleton_key: 'restored' };
+    s.gold = 1000;
+    const real = Math.random;
+    try {
+      if (canStartExpedition(s, 'slime')) {
+        startExpedition(s, 'slime');
+        s.expedition.remaining = 0;
+        const base = C69.expedition?.mishapChance ?? 0.25;
+        Math.random = () => base * 0.75;              // mishap WITHOUT the Key; clean WITH it
+        resolveExpedition(s);
+        ok((s.materials.slime_core ?? 0) === (C69.expedition?.haul ?? 3),
+          'relicwork: the Skeleton Key turns a would-be mishap into a full haul (the halved die)');
+      } else { ok(false, 'relicwork: expedition fixture could not start'); }
+    } finally { Math.random = real; }
+
+    // Hero Magnet: +1 to the score under identical dice.
+    const real2 = Math.random;
+    try {
+      Math.random = () => 0.5;
+      const a = rc69(MONSTERS.slime, ITEMS.club, 0).score;
+      const b = rc69(MONSTERS.slime, ITEMS.club, 1).score;
+      ok(b === a + 1, 'relicwork: the Hero Magnet adds exactly +1 to the combat score');
+    } finally { Math.random = real2; }
+
+    // Yesterday Potion: scan days for a pair where yesterday is cheaper somewhere; the swapped
+    // offer carries the tag, the lower gold, NO featured mark; the list keeps ONE featured.
+    const p = shopState();
+    p.relics = { yesterday_potion: 'restored' };
+    let proved = 0;
+    for (let d = 2; d <= 30 && proved === 0; d++) {
+      p.tradeDayKeyOverride = `sim-day-${d}`;
+      const plain = (await import('./src/data/trademarket.js')).offersForDay(`sim-day-${d}`);
+      const offers = cto69(p);
+      for (const o of offers) {
+        if (o.rateDay === 'yesterday') {
+          const t = plain.find((x) => x.itemId === o.itemId);
+          ok(o.gold < t.gold, 'relicwork: the Potion only ever swaps to a CHEAPER gold');
+          ok(o.featured === undefined, 'relicwork: an imported offer drops the featured mark');
+          proved++;
+        }
+      }
+      ok(offers.filter((o) => o.featured).length === 1,
+        `relicwork: sim-day-${d} keeps exactly ONE featured offer under the Potion`);
+    }
+    ok(proved > 0, 'relicwork: a yesterday-cheaper case exists within 30 days (guard-the-guard)');
+
+    // Everything Cloak: +2 on every cap, and only when restored.
+    const c1 = shopState();
+    const c2 = shopState();
+    c2.relics = { everything_cloak: 'restored' };
+    ok(mc69(c2, 'slime_core') === mc69(c1, 'slime_core') + 2,
+      'relicwork: the Cloak raises every material cap by exactly +2');
+  }
+
+  // (e) Hard-restore deduction: every currency, exactly; a missing Seal refuses.
+  {
+    const s = shopState();
+    s.relics = { skeleton_key: 'found' };
+    const r = R69.skeleton_key;
+    s.scrap = r.restoreCost.scrap; s.gold = r.restoreCost.gold;
+    s.materials = {};
+    for (const [mid, n] of Object.entries(r.restoreCost.materials)) s.materials[mid] = n + 1;
+    s.materials.inspectors_seal = 0;
+    ok(!crr69(s, 'skeleton_key'), 'relicwork: a missing Seal refuses the restore (hard means hard)');
+    s.materials.inspectors_seal = 1;
+    ok(rr69(s, 'skeleton_key'), 'relicwork: fully funded restores');
+    ok(s.scrap === 0 && s.gold === 0 && s.materials.inspectors_seal === 0
+      && Object.entries(r.restoreCost.materials).every(([mid, n]) => mid === 'inspectors_seal' || s.materials[mid] === 1),
+      'relicwork: every currency deducts EXACTLY (the +1 cushion survives)');
+  }
+
+  // (f) Wiring pins: the overlay's yesterday tag; the Forge spells out the material lines.
+  const { readFileSync: rf69 } = await import('node:fs');
+  ok(rf69('./src/ui/market.js', 'utf8').includes('rate-yesterday'),
+    'relicwork: the overlay tags yesterday-rate offers');
+  ok(rf69('./src/ui/panels.js', 'utf8').includes('restoreCost.materials'),
+    'relicwork: the Forge cost line spells out the material lines');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

@@ -12,10 +12,10 @@ export function scoreToTier(score) {
   return 'funnyFailure';
 }
 
-export function resolveCombat(monster, item) {
+export function resolveCombat(monster, item, bonus = 0) {
   const c = CONFIG.combat;
   const itemEffect = item?.combatEffect ?? 0;         // guard: missing field never NaNs the score
   const monsterMod = monster?.combatMod ?? 0;
-  const score = itemEffect + monsterMod - c.encounterDifficulty + randInt(-c.rngSpread, c.rngSpread);
-  return { tier: scoreToTier(score), score };
+  const score = itemEffect + monsterMod + bonus - c.encounterDifficulty + randInt(-c.rngSpread, c.rngSpread);
+  return { tier: scoreToTier(score), score };         // bonus: relic effects (the Hero Magnet) — defaults to 0
 }

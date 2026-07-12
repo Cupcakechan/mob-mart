@@ -36,7 +36,7 @@ import {
   buyUpgrade, canBuyUpgrade, buyPerk, canBuyPerk,
   buyWorkerLevel, canBuyWorkerLevel, restoreRelic, canRestoreRelic,
   restockAll, canRestockAll, fameOf,
-  currentTradeOffers, canTrade, executeTrade,
+  currentTradeOffers, canTrade, executeTrade, inspectionGrade, addMaterial,
   startExpedition,
 } from './src/game.js';
 import { MONSTERS, MONSTER_IDS } from './src/data/monsters.js';
@@ -54,7 +54,9 @@ const DT = 0.1;                // sim tick (s). Must stay <= the min serve coold
 const POLICY_SEC = 1.0;        // how often the simulated player acts (restock + buys) — ~a human click cadence
 const SAMPLE_SEC = 60;         // curve sampling interval
 const TAIL_SEC = 3600;         // post-death observation window (the accumulation-rate measurement)
-const CAP_SEC = 48 * 3600;     // hard safety cap; a cap-hit is reported loudly and exits non-zero
+const CAP_SEC = 168 * 3600;    // hard safety cap (48h -> 168h at the relic rework: the Seal-gated
+                               // relic arc is a >=4-sim-day project BY DESIGN, so the horizon must
+                               // contain it); a cap-hit is reported loudly and exits non-zero
 const OBSERVED_ENDGAME_PURSE = 1462291; // the §0 starting fact: 6.4x the 228,483 sink stack
 
 // --- Seeded PRNG (mulberry32) — swapped into Math.random per run --------------------------------
@@ -156,6 +158,7 @@ function runSim(seed, { tradeAware = true, expeditionAware = true } = {}) {
     const events = [];                       // { t, kind, key, label, cost, scrap, currency }
     const samples = [];                      // { t, gold, scrap, rep, lifetime, remaining }
     let purchased = 0, deathT = null, goldAtDeath = 0, scrapAtDeath = 0, trades = 0, runsSent = 0;
+    let lastInspectionDay = 0;   // the daily-inspection latch (relic rework — one visit per sim-day)
     let tierSeen = reputationTier(fameOf(s)).index;
     const foundSeen = new Set();
     let policyIn = 0, sampleIn = 0, t = 0;
@@ -194,11 +197,43 @@ function runSim(seed, { tradeAware = true, expeditionAware = true } = {}) {
         // BLIND control never does. Trades are RECURRING (not wants) — they never touch the
         // death count; their effect shows up as income (the sword sells) and stall relief.
         s.tradeDayKeyOverride = `sim-day-${1 + Math.floor(t / 86400)}`;
+        // 4b'. THE INSPECTION (relic rework, 2026-07-12 — the instrument gap the rework exposed):
+        // the sim's world never spawned the dragon, so the Seal — now gating all four relic
+        // restores — had NO source and every seed capped out with 4 wants left. Model the real
+        // cadence: once per sim-day at Legendary+ (tier index >= 5, the game's own eligibility),
+        // roll the SEEDED die against the real slope through the real grade function
+        // (min(1, fullness/sealFullness)) and stamp the Seal. Scale skipped: recipe-excluded,
+        // economically inert today.
+        {
+          const simDay = 1 + Math.floor(t / 86400);
+          if (simDay !== lastInspectionDay && reputationTier(fameOf(s)).index >= 5) {
+            lastInspectionDay = simDay;
+            const g = inspectionGrade(s);
+            const chance = Math.min(1, g.fullness / (CONFIG.visits?.sealFullness ?? 0.9));
+            if (Math.random() < chance) addMaterial(s, 'inspectors_seal', 1);
+          }
+        }
         if (tradeAware) {
+          // THE RESERVE RULE (relic rework, 2026-07-12): the greedy drain was starving the
+          // relic wants forever (the second cap-hit finding) — the bot traded away the exact
+          // materials the restores needed, so the 6+6 lines never accumulated. A real player
+          // with a VISIBLE goal hoards toward it: materials named by any FOUND relic's restore
+          // line are reserved up to that line (max across found relics — restores are
+          // sequential), and trades may spend only the excess.
+          const reserve = {};
+          for (const rid of RELIC_ORDER) {
+            if (s.relics?.[rid] === 'found') {
+              for (const [mid, n] of Object.entries(RELICS[rid].restoreCost.materials ?? {})) {
+                reserve[mid] = Math.max(reserve[mid] ?? 0, n);
+              }
+            }
+          }
+          const breachesReserve = (offer) => Object.entries(offer.materials)
+            .some(([mid, n]) => (s.materials?.[mid] ?? 0) - n < (reserve[mid] ?? 0));
           // Pass B: TEN offers a day — the aware bot works the whole board, not offers[0].
           for (const offer of currentTradeOffers(s)) {
             for (let i = 0; i < 10; i++) {
-              if (!canTrade(s, offer)) break;
+              if (!canTrade(s, offer) || breachesReserve(offer)) break;
               executeTrade(s, offer.key);
               trades++;
             }
@@ -207,10 +242,16 @@ function runSim(seed, { tradeAware = true, expeditionAware = true } = {}) {
         // 4c. EXPEDITIONS (reform step 4): the decision loop — scan EVERY offer's recipe (Pass B),
         // find the material the stores are SHORTEST on across the whole board, send that family.
         // No deficit -> no run (fees aren't burned idly). The slot + clock do the rate limiting.
+        // Since the relic rework, FOUND relics' restore lines join the scan — the bot sends
+        // expeditions to fill restore needs too, same shortest-first greed.
         if (expeditionAware && !s.expedition) {
           let target = null, worst = 0;
-          for (const offer of currentTradeOffers(s)) {
-            for (const [mid, n] of Object.entries(offer.materials)) {
+          const wantedLines = [...currentTradeOffers(s).map((o) => o.materials)];
+          for (const rid of RELIC_ORDER) {
+            if (s.relics?.[rid] === 'found') wantedLines.push(RELICS[rid].restoreCost.materials ?? {});
+          }
+          for (const line of wantedLines) {
+            for (const [mid, n] of Object.entries(line)) {
               const deficit = n - (s.materials?.[mid] ?? 0);
               if (deficit > worst) { worst = deficit; target = mid; }
             }

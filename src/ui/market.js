@@ -53,8 +53,9 @@ export function offerRowHtml(offer, state) {
   });
   const goldOk = (state.gold ?? 0) >= offer.gold;
   const goldWas = offer.featured ? `<s class="offer-was">${offer.origGold}g</s> ` : '';
+  const yTag = offer.rateDay === 'yesterday' ? ` <span class="rate-yesterday">(yesterday's rate)</span>` : '';   // the Yesterday Potion's tag
   return `<b>${ITEMS[offer.itemId]?.displayName ?? offer.itemId}</b> ⇐ ${parts.join('')}`
-    + `<span class="${goldOk ? 'mat-ok' : 'mat-short'}"> + ${goldWas}${offer.gold}g</span>`;
+    + `<span class="${goldOk ? 'mat-ok' : 'mat-short'}"> + ${goldWas}${offer.gold}g</span>${yTag}`;
 }
 
 export function initMarket(root, h) {
