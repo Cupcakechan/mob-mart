@@ -10,24 +10,28 @@ Claude or ChatGPT can parse it cold.*
 
 ## §0 — START HERE (cold boot): where the project is, and what happens next
 
-**State as of 2026-07-12 (suite: 804 green; `node test_suite.mjs` self-verifies a fresh clone):**
-the MVP, the full UX roadmap, Market Day, Deep Sinks, Special Visits (the Inspector, reauthored
-1:1), the gear expansion (27 items), six door destinations, the whole of **§14** (DOUG, SCRAP,
-**the RELIC FORGE**), **THE ECONOMY AUDIT** (`sim_economy.mjs` + `ECONOMY_AUDIT.md`), **THE
-RETENTION RESET** (`TRADE_MARKET_DESIGN.md` + `RETENTION_RESEARCH.md`), **MARKET PASS A**
-(monster materials + the Trade Market, acceptance PASS), **THE DROP-RATE RETUNE** (Ns ~2.5×),
-**REFORM STEP 3** (DEMMY the Apologetic Menace + LEGGSY the Overstocker — roster nine, faucets
-eight), **EXPEDITIONS MVP** (reform step 4 — Bestiary Job Cards, one slot; both blind bots
-lose hours), and now **MARKET PASS B** (2026-07-12, browser-confirmed): the TEN-ITEM trade
-tier (base/workman gold, upgrades/premium trade — Daniel's line, row-confirmed),
-value-derived recipe gold, the Inspector's Scale-per-visit + Seal-at-top-grade (both
-recipe-excluded forever; the Seal reserved for relics), the board's iconic headline +
-"Tomorrow:" forecast row, and the Shop tab's category-filtered iconic offer list. **The
-acceptance metric EVOLVED here** (the economy went substantially perpetual): verdicts read
-POST-EXHAUSTION RATE ADVANTAGE — aware **+20%** over market-blind, **+17%** over
-expedition-blind, 3× stable; aware finite-checklist death 26:43 (from 8:18 at the audit).
-Detail in the dated sections below; LESSONS.md carries the error record (a new 2026-07-12
-entry: the CSS cascade tie / probe-the-effect / stale-CSS saga).
+**State as of 2026-07-12, end of THE MARKET ARC session (suite: 1551 green; `node test_suite.mjs`
+self-verifies a fresh clone):** the MVP, the full UX roadmap, Market Day, Deep Sinks, Special
+Visits (the Inspector, reauthored 1:1), the gear expansion (27 items), six door destinations, the
+whole of **§14** (DOUG, SCRAP, **the RELIC FORGE**), **THE ECONOMY AUDIT** (`sim_economy.mjs` +
+`ECONOMY_AUDIT.md`), **THE RETENTION RESET** (`TRADE_MARKET_DESIGN.md` + `RETENTION_RESEARCH.md`),
+**MARKET PASS A**, **THE DROP-RATE RETUNE**, **REFORM STEP 3** (DEMMY + LEGGSY — roster nine,
+faucets eight), **EXPEDITIONS MVP** (reform step 4), **MARKET PASS B** (the ten-item trade tier,
+value-derived recipe gold, the Inspector's Scale/Seal drops — Seal reserved for relics), and now
+**THE MARKET ARC** (2026-07-12, five passes, all browser-confirmed — the dated arc section at the
+bottom): the D6-B **TRADE MARKET OVERLAY** pulled forward (full-name offer rows; the canvas board
+CLICKABLE via the derived hit rect; the strip slimmed to chips + Open Market), the **DAILY
+SPECIAL** discount (Daniel's Option 3 — gold ×0.6 AND one unit off the largest stack, applied ON
+the offer object so every surface reads one price), the board reworked to a **SALE SIGN**
+(Daniel's framing: the board advertises, the overlay informs — "TODAY: <item> — 40% OFF" derived
+from the live dial), the **LED TICKER** (REAL day-over-day movement + `TRADE_VOICE.ticker` quips;
+full-bleed crawl at the overlay's base), the two riders (card trade-hint = a Market door; board
+hover cursor), and **GREG GOLD-ONLY** (the two-mode door shipped and retired same-day — the
+steady-state lesson). **Acceptance re-certified at the discount pass, 3× bit-identical: aware
++24% over market-blind (was +20%), +22% over expedition-blind (was +17%); aware death 26:07
+(from 26:43 — cheaper trades free gold for sinks sooner; a wash, not a regression).** LESSONS.md
+gained three 2026-07-12 entries (the cancelled checkpoint, the half-run shell chain, the
+steady-state messenger).
 
 **THE DESIGN RESET (Daniel, 2026-07-10) — MEASURED by the audit (2026-07-11):** passive play
 reaches millions with nothing left to want. The sink stack is **228,483 gold** exactly; the
@@ -62,28 +66,27 @@ Inspector's Seal; economy effects in the scarce carrier slots); 6. **Commissions
 (rule-changing prestige, six-door factions — designed last, against what the harness
 measures then).
 
-**NEXT SESSION — a SMALL UI ROUND (Daniel's priorities, 2026-07-12), then RELIC REWORK
-(step 5).** The UI round, confirmed and re-prioritized by Daniel after the Pass B fixes landed:
+**NEXT SESSION — RELIC REWORK (reform step 5), opening with its options round:** HARD restores
+(scrap + gold + MATERIALS incl. the reserved Inspector's Seal), economy effects in the 3 wall
+frames + desk slot, restore-cost shape. The 2026-07-12 UI round that stood in front of it is
+COMPLETE (the price-color fix + the whole Market arc — the sessions' dated sections below).
 
-  1. **The shelf card PRICE color.** The `◆ N` price on item cards renders in gold, which
-     doesn't contrast the tan card — Daniel's ORIGINAL readability complaint, finally pinned to
-     the right element (the earlier round fixed the trade-*hint* text, a different thing; the
-     price itself is still gold). Needs a dark/contrasting tone like the hint got. Small, but
-     it's the one that keeps getting mis-hit — verify against the actual price element in the
-     card template, not the hint.
-  2. **The offer rows need material NAMES back + BIGGER icons (the pair Daniel prioritized).**
-     Right now a row reads "Iron Sword ⇐ [tiny icon] 2 + 32g" — the icon alone doesn't teach a
-     player WHAT the material is, and it's too small. Both fixes together: put the short name
-     beside each icon and enlarge the icon (the list icons are 15px — the board went 20/17 and
-     reads well; match that neighborhood). This is a genuine layout/space question in a narrow
-     row with a Trade button — so it gets an OPTIONS ROUND for the row layout (name+icon+count
-     inline vs stacked vs abbreviated) before building. The board's iconic rows are fine as-is
-     (a headline, not a reference surface); this is specifically the Shop-tab LIST.
+**NEW PARKED ITEMS (this session, Daniel's asks — both want their own sessions):**
+  (a) **Scarcity → dismissals → Rep bleed.** Trade-tier scarcity has customers leaving more
+      (visible as −1 clusters in the Battle Results log — Daniel's screenshot evidence,
+      2026-07-12). Not necessarily bad, but the dismissal economics predate the reform and need
+      a revisit. Approach when opened: measure the dismissal RATE in sim_economy before/after
+      the reform first, then tune from numbers (rep cost shape, or want-substitution when trade
+      stock is dry). Interacts with the fill-to-cap churn pass (§13b), which is now DOUBLY
+      motivated — Greg's trade-mode retirement leans on it as the real answer to trade outages.
+  (b) **COMEDY BIBLE ANALYSIS.** Daniel wants a dedicated review pass on the bible itself — the
+      voice spec, pool coverage and staleness, and how the new market-era voices (ticker,
+      trade, board, expedition) sit against the original four-cast design. A reading/design
+      session, not a code pass.
 
-Then the relic rework's options round: HARD restores (scrap + gold + materials, incl. the
-reserved Inspector's Seal), economy effects in the 3 wall frames + desk slot, restore-cost
-shape. §13b's named passes (Trade Market overlay, the churn/fill-to-cap pass) and §0's parked
-list (expedition pacing, worker wages, the Job Board's home) all still stand behind it.
+**Standing behind step 5, unchanged:** §13b's churn/fill-to-cap pass (the overlay half of §13b
+SHIPPED this session) and §0's older parked list (expedition pacing + fame-tier fee discounts,
+WORKER WAGES, the Job Board's real home, P2 Mythic → 40k).
 
 **PARKED, in Daniel's own words (2026-07-11, post-step-4):** (a) **expedition pacing retune**
 — "up the gold charge," plus FAME-TIER DISCOUNTS on the fee (fame already carries budget
@@ -1735,3 +1738,73 @@ confirmed 1.05 ("size is right"); the one-word update rides the next monsters.js
 Daniel's excerpt attachment (2026-07-12) arrived EMPTY — flagged; he may repaste.
 
 **NEXT:** the three-item UI round (§0), then the relic rework's options round.
+
+---
+
+## 2026-07-12 — THE MARKET ARC (five passes + the price fix; suite 804 → 1551)
+
+**The session's shape:** Daniel's queued UI round (§0) opened it, then his redirect — "explore
+new ways of displaying the trade board" — grew it into the arc. Passes, in ship order, each
+browser-confirmed:
+
+**0. The price-color fix (commit 4b03436):** `.item-price` gold-on-tan → `#6b4a1e` (the
+trade-hint's exact treatment); the mis-hit history ended by pinning the actual element at HEAD
+first. First use of the CSS cache-bust ritual post-lesson (`?v=7`).
+
+**1. THE TRADE MARKET OVERLAY (D6-B pulled forward — Daniel's Option 2; commit c0b788f, suite
+856):** `src/ui/market.js` owns the surface — full-material-name offer rows (the readability fix
+the 430px strip could not fit; `offerRowHtml` is PURE and suite-proven), the Special headline,
+chips with caps, the forecast line; sim runs under it (the menu's idle-honest law). The canvas
+gained its FIRST click handling: `boardHitRect()`/`pointOnBoard()` DERIVE from SPECIAL_BOARD
+(a re-hang moves the target), client→stage coords divide out the scale transform via the
+canvas's own rect. The strip slimmed to count + chips + Open Market. §64; the §63 license
+specimen tests survived untouched.
+
+**2. THE DAILY SPECIAL (Daniel's Option 3 — both cuts; in commit 87adc7b, suite 1496):** his
+call and his reasoning: gold-only discounts decay because gold is the runaway currency. Dials
+`CONFIG.trade.feature { goldMult: 0.6, matUnitsOff: 1 }`; applied ON the offer object in
+offersForDay (one hash, one mark, ONE PRICE — board, overlay, executeTrade can never disagree);
+origGold/origMaterials ride for the was/now strike-through; all-1s recipes get the gold cut
+alone (the material cut is lumpy BY NATURE — the Market-Day escalation hook). §63(b) softened
+per doctrine (band law reads pre-discount gold); §65 owns the exacts (40 sim-days). **The
+acceptance metric moved here: aware +24%/+22% (from +20%/+17%), death 26:07 (from 26:43), 3×
+bit-identical — the discount strengthened the market's pull, working as intended.**
+
+**3. THE SALE SIGN (Daniel's Option 2; commit 87adc7b — COMBINED with pass 2, see the LESSONS
+entry on the cancelled checkpoint; suite 1510):** Daniel's design key — "the Market Board is for
+the player, not the lore." `boardLines(state)` derives "TODAY: <item> — <pct>% OFF" (pct from
+the live goldMult — the sign undersells; the material cut makes the real deal deeper) +
+"Tomorrow: <item>". Recipe overflow on the plank is now STRUCTURALLY impossible. Pure-JS pass.
+`describeOfferSegments` kept alive with no live consumer — the ticker's likely renderer.
+nameFont/quipFont have headroom for bigger lettering now (one-value tune, unexercised).
+
+**4. THE LED TICKER (Daniel's Option 3 — REAL movement; commit 732b2c4, suite 1544):**
+`yesterdayKey` (the forecast's mirror) + `tickerSegments` — one ▲/▼ per tier item from
+today-vs-yesterday PRE-DISCOUNT gold (the special's cut is a sale, not a market move),
+interleaved with day-seeded `TRADE_VOICE.ticker` quips ({mat} from eligibleMaterialIds — new
+materials flow into the jokes). Full-bleed crawl at the overlay card's base; amber LED glow;
+seamless −50% loop with the content doubled; rebuilt on DAY ROLLOVER ONLY (`tickerKey` — an
+innerHTML reset restarts the CSS animation and uiDirty fires every serve);
+prefers-reduced-motion shows it static. Motion-law note: constant motion is fine on a SUMMONED
+surface. Riders in the same commit: the card trade-hint reworded + wired as a Market door; the
+board hit rect drives a hover cursor. §67 includes the bible's ≤80-char law checked AT RENDER
+against the longest registry name.
+
+**5. GREG GOLD-ONLY (the Greg-chip fix — Option B shipped-and-retired, Option 2 final; suite
+1551, uncommitted at handoff-writing, the checkpoint rides with this doc update):** Daniel's
+screenshot: "Iron Buckler out — Restock ◆ 6" — a gold quote on material-made stock. The reform
+had guarded every restock PATH (canRestock's acquisition check, so no economy leak — the click
+was safely dead); the MESSAGE layer was the missed consumer. The first fix (trade-mode door)
+nagged in play — trade outages are the STEADY STATE under single-unit trading — and was retired
+same-day for the gold-only filter on BOTH sides (renderPanels' target pick + game.js's cycle
+trigger, cross-referenced). `gregBubbleFor` is pure, returns null for trade targets; §68 pins
+the exclusion. The full arc: LESSONS "steady-state messenger" entry.
+
+**Workflow notes:** (a) the combined-commit slip and the half-run shell chain are LESSONS
+entries (both 2026-07-12) — read them at the next harvest. (b) `TRADE_MARKET_DESIGN.md` §13b's
+overlay entry marked SHIPPED this session (one-line edit riding this doc commit). (c) The
+overlay's Trade buttons re-validate offer keys against the CURRENT day (executeTrade unchanged)
+— a stale open overlay can never trade yesterday's rates; worth remembering when the churn pass
+adds fill-to-cap.
+
+**NEXT:** the relic rework's options round (§0 carries the agenda and the new parked items).

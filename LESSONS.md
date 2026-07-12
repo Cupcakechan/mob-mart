@@ -280,3 +280,50 @@ chips proved the JS) before diagnosing the code.
 
 Route: universal method candidate (probe-the-effect; scoped-override-at-birth; cache-bust static
 assets; the half-applied-fix staleness heuristic).
+
+## 2026-07-12 — The pending checkpoint a feedback pivot silently cancelled
+- What happened: the daily-special pass was delivered and browser-confirmed, but Daniel's
+  confirmation message pivoted straight into the next design round (the board rework), and the
+  checkpoint was never sent. Both passes then rode ONE commit (87adc7b) whose message names only
+  the sale sign — one-system-per-commit broken, and the special's completion is invisible in
+  `git log`.
+- Root cause: the checkpoint step was keyed on "Daniel confirms, then checkpoint" — a
+  confirmation that ARRIVES WITH a new request reads as the next task and the ritual step gets
+  skipped.
+- Verification gap: none mechanical — the commit content was correct; the granularity and the
+  message were the loss. Caught at the next session-sync (`git show --stat` on an
+  unexpectedly-shaped log).
+- Plug: a confirmation embedded in a pivot still closes the open pass — deliver the pending
+  checkpoint BEFORE opening the new round's work, even inside the same reply.
+- Route: GI candidate (the per-feature workflow's step 4).
+
+## 2026-07-12 — A compound shell chain that half-ran: the bump landed, the regen didn't
+- What happened: the CSS version bump, the mirror-regen script, and the verification were
+  chained in one shell command; a syntax error in a LATER verification clause aborted the chain
+  after the `sed` bump but before the regen — leaving the mirror stale at v=9 while index.html
+  read v=10.
+- Root cause: partial execution of a compound command; the failure surfaced as a shell parse
+  error, not a regen error, so nothing said "mirror stale."
+- Caught: the landing report — re-running the checks alone showed a 6-line mirror delta (5 is
+  the law) and v=10 in only one shell. An instance of the existing edit-script law (silence
+  where output was expected), with a refinement.
+- Plug: the clean re-run, then delta + version verified in BOTH shells. Refinement to encode:
+  run the EDIT and its VERIFICATION as separate commands — a verification clause must never be
+  able to abort the edit it verifies.
+- Route: skill reference (SKILL.md scripted-edits law — the separation refinement).
+
+## 2026-07-12 — The messenger built on a steady state: Greg's trade-mode bubble, shipped and retired same-day
+- What happened: the Greg-chip fix (a gold quote on material-made stock) was first built as a
+  two-mode bubble — trade outages got a "Trade at the Market ▸" door. In play it nagged: Greg
+  cycled through the tier's outages one after another, often pointing at trades the player
+  couldn't afford. Retired same-session for the gold-only filter (both the render target pick
+  and the game-side cycle trigger).
+- Root cause: the bubble treats an outage as an EVENT, but under single-unit trading against
+  5-stock shelves a trade-tier outage is the STEADY STATE (the churn finding, design doc §13b) —
+  a message keyed on a permanent condition is a nag by construction, whatever it says.
+- Verification gap: the suite proved the bubble's CONTENT, not its FREQUENCY — nothing measured
+  the condition's duty cycle. Daniel's play session was the instrument.
+- Plug: gold-only filter on both sides, §68 pins the exclusion. The rule to encode: before
+  building a message/attention beat on a condition, check the condition's duty cycle at steady
+  state — an always-true trigger disqualifies the surface, not just the wording.
+- Route: GI candidate (design-side sibling of the attention/motion laws).

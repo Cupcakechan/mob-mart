@@ -264,9 +264,9 @@ single policy is optimal across days.
 
 ## 13b. Named future passes (from Pass B's rounds — parked with intent)
 
-- **The Trade Market overlay (D6-B):** the canvas board becomes CLICKABLE and opens a dedicated
-  Trade Market surface; the Shop tab keeps chips + an "Open" button. A pure RELOCATION of the
-  shipped offer list — needs canvas hit-testing + an overlay component. Daniel's sketch;
+- **The Trade Market overlay (D6-B) — SHIPPED 2026-07-12 (the Market Arc):** the canvas board is
+  CLICKABLE and opens the dedicated Trade Market surface; the Shop tab keeps chips + an "Open"
+  button. Built as designed (src/ui/market.js; the handoff's arc section);
   option C (a true Market room/screen) stays parked behind it.
 - **The churn pass (fill-to-cap trading):** Daniel's observation — "trade a sword, someone buys
   it, you're out again." Throughput IS the design (the margin lives there), but single-unit
