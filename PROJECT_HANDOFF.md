@@ -83,6 +83,14 @@ COMPLETE (the price-color fix + the whole Market arc — the sessions' dated sec
       voice spec, pool coverage and staleness, and how the new market-era voices (ticker,
       trade, board, expedition) sit against the original four-cast design. A reading/design
       session, not a code pass.
+  (c) **LAYERED MARKET DEPTH (Daniel, 2026-07-12, post-arc): "a simple system at a surface
+      level, but then a complex system — some players love complexity."** An exploration round
+      AFTER the relic rework: the simple layer stays "trade what glows"; the deep layer plays
+      the rates. Existing seeds to build the round on: the forecast (the surface plan hook),
+      §5's unexercised dials (per-offer daily stock; the parked materials-only and
+      material→material swap offers), and the ticker's REAL movement data — a rate-trend a
+      complexity player could genuinely trade on. Design-first session; interacts with the
+      churn pass and (a) above.
 
 **Standing behind step 5, unchanged:** §13b's churn/fill-to-cap pass (the overlay half of §13b
 SHIPPED this session) and §0's older parked list (expedition pacing + fame-tier fee discounts,
