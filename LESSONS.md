@@ -186,7 +186,7 @@
 - Route: universal method candidate (the scripted-edits section — "deletions have landing
   zones too; audit the survivors"). Pairs with 2026-07-05 "landing-zone checks, not exit codes".
 
-## 2026-07-10 — `node --check` passed a file whose ES-module parse failed (the doubled brace)
+## 2026-07-10 — `node --check` passed a file whose ES-module parse failed (the doubled brace) [HARVESTED — 2026-07-11]
 - What broke: a display-fix splice left a doubled `}` in drawRelicWall. `node --check` PASSED;
   the suite’s module-import health section failed with "Unexpected token ’}’" — the game would
   not have booted.
@@ -201,7 +201,7 @@
 - Route: universal method candidate (the check-before-delivering section — "the fast check’s
   limits" now include parse-mode divergence). Pairs with the 2026-07-10 survivor-audit entry.
 
-## 2026-07-11 — Registry facts written from memory in a DOC pass: three live customers marked "future", a second dragon invented
+## 2026-07-11 — Registry facts written from memory in a DOC pass: three live customers marked "future", a second dragon invented [HARVESTED — 2026-07-11]
 - What broke: TRADE_MARKET_DESIGN.md §3 (and the handoff lines quoting it) shipped two false
   registry facts — Skele/Ratty/Beetley labeled "future customers" (all three LIVE since the
   2026-07-05 passes) and a "customer dragon sheds scales / dragon bureaucrat stamps seals"
@@ -220,7 +220,7 @@
 - Route: universal method candidate (verify-don't-assume — add "applies to documents about the
   code, not just the code").
 
-## 2026-07-11 — An unterminated inline heredoc made a whole edit script a silent no-op (returncode 0)
+## 2026-07-11 — An unterminated inline heredoc made a whole edit script a silent no-op (returncode 0) [HARVESTED — 2026-07-11]
 - What broke: a chained shell command opening a heredoc that was never terminated — the shell
   swallowed the entire monsters.js edit script as heredoc body, executed nothing, and returned
   0 with NO output. The file was untouched; nothing failed loudly.
@@ -236,7 +236,7 @@
 - Route: universal method candidate (scripted-edits section — "no inline heredocs; scripts are
   files; silence is failure").
 
-## 2026-07-11 — `git pull | tail -1` printed "Updating x..y" while the pull ABORTED; HEAD stayed a commit behind
+## 2026-07-11 — `git pull | tail -1` printed "Updating x..y" while the pull ABORTED; HEAD stayed a commit behind [HARVESTED — 2026-07-11]
 - What broke: with a dirty working tree, `git pull 2>&1 | tail -1` showed the optimistic
   "Updating 791ce2e..ed8f243" line — the abort message ("Please move or remove them…") was cut
   off by the tail — and work continued at the OLD head for several turns, including a tuning
@@ -251,7 +251,7 @@
   signal, not noise.
 - Route: universal method candidate (git section, the mirror-side of "git status is a READ").
 
-## 2026-07-12 — The filter that "didn't work": a CSS specificity TIE, a probe that tested the mechanism instead of the effect, and stale CSS on top
+## 2026-07-12 — The filter that "didn't work": a CSS specificity TIE, a probe that tested the mechanism instead of the effect, and stale CSS on top [HARVESTED — 2026-07-12]
 
 **What happened:** Pass B's category filter (offer rows toggle `.hidden`) shipped visually broken
 and survived THREE fix rounds. Cause one: `.offer-row { display:flex }` was appended at the END
