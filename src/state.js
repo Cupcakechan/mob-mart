@@ -53,6 +53,16 @@ export function createInitialState() {
     expedition: null,           // EXPEDITIONS MVP (reform step 4): the ONE slot. Null, or
                                 // { monsterId, dest, remaining } — PERSISTED (a reload resumes
                                 // the clock; main.js credits away time at boot). See game.js.
+    commission: null,           // COMMISSIONS (reform step 6): the ONE order slot. Null, or
+                                // { monsterId, itemId, count, days, placedIndex } — PERSISTED.
+                                // Terms (gold/rep) DERIVE live at fulfillment (commissionTerms),
+                                // so a save can never mint a price; placedIndex is a trade-day
+                                // index (commissions.js dayIndexOf) — deadlines are absolute
+                                // day math, immune to unobserved rollovers while away.
+    lastCommissionIndex: -1,    // trade-day index of the last PLACED order (PERSISTED): the
+                                // once-a-day placement latch — a reload right after fulfilling
+                                // can't re-place (and re-farm) the same deterministic order.
+    commissionCheckIn: 0,       // transient: update()'s commission rollover-check throttle
     relics: {},                 // RELIC status map (§14 Pass B): id -> 'found' | 'restored'.
                                 // Absent id = not yet found. One-of-ones; persisted.
     relicPity: 0,               // scavenge runs since the last relic find — the pity floor

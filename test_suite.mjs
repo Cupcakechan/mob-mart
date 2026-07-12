@@ -4346,5 +4346,217 @@ console.log('M4 auto-serve worker — smoke test\n');
     'relicwork: the Forge cost line spells out the material lines');
 }
 
+// ============= SECTION 70 — COMMISSIONS (reform step 6 — the NAMED CLIENT, Option 2) ==========
+// One order slot; day-seeded roster client; LICENSED trade-tier goods only; market-day deadline;
+// fulfillment consumes SHELF stock and pays premium gold + fame; a lapse is a comic line and
+// ZERO penalty. Exact terms math + config-band pins live HERE (the newest batch).
+{
+  const { commissionForDay, dayIndexOf } = await import('./src/data/commissions.js');
+  const { refreshCommission, fulfillCommission, canFulfillCommission, commissionTerms,
+    commissionDaysLeft, eligibleCommissionItemIds, update: up70 } = await import('./src/game.js');
+  const { COMMISSION_VOICE } = await import('./src/data/results.js');
+  const { CONFIG: C70 } = await import('./src/config.js');
+  const { ITEMS: I70 } = await import('./src/data/items.js');
+  const { MONSTERS: M70, MONSTER_IDS: MI70 } = await import('./src/data/monsters.js');
+  const { tradeItemIds } = await import('./src/data/trademarket.js');
+  const { itemGoldMult, globalGoldMult } = await import('./src/data/milestones.js');
+  const CB = C70.commission;
+
+  // (a) dayIndexOf — both key families become comparable integers; anything else is null.
+  ok(dayIndexOf('sim-day-7') === 7 && dayIndexOf('sim-day-1') === 1,
+    'commission: dayIndexOf parses the synthetic family');
+  ok(dayIndexOf('2026-07-12') - dayIndexOf('2026-07-11') === 1,
+    'commission: adjacent calendar days differ by exactly 1');
+  ok(dayIndexOf('2026-08-01') - dayIndexOf('2026-07-31') === 1,
+    'commission: the month boundary still steps by 1 (Date.UTC math, DST-proof)');
+  ok(dayIndexOf('garbage') === null && dayIndexOf('sim-day-3+1') === null && dayIndexOf(null) === null,
+    'commission: odd keys (incl. the forecast fallback family) yield null — the machinery idles');
+
+  // (b) commissionForDay — pure, deterministic, band-legal, eligibility-respecting.
+  const tier70 = tradeItemIds();
+  const a1 = commissionForDay('sim-day-5', tier70);
+  const a2 = commissionForDay('sim-day-5', tier70);
+  ok(JSON.stringify(a1) === JSON.stringify(a2),
+    'commission: same day + same list -> the identical order (pure, no Math.random)');
+  ok(commissionForDay('sim-day-5', []) === null && commissionForDay('sim-day-5', null) === null,
+    'commission: nothing eligible -> no order (early game commission-free by construction)');
+  {
+    let varied = false, legal = true;
+    for (let d = 1; d <= 60; d++) {
+      const c = commissionForDay(`sim-day-${d}`, tier70);
+      if (JSON.stringify(c) !== JSON.stringify(a1)) varied = true;
+      if (!tier70.includes(c.itemId) || M70[c.monsterId]?.special
+        || c.count < CB.countMin || c.count > CB.countMax
+        || c.days < CB.daysMin || c.days > CB.daysMax) legal = false;
+    }
+    ok(varied, 'commission: orders vary across days (the rotation is real)');
+    ok(legal, 'commission: 60 days of orders — item from the passed list, client non-special, count/days in the config bands');
+  }
+
+  // (c) The machinery — arming, placement, the once-a-day latch.
+  const armed = () => {
+    const s = shopState();
+    s.licenses.iron_buckler = true;              // one licensed trade item = eligible
+    s.tradeDayKeyOverride = 'sim-day-3';         // the harness seam arms the machinery
+    return s;
+  };
+  {
+    const s = shopState();
+    s.licenses.iron_buckler = true;
+    refreshCommission(s);                        // NO override, NO marketDayKey
+    ok(s.commission === null && s.log.length === 0,
+      'commission: unarmed refresh is a no-op (headless tests never see commissions)');
+  }
+  {
+    const s = armed();
+    refreshCommission(s);
+    ok(!!s.commission && s.commission.placedIndex === 3 && s.lastCommissionIndex === 3,
+      'commission: an armed, eligible day places the order and advances the latch');
+    ok(s.commission.itemId === 'iron_buckler',
+      'commission: the order respects eligibility (only the licensed item can be asked for)');
+    ok(s.log.length === 1 && s.log[0].tier === 'market',
+      'commission: placement announces once, tier market (stagger-bypassing)');
+    const logCount = s.log.length;
+    refreshCommission(s);
+    ok(s.log.length === logCount, 'commission: a second refresh the same day changes nothing');
+  }
+
+  // (d) Fulfillment — the exact terms math; the ledger stays untouched; the farm guard holds.
+  {
+    const s = armed();
+    refreshCommission(s);
+    const c = s.commission;
+    s.items[c.itemId].stock = c.count;
+    const per = Math.round(I70[c.itemId].basePrice * itemGoldMult(s, c.itemId)
+      * globalGoldMult(s) * CB.premiumMult);
+    const t = commissionTerms(s);
+    ok(t.gold === per * c.count && t.rep === CB.repPerUnit * c.count,
+      'commission: terms = round(base × loyalty mults × premiumMult) × count + flat fame (the payout law)');
+    const g0 = s.gold, lr0 = s.lifetimeRep, sales0 = s.stats.itemSales[c.itemId];
+    ok(canFulfillCommission(s) && fulfillCommission(s), 'commission: a stocked shelf fulfills');
+    ok(s.gold - g0 === t.gold && s.lifetimeRep - lr0 === t.rep && s.items[c.itemId].stock === 0,
+      'commission: gold + dual-track fame land exactly; the stock leaves the shelf');
+    ok(s.stats.itemSales[c.itemId] === sales0,
+      'commission: itemSales UNTOUCHED — loyalty ladders count counter sales only');
+    ok(s.commission === null, 'commission: the slot rests after fulfillment');
+    refreshCommission(s);
+    ok(s.commission === null,
+      'commission: no re-placement the same day (the reload-farm guard — the latch is persisted)');
+    s.tradeDayKeyOverride = 'sim-day-4';
+    refreshCommission(s);
+    ok(!!s.commission && s.commission.placedIndex === 4,
+      'commission: the next rollover seats the next order');
+  }
+
+  // (e) The lapse — zero penalty, comic line, and the same refresh seats today's order.
+  {
+    const s = armed();
+    refreshCommission(s);
+    const c = s.commission;
+    const g0 = s.gold, r0 = s.reputation, lr0 = s.lifetimeRep;
+    s.tradeDayKeyOverride = `sim-day-${3 + c.days}`;
+    refreshCommission(s);
+    ok(s.gold === g0 && s.reputation === r0 && s.lifetimeRep === lr0,
+      'commission: a lapse costs NOTHING (player-forgiving law)');
+    ok(!!s.commission && s.commission.placedIndex === 3 + c.days,
+      'commission: lapse-then-place in one refresh — the world moves on the same morning');
+    ok(s.log.length === 3 && s.log.every((l) => l.tier === 'market'),
+      'commission: placed + lapsed + placed = three market-tier lines');
+  }
+
+  // (e2) daysLeft display math: placed day D with N days reads N, then N-1, then lapses.
+  {
+    const s = armed();
+    refreshCommission(s);
+    const n = s.commission.days;
+    ok(commissionDaysLeft(s) === n, 'commission: daysLeft reads the full span on placement day');
+    s.tradeDayKeyOverride = 'sim-day-4';
+    ok(commissionDaysLeft(s) === n - 1, 'commission: daysLeft steps down with the trade day');
+  }
+
+  // (f) Short shelf refuses, mutation-free.
+  {
+    const s = armed();
+    refreshCommission(s);
+    const c = s.commission;
+    s.items[c.itemId].stock = c.count - 1;
+    const g0 = s.gold, st0 = s.items[c.itemId].stock;
+    ok(!canFulfillCommission(s) && !fulfillCommission(s)
+      && s.gold === g0 && s.items[c.itemId].stock === st0 && !!s.commission,
+      'commission: one unit short refuses and mutates nothing');
+  }
+
+  // (g) Save round-trip + the corruption guards (the expedition slot's own family).
+  {
+    const s = armed();
+    refreshCommission(s);
+    s.items.iron_buckler.stock = 2;
+    const data = serializeSave(s);
+    const back = mergeSave(createInitialState(), data);
+    ok(['itemId', 'monsterId', 'count', 'days', 'placedIndex']
+        .every((k) => back.commission?.[k] === s.commission[k])
+      && back.lastCommissionIndex === s.lastCommissionIndex,
+      'commission: the slot + the placement latch survive a save round-trip');
+    const corrupt = (patch) => mergeSave(createInitialState(),
+      { ...data, commission: { ...data.commission, ...patch } }).commission;
+    ok(corrupt({ itemId: 'nonsense' }) === null, 'commission: an unknown itemId drops the order whole');
+    ok(corrupt({ itemId: 'club' }) === null, 'commission: a GOLD-tier itemId drops the order (trade tier only)');
+    ok(corrupt({ monsterId: 'dragon' }) === null, 'commission: a special client drops the order (the Inspector inspects)');
+    ok(corrupt({ count: 999 }).count === CB.countMax && corrupt({ count: 0 }).count === CB.countMin,
+      'commission: count clamps into the config band');
+    ok(corrupt({ days: 999 }).days === CB.daysMax && corrupt({ days: 0 }).days === CB.daysMin,
+      'commission: days clamps into the config band');
+  }
+
+  // (h) Voice laws at RENDER (the ticker's precedent): worst-case substitution against the LIVE
+  // registries must fit the 80-char log budget; no second person (§42's rule, same whitelist);
+  // every current non-special client has a keyed register, and the generic pool stands ready for
+  // the NEXT roster monster (the auto-flow law).
+  {
+    const longestItem = tradeItemIds().map((id) => I70[id].displayName)
+      .reduce((a, b) => (b.length > a.length ? b : a));
+    const longestName = MI70.filter((id) => !M70[id].special).map((id) => M70[id].displayName)
+      .reduce((a, b) => (b.length > a.length ? b : a));
+    const sub = (t) => t.replaceAll('{name}', longestName).replaceAll('{n}', String(CB.countMax))
+      .replaceAll('{item}', longestItem).replaceAll('{days}', String(CB.daysMax));
+    const pools = [...Object.values(COMMISSION_VOICE.placed),
+      COMMISSION_VOICE.fulfilled, COMMISSION_VOICE.lapsed];
+    const texts = pools.flat();
+    ok(texts.every((t) => sub(t).length <= 80),
+      `commission voice: every line fits 80 chars at worst-case render (${longestName} × ${CB.countMax}× ${longestItem})`);
+    ok(texts.every((t) => !/\byou\b/i.test(t.replace(/you'd/gi, ''))),
+      'commission voice: no second person outside the you\'d idiom');
+    ok(MI70.filter((id) => !M70[id].special)
+      .every((id) => (COMMISSION_VOICE.placed[id]?.length ?? 0) >= 2),
+      'commission voice: every non-special roster monster has its own placed register (2+ lines)');
+    ok((COMMISSION_VOICE.placed.generic?.length ?? 0) >= 2
+      && COMMISSION_VOICE.fulfilled.length >= 3 && COMMISSION_VOICE.lapsed.length >= 3,
+      'commission voice: generic fallback + fulfilled + lapsed pools are stocked');
+  }
+
+  // (i) Wiring text-pins: the overlay row, its scoped hidden override (the cascade-tie law),
+  // and main.js's handler.
+  {
+    const { readFileSync: rf70 } = await import('node:fs');
+    const mkt = rf70('./src/ui/market.js', 'utf8');
+    ok(mkt.includes('mkt-comm-fulfill') && mkt.includes('market-commission'),
+      'commission: the overlay carries the Special Order row + Fulfill button');
+    ok(rf70('./style.css', 'utf8').includes('.market-commission.hidden'),
+      'commission: style.css carries the SCOPED hidden override (the cascade-tie law)');
+    ok(rf70('./src/main.js', 'utf8').includes('onFulfill'),
+      'commission: main.js wires the Fulfill handler');
+  }
+
+  // (j) update() integration: the throttled check places via the normal tick path.
+  {
+    const s = shopState();
+    s.licenses.iron_buckler = true;
+    s.tradeDayKeyOverride = 'sim-day-9';
+    for (let i = 0; i < 7; i++) up70(s, 1);      // past the checkSec throttle
+    ok(!!s.commission && s.commission.placedIndex === 9,
+      'commission: update() runs the machinery through the throttle (the live path)');
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

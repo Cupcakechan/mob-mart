@@ -725,3 +725,67 @@ export const INSPECTOR_VOICE = {
     `The Inspector's Seal, awarded. He almost smiled. Almost.`,
   ],
 };
+
+// --- Commission voice (reform step 6 — the NAMED CLIENT, Daniel's Option 2) ----------------------
+// A roster monster places a trade-tier order against a market-day deadline. `placed` is keyed by
+// monster id — the client's register IS the beat (bible levers apply per voice) — with a
+// `generic` pool so a FUTURE customer auto-joins as a client with zero authoring debt (the
+// auto-flow law; game.js falls back). `fulfilled`/`lapsed` are generic pools charactered by
+// {name}. LAPSE lines carry ZERO blame — player-forgiving law: the mob shrugs, keeps a shred of
+// dignity, and nothing is lost but the premium. Placeholders: {name} {n} {item} {days}. Orders
+// format as "{n}× {item}" (the market's own convention) — no pluralization hazard ("a {item}"
+// lesson). All tier 'market' at the call site (event announcements bypass the milestone stagger).
+export const COMMISSION_VOICE = {
+  placed: {
+    slime: [
+      `Slimey ordered {n}× {item} "for later." Later is a place now.`,
+      `Slimey placed an order: {n}× {item}. He signed it with a happy circle.`,
+    ],
+    bat: [
+      `Batty pre-ordered {n}× {item} and apologized for the trouble. Twice.`,
+      `Batty ordered {n}× {item}. Due in {days} days. He is already worried.`,
+    ],
+    skeleton: [
+      `Skele ordered {n}× {item}. In writing. Bones forget; paper doesn't.`,
+      `Skele commissioned {n}× {item}, due in {days} days. He rattled approvingly.`,
+    ],
+    frog: [
+      `Froggo ordered {n}× {item} and demanded an invoice. And a better pen.`,
+      `Froggo commissioned {n}× {item}. He expects the worst, punctually.`,
+    ],
+    rat: [
+      `Ratty commissioned {n}× {item}. Legitimately. He has a receipt ready.`,
+      `Ratty ordered {n}× {item}, due in {days} days. Payment definitely his own.`,
+    ],
+    beetle: [
+      `Beetley requisitioned {n}× {item}. Filed in triplicate. Saluted twice.`,
+      `Beetley ordered {n}× {item} for the front line. The front line is him.`,
+    ],
+    demon: [
+      `Demmy ordered {n}× {item} for the raid. He apologized to the order form.`,
+      `Demmy commissioned {n}× {item}, due in {days} days. Sorry cards pre-written.`,
+    ],
+    spider: [
+      `Leggsy ordered {n}× {item}. Spares for the spares. It's a system.`,
+      `Leggsy commissioned {n}× {item}, due in {days} days. Eight reminders set.`,
+    ],
+    generic: [
+      `{name} placed an order: {n}× {item}, due in {days} days. Bob chalked it up.`,
+      `New order: {n}× {item} for {name}. The deadline is real. Bob checked.`,
+    ],
+  },
+  fulfilled: [
+    `Order delivered: {n}× {item}. {name} paid a premium and meant it.`,
+    `{name} collected the {item} order. Tipped like a legend. Bob bowed.`,
+    `Commission complete. {n}× {item}, handed over with ceremony. Mostly.`,
+    `{name} picked up the order. The count was perfect. Bob counted thrice.`,
+    `The {item} order shipped. {name} applauded. Bob took a small bow.`,
+  ],
+  lapsed: [
+    `The {item} order lapsed. {name} shrugged. Adventure won't wait.`,
+    `{name} came by, found no order ready, and bought a pebble instead. All good.`,
+    `Order expired: {item}. {name} took it well. Bob kept the paperwork.`,
+    `The deadline passed. {name} waved it off. Bob filed the order under "someday."`,
+    `{name}'s order quietly expired. The chalk was erased with respect.`,
+  ],
+};

@@ -709,6 +709,18 @@ body{
   margin-bottom:8px;display:flex;align-items:center;gap:8px;
 }
 .special-badge{color:var(--gold);font-weight:800;font-size:10px;letter-spacing:.6px;text-transform:uppercase;flex-shrink:0;}
+/* THE SPECIAL ORDER (reform step 6) — the named client's commission row. The special's shape,
+   the GOOD-green accent (an order is an opportunity, not a discount) so the two headline rows
+   read as siblings, never twins. */
+.market-commission{
+  background:#1e2a22;border:1px solid var(--good);border-radius:8px;padding:6px 10px;
+  margin-bottom:8px;display:flex;align-items:center;gap:8px;
+}
+.market-commission.hidden{display:none;}  /* the cascade-tie law: this block sets its own display,
+                                             so the global .hidden would tie and lose */
+.commission-badge{color:var(--good);font-weight:800;font-size:10px;letter-spacing:.6px;text-transform:uppercase;flex-shrink:0;}
+.market-commission .offer-text{flex:1;min-width:0;}
+.market-commission .comm-due{color:var(--bad);font-weight:700;}   /* last fulfillable day shouts */
 .market-offer-list{display:flex;flex-direction:column;gap:4px;overflow-y:auto;flex:1;min-height:0;}
 .market-offer-list .offer-row{padding:3px 4px;border-bottom:1px solid #3a2c50;}
 .market-offer-list .offer-row:last-child{border-bottom:none;}

@@ -39,6 +39,18 @@ export const CONFIG = {
     mishapChance: 0.25,        // comic mishap on return: HALF haul rounded up, never zero,
                                // NEVER death (split-loops law — the battle log's gag is untouched)
   },
+  commission: {                // COMMISSIONS (reform step 6 — design doc §8; Daniel's Option 2:
+                               // the NAMED CLIENT). One order slot; day-seeded; trade-tier only.
+    countMin: 2, countMax: 4,  // order size band (seeded per day, commissions.js)
+    daysMin: 2, daysMax: 3,    // deadline band in MARKET DAYS — the clock is the trade day, so
+                               // the forecast is part of the plan (hold? trade? send a run?)
+    premiumMult: 2.0,          // fulfillment pays the normal PER-UNIT payout (basePrice × loyalty
+                               // mults — the payout law holds, basePrice untouched) × this. The
+                               // premium buys TENSION, not wealth (finding ii, 2026-07-12): worker
+                               // wages, not commissions, are the planned perpetual drain.
+    repPerUnit: 3,             // flat fame bonus per unit — modest beside serve rep by design
+    checkSec: 5,               // update()'s rollover-check throttle (the market check's cadence)
+  },
 
   reputation: {
     // Option A: reputation rewards *service*, not the off-screen battle outcome.

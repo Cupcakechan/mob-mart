@@ -11,7 +11,8 @@ import { ITEMS } from '../data/items.js';
 import { MATERIALS, MATERIAL_ORDER } from '../data/materials.js';
 import { MONSTERS, MONSTER_IDS } from '../data/monsters.js';
 import { tradeItemIds, featuredOffer, tradeDayKey, forecastDayKey, tickerSegments } from '../data/trademarket.js';
-import { currentTradeOffers, canTrade, materialCap, isItemUnlocked, effectiveMaxStock } from '../game.js';
+import { currentTradeOffers, canTrade, materialCap, isItemUnlocked, effectiveMaxStock,
+  canFulfillCommission, commissionTerms, commissionDaysLeft } from '../game.js';   // + reform step 6
 
 let handlers = { onTrade: () => {}, onDirty: () => {} };
 let rootEl = null;
@@ -77,6 +78,11 @@ export function initMarket(root, h) {
         <span class="special-badge">Special of the Day</span>
         <span id="mkt-special" class="offer-text"></span>
       </div>
+      <div id="mkt-commission" class="market-commission hidden">
+        <span class="commission-badge">Special Order</span>
+        <span id="mkt-comm-text" class="offer-text"></span>
+        <button id="mkt-comm-fulfill" class="offer-trade">Fulfill</button>
+      </div>
       <div id="mkt-offers" class="market-offer-list">${tradeItemIds().map((itemId) =>
         `<div class="offer-row" data-item-row="${itemId}">
            <span class="offer-text" id="offer-text-${itemId}"></span><button
@@ -104,8 +110,11 @@ export function initMarket(root, h) {
       return `<span class="mat-chip" title="${m.displayName}"><img class="mat-icon" src="assets/sprites/${m.iconId}.png" alt="" onerror="this.style.display='none'"><b id="mkt-mat-${m.id}">0</b></span>`;
     }).join('');
 
-  root.querySelectorAll('.offer-trade').forEach((btn) =>
+  // Scoped to [data-item]: the commission's Fulfill button SHARES the .offer-trade class for its
+  // styling but is not a trade button — an unscoped sweep would double-bind it (reform step 6).
+  root.querySelectorAll('.offer-trade[data-item]').forEach((btn) =>
     btn.addEventListener('click', () => handlers.onTrade(btn.dataset.offer ?? '')));
+  document.getElementById('mkt-comm-fulfill').addEventListener('click', () => handlers.onFulfill());
   document.getElementById('mkt-close').addEventListener('click', () => closeMarket());
   root.addEventListener('click', (e) => { if (e.target === root) closeMarket(); });  // backdrop dismiss
 }
@@ -122,6 +131,35 @@ export function renderMarket(state) {
   // discount pass will make THIS price diverge from the row's.
   const specialEl = document.getElementById('mkt-special');
   if (specialEl) specialEl.innerHTML = offerRowHtml(featuredOffer(tradeDayKey(state)), state);
+
+  // THE SPECIAL ORDER (reform step 6): the named client's row. Hidden when no order is live
+  // (the scoped .market-commission.hidden override — the cascade-tie law). Terms render LIVE
+  // (commissionTerms derives from today's multipliers, the same numbers fulfillment will pay);
+  // "shelf n/N" is the progress read — the same units the queue is shopping from, which is the
+  // decision. Fulfill disables with a reason, the offer buttons' own convention.
+  const commEl = document.getElementById('mkt-commission');
+  if (commEl) {
+    const c = state.commission;
+    commEl.classList.toggle('hidden', !c);
+    if (c) {
+      const terms = commissionTerms(state, c);
+      const left = commissionDaysLeft(state);
+      const have = state.items[c.itemId]?.stock ?? 0;
+      const textEl = document.getElementById('mkt-comm-text');
+      if (textEl) {
+        textEl.innerHTML = `<b>${MONSTERS[c.monsterId]?.displayName ?? '???'}</b> orders `
+          + `${c.count}× <b>${ITEMS[c.itemId]?.displayName ?? c.itemId}</b>`
+          + ` · pays <b>${terms.gold}g</b> + ${terms.rep} fame`
+          + ` · <span class="${left <= 1 ? 'comm-due' : ''}">${left <= 1 ? 'due tomorrow!' : `${left} days left`}</span>`
+          + ` · shelf <span class="${have >= c.count ? 'mat-ok' : 'mat-short'}">${have}/${c.count}</span>`;
+      }
+      const fbtn = document.getElementById('mkt-comm-fulfill');
+      if (fbtn) {
+        fbtn.disabled = !canFulfillCommission(state);
+        fbtn.title = fbtn.disabled ? 'Not enough on the shelf — trade for more first' : '';
+      }
+    }
+  }
 
   // The rows — the strip's fill loop, relocated verbatim (validation + tooltip reasons unchanged;
   // executeTrade re-validates the key against the CURRENT day, the midnight guard).

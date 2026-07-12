@@ -37,7 +37,7 @@ import {
   buyWorkerLevel, canBuyWorkerLevel, restoreRelic, canRestoreRelic,
   restockAll, canRestockAll, fameOf,
   currentTradeOffers, canTrade, executeTrade, inspectionGrade, addMaterial,
-  startExpedition,
+  startExpedition, canFulfillCommission, fulfillCommission,
 } from './src/game.js';
 import { MONSTERS, MONSTER_IDS } from './src/data/monsters.js';
 import { ITEMS, ITEM_ORDER } from './src/data/items.js';
@@ -146,10 +146,11 @@ function cheapestPerkWant(state) {
 }
 
 // --- One seeded run ------------------------------------------------------------------------------
-function runSim(seed, { tradeAware = true, expeditionAware = true } = {}) {
+function runSim(seed, { tradeAware = true, expeditionAware = true, commissionAware = true } = {}) {
   // tradeAware=false is Pass A's ACCEPTANCE control; expeditionAware=false is step 4's — a bot
-  // that trades but never sends supply runs. Each blind bot must measurably lose to the full
-  // player, or the system it ignores isn't real yet.
+  // that trades but never sends supply runs; commissionAware=false is step 6's — a bot that
+  // trades and runs but leaves every Special Order to lapse. Each blind bot must measurably
+  // lose to the full player, or the system it ignores isn't real yet.
   const realRandom = Math.random;
   Math.random = mulberry32(seed);
   try {
@@ -157,7 +158,8 @@ function runSim(seed, { tradeAware = true, expeditionAware = true } = {}) {
     s.screen = 'shop';                       // update() gates on the shop screen
     const events = [];                       // { t, kind, key, label, cost, scrap, currency }
     const samples = [];                      // { t, gold, scrap, rep, lifetime, remaining }
-    let purchased = 0, deathT = null, goldAtDeath = 0, scrapAtDeath = 0, trades = 0, runsSent = 0;
+    let purchased = 0, deathT = null, goldAtDeath = 0, scrapAtDeath = 0, trades = 0, runsSent = 0,
+      commissionsFilled = 0;   // reform step 6 — the aware bot's Special Order deliveries
     let lastInspectionDay = 0;   // the daily-inspection latch (relic rework — one visit per sim-day)
     let tierSeen = reputationTier(fameOf(s)).index;
     const foundSeen = new Set();
@@ -239,6 +241,16 @@ function runSim(seed, { tradeAware = true, expeditionAware = true } = {}) {
             }
           }
         }
+        // 4b'''. COMMISSIONS (reform step 6): the deadline layer rides the same synthetic days —
+        // refreshCommission runs inside update() (the override above arms it), so orders place
+        // and lapse on their own; the POLICY choice is only whether to fill. The aware bot fills
+        // whenever the shelf covers the order (the trade loop above keeps trade stock at cap, so
+        // a fill is a REDIRECT: units leave the queue's shelf for the premium channel, then the
+        // next tick's trades restock — materials remain the true bound, reserve rule untouched).
+        if (commissionAware && canFulfillCommission(s)) {
+          fulfillCommission(s);
+          commissionsFilled++;
+        }
         // 4c. EXPEDITIONS (reform step 4): the decision loop — scan EVERY offer's recipe (Pass B),
         // find the material the stores are SHORTEST on across the whole board, send that family.
         // No deficit -> no run (fees aren't burned idly). The slot + clock do the rate limiting.
@@ -293,6 +305,7 @@ function runSim(seed, { tradeAware = true, expeditionAware = true } = {}) {
       ? (s.gold - goldAtDeath) / ((t - deathT) / 60) : null;   // net gold/min with nothing to want
     return { seed, events, samples, deathT, endT: t, goldAtDeath, scrapAtDeath,
       goldEnd: s.gold, scrapEnd: s.scrap ?? 0, postRate, purchased, trades, runsSent,
+      commissionsFilled,
       swordSold: s.stats.itemSales.iron_sword ?? 0,
       matsEarned: Object.values(s.stats.materialEarned ?? {}).reduce((a, b) => a + b, 0) };
   } finally {
@@ -464,6 +477,33 @@ console.log(expRateAdvMed > 0.10
     + ` expedition-starved one; the supply valve is load-bearing.`
   : `  VERDICT: WEAK — rate advantage only ${(expRateAdvMed * 100).toFixed(0)}%; the valve needs`
     + ` a bigger haul or a shorter clock before step 4 can claim acceptance.`);
+console.log('');
+
+// STEP-6 ACCEPTANCE — the commission-blind bot trades and runs but lets every Special Order
+// lapse (zero penalty by design, so its ONLY loss is the forfeited premium channel). Honest
+// expectation going in: a fill REDIRECTS units the shelf would sell anyway, so the rate delta
+// is (premiumMult−1) × a few units every couple of days — structurally small beside the whole
+// economy. The commission's real pull is the DECISION layer (hold vs sell, deadline vs rate);
+// the premium dial (CONFIG.commission.premiumMult) stays open if Daniel wants teeth.
+console.log('== STEP-6 ACCEPTANCE — commission-BLIND control (seeds 1–3) vs the full-aware runs ==');
+const commBlind = SEEDS.slice(0, 3).map((seed) => runSim(seed, { commissionAware: false }));
+for (const b of commBlind) {
+  const a = runs.find((r) => r.seed === b.seed);
+  const delay = (b.deathT ?? b.endT) - (a.deathT ?? a.endT);
+  console.log(`  seed ${b.seed}: comm-blind death ${hms(b.deathT ?? b.endT)} vs full ${hms(a.deathT ?? a.endT)}`
+    + `  (${signed(delay)})  |  fills 0 vs ${a.commissionsFilled}`
+    + `  |  post-death ${b.postRate?.toFixed(0) ?? '-'} vs ${a.postRate?.toFixed(0) ?? '-'} gold/min`);
+}
+const commRateAdvMed = median(commBlind.map((b) => {
+  const a = runs.find((r) => r.seed === b.seed);
+  return (a.postRate ?? 0) / Math.max(1, b.postRate ?? 0) - 1;
+}));
+console.log(commRateAdvMed > 0.02
+  ? `  VERDICT: PASS — the full economy runs ${(commRateAdvMed * 100).toFixed(1)}% hotter; the`
+    + ` premium channel is worth working.`
+  : `  VERDICT: FLAT — rate advantage ${(commRateAdvMed * 100).toFixed(2)}%: the premium redirects`
+    + ` sales the shelf makes anyway. The commission's pull is the DECISION layer; the premium`
+    + ` dial is open (a finding for Daniel, not a hidden failure).`);
 console.log('');
 
 // Seed-1 detail: savings velocity by phase + the two curves.

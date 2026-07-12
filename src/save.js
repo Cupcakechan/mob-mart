@@ -74,6 +74,30 @@ export function mergeSave(fresh, data) {
       };
     }
   }
+  // Commissions (reform step 6): the ONE order slot persists — GUARDED like the expedition slot:
+  // the item must be a real TRADE-TIER row and the client a real non-special monster (a stale or
+  // hand-edited id drops the order WHOLE, no crash — tomorrow places a fresh one), count/days
+  // clamp into the config bands. placedIndex floors to an integer but is otherwise trusted —
+  // terms re-DERIVE at fulfillment (commissionTerms), so no edit here can mint gold; the guards
+  // protect against crashes and registry violations, not self-cheating (the gold-merge stance).
+  fresh.commission = null;
+  if (data.commission && typeof data.commission === 'object') {
+    const it = ITEMS[data.commission.itemId];
+    const cm = MONSTERS[data.commission.monsterId];
+    const CB = CONFIG.commission ?? {};
+    if (it && (it.acquisition ?? 'gold') === 'trade' && cm && !cm.special) {
+      fresh.commission = {
+        itemId: data.commission.itemId,
+        monsterId: data.commission.monsterId,
+        count: clamp(Math.floor(numOr(data.commission.count, CB.countMin ?? 2)),
+          CB.countMin ?? 2, CB.countMax ?? 4),
+        days: clamp(Math.floor(numOr(data.commission.days, CB.daysMin ?? 2)),
+          CB.daysMin ?? 2, CB.daysMax ?? 3),
+        placedIndex: Math.floor(numOr(data.commission.placedIndex, 0)),
+      };
+    }
+  }
+  fresh.lastCommissionIndex = Math.floor(numOr(data.lastCommissionIndex, -1));
   // Relics (§14 Pass B): additive + GUARDED — only known relic ids with legal statuses survive
   // the merge (a corrupt/hand-edited save can't invent relics or statuses). Pre-relic saves: {}.
   fresh.relics = {};
@@ -164,6 +188,12 @@ export function serializeSave(state) {
       ? { monsterId: state.expedition.monsterId, dest: state.expedition.dest,
           remaining: Math.max(0, state.expedition.remaining ?? 0) }
       : null,                                            // the ONE expedition slot (reform step 4)
+    commission: state.commission
+      ? { monsterId: state.commission.monsterId, itemId: state.commission.itemId,
+          count: state.commission.count, days: state.commission.days,
+          placedIndex: state.commission.placedIndex }
+      : null,                                            // the ONE order slot (reform step 6)
+    lastCommissionIndex: Math.floor(state.lastCommissionIndex ?? -1),   // the placement latch
     relics: state.relics ?? {},                          // relic statuses (§14 Pass B)
     relicPity: Math.max(0, Math.floor(state.relicPity ?? 0)),
     lifetimeRep: state.lifetimeRep ?? state.reputation,

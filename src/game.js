@@ -10,9 +10,10 @@ import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost,
   workerLevel, workerLevelCost, isWorkerLevelMaxed, sumWorkerEffect } from './data/workers.js';
 import { randInt, pick, weightedPick } from './utils.js';
 import { WORKER_HIRE_LINES, DOUG_RETURN_LINES, RELIC_VOICE, TRADE_VOICE, INSPECTOR_VOICE,
-  EXPEDITION_VOICE, EXPEDITION_DESTINATIONS } from './data/results.js';
+  EXPEDITION_VOICE, EXPEDITION_DESTINATIONS, COMMISSION_VOICE } from './data/results.js';
 import { MATERIALS } from './data/materials.js';   // Trade Market reform Pass A (leaf registry)
-import { offersForDay, tradeDayKey, yesterdayKey, describeOffer } from './data/trademarket.js';   // (leaf, no cycle)
+import { offersForDay, tradeDayKey, yesterdayKey, describeOffer, tradeItemIds } from './data/trademarket.js';   // (leaf, no cycle)
+import { commissionForDay, dayIndexOf } from './data/commissions.js';   // reform step 6 (leaf, no cycle)
 import { RELICS, RELIC_ORDER, RELIC_FIND, RELIC_AMBIENT_CHANCE } from './data/relics.js';
 import { resolveCombat } from './combat.js';
 import { reputationTier } from './reputation.js';
@@ -463,6 +464,106 @@ export function resolveExpedition(state) {
     repDelta: 0, tier: 'market', monsterId: run.monsterId });   // instant, like the departure
   state.uiDirty = true;
   return true;
+}
+
+// --- Commissions (reform step 6 — design doc §8; Daniel's Option 2: the NAMED CLIENT) ------------
+// A roster monster orders trade-tier goods against a MARKET-DAY deadline for a premium. One order
+// slot (the expedition precedent); the order fulfills from SHELF STOCK — the same units the queue
+// would buy, which is the exclusive decision (hold for the order, or sell to the line?). A missed
+// deadline LAPSES with a comic line and ZERO penalty (player-forgiving law); the next order
+// arrives on the next rollover. Generation is day-seeded + eligible (commissions.js).
+
+// The eligibility list: LICENSED trade-tier items only — an order never demands what the shop may
+// not legally sell (the eligibility law, commission edition). Licenses only ever grow, so a
+// placed order can't retro-invalidate.
+export function eligibleCommissionItemIds(state) {
+  return tradeItemIds().filter((id) => isItemUnlocked(state, id));
+}
+
+// Terms DERIVE live, never persist: per-unit = the normal sale payout (basePrice × loyalty
+// multipliers — the payout law: multipliers touch payout, never basePrice) × premiumMult, so the
+// order stays a genuine premium over queue-selling the same units at every stage of the game.
+// Deliberately OUTSIDE the formula: Market-Day event mults (a demand event is the queue's story)
+// and Bob's saleTip (counter training pays at the counter). Rep is a flat per-unit bonus.
+export function commissionTerms(state, c = state.commission) {
+  if (!c || !ITEMS[c.itemId]) return null;
+  const per = Math.round(ITEMS[c.itemId].basePrice * itemGoldMult(state, c.itemId)
+    * globalGoldMult(state) * (CONFIG.commission?.premiumMult ?? 2));
+  return { gold: per * c.count, rep: (CONFIG.commission?.repPerUnit ?? 3) * c.count };
+}
+
+// Whole days left before the lapse rollover: placed day D with `days` N is fulfillable on
+// D..D+N-1 and lapses when the index reaches D+N. Odd/unparseable day keys (no day identity)
+// report the full span rather than guessing.
+export function commissionDaysLeft(state) {
+  const c = state.commission;
+  if (!c) return 0;
+  const idx = dayIndexOf(tradeDayKey(state));
+  return idx === null ? c.days : Math.max(0, (c.placedIndex ?? idx) + c.days - idx);
+}
+
+export function canFulfillCommission(state) {
+  const c = state.commission;
+  return !!c && !!ITEMS[c.itemId] && isItemUnlocked(state, c.itemId)
+    && (state.items[c.itemId]?.stock ?? 0) >= c.count;
+}
+
+// One shared formatter for the three commission moments — worst-case renders are suite-pinned
+// against the live registries (the ≤80 law checked AT RENDER, the ticker's precedent).
+function commissionLine(pool, c) {
+  return pick(pool)
+    .replaceAll('{name}', MONSTERS[c.monsterId]?.displayName ?? 'Somebody')
+    .replaceAll('{n}', String(c.count))
+    .replaceAll('{item}', ITEMS[c.itemId]?.displayName ?? c.itemId)
+    .replaceAll('{days}', String(c.days));
+}
+
+export function fulfillCommission(state) {
+  if (!canFulfillCommission(state)) { state.uiDirty = true; return false; }
+  const c = state.commission;
+  const terms = commissionTerms(state, c);
+  state.items[c.itemId].stock -= c.count;
+  state.gold += terms.gold;
+  state.reputation += terms.rep;                    // dual-track fame, the serve convention
+  state.lifetimeRep = fameOf(state) + terms.rep;
+  // Deliberately NOT stats.itemSales: the loyalty ladders count COUNTER sales (Leggsy's bulk
+  // rides serveCurrent and its skip-guard); a side-channel increment here would advance
+  // breakpoints silently, with no crossing announcement. Special orders are their own channel.
+  // (A commission-driven tier crossing likewise skips serveCurrent's license-announce block —
+  // the 30s license reminder covers discovery; the rep bonus is small beside tier thresholds.)
+  pushLog(state, { text: commissionLine(COMMISSION_VOICE.fulfilled, c),
+    repDelta: 0, tier: 'market', monsterId: c.monsterId });
+  state.commission = null;                          // the slot rests until the next rollover
+  state.uiDirty = true;
+  return true;
+}
+
+// The deadline machinery — LAPSE first, then PLACE, so a rollover that expires yesterday's order
+// seats today's in the same breath. ARMED only when a day identity exists: a live boot ran
+// refreshMarketDay (marketDayKey) or a harness set the override — headless tests that merely
+// tick update() never see commissions (the visit machinery's own arming convention).
+export function refreshCommission(state) {
+  if (!state.tradeDayKeyOverride && !state.marketDayKey) return;
+  const idx = dayIndexOf(tradeDayKey(state));
+  if (idx === null) return;                         // no day identity — idle, never guess
+  const c = state.commission;
+  if (c && idx >= (c.placedIndex ?? idx) + (c.days ?? 0)) {
+    pushLog(state, { text: commissionLine(COMMISSION_VOICE.lapsed, c),
+      repDelta: 0, tier: 'market', monsterId: c.monsterId });   // zero penalty — the comic beat IS the cost
+    state.commission = null;
+    state.uiDirty = true;
+  }
+  if (!state.commission && idx > (state.lastCommissionIndex ?? -1)) {
+    const next = commissionForDay(tradeDayKey(state), eligibleCommissionItemIds(state));
+    if (next) {                                     // latch advances ONLY on placement: buying the
+      state.commission = { ...next, placedIndex: idx };   // first trade license seats an order the
+      state.lastCommissionIndex = idx;                    // same day, not a dead day later
+      const pool = COMMISSION_VOICE.placed[next.monsterId] ?? COMMISSION_VOICE.placed.generic;
+      pushLog(state, { text: commissionLine(pool, state.commission),
+        repDelta: 0, tier: 'market', monsterId: next.monsterId });
+      state.uiDirty = true;
+    }
+  }
 }
 
 // --- Restocking (cap is base maxStock + summed maxStock upgrades) --------------
@@ -1052,6 +1153,16 @@ export function update(state, dt) {
       state.marketCheckIn = CONFIG.market?.rolloverCheckSec ?? 5;
       refreshMarketDay(state, Date.now());
     }
+  }
+
+  // COMMISSIONS (reform step 6): the deadline machinery rides the TRADE day (tradeDayKey — the
+  // override seam works headlessly, unlike the calendar-armed block above). refreshCommission
+  // carries its own arming gate, so this throttle can tick unarmed harmlessly; a lapse discovered
+  // at boot fires here on the first check, under the away summary where it belongs.
+  state.commissionCheckIn = (state.commissionCheckIn ?? 0) - dt;
+  if (state.commissionCheckIn <= 0) {
+    state.commissionCheckIn = CONFIG.commission?.checkSec ?? 5;
+    refreshCommission(state);
   }
 
   // Bob's bubble (license alerts): tick the current line, promote the next from the queue. All

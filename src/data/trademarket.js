@@ -40,7 +40,9 @@ export function tradeDayKey(state) {
 
 // mulberry32 — the project's standard tiny PRNG (the suite + sim harness use the same), seeded
 // here from the day-key hash so an offer is a pure function of its (day, item) identity.
-function mulberry32(seed) {
+// EXPORTED since reform step 6: commissions.js seeds its daily order from the same PRNG — one
+// seeded-random home for all day-derived content.
+export function mulberry32(seed) {
   return function () {
     seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
     let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);

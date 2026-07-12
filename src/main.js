@@ -1,7 +1,7 @@
 // main.js — entry point: wires DOM, scale-to-fit, input, save/load, nav, and the rAF game loop.
 import { CONFIG } from './config.js';
 import { clamp } from './utils.js';
-import { update, serveCurrent, dismissCurrent, restockItem, restockAll, buyUpgrade, buyPerk, buyLicense, hireWorker, buyWorkerLevel, deliverBattleReport, refreshMarketDay, restoreRelic, executeTrade, startExpedition } from './game.js';
+import { update, serveCurrent, dismissCurrent, restockItem, restockAll, buyUpgrade, buyPerk, buyLicense, hireWorker, buyWorkerLevel, deliverBattleReport, refreshMarketDay, restoreRelic, executeTrade, startExpedition, fulfillCommission } from './game.js';
 import { CATEGORY_LABELS } from './data/marketevents.js';
 import { loadState, saveState, clearSave } from './save.js';
 import { computeOffline, applyOffline, formatAway } from './offline.js';
@@ -255,6 +255,7 @@ initPanels(document.getElementById('shop-ui'), {
 // (the midnight guard), so a stale open overlay can never trade yesterday's rates.
 initMarket(document.getElementById('market-overlay'), {
   onTrade: (offerKey) => executeTrade(state, offerKey),
+  onFulfill: () => fulfillCommission(state),   // the Special Order's button (reform step 6)
   onDirty: () => { state.uiDirty = true; },
 });
 
