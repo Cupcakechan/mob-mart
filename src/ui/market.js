@@ -10,12 +10,14 @@
 import { ITEMS } from '../data/items.js';
 import { MATERIALS, MATERIAL_ORDER } from '../data/materials.js';
 import { MONSTERS, MONSTER_IDS } from '../data/monsters.js';
-import { tradeItemIds, featuredOffer, tradeDayKey, forecastDayKey } from '../data/trademarket.js';
+import { tradeItemIds, featuredOffer, tradeDayKey, forecastDayKey, tickerSegments } from '../data/trademarket.js';
 import { currentTradeOffers, canTrade, materialCap, isItemUnlocked, effectiveMaxStock } from '../game.js';
 
 let handlers = { onTrade: () => {}, onDirty: () => {} };
 let rootEl = null;
 let isOpen = false;
+let tickerKey = null;   // the day the crawl was last built for — an innerHTML reset RESTARTS the
+                        // CSS animation, and uiDirty fires every serve, so rebuild on rollover only
 
 export function marketIsOpen() { return isOpen; }
 
@@ -83,6 +85,7 @@ export function initMarket(root, h) {
         <div id="mkt-mats" class="market-mats"></div>
         <div id="mkt-forecast" class="market-forecast"></div>
       </div>
+      <div class="market-ticker"><div class="ticker-track" id="mkt-ticker"></div></div>
     </div>`;
 
   // Material chips — every SOURCED material (the strip's twin scan; a new source auto-appears).
@@ -145,5 +148,23 @@ export function renderMarket(state) {
   if (fcEl) {
     const fc = featuredOffer(forecastDayKey(state));
     fcEl.innerHTML = fc ? `<b>Tomorrow:</b> ${offerRowHtml(fc, state)}` : '';
+  }
+
+  // The LED crawl (Pass C — Daniel's Option 3): typed segments become colored spans; the track
+  // holds the content TWICE so the -50% keyframe loops seamlessly. Speed scales with content
+  // length for a constant px/sec feel. Rebuilt only when the day key changes (see tickerKey).
+  const tickEl = document.getElementById('mkt-ticker');
+  if (tickEl) {
+    const dk = tradeDayKey(state);
+    if (dk !== tickerKey) {
+      tickerKey = dk;
+      const sep = '<span class="tick-sep"> ◆ </span>';
+      const html = tickerSegments(state).map((s) => s.t === 'move'
+        ? `<span class="tick-name">${s.name}</span> <span class="${s.pct > 0 ? 'tick-up' : s.pct < 0 ? 'tick-down' : 'tick-flat'}">`
+          + `${s.pct > 0 ? '▲' : s.pct < 0 ? '▼' : '•'}${Math.abs(s.pct)}%</span>`
+        : `<span class="tick-quip">${s.s}</span>`).join(sep);
+      tickEl.innerHTML = `${html}${sep}${html}${sep}`;
+      tickEl.style.animationDuration = `${Math.max(24, Math.round(tickEl.textContent.length * 0.28))}s`;
+    }
   }
 }

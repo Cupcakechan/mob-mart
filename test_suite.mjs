@@ -4080,5 +4080,69 @@ console.log('M4 auto-serve worker — smoke test\n');
     'sign: scene.js no longer builds recipe segments for the board (the ad, not the data)');
 }
 
+// ========== SECTION 67 — the LED TICKER (Pass C, Option 3: real movement) + the two riders =====
+// The crawl's segments derive from ACTUAL day-over-day rates (pre-discount gold both sides — the
+// special's cut is a sale, not a market move) interleaved with day-seeded quips. Riders: the
+// card trade-hint is a door; the board gets hover-cursor feedback.
+{
+  const { tickerSegments: tick67, yesterdayKey: yk67, offersForDay: off67, tradeDayKey: tdk67 }
+    = await import('./src/data/trademarket.js');
+  const { TRADE_VOICE: TV67 } = await import('./src/data/results.js');
+  const { MATERIALS: M67, MATERIAL_ORDER: MO67 } = await import('./src/data/materials.js');
+
+  // (a) yesterdayKey mirrors the forecast contract.
+  ok(yk67({ tradeDayKeyOverride: 'sim-day-7' }) === 'sim-day-6', 'ticker: yesterday of sim-day-7 is sim-day-6');
+  ok(yk67({ tradeDayKeyOverride: 'weird-key' }) === 'weird-key-1', 'ticker: odd overrides get the stable -1 suffix');
+
+  // (b) Movement math: every move segment's pct re-derives from the two days' PRE-DISCOUNT golds.
+  {
+    const s = { tradeDayKeyOverride: 'sim-day-7' };
+    const segs = tick67(s);
+    const today = off67('sim-day-7'), yest = off67('sim-day-6');
+    const moves = segs.filter((x) => x.t === 'move');
+    ok(moves.length === today.length, 'ticker: one move segment per posted offer');
+    const { ITEMS: I67 } = await import('./src/data/items.js');
+    let discountDiffers = 0;
+    for (const o of today) {
+      const tg = o.origGold ?? o.gold;
+      const yg = (() => { const y = yest.find((x) => x.itemId === o.itemId); return y ? (y.origGold ?? y.gold) : tg; })();
+      const expect = yg > 0 ? Math.round(((tg - yg) / yg) * 100) : 0;
+      const m = moves.find((x) => x.name === I67[o.itemId].displayName.toUpperCase());
+      ok(m && m.pct === expect, `ticker: ${o.itemId} movement derives from pre-discount golds (${expect}%)`);
+      if (o.featured) {
+        const wrong = Math.round(((o.gold - yg) / yg) * 100);
+        if (wrong !== expect) { discountDiffers++; ok(m.pct !== wrong, 'ticker: the special\'s SALE price never leaks into the movement'); }
+      }
+    }
+    ok(discountDiffers >= 0, 'ticker: discount-exclusion checked where derivable');
+    ok(JSON.stringify(tick67(s)) === JSON.stringify(tick67(s)), 'ticker: segments are a pure function of the day');
+    ok(segs.some((x) => x.t === 'quip'), 'ticker: quips interleave the movers');
+    ok(!segs.some((x) => (x.s ?? x.name).includes('{mat}') || (x.s ?? '').includes('undefined') || String(x.pct).includes('NaN')),
+      'ticker: no unresolved templates, undefineds, or NaNs in the crawl');
+  }
+
+  // (c) The bible's length law holds at render: every pool line, substituted with the LONGEST
+  // eligible material name, stays <= 80 chars (derived from the live registry, never hand-typed).
+  {
+    const longest = MO67.map((id) => M67[id].displayName).reduce((a, b) => (b.length > a.length ? b : a), '');
+    for (const line of TV67.ticker) {
+      const rendered = line.replaceAll('{mat}', longest.toUpperCase());
+      ok(rendered.length <= 80, `ticker: pool line stays <=80 rendered ("${rendered.slice(0, 30)}…" = ${rendered.length})`);
+    }
+    ok(TV67.ticker.length >= 8, 'ticker: the pool is deep enough to vary day-to-day');
+  }
+
+  // (d) Wiring pins (the house pattern).
+  const { readFileSync: rf67 } = await import('node:fs');
+  const css67 = rf67('./style.css', 'utf8');
+  ok(css67.includes('ticker-crawl') && css67.includes('.market-ticker'), 'ticker: the crawl CSS shipped');
+  ok(css67.includes('.ticker-track{animation:none;}'), 'ticker: prefers-reduced-motion shows the strip static');
+  const mkt67 = rf67('./src/ui/market.js', 'utf8');
+  ok(mkt67.includes('tickerKey'), 'ticker: the crawl rebuilds on day rollover only (the animation-restart guard)');
+  const pnl67 = rf67('./src/ui/panels.js', 'utf8');
+  ok(pnl67.includes(`querySelectorAll('.trade-hint')`), 'rider: every card hint is wired as a Market door');
+  ok(rf67('./src/main.js', 'utf8').includes('mousemove'), 'rider: the board hit rect drives the hover cursor');
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

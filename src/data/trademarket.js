@@ -168,6 +168,47 @@ export function forecastDayKey(state) {
   return dayKeyOf(Date.now() + 86400000);
 }
 
+// YESTERDAY's key — the ticker's movement baseline (forecastDayKey's mirror: same override
+// contract, same fallback shape, minus a day).
+export function yesterdayKey(state) {
+  const o = state?.tradeDayKeyOverride;
+  if (o) {
+    const m = /^sim-day-(\d+)$/.exec(o);
+    return m ? `sim-day-${Number(m[1]) - 1}` : `${o}-1`;
+  }
+  return dayKeyOf(Date.now() - 86400000);
+}
+
+// THE TICKER (Pass C — Daniel's Option 3): REAL day-over-day movement per tier item, interleaved
+// with day-seeded editorial quips ({mat} resolves to an eligible material — new materials flow
+// into the jokes automatically). Movement compares PRE-DISCOUNT gold on BOTH days (origGold ??
+// gold): the special's cut is a sale price, not a market move — counting it would fake a crash
+// today and a rally tomorrow. Segments are typed ({ t:'move', name, pct } | { t:'quip', s }) so
+// the overlay colors ▲/▼ without string parsing. Deterministic per day, like everything here.
+export function tickerSegments(state) {
+  const today = offersForDay(tradeDayKey(state));
+  const yGold = Object.fromEntries(
+    offersForDay(yesterdayKey(state)).map((o) => [o.itemId, o.origGold ?? o.gold]));
+  const quipPool = TRADE_VOICE?.ticker ?? [];
+  const mats = eligibleMaterialIds();
+  const h = hashDayKey(`ticker:${tradeDayKey(state)}`);
+  const segs = [];
+  let qi = 0;
+  today.forEach((o, i) => {
+    const t = o.origGold ?? o.gold;
+    const y = yGold[o.itemId] ?? t;
+    const pct = y > 0 ? Math.round(((t - y) / y) * 100) : 0;
+    segs.push({ t: 'move', name: (ITEMS[o.itemId]?.displayName ?? o.itemId).toUpperCase(), pct });
+    if (i % 2 === 1 && quipPool.length > 0 && mats.length > 0) {   // a quip after every 2nd mover
+      const line = quipPool[(h + qi) % quipPool.length];
+      const mat = (MATERIALS[mats[(h + qi) % mats.length]]?.displayName ?? '').toUpperCase();
+      segs.push({ t: 'quip', s: line.replaceAll('{mat}', mat) });
+      qi++;
+    }
+  });
+  return segs;
+}
+
 // The board headline's FEATURED offer — the day's discounted special, marked by offersForDay
 // (one hash, one mark, one price; this just finds it).
 export function featuredOffer(dayKey) {

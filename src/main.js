@@ -270,6 +270,16 @@ canvas.addEventListener('click', (e) => {
   const sy = (e.clientY - r.top) / r.height * CONFIG.stage.height;
   if (pointOnBoard(sx, sy)) { openMarket(); renderMarket(state); }
 });
+// Hover feedback for the board door (Pass C rider — the discoverability gap flagged at Pass A
+// ship): pointer over the hit rect. Same coord math as the click; one rect test per move event.
+canvas.addEventListener('mousemove', (e) => {
+  if (state.screen !== 'shop') { canvas.style.cursor = ''; return; }
+  const r = canvas.getBoundingClientRect();
+  if (r.width === 0 || r.height === 0) return;
+  const sx = (e.clientX - r.left) / r.width * CONFIG.stage.width;
+  const sy = (e.clientY - r.top) / r.height * CONFIG.stage.height;
+  canvas.style.cursor = pointOnBoard(sx, sy) ? 'pointer' : '';
+});
 initNav(document.getElementById('nav'));           // bottom nav swaps the center panel
 
 // --- Menu overlay (UX roadmap 5, Option 2) -------------------------------------------------

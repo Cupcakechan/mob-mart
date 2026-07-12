@@ -648,10 +648,13 @@ body{
 }
 .trade-btn:disabled { color: #8f86a3; border-color: #5a4a75; cursor: default; }
 /* Trade-tier card pointer: replaces the restock button once licensed (panels.js toggles).
-   Dark ink on the tan card — the gold-on-tan version was near-invisible (Daniel's QA, Pass B). */
+   Dark ink on the tan card — the gold-on-tan version was near-invisible (Daniel's QA, Pass B).
+   A DOOR since Pass C (opens the Market overlay), so it reads clickable. */
 .item-card .trade-hint {
   font-size: 10px; line-height: 1.2; color: #6b4a1e; font-weight: 700; padding: 4px 0;
+  cursor: pointer;
 }
+.item-card .trade-hint:hover { text-decoration: underline; }
 
 /* --- Expedition Job Card row (reform step 4 MVP; the Bestiary grid cards) ---------------------- */
 .beast-exp-row { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
@@ -718,3 +721,23 @@ body{
 .market-offer-list .offer-row.featured{
   border:1px solid var(--gold);border-radius:6px;background:rgba(255,207,74,.08);
 }
+/* --- The LED ticker (Pass C — Daniel's Option 3: REAL day-over-day movement + editorial quips).
+   Full-bleed strip at the card's base: negative margins cancel the card's 14/18px padding, the
+   bottom radius matches the card's 14px minus its 2px border. Motion law: constant motion is
+   fine HERE — the overlay is a summoned surface, not ambient UI (the shelf-wiggle law's scope). */
+.market-ticker{
+  margin:10px -18px -14px;background:#120d1c;border-top:2px solid var(--panel-edge);
+  border-radius:0 0 12px 12px;overflow:hidden;white-space:nowrap;padding:4px 0;
+}
+.ticker-track{
+  display:inline-block;font-family:Consolas,'Courier New',monospace;font-size:12px;
+  font-weight:700;color:#d9ccae;animation:ticker-crawl linear infinite;
+}
+.tick-name{color:#ffb84a;text-shadow:0 0 6px rgba(255,184,74,.5);}   /* the amber LED glow */
+.tick-up{color:var(--good);}
+.tick-down{color:var(--bad);}
+.tick-flat{color:#8f86a3;}
+.tick-quip{color:#cfc3e0;}
+.tick-sep{color:#5a4a75;}
+@keyframes ticker-crawl{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+@media (prefers-reduced-motion: reduce){ .ticker-track{animation:none;} }

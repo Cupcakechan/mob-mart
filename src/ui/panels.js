@@ -114,7 +114,7 @@ export function initPanels(root, h) {
         <div class="item-stock">Stock: <span id="stock-${id}">0</span>/<span id="max-${id}">${it.maxStock}</span></div>
         <div class="item-sold"><b id="sold-${id}">0</b> sold<span id="next-${id}"></span></div>
         <button class="restock-btn" data-item="${id}">Restock &#9670;<span id="rcost-${id}">${it.restockCost}</span></button>
-        <div class="trade-hint hidden">Trade at the Market Board</div>
+        <div class="trade-hint hidden">Trade at the Market &#9656;</div>
         <button class="license-btn hidden" data-item="${id}"></button>
       </div>`;
   }).join('');
@@ -127,6 +127,10 @@ export function initPanels(root, h) {
   // one-line icon-only rows couldn't teach material names; the overlay's full-name rows can.
   document.getElementById('open-market-btn')
     .addEventListener('click', () => handlers.onOpenMarket());
+  // The trade-hint is a DOOR now (Pass C rider — Daniel: "currently it does nothing"): every
+  // card's hint opens the Market overlay. Wired once here; visibility still toggles per-card.
+  root.querySelectorAll('.trade-hint').forEach((el) =>
+    el.addEventListener('click', () => handlers.onOpenMarket()));
   // Material chips: one per SOURCED material — serve faucets AND the Inspector's VIP drops
   // (material/gradeMaterial on any row), in MATERIAL_ORDER. A new source auto-appears.
   const sourced = new Set();

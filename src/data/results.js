@@ -664,6 +664,20 @@ export const TRADE_VOICE = {
     `Bob negotiated with the dawn. The dawn blinked first.`,
     `All trades final. All chalk artisanal.`,
   ],
+  ticker: [   // the LED crawl's editorial pool (Pass C) — {mat} resolves to an eligible material,
+              // UPPERCASED by tickerSegments (the crawl shouts everything; that IS the bit).
+              // Bible laws apply at render: <=80 chars substituted, punch word last, deadpan.
+    `{mat}: analysts say "shiny." Bob concurs.`,
+    `Insider tip: the insides of things contain {mat}.`,
+    `{mat} futures unclear. The present, also unclear.`,
+    `Bob denies hoarding {mat}. The back room declined comment.`,
+    `BREAKING: rates set at dawn. Dawn unavailable for questions.`,
+    `Market sentiment today: cozy.`,
+    `A gull was seen near the {mat} reserves. Developing.`,
+    `{mat} remains material. Experts stunned.`,
+    `Tip line open. Bob accepts tips. Mostly gold.`,
+    `Volatility low. Bob's chalk hand, steady.`,
+  ],
 };
 
 // --- Expedition voice (reform step 4 MVP) --------------------------------------------------------
