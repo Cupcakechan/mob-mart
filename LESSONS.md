@@ -120,7 +120,7 @@
   log line) — a pull that "ran" is not a pull that succeeded.
 - Route: Claude-side workflow rule; pairs with the existing "git status is a READ" entry.
 
-## 2026-07-06 — index.kongregate.html silently drifted several passes behind index.html
+## 2026-07-06 — index.kongregate.html silently drifted several passes behind index.html [HARVESTED — 2026-07-10]
 - What broke / what happened: the Kongregate shell (defined as "index.html + one script tag,
   otherwise identical") was missing the hire-goal chip, Bob's bubble markup, the menu overlay,
   and the away-modal additions from the last three passes — it still carried the retired
@@ -138,7 +138,7 @@
 - Route: skill reference (html-game.md) candidate — "a mirrored entry page is a build artifact
   without a build step; regenerate it mechanically and suite-pin the mirror, never hand-sync."
 
-## 2026-07-08 — The VIP sizing saga: three deliveries and a burned re-export, all Claude's
+## 2026-07-08 — The VIP sizing saga: three deliveries and a burned re-export, all Claude's [HARVESTED — 2026-07-10]
 - What broke / what happened: the dragon VIP shipped at +15% over queue-mates and read
   "massively smaller than everyone" (Daniel, correctly); two sizing iterations later
   (spriteScale 1.25 -> 1.4 -> pixelScale 2), Claude instructed a 200% re-export with the words
@@ -168,7 +168,7 @@
   contract, not a comment."
 
 
-## 2026-07-10 — A scripted DELETION ate the neighbor line (DOUG.height): NaN geometry is silently invisible
+## 2026-07-10 — A scripted DELETION ate the neighbor line (DOUG.height): NaN geometry is silently invisible [HARVESTED — 2026-07-10]
 - What broke: after the celebrant-floor-grammar fix, Doug stopped rendering entirely — idle
   included. No error anywhere.
 - Root cause: the edit script spliced TWO lines to retire the one-line `doorFeetY` field; the

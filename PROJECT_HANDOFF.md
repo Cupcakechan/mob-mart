@@ -10,20 +10,17 @@ Claude or ChatGPT can parse it cold.*
 
 ## §0 — START HERE (cold boot): where the project is, and what happens next
 
-**State as of 2026-07-11 (suite: 745 green; `node test_suite.mjs` self-verifies a fresh clone):**
+**State as of 2026-07-11 (suite: 768 green; `node test_suite.mjs` self-verifies a fresh clone):**
 the MVP, the full UX roadmap, Market Day, Deep Sinks, Special Visits (the Inspector, reauthored
-1:1), the gear expansion (27 items), six door destinations, the whole of **§14** (DOUG the
-scavenger, SCRAP, his battle cameos, and **the RELIC FORGE** — one-of-one relics found by Doug,
-restored for scrap+gold, displayed in 3 wall frames + 1 desk slot), **THE ECONOMY AUDIT**
-(2026-07-11): `sim_economy.mjs` + `ECONOMY_AUDIT.md`, **THE RETENTION RESET** (2026-07-11):
-`TRADE_MARKET_DESIGN.md` + `RETENTION_RESEARCH.md`, **MARKET PASS A** (2026-07-11,
-browser-confirmed, acceptance PASS): monster materials + the Trade Market, all ten icon PNGs
-in, plus **THE DROP-RATE RETUNE** (Ns ~2.5×, determinism kept) and **REFORM STEP 3 COMPLETE**
-(2026-07-11, two passes, both browser-confirmed): **DEMMY** the Apologetic Menace (the roster's
-first winner, the market's demand engine) and **LEGGSY** the Overstocker (the `bulkBuyer`
-quirk — the first demand-side pressure on stock depth). Roster NINE, faucets EIGHT. Detail
-lives in the dated sections below (§9 art, §12–§14 systems, the 2026-07-11 audit / reset /
-Pass A / step-3 sections); LESSONS.md carries the error record (three 2026-07-11 entries).
+1:1), the gear expansion (27 items), six door destinations, the whole of **§14** (DOUG, SCRAP,
+**the RELIC FORGE**), **THE ECONOMY AUDIT** (`sim_economy.mjs` + `ECONOMY_AUDIT.md`), **THE
+RETENTION RESET** (`TRADE_MARKET_DESIGN.md` + `RETENTION_RESEARCH.md`), **MARKET PASS A**
+(monster materials + the Trade Market, acceptance PASS), **THE DROP-RATE RETUNE** (Ns ~2.5×),
+**REFORM STEP 3** (DEMMY the Apologetic Menace + LEGGSY the Overstocker — roster nine, faucets
+eight), and now **EXPEDITIONS MVP** (reform step 4, 2026-07-11, browser-confirmed): the
+targeted-supply loop — Bestiary Job Cards, one slot, fee/clock/haul/mishap dials, BOTH
+harness acceptance verdicts PASS (expedition-blind loses 3:10; the +0:40 gap re-widened to
+hours). Detail in the dated sections below; LESSONS.md carries the error record.
 
 **THE DESIGN RESET (Daniel, 2026-07-10) — MEASURED by the audit (2026-07-11):** passive play
 reaches millions with nothing left to want. The sink stack is **228,483 gold** exactly; the
@@ -51,30 +48,36 @@ with this §0.
 **The locked sequence (one system per pass; §14's A/B split where a pass is big):**
 1. **Market Pass A** — **DONE 2026-07-11** (materials substrate + the Market Board, Iron Sword
 as the proof; acceptance PASS — the section at the bottom); 2. **Market Pass B** — the full
-first trade tier + the forecast + the board's second-row design (now sequenced AFTER
-expeditions — see NEXT); 3. **Spider + Demon** — **DONE 2026-07-11, both halves** (Demmy 3a +
-Leggsy 3b, the step-3 section at the bottom); 4. **Expeditions MVP** (one monster, one door,
-one slot); 5. **Relic rework** (HARD restores — scrap+gold+materials; economy effects in the
-scarce carrier slots); 6. **Commissions** (deadlines); 7. **Expedition depth** (parties,
-offline party management); 8. **Franchise** (rule-changing prestige, six-door factions —
-designed last, against what the harness measures then).
+first trade tier + the forecast + the board's second-row design (re-sequenced after
+expeditions, which are now in — Pass B is NEXT); 3. **Spider + Demon** — **DONE 2026-07-11,
+both halves** (Demmy 3a + Leggsy 3b, the step-3 section); 4. **Expeditions MVP** — **DONE
+2026-07-11** (the step-4 section at the bottom; both acceptance verdicts PASS); 5. **Relic
+rework** (HARD restores — scrap+gold+materials; economy effects in the scarce carrier slots);
+6. **Commissions** (deadlines); 7. **Expedition depth** (parties, offline party management);
+8. **Franchise** (rule-changing prestige, six-door factions — designed last, against what the
+harness measures then).
 
-**NEXT SESSION — EXPEDITIONS MVP (sequence step 4, leapfrogging step 2 on the data).** The
-acceptance trend made the call: the blind penalty narrowed **3:32 → 1:22 → 1:00 → 0:40** across
-the retune and step 3 because the market is now SUPPLY-BOUND (every traded sword sells; trades
-are capped by material income). Market Pass B would ADD demand onto a starved supply;
-expeditions are the DESIGNED supply reopener (targeted bursts, rate-limited by slots +
-duration) — so they come first, and Pass B lands after with volume to feed it. Open with the
-options round: run shape (who sponsors, fee, duration), the door → material targeting rule,
-haul sizing, the comic-mishap partial-haul law (NOBODY DIES — split loops), family mastery's
-first hook (Bestiary counts), and the harness policy (the expedition-blind bot must lose —
-this is the pass that re-widens the gap). **Pass B afterward** still wants Daniel's two §13
-calls (the Inspector's Scale/Seal drop design; the basic-vs-trade tier line) plus the
-recipe-band margin dial (post-death aware ≈ blind — 583 vs 597 gold/min — because the sword's
-pure-gold margin is thin; throughput + the sale carry its value today). PARKED but live:
-**P2 (Mythic → 40k)** — a one-value pass anytime (config value + two §53 suite assertions);
-the sweep in the reset section showed death doesn't move and the goal is horizon, not a
-binding gate. P3 stands (don't nerf deep-rung prices); old P4/P5/P6 are superseded (design
+**NEXT SESSION — MARKET PASS B (sequence step 2, now that the supply valve exists).** Open
+with its options round. The agenda it has accumulated: the full trade tier (**Daniel's §13.2
+call wanted:** the basic-vs-trade line — standing candidates Greater Flask + Knight Helm join
+the sword, 600g-and-below stays gold); the FORECAST (tomorrow's offers visible — the law-3
+planning surface); per-offer daily limits (the scarcity dial); the board's SECOND ROW design
+(the daily-special / Market-Day-event presence, cut from Pass A as clutter); the Inspector's
+drops (**Daniel's §13.1 call wanted:** proposal — Dragon Scale per visit, Seal only on a
+top-grade inspection); and the RECIPE-BAND MARGIN dial (the sword's pure-gold margin measured
+thin — throughput + the sale carry it today).
+
+**PARKED, in Daniel's own words (2026-07-11, post-step-4):** (a) **expedition pacing retune**
+— "up the gold charge," plus FAME-TIER DISCOUNTS on the fee (fame already carries budget
+multipliers — the precedent exists); pairs with the pacing finding (60s/25g lets the optimal
+bot run ~50/hour — `durationSec` is the other lever); one small tuning pass whenever his
+browser feel says so. (b) **WORKER WAGES** — a recurring payroll as a permanent gold drain;
+the first PERPETUAL sink ever proposed and the direct answer to the audit's oldest finding
+(post-death income runs away); interacts with training levels and future prestige math —
+earns its own options round before any numbers. (c) **the Job Board's real home** — the
+Bestiary is the Job Card BY INTENT and temporarily; when the pure-lore Bestiary gets built,
+the expedition console needs its own surface — options round owed then. Plus the standing:
+**P2 (Mythic → 40k)** one-value pass anytime; P3 stands; old P4/P5/P6 superseded (design
 doc §12).
 
 **Small parked follow-ups (real, not urgent):** Doug’s door-open feel pass (playPortalOpen is a
@@ -1618,3 +1621,52 @@ UNPUSHED Leggsy commit before this handoff recorded false state — the tell, wo
 `(HEAD -> main, origin/main)` once the push has landed.
 
 **NEXT:** Expeditions MVP opens with its options round (§0 carries the agenda).
+
+---
+
+## 2026-07-11 — EXPEDITIONS MVP (reform step 4) — the supply valve, and the gap re-widened (commit c4905f9; flake fix 2179971)
+
+**The build (11 files; Daniel's A/A/A options-round picks — Bestiary-card surface / flat
+economics / dice-driven mishap):** `CONFIG.expedition` (fee 25 / durationSec 60 / haul 3 /
+mishapChance 0.25 — one dial block); the persisted ONE-slot run (`state.expedition =
+{ monsterId, dest, remaining }` — a reload resumes the clock; a corrupt/hand-edited run drops
+WHOLE in the merge, fee gone, crash never; the clock clamps into the config band); the
+`stats.expeditions` per-family ledger (family mastery's first hook — counting only, effects
+are a later conversation); `canStartExpedition` / `startExpedition` / `resolveExpedition` +
+the update() tick (whole-second edge marks uiDirty, so the countdown renders at 1Hz without a
+60fps panel re-render); away time credited at boot (main.js, BEFORE the offline modal — the
+return line lands under the away summary where it belongs; uncapped on purpose, a 60s run
+never needs Bob's offline hours); the family pick IS the targeting (send slimes, get Cores);
+destinations are the six doors' flavor names; a mishap is HALF ROUNDED UP, never zero, NEVER
+death (split loops — the battle log's gag untouched). Surface: the Bestiary grid cards became
+JOB CARDS (run count / live countdown / Send button with reason tooltips) — **temporary BY
+INTENT** (Daniel: a pure-lore Bestiary is a wanted later surface; the console moves then).
+
+**A stagger lesson mid-pass:** the return line vanished in the suite — probe-confirmed the
+MILESTONE STAGGER was queueing it behind the departure line (one 0.1s test tick never drained
+it). The fix was semantic, not test-side: expedition lines are EVENT ANNOUNCEMENTS, so they
+ride tier `'market'` (the Inspector-grade-line precedent — instant, stagger-bypassing).
+
+**Suite 768** (745 + §62's 23: gates, the one-slot law, both resolve paths on forced dice, cap
+clamping on bursts, away-credit math, save round-trip + corruption guards) — certified 3×.
+Also this era: the **frog spawn-rate flake** (commit 2179971) — a frozen `> 40/400` floor went
+marginal at nine monsters (expected 50, a −1.5σ draw failed ~1 run in 15, and it had survived
+each pass's certification runs by luck); the floor now DERIVES from the live spawnable count
+at 4σ, 12× certified.
+
+**ACCEPTANCE — both verdicts PASS, 3× bit-identical:** market-blind loses **3:43**;
+expedition-blind (trades, never sends) loses **3:10** with sword sales 88 vs ~620 — the
+pre-expedition +0:40 gap RE-WIDENED to hours, which is this system's entire job. **The honest
+flip side, flagged at ship:** the full-aware bot's death returned to **8:18 — the audit
+baseline** — because 60s/25g lets an optimal player run continuously (~50 runs/hour, 367–401
+per playthrough). The DECISION layer is real (both blind bots lose hours); the PACING dial is
+wide open. Levers when Daniel's feel asks: `durationSec` first (180s ≈ 20/hour), fee second —
+and his own asks (fee up + fame-tier discounts) live in §0's parked list alongside WORKER
+WAGES (the first perpetual-sink proposal) and the Job Board's future home.
+
+**Rogue-art note (the standing workflow):** rat_idle + rat_walk_happy re-authored in this
+commit (the walk 16k → 3.7k — a cleaner export). Dimension pins held; if Ratty's feet read
+wrong in the next session, his registry footPad is one pngjs re-measure away.
+
+**NEXT:** Market Pass B's options round — §0 carries the accumulated agenda (the tier line and
+the Inspector's drops both want Daniel's §13 calls).
