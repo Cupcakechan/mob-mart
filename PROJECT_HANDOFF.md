@@ -10,17 +10,24 @@ Claude or ChatGPT can parse it cold.*
 
 ## §0 — START HERE (cold boot): where the project is, and what happens next
 
-**State as of 2026-07-11 (suite: 768 green; `node test_suite.mjs` self-verifies a fresh clone):**
+**State as of 2026-07-12 (suite: 804 green; `node test_suite.mjs` self-verifies a fresh clone):**
 the MVP, the full UX roadmap, Market Day, Deep Sinks, Special Visits (the Inspector, reauthored
 1:1), the gear expansion (27 items), six door destinations, the whole of **§14** (DOUG, SCRAP,
 **the RELIC FORGE**), **THE ECONOMY AUDIT** (`sim_economy.mjs` + `ECONOMY_AUDIT.md`), **THE
 RETENTION RESET** (`TRADE_MARKET_DESIGN.md` + `RETENTION_RESEARCH.md`), **MARKET PASS A**
 (monster materials + the Trade Market, acceptance PASS), **THE DROP-RATE RETUNE** (Ns ~2.5×),
 **REFORM STEP 3** (DEMMY the Apologetic Menace + LEGGSY the Overstocker — roster nine, faucets
-eight), and now **EXPEDITIONS MVP** (reform step 4, 2026-07-11, browser-confirmed): the
-targeted-supply loop — Bestiary Job Cards, one slot, fee/clock/haul/mishap dials, BOTH
-harness acceptance verdicts PASS (expedition-blind loses 3:10; the +0:40 gap re-widened to
-hours). Detail in the dated sections below; LESSONS.md carries the error record.
+eight), **EXPEDITIONS MVP** (reform step 4 — Bestiary Job Cards, one slot; both blind bots
+lose hours), and now **MARKET PASS B** (2026-07-12, browser-confirmed): the TEN-ITEM trade
+tier (base/workman gold, upgrades/premium trade — Daniel's line, row-confirmed),
+value-derived recipe gold, the Inspector's Scale-per-visit + Seal-at-top-grade (both
+recipe-excluded forever; the Seal reserved for relics), the board's iconic headline +
+"Tomorrow:" forecast row, and the Shop tab's category-filtered iconic offer list. **The
+acceptance metric EVOLVED here** (the economy went substantially perpetual): verdicts read
+POST-EXHAUSTION RATE ADVANTAGE — aware **+20%** over market-blind, **+17%** over
+expedition-blind, 3× stable; aware finite-checklist death 26:43 (from 8:18 at the audit).
+Detail in the dated sections below; LESSONS.md carries the error record (a new 2026-07-12
+entry: the CSS cascade tie / probe-the-effect / stale-CSS saga).
 
 **THE DESIGN RESET (Daniel, 2026-07-10) — MEASURED by the audit (2026-07-11):** passive play
 reaches millions with nothing left to want. The sink stack is **228,483 gold** exactly; the
@@ -46,26 +53,37 @@ the disposition of all prior proposals live in **`TRADE_MARKET_DESIGN.md`** — 
 with this §0.
 
 **The locked sequence (one system per pass; §14's A/B split where a pass is big):**
-1. **Market Pass A** — **DONE 2026-07-11** (materials substrate + the Market Board, Iron Sword
-as the proof; acceptance PASS — the section at the bottom); 2. **Market Pass B** — the full
-first trade tier + the forecast + the board's second-row design (re-sequenced after
-expeditions, which are now in — Pass B is NEXT); 3. **Spider + Demon** — **DONE 2026-07-11,
-both halves** (Demmy 3a + Leggsy 3b, the step-3 section); 4. **Expeditions MVP** — **DONE
-2026-07-11** (the step-4 section at the bottom; both acceptance verdicts PASS); 5. **Relic
-rework** (HARD restores — scrap+gold+materials; economy effects in the scarce carrier slots);
-6. **Commissions** (deadlines); 7. **Expedition depth** (parties, offline party management);
-8. **Franchise** (rule-changing prestige, six-door factions — designed last, against what the
-harness measures then).
+1. **Market Pass A** — **DONE 2026-07-11**; 2. **Market Pass B** — **DONE 2026-07-12** (the
+full tier + forecast + Inspector drops + the iconic filtered list; the Pass B section at the
+bottom); 3. **Spider + Demon** — **DONE 2026-07-11**; 4. **Expeditions MVP** — **DONE
+2026-07-11**; 5. **Relic rework** (HARD restores — scrap+gold+MATERIALS incl. the reserved
+Inspector's Seal; economy effects in the scarce carrier slots); 6. **Commissions**
+(deadlines); 7. **Expedition depth** (parties, offline party management); 8. **Franchise**
+(rule-changing prestige, six-door factions — designed last, against what the harness
+measures then).
 
-**NEXT SESSION — MARKET PASS B (sequence step 2, now that the supply valve exists).** Open
-with its options round. The agenda it has accumulated: the full trade tier (**Daniel's §13.2
-call wanted:** the basic-vs-trade line — standing candidates Greater Flask + Knight Helm join
-the sword, 600g-and-below stays gold); the FORECAST (tomorrow's offers visible — the law-3
-planning surface); per-offer daily limits (the scarcity dial); the board's SECOND ROW design
-(the daily-special / Market-Day-event presence, cut from Pass A as clutter); the Inspector's
-drops (**Daniel's §13.1 call wanted:** proposal — Dragon Scale per visit, Seal only on a
-top-grade inspection); and the RECIPE-BAND MARGIN dial (the sword's pure-gold margin measured
-thin — throughput + the sale carry it today).
+**NEXT SESSION — a SMALL UI ROUND (Daniel's priorities, 2026-07-12), then RELIC REWORK
+(step 5).** The UI round, confirmed and re-prioritized by Daniel after the Pass B fixes landed:
+
+  1. **The shelf card PRICE color.** The `◆ N` price on item cards renders in gold, which
+     doesn't contrast the tan card — Daniel's ORIGINAL readability complaint, finally pinned to
+     the right element (the earlier round fixed the trade-*hint* text, a different thing; the
+     price itself is still gold). Needs a dark/contrasting tone like the hint got. Small, but
+     it's the one that keeps getting mis-hit — verify against the actual price element in the
+     card template, not the hint.
+  2. **The offer rows need material NAMES back + BIGGER icons (the pair Daniel prioritized).**
+     Right now a row reads "Iron Sword ⇐ [tiny icon] 2 + 32g" — the icon alone doesn't teach a
+     player WHAT the material is, and it's too small. Both fixes together: put the short name
+     beside each icon and enlarge the icon (the list icons are 15px — the board went 20/17 and
+     reads well; match that neighborhood). This is a genuine layout/space question in a narrow
+     row with a Trade button — so it gets an OPTIONS ROUND for the row layout (name+icon+count
+     inline vs stacked vs abbreviated) before building. The board's iconic rows are fine as-is
+     (a headline, not a reference surface); this is specifically the Shop-tab LIST.
+
+Then the relic rework's options round: HARD restores (scrap + gold + materials, incl. the
+reserved Inspector's Seal), economy effects in the 3 wall frames + desk slot, restore-cost
+shape. §13b's named passes (Trade Market overlay, the churn/fill-to-cap pass) and §0's parked
+list (expedition pacing, worker wages, the Job Board's home) all still stand behind it.
 
 **PARKED, in Daniel's own words (2026-07-11, post-step-4):** (a) **expedition pacing retune**
 — "up the gold charge," plus FAME-TIER DISCOUNTS on the fee (fame already carries budget
@@ -1670,3 +1688,50 @@ wrong in the next session, his registry footPad is one pngjs re-measure away.
 
 **NEXT:** Market Pass B's options round — §0 carries the accumulated agenda (the tier line and
 the Inspector's drops both want Daniel's §13 calls).
+
+---
+
+## 2026-07-12 — MARKET PASS B (reform step 2, out of order by design) + the UI-fix saga (one combined commit)
+
+**Daniel's calls that shaped it:** the tier line moved from "the license rung" to **"base
+objects and workman's goods GOLD; upgrades and premium no-base goods TRADE"** — ten items,
+row-confirmed (iron_sword, greater_flask, knight_helm, quiver, zip_tonic, iron_buckler,
+iron_gauntlet, silver_key, spiked_club, iron_shield; murk/bracer/pickaxe/map/salt stay gold
+with their licenses). The Seal's destiny: **relic-restore material** (the eligibility law's
+`!special` filter already reserves it — zero code needed for the reservation). His churn
+observation ("trade a sword, someone buys it, you're out again") is a NAMED future pass
+(fill-to-cap trading — design doc §13b). D6 surface: the Shop tab hosts the list NOW; the
+clickable-board → Trade Market overlay is the designed follow-up; a true Market room parked.
+
+**As built:** nine acquisition flips (count-guarded script); recipe gold DERIVES from
+basePrice (CONFIG.trade goldMultMin/Max 1.2–3.5 — the margin dial); Inspector drops registry-
+driven on the dragon row (material/gradeMaterial; `sealFullness` 0.9) with INSPECTOR_VOICE
+lines, drops land inside the inspection block in serveCurrent; the board renders ICONIC
+offer segments (`describeOfferSegments` + the `drawOfferRow` closure — icons 20px headline /
+17px forecast, centered on the text line, chalk write-on preserved, missing-PNG "×n"
+fallback) with the featured offer + "Tomorrow:" forecast row (`featuredOffer` /
+`forecastDayKey`, deterministic both live and headless); the Shop tab's offer list is ICONIC
+and CATEGORY-FILTERED (the shelf tabs govern it); material chips = count-only, all TEN
+sourced materials, cap in the tooltip; `main.js` gained ten explicit material `loadSprite`
+registrations (the canvas board's getSprite needs them — the pairing scan only sees
+literals, which is WHY they were explicit, not a loop).
+
+**The QA saga (the LESSONS 2026-07-12 entry, read it):** the category filter shipped broken
+behind a CSS SPECIFICITY TIE (`.offer-row{display:flex}` appended late beats `.hidden` by
+order — fixed with the scoped `.offer-row.hidden` override, the house pattern; §63(f)
+text-pins it), a jsdom probe that certified the bug as working (it asserted the CLASS, not
+the computed display), and Daniel's browser serving STALE CSS while running fresh JS (the
+structural fix: both shells now load `style.css?v=6` — bump the version on CSS changes).
+
+**Suite 768 → 804** (§63: tier exacts, derived gold bands, Inspector drop tests, forecast
+determinism, segment guard, the cascade text-pin; the three license tests now DERIVE their
+specimen — greater_flask joining the tier broke the Pass A swap; §0b pairing scan extended
+with material iconIds as consumers). **Harness:** policy works ALL offers; **the metric
+evolution** is §0's headline (rate advantage replaces death delay — the finite checklist is
+no longer the game); aware 26:43 / +20% / +17%, 3× stable.
+
+**Still owed, small:** Leggsy's spriteScale registry comment says PROVISIONAL — Daniel
+confirmed 1.05 ("size is right"); the one-word update rides the next monsters.js touch.
+Daniel's excerpt attachment (2026-07-12) arrived EMPTY — flagged; he may repaste.
+
+**NEXT:** the three-item UI round (§0), then the relic rework's options round.

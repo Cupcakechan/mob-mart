@@ -250,3 +250,33 @@
   truncate a pull's output; a contradiction between two adjacent command outputs is a stop
   signal, not noise.
 - Route: universal method candidate (git section, the mirror-side of "git status is a READ").
+
+## 2026-07-12 — The filter that "didn't work": a CSS specificity TIE, a probe that tested the mechanism instead of the effect, and stale CSS on top
+
+**What happened:** Pass B's category filter (offer rows toggle `.hidden`) shipped visually broken
+and survived THREE fix rounds. Cause one: `.offer-row { display:flex }` was appended at the END
+of style.css — it TIES the global `.hidden { display:none }` (both 0-1-0 specificity), and a tie
+resolves by ORDER, so the late `flex` beat `none` and "hidden" rows stayed visible. The codebase
+already knew this trap — `.item-card.hidden`, `.restock-btn.hidden` are scoped overrides for
+exactly this reason — the new rule just didn't follow the house pattern. Cause two, stacked on
+top: Daniel's browser served a STALE style.css while running fresh JS modules (the dark-brown
+hint showed gold; the count-only chips proved the JS was current), so even correct CSS fixes
+looked dead on arrival, and Claude burned a round on a wrong "hard refresh" diagnosis.
+
+**The probe that lied by omission:** a jsdom instrumentation run "proved the filter works" — but
+it asserted `classList.contains('hidden')`, the MECHANISM, not the computed display, the EFFECT.
+The class was always applied; the CSS resolution was the failure, and the probe never looked at
+it. An instrumented test that stops one layer short of the user-visible effect can certify a bug
+as working.
+
+**The rules:** (1) any element with its own display rule that will ever receive `.hidden` gets a
+scoped `.thing.hidden { display:none }` override AT BIRTH — suite §63(f) now text-pins the
+offer-row one. (2) Probes assert the EFFECT the user sees (computed style, rendered geometry),
+not the flag that should produce it. (3) Static assets that change during development carry a
+cache-busting version (`style.css?v=N`, both shells, bumped on CSS change) — "did you hard
+refresh" is not a deployment strategy. (4) When fixes half-apply (some visible, some not), the
+FIRST hypothesis is layered staleness — enumerate which artifacts are provably current (the
+chips proved the JS) before diagnosing the code.
+
+Route: universal method candidate (probe-the-effect; scoped-override-at-birth; cache-bust static
+assets; the half-applied-fix staleness heuristic).
