@@ -434,3 +434,25 @@ assets; the half-applied-fix staleness heuristic).
   suite-green pass FIRST, recording the pending certification in the commit message and
   handoff. Same shape as "versioned deliverables get a committed home."
 - Route: GI candidate.
+
+## 2026-07-12 — The detached-run pattern, proven: setsid + artifact poll + exit sentinel
+- What happened: the F1a harness certification ran as its options round's Option 2 —
+  `setsid bash -c 'cd <repo> && node sim > out 2> err; echo $? > exit'` detached, polled by
+  ARTIFACT (stderr tail + stdout size/mtime + the exit-code sentinel file), runs sequential per
+  the OOM policy. It survived every tool-call boundary; 3× bit-identical certified in ~15 min
+  of wall time. The step-6 "pathology" closed as pure execution ceiling: the dead session's
+  runs froze at 9,597 bytes and the certified run passed that exact byte mid-flight.
+- Root cause (of the prior failure this reverses): the dead session's background attempts used
+  bare nohup and a self-matching pgrep poll. Whether setsid or a container difference is the
+  discriminator is UNRESOLVED — so the pattern ships with its own failure detector rather than
+  a survival assumption.
+- Verification gap plugged: a detached run must fail LOUDLY — poll rule: output mtime frozen
+  >120s = dead, stop and rethink (never retry-forever). And the pattern was probed with a toy
+  (a 90s setsid writer loop read across three tool calls) BEFORE the real launch — boundary
+  survival measured, not assumed.
+- Plug/pattern to encode: cwd stated INSIDE the detached subshell (the operator-precedence
+  entry); scratch artifacts OUTSIDE the clone; an exit-code sentinel file as the completion
+  signal; stderr-only timing so stdout stays byte-comparable across doctrine runs; toy-probe
+  the mechanism before the real job.
+- Route: dev-method (the execution-ceiling entry's proven strategy; pairs with the
+  self-matching-probe and background-cwd entries).

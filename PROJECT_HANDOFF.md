@@ -30,11 +30,13 @@ chip's designed successor), and now **F1a — FAME LEVELS** (c10810b, suite 1667
 DEMAND REFORM's first pass): fame is a generated LEVEL track (`levelThreshold(n)`, base 25 ×
 growth 1.6), the seven names survive as RUNGS anchored at levels with mins DERIVED from the
 curve at load, the HUD badge reads "«Rung» · Lv N", and offline sales pay HALF fame
-(`repFraction: 0.5` — gold untouched). **F1a is suite-certified but HARNESS CERT PENDING** —
-the acceptance sim exceeds the container's execution limits; the certification strategy is an
-open options round (the NEXT block). Built in a session that died mid-certification and
-recovered from its delivery zip — the two 2026-07-12 sections at the bottom carry both
-stories, and LESSONS.md gained five entries from the postmortem.
+(`repFraction: 0.5` — gold untouched), **HARNESS-CERTIFIED 2026-07-12** (3× bit-identical via
+the detached-run pattern; ~4.5 min wall per full run): market-blind **PASS +48%**,
+expedition-blind **PASS +25%**, commission-blind **PASS +3.5%** (thin — certification finding
+(i) in the NEXT block), median desire-death 96:00 (spread 72–120h), median death fame 636k =
+**LEVEL 22** by the live curve — the design's ≈L23 calibration HELD. Built in a session that
+died mid-certification and recovered from its delivery zip — the two 2026-07-12 sections at
+the bottom carry both stories, and LESSONS.md gained six entries across the arc.
 
 **THE DESIGN RESET (Daniel, 2026-07-10) — MEASURED by the audit (2026-07-11):** passive play
 reaches millions with nothing left to want. The sink stack is **228,483 gold** exactly; the
@@ -66,31 +68,39 @@ bottom); 3. **Spider + Demon** — **DONE 2026-07-11**; 4. **Expeditions MVP** �
 2026-07-11**; 5. **Relic rework** — **DONE 2026-07-12** (51e2ec3); 6. **Commissions** —
 **DONE 2026-07-12** (a5e6836, the NAMED CLIENT); **then the FAME & DEMAND REFORM ARC**
 (`FAME_ECONOMY_DESIGN.md` §3 — the arc's home): **F1a fame levels — DONE 2026-07-12**
-(c10810b, harness cert pending) → **F2 demand honesty** (supply-aware want mix) → **F3
+(c10810b, harness-certified same day) → **F2 demand honesty** (supply-aware want mix) → **F3
 scarcity teeth** (sized AFTER F2 sets the miss rate — the ordering is deliberate; includes
 the auto-wave/dismissal economics review) → **F4 demand surface** (the retired HUD chip's
 successor); 7. **Expedition depth** (parties, offline party management); 8. **Franchise**
 (rule-changing prestige, six-door factions — designed last, against what the harness measures
 then; **F1b — prestige spends fame — ships WITH it**, design already in the doc's §5).
 
-**NEXT — THE F1a HARNESS CERTIFICATION, opening with its options round (an INFRASTRUCTURE
-decision, not a design one — solve "how does a ~25-minute sim run inside tool-call limits"
-BEFORE launching anything).** The measured constraints: foreground tool calls cap ~600s;
-background `nohup` processes do NOT survive tool-call boundaries; two parallel sims (~1.5-2GB
-each) OOM the 4GB container — sequential is policy. Candidate shapes from the postmortem:
-(a) one foreground sim-only run at max timeout (suite separately — the solo run reached step
-6 in <5min with ~1-2min of seeds left, it MAY just fit); (b) split the sim into blocks via
-flags — modifies the certified artifact, needs a doctrine ruling; (c) `setsid` detachment —
-unproven here. Two open questions ride the round: the **3×-bit-identical doctrine vs. F1a
-introducing zero new RNG paths** (does the doctrine demand three full runs of a deterministic
-change?), and the contemplated **CAP_SEC 168h → 240h** bump (decide DELIBERATELY — it
-lengthens the very sim that exceeds the ceiling). Also OPEN, instrument-before-concluding:
-the comm-blind step-6 disproportion — real perf pathology (comm-blind lapses re-place the
-order every rollover; a possible cascade) or purely the execution ceiling? The timing
-evidence is CONTAMINATED (the self-matching poll); add step timestamps INSIDE the sim's own
-output before ruling either way. **F2 (demand honesty) follows certification.** Cold-boot
-ritual applies as always: this doc in full, the dev-method skill, sync-and-certify (suite
-must read **1667** at HEAD).
+**NEXT — F2: DEMAND HONESTY (the fame & demand arc's second pass), opening with its options
+round.** The sketch (FAME_ECONOMY_DESIGN.md §6): supply-aware want mix — trade-tier demand
+scales to real stockability. F3 (scarcity teeth) is sized AFTER F2 sets the miss rate — the
+ordering is deliberate. Cold-boot ritual applies as always: this doc in full, the dev-method
+skill, sync-and-certify (suite must read **1667** at HEAD).
+
+**FOUR MEASURED FINDINGS from the F1a certification (2026-07-12, 3× bit-identical), for
+Daniel's judgment — raise them BEFORE building anything that touches the economy:**
+  (i)   **The commission margin is THIN.** Comm-blind PASSES at only **+3.5%** (3-4 fills per
+        aware run) — the weakest acceptance margin on the board. It clears its bar (each blind
+        bot must measurably lose), but the premium channel barely moves the greedy bot; B2
+        (material payment) and B3 (extra slots) are queued as its depth. A design data point,
+        not a defect.
+  (ii)  **The metric moved under TWO passes at once.** These are the first certified verdicts
+        since the relic rework, so commissions + F1a arrive together: market-blind +34% →
+        **+48%**, exp-blind +29% → **+25%**. Attribution between the two passes is not
+        separable from this run.
+  (iii) **The death spread widened to 72–120h** (median steady at 96:00, still quantized to
+        inspection days); market-blind seed 2 is right-censored at the 168h horizon, so its
+        PASS is conservative. The **CAP_SEC 240h bump stays DEFERRED** — un-censoring one
+        control seed isn't worth the runtime until a verdict actually needs it.
+  (iv)  **F1a's calibration HELD.** Median death fame 636k = **level 22** by the live curve
+        (L22 = 483,570; L23 = 773,713 — the design predicted ≈L23 at the old 643k endpoint);
+        Mythic (L20, 188,895) is reached well before death. Post-death accumulation is now
+        **23.5k gold/hour** (from the pre-reform 53k/h era) ≈ 62.1h of post-death play to the
+        observed endgame purse.
 
 **THREE MEASURED FINDINGS from the relic rework, for Daniel's judgment (raise them BEFORE
 building anything that touches the economy):**
@@ -1972,7 +1982,7 @@ carries the full agenda.
 
 ---
 
-## 2026-07-12 — F1a: FAME LEVELS (the recovery session; c10810b, suite 1667; HARNESS CERT PENDING)
+## 2026-07-12 — F1a: FAME LEVELS (the recovery session; c10810b, suite 1667; HARNESS-CERTIFIED)
 
 **The recovery:** the verified zip (six files: FAME_ECONOMY_DESIGN.md new + config.js,
 reputation.js, offline.js, ui/hud.js, test_suite.mjs) applied over a clean `18be9de`; suite
@@ -2009,8 +2019,19 @@ reads (`tiers[i].min`; offline expectations derived through repFraction) — the
 derive-never-hand-type doctrine applied to the whole ladder. A top-level CONFIG import was
 added to the suite (block-scoped section imports checked legal — no duplicate binding).
 
-**CERT PENDING:** the acceptance sim never completed in the dead session (the section above);
-F1a is suite-certified only. The certification strategy — including the 3×-bit-identical
-doctrine question, the CAP_SEC 168h→240h dial, and the comm-blind step-6 open question — is
-the next options round; §0's NEXT block carries the full agenda. **F2 (demand honesty)
-follows certification.**
+**HARNESS-CERTIFIED (same day, the follow-up session — Daniel picked Option 2 of the
+certification round):** a `setsid`-DETACHED run polled by ARTIFACT — output size/mtime plus an
+exit-code sentinel file, never a process substring — runs sequential per the OOM policy, and a
+90-second toy writer-loop probe verified boundary survival BEFORE the real launch. The sim
+gained ~13 lines of **stderr-only** wall-clock marks (`tmark` — per-runSim start/done with
+wall seconds + sim end-hours) so stdout stays the certified byte-comparable artifact.
+**Result: 3× bit-identical (sha256 f0a1fb3b…), all exits 0, ~4.5 min wall per full run —
+14 runSims at 11–25s each.** The step-6 question CLOSED as ceiling, not pathology: comm-blind
+seeds run 13–23s, indistinguishable from every other block; the dead session's runs froze at
+9,597 bytes and this run passed that exact byte mid-flight — same deterministic stdout, the
+runs simply died at the execution ceiling. Its "exp-blind seeds cap out" claim was also wrong:
+only market-blind seed 2 touches 168h (right-censored; that PASS is conservative) — aware runs
+top out at 121h, and no cap-hit warning fired. **Verdicts: market-blind PASS +48%, exp-blind
+PASS +25%, comm-blind PASS +3.5%; median death 96:00 (spread 72–120h); median death fame
+636k = LEVEL 22 by the live curve — the design's ≈L23 calibration held.** The four
+certification findings live in §0's NEXT block. **F2 (demand honesty) is next.**

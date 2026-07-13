@@ -59,6 +59,15 @@ const CAP_SEC = 168 * 3600;    // hard safety cap (48h -> 168h at the relic rewo
                                // contain it); a cap-hit is reported loudly and exits non-zero
 const OBSERVED_ENDGAME_PURSE = 1462291; // the §0 starting fact: 6.4x the 228,483 sink stack
 
+// STDERR-ONLY wall-clock marks (F1a harness certification, 2026-07-12). Observability for runs
+// watched from OUTSIDE the process — the dead-session lesson: poll the artifact, and let the
+// artifact carry its own timestamps, so "stalled at step 6" is diagnosable from the stream
+// alone. Deliberately stderr: STDOUT is the certified bit-identical artifact and must stay
+// byte-comparable across the 3x doctrine runs (wall times never are).
+const WALL0 = Date.now();
+const tmark = (msg) =>
+  process.stderr.write(`[t+${((Date.now() - WALL0) / 1000).toFixed(1)}s] ${msg}\n`);
+
 // --- Seeded PRNG (mulberry32) — swapped into Math.random per run --------------------------------
 function mulberry32(seed) {
   return function () {
@@ -151,6 +160,8 @@ function runSim(seed, { tradeAware = true, expeditionAware = true, commissionAwa
   // that trades but never sends supply runs; commissionAware=false is step 6's — a bot that
   // trades and runs but leaves every Special Order to lapse. Each blind bot must measurably
   // lose to the full player, or the system it ignores isn't real yet.
+  const wallStart = Date.now();
+  tmark(`runSim start seed=${seed} trade=${tradeAware} exp=${expeditionAware} comm=${commissionAware}`);
   const realRandom = Math.random;
   Math.random = mulberry32(seed);
   try {
@@ -303,6 +314,8 @@ function runSim(seed, { tradeAware = true, expeditionAware = true, commissionAwa
 
     const postRate = (deathT !== null && t > deathT)
       ? (s.gold - goldAtDeath) / ((t - deathT) / 60) : null;   // net gold/min with nothing to want
+    tmark(`runSim done  seed=${seed} trade=${tradeAware} exp=${expeditionAware} comm=${commissionAware}`
+      + ` wall=${((Date.now() - wallStart) / 1000).toFixed(1)}s simEnd=${(t / 3600).toFixed(1)}h`);
     return { seed, events, samples, deathT, endT: t, goldAtDeath, scrapAtDeath,
       goldEnd: s.gold, scrapEnd: s.scrap ?? 0, postRate, purchased, trades, runsSent,
       commissionsFilled,
