@@ -36,7 +36,19 @@ expedition-blind **PASS +25%**, commission-blind **PASS +3.5%** (thin — certif
 (i) in the NEXT block), median desire-death 96:00 (spread 72–120h), median death fame 636k =
 **LEVEL 22** by the live curve — the design's ≈L23 calibration HELD. Built in a session that
 died mid-certification and recovered from its delivery zip — the two 2026-07-12 sections at
-the bottom carry both stories, and LESSONS.md gained six entries across the arc.
+the bottom carry both stories, and LESSONS.md gained six entries across the arc. And now **F2 — DEMAND HONESTY**
+(e71beef, 2026-07-13, suite 1678 — arc pass two): the want-pick's item stage rides
+`supplyWantWeight` — trade-tier asks weigh **stocked 1 / known 0.7 / unknown 0.4**
+(CONFIG.queue.supplyWantBias), the ROSTER RULE is suite-enforced (§73: every trade-bearing
+category keeps a gold sibling), and the sim gained the OOS-front + trade-share acceptance
+metrics. Certified 3× bit-identical at the Option B dials: market-blind **+12%**, exp-blind
+**+28%**, comm-blind **+6.0%** — all PASS — with THE finding of the arc: the first-cut dials
+(0.4/0.15) flipped market-blind to −20%, proving the old +48% edge was mostly the
+mispriced-scarcity TAX on non-participants; **+12% is the market's honest rate margin**, and
+its completion bite is now the bigger tooth (blind deaths stretch to 144h/96h/cap-censored vs
+the aware arc's 72:00 FLAT across all five seeds). OOS-front fell from a median 63% of each
+run to ~51.5%. The 2026-07-13 dated section carries the whole story, including the two-round
+shape (first cut failed the law; Option B restored it).
 
 **THE DESIGN RESET (Daniel, 2026-07-10) — MEASURED by the audit (2026-07-11):** passive play
 reaches millions with nothing left to want. The sink stack is **228,483 gold** exactly; the
@@ -68,39 +80,42 @@ bottom); 3. **Spider + Demon** — **DONE 2026-07-11**; 4. **Expeditions MVP** �
 2026-07-11**; 5. **Relic rework** — **DONE 2026-07-12** (51e2ec3); 6. **Commissions** —
 **DONE 2026-07-12** (a5e6836, the NAMED CLIENT); **then the FAME & DEMAND REFORM ARC**
 (`FAME_ECONOMY_DESIGN.md` §3 — the arc's home): **F1a fame levels — DONE 2026-07-12**
-(c10810b, harness-certified same day) → **F2 demand honesty** (supply-aware want mix) → **F3
-scarcity teeth** (sized AFTER F2 sets the miss rate — the ordering is deliberate; includes
+(c10810b, harness-certified same day) → **F2 demand honesty — DONE 2026-07-13** (e71beef,
+Option 1 + the Option B dial retune, all laws PASS) → **F3 scarcity teeth** (RE-SCOPED — the
+original sketch retired; design doc §7 carries why; opens with its options round; includes
 the auto-wave/dismissal economics review) → **F4 demand surface** (the retired HUD chip's
 successor); 7. **Expedition depth** (parties, offline party management); 8. **Franchise**
 (rule-changing prestige, six-door factions — designed last, against what the harness measures
 then; **F1b — prestige spends fame — ships WITH it**, design already in the doc's §5).
 
-**NEXT — F2: DEMAND HONESTY (the fame & demand arc's second pass), opening with its options
-round.** The sketch (FAME_ECONOMY_DESIGN.md §6): supply-aware want mix — trade-tier demand
-scales to real stockability. F3 (scarcity teeth) is sized AFTER F2 sets the miss rate — the
-ordering is deliberate. Cold-boot ritual applies as always: this doc in full, the dev-method
-skill, sync-and-certify (suite must read **1667** at HEAD).
+**NEXT — F3: SCARCITY TEETH, opening with its RE-SCOPE options round (the original sketch is
+RETIRED — design doc §7 carries why).** The measured frame, all at the shipped dials: the
+market's honest rate margin is **+12%**; misses sit **blind ~58% vs aware ~51.5%** of run time
+(the sizing line in the market acceptance block), so miss-costs wouldn't invert the gap but
+offer only a ~6-point differential — weak teeth; the market's REAL bite post-F2 is COMPLETION
+(blind deaths 144h/96h/cap-censored-168h vs aware 72:00 flat). All economy laws already PASS,
+so F3's scope question is genuinely open: fiction-texture teeth (fame-scaled leave penalty),
+throughput teeth (participation pays — e.g. fame-scaled trade shelf depth; WARNING: shelf caps
+feed inspection fullness, trace before touching), or memory teeth (missed-demand decay ledger,
+new state). Behind F3: F4, then the parked (g) queue — **B1 first among them, priority RAISED:
+F2 amplifies the commission-stock collision (stocking an order's item attracts full-weight
+counter demand; Daniel watched Bob serve away a Silver Key the order needed, 2026-07-13);
+queue order kept by Daniel's call.** Cold-boot ritual as always: this doc in full, the
+dev-method skill, sync-and-certify (suite must read **1678** at HEAD).
 
-**FOUR MEASURED FINDINGS from the F1a certification (2026-07-12, 3× bit-identical), for
-Daniel's judgment — raise them BEFORE building anything that touches the economy:**
-  (i)   **The commission margin is THIN.** Comm-blind PASSES at only **+3.5%** (3-4 fills per
-        aware run) — the weakest acceptance margin on the board. It clears its bar (each blind
-        bot must measurably lose), but the premium channel barely moves the greedy bot; B2
-        (material payment) and B3 (extra slots) are queued as its depth. A design data point,
-        not a defect.
-  (ii)  **The metric moved under TWO passes at once.** These are the first certified verdicts
-        since the relic rework, so commissions + F1a arrive together: market-blind +34% →
-        **+48%**, exp-blind +29% → **+25%**. Attribution between the two passes is not
-        separable from this run.
-  (iii) **The death spread widened to 72–120h** (median steady at 96:00, still quantized to
-        inspection days); market-blind seed 2 is right-censored at the 168h horizon, so its
-        PASS is conservative. The **CAP_SEC 240h bump stays DEFERRED** — un-censoring one
-        control seed isn't worth the runtime until a verdict actually needs it.
-  (iv)  **F1a's calibration HELD.** Median death fame 636k = **level 22** by the live curve
-        (L22 = 483,570; L23 = 773,713 — the design predicted ≈L23 at the old 643k endpoint);
-        Mythic (L20, 188,895) is reached well before death. Post-death accumulation is now
-        **23.5k gold/hour** (from the pre-reform 53k/h era) ≈ 62.1h of post-death play to the
-        observed endgame purse.
+**MEASURED FINDINGS STANDING FOR DANIEL'S JUDGMENT (F1a certification, amended through F2):**
+  (i)   **The commission margin RECOVERED under F2**: comm-blind +3.5% → **+6.0%** — demand
+        honesty concentrated counter traffic on stocked shelves and the premium channel
+        strengthened. B2 (material payment) and B3 (extra slots) remain its designed depth.
+  (ii)  **Attribution is a trajectory now, not a decomposition** — three passes deep
+        (commissions, F1a, F2): market-blind +34% → +48% (tax-inflated) → **+12% (honest)**.
+        The middle number was never real margin; the record shows why.
+  (iii) **The aware death spread COLLAPSED to 72:00 flat across all five seeds** (from
+        72–120h) — median down a full day, run variance gone: punchier arc, less texture; a
+        pacing judgment for Daniel. Blind controls stretched the other way (one cap-censors at
+        168h — its PASS stays conservative). CAP_SEC 240h stays DEFERRED.
+  (iv)  **F1a's calibration keeps holding under the faster arc**: median death fame 659k =
+        level 22 by the live curve; Mythic lands well before death.
 
 **THREE MEASURED FINDINGS from the relic rework, for Daniel's judgment (raise them BEFORE
 building anything that touches the economy):**
@@ -2035,3 +2050,61 @@ top out at 121h, and no cap-hit warning fired. **Verdicts: market-blind PASS +48
 PASS +25%, comm-blind PASS +3.5%; median death 96:00 (spread 72–120h); median death fame
 636k = LEVEL 22 by the live curve — the design's ≈L23 calibration held.** The four
 certification findings live in §0's NEXT block. **F2 (demand honesty) is next.**
+
+---
+
+## 2026-07-13 — F2: DEMAND HONESTY (arc pass two; e71beef, suite 1678; certified twice — the round that failed and the round that shipped)
+
+**The build (Daniel's Option 1 — item-stage supply bias, binary signals):** `supplyWantWeight`
+(game.js, exported) — trade-tier items weigh by three live signals, zero new bookkeeping:
+shelf stock > 0 → `stocked`; `stats.itemSales[id]` > 0 → `known`; else `unknown`. Gold-tier and
+stateless picks stay ×1 (the bias never touches the gold economy or legacy math); every read
+??-guarded. Wired as the item stage's THIRD factor beside itemBias and affordableWantBias.
+Known accepted nuance: commissions skip itemSales by law, so a wholesale-only item reads
+'unknown' once its shelf empties. **§73** pins the dial contract (exacts + the never-to-zero
+law), the four levels against live-registry ids, a seeded REAL-spawn-path effect probe
+(relations, never counts: starved 4/400 asks — the floor working; stocked 30/400), the wiring,
+and **the ROSTER RULE as a suite-enforced contract: every trade-bearing category keeps a gold
+sibling** — the options round's guard for the item-stage-only design; an all-trade category
+must fail there and force the category-stage upgrade. A2's fixture now stocks the flask it
+licenses (conditioning the supply contract out exactly as it conditions out budget). The sim
+gained the acceptance metrics: `oosFrontSec` (front customer blocked on stock ≤ 0, integrated
+at policy resolution) and end-state trade/all serve shares from the game's own ledger.
+
+**The baseline revelation (scratch clone at HEAD + metrics-only sim):** pre-F2, the aware
+bot's front customer sat blocked out-of-stock for **40–76 HOURS per run — a median 63% of the
+run's lifetime.** The diagnosis's "invisible throughput tax," finally a number.
+
+**Certification round one — the first cut (0.4/0.15) FAILED the standing law:** F2's own
+acceptance was met (OOS share 63% → ~47%; serves +65%; purses doubled), but market-blind
+flipped to **WEAK, aware −20%**: the blind bot never stocks trade → all its trade demand
+floored → a pure, instantly-restockable gold queue at maximal throughput, while the aware shop
+attracted full-weight asks onto maxStock-5 shelves and ate the sell-out blocking. **The deep
+finding: the old +48% market edge was mostly the mispriced-scarcity TAX on non-participants —
+remove the defect and trade margins alone don't carry the market.** The pass was HELD (zip
+packaged as insurance, nothing committed) and the ruling went to Daniel as an options round:
+(A) ship as-measured, F3 restores the law next; (B) soften the dials until both laws hold;
+(C) pair with a re-scoped F3 in-session. **Daniel picked B.**
+
+**Certification round two — candidate 0.7/0.4 PASSED everything first try (3× bit-identical):**
+market-blind **+12%** (the honest margin, with a partial tax deliberately kept in the
+non-participant's queue), exp-blind **+28%**, comm-blind **+6.0%** (STRONGER than pre-F2's
++3.5% — honesty concentrated counter sales on stocked shelves). F2's acceptance held at the
+softer dials: OOS median 63% → ~51.5%, throughput +13%, trade serve share 14.6–15.0%.
+Pacing finding: **the aware death spread collapsed to 72:00 flat across all five seeds**
+(median down a full day); blind controls stretched to 144h/96h/cap-censored-168h — post-F2,
+the market's biggest tooth is COMPLETION, not rate.
+
+**Daniel's browser test surfaced the F2 × COMMISSIONS amplification:** he stocked 3 Silver
+Keys for a 2× commission and watched Bob serve one to a counter customer — B1's exact gap
+(no reservation exists at HEAD), now SHARPENED because stocking an order's item flips it to
+full ×1 demand and actively attracts the counter traffic. **Queue order kept by Daniel's call
+(F3 → F4 → B1), with B1's priority noted as raised.**
+
+**The F3 re-scope (design doc §7 rewritten):** the old sketch's miss-penalty premise measured
+DIAL-DEPENDENT — at 0.4/0.15 it would have inverted the gap outright. The same-day sizing run
+(the OOS line added to the market acceptance block) settled the shipped-dial picture: misses
+sit **blind ~58% vs aware ~51.5%** of run time — miss-costs are direction-safe but offer only
+~6 points of differential. F3's round opens from that frame; §0's NEXT carries it.
+
+**NEXT:** the F3 re-scope options round.

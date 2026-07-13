@@ -110,20 +110,31 @@ want to play* — a replay hook, not a graveyard. Design direction (mechanics sh
   ledgers (rep mults) carry, halve, or reset; whether expedition capacity is a franchise perk
   (Daniel's note: more expeditions through prestiges).
 
-## 6. F2 — Demand honesty (sketch)
+## 6. F2 — Demand honesty (SHIPPED 2026-07-13, e71beef — Option 1, Option B dials)
 
-The want-pick's item stage gains a SUPPLY weight for trade-tier goods — demand for an item the
-shop has never stocked (or can't currently stock) shrinks toward a floor, never to zero (a
-stray ask teaches the market exists). Candidate signal: recent stocked-time or lifetime trades
-of the item, registry-driven. Acceptance: front-blocking out-of-stock waits drop measurably in
-the harness; trade-tier serve share tracks actual supply share.
+The want-pick's item stage gained the SUPPLY weight (`supplyWantWeight`, game.js; dials
+`CONFIG.queue.supplyWantBias` — stocked 1 / known 0.7 / unknown 0.4). Acceptance MET and
+certified 3× bit-identical: front-blocked out-of-stock time fell from a median 63% of each run
+to ~51.5%; trade serve share tracks supply at 14.6–15.0%; serve throughput +13%. THE BIG
+MEASURED TRUTH: the first cut (0.4/0.15) flipped market-blind to WEAK (aware −20%) — the old
++48% market edge was mostly the mispriced-scarcity TAX on non-participants, not trade margin.
+The Option B floors deliberately keep a partial tax in the non-participant's queue; **+12% is
+the market's honest margin at these dials.** Full story: the handoff's 2026-07-13 section.
 
-## 7. F3 — Scarcity teeth (sketch)
+## 7. F3 — Scarcity teeth (RE-SCOPED 2026-07-13 — the original sketch is retired)
 
-After F2, the remaining misses are REAL misses. Options space: leave penalty scaled to fame
-tier (a Renowned shop disappoints louder); a visible "demand missed today" counter feeding a
-small tier-scaled bleed; auto-wave stays penalty-free (Bob managing the line is service, not
-failure). Sized against F2's measured miss rate.
+The original sketch (fame-scaled leave penalties; a missed-demand counter feeding a
+tier-scaled bleed) rested on a premise F2's certification measured to be DIAL-DEPENDENT: after
+demand honesty, misses concentrate substantially on the shop that PARTICIPATES (stocked trade
+shelves attract full-weight asks and sell out at maxStock 5), while at the first-cut dials the
+blind shop's queue was nearly miss-free — a miss-tax there would have INVERTED the gap. At the
+shipped 0.7/0.4 floors the blind queue keeps a real stream of unservable floor asks, so the
+direction of any miss-cost hinges on where OOS time actually sits blind-vs-aware — now printed
+in the market acceptance block (the F3 sizing line). F3's re-scoped brief: close the gap
+between the honest +12% and a margin worth the market's ceremony by making PARTICIPATION pay
+(or gold-throughput cost), measured before designed. Its options round opens from the sizing
+numbers, not from this paragraph. Auto-wave stays penalty-free either way (Bob managing the
+line is service, not failure — unchanged law).
 
 ## 8. F4 — Demand surface (sketch)
 
@@ -137,3 +148,11 @@ one options round.
   offline fame haircut approved. F1b design here, mechanics with step 8.
 - 2026-07-12 — Commission B1 = **Option 1** (hard reserve + awareness bundle), queued behind
   this arc.
+- 2026-07-13 — F2 = **Option 1** (item-stage supply bias, binary signals, roster rule
+  suite-enforced). First-cut dials 0.4/0.15 failed the market-blind law (aware −20%); Daniel
+  picks **Option B** (soften until both laws hold) over ship-as-measured / pair-with-F3.
+  Candidate 0.7/0.4 certifies on the first try: +12/+28/+6, all PASS.
+- 2026-07-13 — Daniel's browser test surfaces the F2 × commissions collision (stocking an
+  order's item attracts full-weight counter demand; Bob serves reserved-in-spirit stock away).
+  **Queue order KEPT** — B1 (hard reserve) stays behind F3/F4, with the amplification recorded
+  as a priority note on it.

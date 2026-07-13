@@ -471,7 +471,11 @@ for (const b of blind) {
   const delay = (b.deathT ?? b.endT) - (a.deathT ?? a.endT);
   console.log(`  seed ${b.seed}: blind death ${hms(b.deathT ?? b.endT)} vs aware ${hms(a.deathT ?? a.endT)}`
     + `  (${signed(delay)})  |  sword sold ${b.swordSold} vs ${a.swordSold}`
-    + `  |  post-death ${b.postRate?.toFixed(0) ?? '-'} vs ${a.postRate?.toFixed(0) ?? '-'} gold/min`);
+    + `  |  post-death ${b.postRate?.toFixed(0) ?? '-'} vs ${a.postRate?.toFixed(0) ?? '-'} gold/min`
+    // F3 SIZING (added post-F2): where the misses LIVE, blind vs aware — the number that decides
+    // whether miss-costs tax the non-participant (blind's unservable floor asks) or punish the
+    // participant (aware's sell-out gaps). Read BEFORE designing any scarcity tooth.
+    + `  |  OOS-front ${hms(Math.round(b.oosFrontSec))} vs ${hms(Math.round(a.oosFrontSec))}`);
 }
 const rateAdvMed = median(blind.map((b) => {
   const a = runs.find((r) => r.seed === b.seed);
