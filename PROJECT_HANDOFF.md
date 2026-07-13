@@ -48,7 +48,15 @@ mispriced-scarcity TAX on non-participants; **+12% is the market's honest rate m
 its completion bite is now the bigger tooth (blind deaths stretch to 144h/96h/cap-censored vs
 the aware arc's 72:00 FLAT across all five seeds). OOS-front fell from a median 63% of each
 run to ~51.5%. The 2026-07-13 dated section carries the whole story, including the two-round
-shape (first cut failed the law; Option B restored it).
+shape (first cut failed the law; Option B restored it). And **F3 — SCARCITY TEETH** (7db7c21,
+2026-07-13, suite 1693 — arc pass three, Option 1 of the RE-SCOPED round): the leave penalty
+scales with the shop's rung — `leavePenaltyOf` = leavePenalty + leavePenaltyPerTier × tier
+index (1 at Neutral → 5 at Renowned → 7 at Mythic), charged to SPENDABLE fame only (the perk
+budget); **the lifetime track never falls** (suite-pinned through the real leave path in §74),
+and auto-wave/dismissal stay penalty-free. The fiction-first option turned out to carry real
+weight: the drain compounds through PERK TIMING (every blind bot leaks more goodwill than the
+full player), widening every margin — market-blind **+21%**, exp-blind **+36%**, comm-blind
+**+12.4%**, all 3× bit-identical.
 
 **THE DESIGN RESET (Daniel, 2026-07-10) — MEASURED by the audit (2026-07-11):** passive play
 reaches millions with nothing left to want. The sink stack is **228,483 gold** exactly; the
@@ -81,27 +89,35 @@ bottom); 3. **Spider + Demon** — **DONE 2026-07-11**; 4. **Expeditions MVP** �
 **DONE 2026-07-12** (a5e6836, the NAMED CLIENT); **then the FAME & DEMAND REFORM ARC**
 (`FAME_ECONOMY_DESIGN.md` §3 — the arc's home): **F1a fame levels — DONE 2026-07-12**
 (c10810b, harness-certified same day) → **F2 demand honesty — DONE 2026-07-13** (e71beef,
-Option 1 + the Option B dial retune, all laws PASS) → **F3 scarcity teeth** (RE-SCOPED — the
-original sketch retired; design doc §7 carries why; opens with its options round; includes
-the auto-wave/dismissal economics review) → **F4 demand surface** (the retired HUD chip's
+Option 1 + the Option B dial retune, all laws PASS) → **F3 scarcity teeth — DONE 2026-07-13**
+(7db7c21, the re-scoped Option 1: tier-scaled leave penalty on spendable fame; margins widened
+to +21/+36/+12.4; the auto-wave/dismissal economics review CLOSED with it — both stay free by
+law and by pin) → **F4 demand surface** (the retired HUD chip's
 successor); 7. **Expedition depth** (parties, offline party management); 8. **Franchise**
 (rule-changing prestige, six-door factions — designed last, against what the harness measures
 then; **F1b — prestige spends fame — ships WITH it**, design already in the doc's §5).
 
-**NEXT — F3: SCARCITY TEETH, opening with its RE-SCOPE options round (the original sketch is
-RETIRED — design doc §7 carries why).** The measured frame, all at the shipped dials: the
-market's honest rate margin is **+12%**; misses sit **blind ~58% vs aware ~51.5%** of run time
-(the sizing line in the market acceptance block), so miss-costs wouldn't invert the gap but
-offer only a ~6-point differential — weak teeth; the market's REAL bite post-F2 is COMPLETION
-(blind deaths 144h/96h/cap-censored-168h vs aware 72:00 flat). All economy laws already PASS,
-so F3's scope question is genuinely open: fiction-texture teeth (fame-scaled leave penalty),
-throughput teeth (participation pays — e.g. fame-scaled trade shelf depth; WARNING: shelf caps
-feed inspection fullness, trace before touching), or memory teeth (missed-demand decay ledger,
-new state). Behind F3: F4, then the parked (g) queue — **B1 first among them, priority RAISED:
-F2 amplifies the commission-stock collision (stocking an order's item attracts full-weight
-counter demand; Daniel watched Bob serve away a Silver Key the order needed, 2026-07-13);
-queue order kept by Daniel's call.** Cold-boot ritual as always: this doc in full, the
-dev-method skill, sync-and-certify (suite must read **1678** at HEAD).
+**NEXT — F4: DEMAND SURFACE (the arc's last pre-capstone pass), opening with its options
+round.** The chip's designed successor, ambient and DIEGETIC (design doc §8): the Market Day
+event runs with no player-facing surface since the chip retired (the standing discovery gap) —
+log line, Bob's bubble, and the away modal name it, but nothing ambient advertises today's
+demand. Candidates from the sketch: a second line on the market board's chalk ("Today: flasks
+fly" — market-crier voice, the board-advertises doctrine), a door-side demand sign, shelf-tab
+glow on the event category. One pass, one options round. Behind F4: the parked (g) queue (B1
+first, priority raised) and (h). Cold-boot ritual as always: this doc in full, the dev-method
+skill, sync-and-certify (suite must read **1693** at HEAD).
+
+**MEASURED FINDINGS STANDING FOR DANIEL'S JUDGMENT (amended through F3's certification):**
+  (i)   **The commission margin keeps compounding**: +3.5% (F1a) → +6.0% (F2) → **+12.4%**
+        (F3) — scarcity of spendable rep makes the commission's fame bonus bite in perk
+        timing. B2/B3 remain its designed depth, now on top of a healthy channel.
+  (ii)  **The market-blind trajectory**: +34% → +48% (tax-inflated) → +12% (honest) →
+        **+21%** (honest + teeth). The reform arc's whole story in four numbers.
+  (iii) **Death-spread texture partly returned under F3**: 72:00 flat → **72–120h** (median
+        72:00) — the pacing concern from F2's collapse eased on its own. CAP_SEC 240h stays
+        DEFERRED.
+  (iv)  **F1a's calibration keeps holding**: median death fame 662k = level 22 by the live
+        curve, three passes running.
 
 **MEASURED FINDINGS STANDING FOR DANIEL'S JUDGMENT (F1a certification, amended through F2):**
   (i)   **The commission margin RECOVERED under F2**: comm-blind +3.5% → **+6.0%** — demand
@@ -149,8 +165,15 @@ building anything that touches the economy):**
       HUD compact-numbers option; the itch dual-publish decision.
   (g) **QUEUED BEHIND THE FAME & DEMAND ARC (order per FAME_ECONOMY_DESIGN.md §3's tail):**
       ① Greg perks hidden pre-hire; ② Commission B1 — hard reserve + awareness bundle
-      (**Option 1 PICKED 2026-07-12**, decision log in the design doc §9); ③ B2 material
-      payment; ④ B3 extra slots via Bob upgrade.
+      (**Option 1 PICKED 2026-07-12**, decision log in the design doc §9; **priority RAISED
+      2026-07-13** — F2 amplifies the collision: stocking an order's item attracts full-weight
+      counter demand, and Daniel watched Bob serve away a Silver Key the order needed); ③ B2
+      material payment; ④ B3 extra slots via Bob upgrade.
+  (h) **Results-box flooding on material-item purchases** (Daniel, browser, 2026-07-13):
+      buying several material-made objects fills the battle-results box, with duplicate lines
+      for repeats of the same item. Wanted: aggregate/dedupe in the results renderer
+      ("Iron Buckler ×3" style) — presentation-only, no economy surface; a clean small
+      standalone pass.
 
 **Steps 7-8 behind all of it:** Expedition depth (parties, offline management), then Franchise
 (rule-changing prestige, six-door factions — designed against what the harness measures then,
@@ -2108,3 +2131,38 @@ sit **blind ~58% vs aware ~51.5%** of run time — miss-costs are direction-safe
 ~6 points of differential. F3's round opens from that frame; §0's NEXT carries it.
 
 **NEXT:** the F3 re-scope options round.
+
+---
+
+## 2026-07-13 — F3: SCARCITY TEETH (arc pass three; 7db7c21, suite 1693; the re-scoped Option 1)
+
+**The round's frame (why the original sketch died):** the F2 sizing run put misses at blind
+~58% vs aware ~51.5% of run time — miss-costs direction-safe at the shipped dials but only ~6
+points of raw differential — and all economy laws already PASSED at +12%, so the round asked
+what teeth the GAME still wanted: fiction-texture (fame-scaled leave penalty), throughput
+(fame-scaled trade shelf depth — flagged: shelf caps feed inspection fullness, trace first),
+or memory (missed-demand decay ledger, new state). **Daniel picked Option 1, the smallest.**
+
+**The build:** `leavePenaltyOf(state)` (game.js, beside fameOf) = `leavePenalty` +
+`leavePenaltyPerTier` × tier index — 1 at Neutral, 5 at Renowned, 7 at Mythic; both dials in
+CONFIG.reputation, perTier 0 restores flat, ??-guarded. Charged ONCE per leaver so both log
+branches (leave and theft) report the true delta (`repDelta: -pen`). The drain lands on
+**spendable fame only** — the perk budget; the lifetime tier track NEVER falls (the dual-track
+law, now suite-pinned through the REAL leave path: §74 spawns a customer, times it out inside
+`update()`, and asserts the exact tier-scaled charge, the unmoved lifetime, and the honest log
+line). Auto-wave and dismissal stay penalty-free by construction and by pin (they route
+through dismissCurrent, repDelta 0 — service, not failure). **The auto-wave/dismissal
+economics review, carried on the sequence line since the reform began, CLOSED with this pass.**
+
+**Certification (3× bit-identical):** the fiction-first option carried real economic weight —
+the goodwill drain compounds through PERK TIMING (the sim's bot buys the cheapest perk with
+spendable rep; every blind bot leaks more goodwill than the full player, so its perks arrive
+later and its economy runs colder). Every margin widened: market-blind **+21%** (from +12),
+exp-blind **+36%** (from +28), comm-blind **+12.4%** (from +6.0 — spendable-rep scarcity makes
+the commission's fame bonus bite). Median death 72:00 with the spread re-widened to 72–120h
+(texture partly back after F2's flat collapse); death fame 662k = level 22, calibration
+holding a third consecutive pass.
+
+**Also queued from Daniel's browser session:** the results-box flooding item — parked (h).
+
+**NEXT:** F4 (demand surface) opens with its options round — §0 carries the agenda.

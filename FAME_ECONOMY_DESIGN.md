@@ -121,7 +121,17 @@ MEASURED TRUTH: the first cut (0.4/0.15) flipped market-blind to WEAK (aware −
 The Option B floors deliberately keep a partial tax in the non-participant's queue; **+12% is
 the market's honest margin at these dials.** Full story: the handoff's 2026-07-13 section.
 
-## 7. F3 — Scarcity teeth (RE-SCOPED 2026-07-13 — the original sketch is retired)
+## 7. F3 — Scarcity teeth (SHIPPED 2026-07-13, 7db7c21 — the re-scoped Option 1)
+
+Shipped as the tier-scaled leave penalty: `leavePenaltyOf` = leavePenalty +
+leavePenaltyPerTier × rung index (1 → 7 across the ladder), charged to SPENDABLE fame only —
+the lifetime track never falls (suite-pinned through the real leave path), auto-wave and
+dismissal penalty-free by law and pin. The fiction-first option measured as REAL teeth: the
+drain compounds through perk timing, widening every margin (market-blind +12% → **+21%**,
+exp-blind +28% → **+36%**, comm-blind +6.0% → **+12.4%**, 3× bit-identical). The re-scope
+history below is retained for the record — the throughput lever (fame-scaled trade shelf
+depth; inspection-fullness coupling flagged) and the memory lever (missed-demand decay ledger)
+remain documented, unbuilt options if a future certification shows the margin eroding.
 
 The original sketch (fame-scaled leave penalties; a missed-demand counter feeding a
 tier-scaled bleed) rested on a premise F2's certification measured to be DIAL-DEPENDENT: after
@@ -156,3 +166,7 @@ one options round.
   order's item attracts full-weight counter demand; Bob serves reserved-in-spirit stock away).
   **Queue order KEPT** — B1 (hard reserve) stays behind F3/F4, with the amplification recorded
   as a priority note on it.
+- 2026-07-13 — F3 = **Option 1 of the re-scoped round** (tier-scaled leave penalty on
+  spendable fame; fiction-first, smallest). Certified first try, 3× bit-identical; every
+  margin widened (+21/+36/+12.4) via perk-timing compounding. Throughput and memory levers
+  stay documented, unbuilt.
