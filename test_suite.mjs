@@ -1302,6 +1302,10 @@ console.log('M4 auto-serve worker — smoke test\n');
   {
     const s = shopState();
     s.licenses.greater_flask = true;                // frog's bias-3 flask is now in the pool
+    s.items.greater_flask.stock = 5;                // DEMAND HONESTY (F2, 2026-07-13): stocked
+      // -> x supplyWantBias.stocked (1), conditioning the SUPPLY contract out exactly as the
+      // budget filter below conditions affordability out — §73 owns the supply contract; this
+      // section stays a pure itemBias probe.
     let flaskWants = 0, consumableWants = 0;
     for (let i = 0; i < 12000 && consumableWants < 150; i++) {   // cap raised 2026-07-06: the
       // budget>=flask conditioning qualifies only ~3% of draws; 12k keeps the >=100 sample floor
@@ -4654,6 +4658,96 @@ console.log('M4 auto-serve worker — smoke test\n');
     const hud = rf72('./src/ui/hud.js', 'utf8');
     ok(hud.includes('fameLevel') && hud.includes('nextLevelInfo'),
        'fame levels: the HUD badge + remainder ride the level track');
+  }
+}
+
+// ========== SECTION 73 — DEMAND HONESTY (F2 Option 1 — the fame & demand reform) ==========
+// The want-pick's item stage gains a SUPPLY weight for trade-tier goods: on-shelf x stocked(1),
+// sold-before x known, never-sold x unknown — a floor, never zero ("a stray ask teaches the
+// market exists"). Gold-tier and stateless picks stay x1. FAME_ECONOMY_DESIGN.md §6.
+{
+  const { supplyWantWeight, spawnCustomer: spawn73 } = await import('./src/game.js');
+  const { createInitialState: cis73 } = await import('./src/state.js');
+  const { ITEMS: IT73, ITEM_ORDER: ORD73 } = await import('./src/data/items.js');
+  const { tradeItemIds, mulberry32: rng73 } = await import('./src/data/trademarket.js');
+  const dial = CONFIG.queue.supplyWantBias;
+
+  // (a) Dial contract (newest batch, exact) + the never-to-zero law.
+  ok(!!dial && dial.stocked === 1 && dial.known === 0.7 && dial.unknown === 0.4,
+     'demand honesty: dial exacts (stocked 1, known 0.7, unknown 0.4 — the Option B retune)');
+  ok(dial.unknown > 0 && dial.unknown < dial.known && dial.known < dial.stocked,
+     'demand honesty: the never-to-zero law (0 < unknown < known < stocked)');
+
+  // (b) THE ROSTER RULE (the options round's suite-enforced contract): every category holding
+  // a trade-tier item must also hold a gold-tier item — the bias redistributes demand WITHIN
+  // a category, so each such category needs a stockable sibling. A future all-trade category
+  // must fail HERE and force the category-stage upgrade before it ships.
+  {
+    const cats = {};
+    for (const id of ORD73) {
+      const c = IT73[id].category;
+      (cats[c] ??= { gold: 0, trade: 0 })[IT73[id].acquisition ?? 'gold']++;
+    }
+    ok(Object.values(cats).every((c) => c.trade === 0 || c.gold > 0),
+       'demand honesty: ROSTER RULE — every trade-bearing category keeps a gold sibling');
+  }
+
+  // (c) The weight function — all levels, every id derived from the live registry.
+  {
+    const s = cis73();
+    const tId = tradeItemIds()[0];
+    const gId = ORD73.find((id) => (IT73[id].acquisition ?? 'gold') === 'gold');
+    ok(supplyWantWeight(null, tId) === 1,
+       'demand honesty: stateless picks stay x1 (legacy math untouched)');
+    s.items[gId].stock = 0; delete s.stats.itemSales[gId];
+    ok(supplyWantWeight(s, gId) === 1,
+       'demand honesty: gold tier x1 even out-of-stock never-sold — the bias never touches gold');
+    s.items[tId].stock = 0; delete s.stats.itemSales[tId];
+    ok(supplyWantWeight(s, tId) === dial.unknown,
+       'demand honesty: never-sold trade item asks at the unknown floor');
+    s.stats.itemSales[tId] = 1;
+    ok(supplyWantWeight(s, tId) === dial.known,
+       'demand honesty: sold-before shelf-empty asks at known');
+    s.items[tId].stock = 1;
+    ok(supplyWantWeight(s, tId) === dial.stocked,
+       'demand honesty: on the shelf = full personality-driven demand');
+  }
+
+  // (d) The effect probe — the REAL spawn path, seeded and deterministic: the same fresh state
+  // spawns N customers twice; the only change between runs is stocking the starved trade item.
+  // Asserted as RELATIONS (share rises; floor still asks), never hand-typed counts — robust to
+  // unrelated upstream RNG consumers.
+  {
+    const s = cis73();
+    s.screen = 'shop';
+    // Every trade item is LICENSED (measured at the live registry — fresh saves see none), so
+    // the fixture grants the license: a shop that OWNS the license but has never stocked or
+    // sold the item is exactly F2's target case.
+    const tId = tradeItemIds()[0];
+    s.licenses[tId] = true;
+    const realRandom = Math.random;
+    const N = 400;
+    s.items[tId].stock = 0; delete s.stats.itemSales[tId];
+    Math.random = rng73(73001);
+    let starvedAsks = 0;
+    for (let i = 0; i < N; i++) if (spawn73(s)?.wantedItemId === tId) starvedAsks++;
+    s.items[tId].stock = 5;
+    Math.random = rng73(73001);
+    let stockedAsks = 0;
+    for (let i = 0; i < N; i++) if (spawn73(s)?.wantedItemId === tId) stockedAsks++;
+    Math.random = realRandom;
+    ok(starvedAsks > 0,
+       `demand honesty: the stray-ask floor still asks (${starvedAsks}/${N} starved)`);
+    ok(stockedAsks > starvedAsks,
+       `demand honesty EFFECT: stocking raises the ask share (${stockedAsks} > ${starvedAsks} of ${N})`);
+  }
+
+  // (e) Wiring pin: the item stage actually rides the weight.
+  {
+    const { readFileSync: rf73 } = await import('node:fs');
+    const src = rf73('./src/game.js', 'utf8');
+    ok(src.includes('* supplyWantWeight(state, id)'),
+       'demand honesty: the want pick multiplies the supply weight (wiring pin)');
   }
 }
 

@@ -100,6 +100,24 @@ export const CONFIG = {
                                // (not a hard filter) so the broke state survives as texture —
                                // the auto-wave, brokeGrace, and the broke-comedy register all
                                // live on it. 1 disables the bias entirely.
+    supplyWantBias: {          // DEMAND HONESTY (F2 Option 1, Daniel 2026-07-13): at the want
+                               // pick's item stage, TRADE-TIER items weigh x one of these three
+                               // levels — demand finally knows what the shelf knows. Gold-tier
+                               // items always weigh x stocked (their supply is one gold restock
+                               // away, never material-bound). SOFT floors by design ("a stray
+                               // ask teaches the market exists" — the never-to-zero law), so
+                               // unknown stays > 0; all three at 1 disables the bias entirely.
+      stocked: 1,              //   on the shelf now — full personality-driven demand
+      known: 0.7,              //   sold here before, shelf empty — the street remembers
+      unknown: 0.4,            //   never sold a unit — a stray ask, not a queue
+                               // RETUNED same-day (F2 certification, Option B): the first cut
+                               // (0.4/0.15) redirected demand so hard that the market-BLIND bot
+                               // ran 20% HOTTER than the aware one — the old +48% market edge
+                               // was mostly the mispriced-scarcity tax on NON-participants, and
+                               // full honesty removed it. These floors keep a real share of
+                               // impossible asks in the non-participant's queue (partial tax)
+                               // while keeping most of the OOS improvement. F3 owns the rest.
+    },
     // SPAWN DIRECTOR (replaces the flat spawnIntervalSec): next-spawn interval indexed by CURRENT
     // queue length (index clamps to the last entry). Self-balancing at every Bob speed — the flat
     // rate's equilibrium was min(1, throughput-limited) customers: maxed Bob served faster than

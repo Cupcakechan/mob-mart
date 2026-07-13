@@ -34,6 +34,23 @@ function armReturnCooldown(state, monsterId) {
   (state.mobCooldowns ??= {})[monsterId] = CONFIG.queue.returnCooldownSec ?? 18;
 }
 
+// DEMAND HONESTY (F2 Option 1, Daniel 2026-07-13): the item-stage SUPPLY weight. Trade-tier
+// demand scales to what the shop can actually serve — three binary-signal levels read from
+// LIVE state (current shelf stock; lifetime counter sales), zero new bookkeeping. Gold-tier
+// items and stateless picks (older headless tests) stay x1: the bias must never touch the
+// gold economy or shift legacy math. Every read is ?? -guarded — a missing dial or field
+// degrades to x1 (bias off), never NaN. Known nuance, accepted at the options round:
+// commission fulfillment deliberately skips stats.itemSales (the loyalty-ladder law), so an
+// item only ever sold wholesale reads 'unknown' once its shelf empties — the street never saw
+// it sell over the counter, which is honest.
+export function supplyWantWeight(state, itemId) {
+  if (!state || (ITEMS[itemId]?.acquisition ?? 'gold') !== 'trade') return 1;
+  const dial = CONFIG.queue.supplyWantBias ?? {};
+  if ((state.items[itemId]?.stock ?? 0) > 0) return dial.stocked ?? 1;
+  if ((state.stats?.itemSales?.[itemId] ?? 0) > 0) return dial.known ?? 1;
+  return dial.unknown ?? 1;
+}
+
 export function spawnCustomer(state, forcedId = null) {
   // Uniqueness filter: candidates are types NOT in line and NOT cooling down. An empty pool
   // (roster spread between the line and the door) returns null — the caller skips that spawn
@@ -95,7 +112,10 @@ export function spawnCustomer(state, forcedId = null) {
     const ids = catEntries.find((e) => e.value === cat)?.ids ?? [];
     wantedItemId = weightedPick(ids.map((id) => ({ value: id,
       weight: (monster.itemBias?.[id] ?? 1)
-        * (ITEMS[id].basePrice <= budget ? (CONFIG.queue.affordableWantBias ?? 4) : 1) })));
+        * (ITEMS[id].basePrice <= budget ? (CONFIG.queue.affordableWantBias ?? 4) : 1)
+        // DEMAND HONESTY (F2 Option 1): third item-stage factor — trade-tier picks weigh x the
+        // shelf's truth (stocked/known/unknown). See supplyWantWeight above spawnCustomer.
+        * supplyWantWeight(state, id) })));
   }
   // Fallback must be an ITEM id (guards a monster shipped with missing/empty categoryWeights). A
   // monster id here once made the customer want a nonexistent item -> a permanent 'no-item' front

@@ -45,6 +45,7 @@ import { UPGRADES, UPGRADE_ORDER, upgradeCost, upgradeLevel } from './src/data/u
 import { PERKS, PERK_ORDER, perkCost, perkLevel } from './src/data/perks.js';
 import { WORKERS, WORKER_ORDER, workerLevelCost, workerLevel, isWorkerOwned } from './src/data/workers.js';
 import { RELICS, RELIC_ORDER } from './src/data/relics.js';
+import { tradeItemIds } from './src/data/trademarket.js';
 import { reputationTier } from './src/reputation.js';
 
 // --- Dials (named constants, the config convention) ---------------------------------------------
@@ -171,6 +172,10 @@ function runSim(seed, { tradeAware = true, expeditionAware = true, commissionAwa
     const samples = [];                      // { t, gold, scrap, rep, lifetime, remaining }
     let purchased = 0, deathT = null, goldAtDeath = 0, scrapAtDeath = 0, trades = 0, runsSent = 0,
       commissionsFilled = 0;   // reform step 6 — the aware bot's Special Order deliveries
+    let oosFrontSec = 0;       // F2 ACCEPTANCE METRIC (demand honesty): seconds the FRONT customer
+                               // spends blocked on an out-of-stock want (stock <= 0, serveCurrent's
+                               // own gate), integrated at policy resolution. The invisible
+                               // throughput tax the diagnosis named — now a number.
     let lastInspectionDay = 0;   // the daily-inspection latch (relic rework — one visit per sim-day)
     let tierSeen = reputationTier(fameOf(s)).index;
     const foundSeen = new Set();
@@ -183,6 +188,9 @@ function runSim(seed, { tradeAware = true, expeditionAware = true, commissionAwa
 
       if (policyIn <= 0) {
         policyIn = POLICY_SEC;
+        // F2 metric: integrate front-blocked out-of-stock time (1s resolution, the policy cadence).
+        const front = s.queue[0];
+        if (front && (s.items[front.wantedItemId]?.stock ?? 0) <= 0) oosFrontSec += POLICY_SEC;
         // 1. The tutorial exception: manual serves only until Bob is hired.
         if (!isWorkerOwned(s, 'mimic_merchant') && serveBlockReason(s) === null) serveCurrent(s);
         // 2. Restock first — operating cost before wants (the locked policy).
@@ -316,7 +324,12 @@ function runSim(seed, { tradeAware = true, expeditionAware = true, commissionAwa
       ? (s.gold - goldAtDeath) / ((t - deathT) / 60) : null;   // net gold/min with nothing to want
     tmark(`runSim done  seed=${seed} trade=${tradeAware} exp=${expeditionAware} comm=${commissionAware}`
       + ` wall=${((Date.now() - wallStart) / 1000).toFixed(1)}s simEnd=${(t / 3600).toFixed(1)}h`);
+    // F2 metrics, derived from the game's own ledger at run end (itemSales counts COUNTER sales
+    // only — commissions skip it by law, so this is exactly the over-the-counter serve share).
+    const allServes = Object.values(s.stats.itemSales ?? {}).reduce((a, b) => a + b, 0);
+    const tradeServes = tradeItemIds().reduce((a, id) => a + (s.stats.itemSales[id] ?? 0), 0);
     return { seed, events, samples, deathT, endT: t, goldAtDeath, scrapAtDeath,
+      oosFrontSec, tradeServes, allServes,
       goldEnd: s.gold, scrapEnd: s.scrap ?? 0, postRate, purchased, trades, runsSent,
       commissionsFilled,
       swordSold: s.stats.itemSales.iron_sword ?? 0,
@@ -398,7 +411,9 @@ for (const r of runs) {
     console.log(`  seed ${r.seed}: desire curve dies at ${hms(r.deathT)}  |  purse at death ${kfmt(r.goldAtDeath)}`
       + `  |  post-death rate ${r.postRate.toFixed(0)} gold/min  |  purse +60min ${kfmt(r.goldEnd)}`
       + `  |  scrap at death ${r.scrapAtDeath} (155 spent)`
-      + `  |  trades ${r.trades}, sword sold ${r.swordSold}, mats earned ${r.matsEarned}, runs ${r.runsSent}`);
+      + `  |  trades ${r.trades}, sword sold ${r.swordSold}, mats earned ${r.matsEarned}, runs ${r.runsSent}`
+      + `  |  OOS-front ${hms(Math.round(r.oosFrontSec))}, trade serves ${r.tradeServes}/${r.allServes}`
+      + ` (${r.allServes ? (100 * r.tradeServes / r.allServes).toFixed(1) : '0.0'}%)`);
   }
 }
 console.log('');
