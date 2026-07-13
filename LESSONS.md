@@ -281,7 +281,7 @@ chips proved the JS) before diagnosing the code.
 Route: universal method candidate (probe-the-effect; scoped-override-at-birth; cache-bust static
 assets; the half-applied-fix staleness heuristic).
 
-## 2026-07-12 — The pending checkpoint a feedback pivot silently cancelled
+## 2026-07-12 — The pending checkpoint a feedback pivot silently cancelled [HARVESTED — 2026-07-12]
 - What happened: the daily-special pass was delivered and browser-confirmed, but Daniel's
   confirmation message pivoted straight into the next design round (the board rework), and the
   checkpoint was never sent. Both passes then rode ONE commit (87adc7b) whose message names only
@@ -297,7 +297,7 @@ assets; the half-applied-fix staleness heuristic).
   checkpoint BEFORE opening the new round's work, even inside the same reply.
 - Route: GI candidate (the per-feature workflow's step 4).
 
-## 2026-07-12 — A compound shell chain that half-ran: the bump landed, the regen didn't
+## 2026-07-12 — A compound shell chain that half-ran: the bump landed, the regen didn't [HARVESTED — 2026-07-12]
 - What happened: the CSS version bump, the mirror-regen script, and the verification were
   chained in one shell command; a syntax error in a LATER verification clause aborted the chain
   after the `sed` bump but before the regen — leaving the mirror stale at v=9 while index.html
@@ -312,7 +312,7 @@ assets; the half-applied-fix staleness heuristic).
   able to abort the edit it verifies.
 - Route: skill reference (SKILL.md scripted-edits law — the separation refinement).
 
-## 2026-07-12 — The messenger built on a steady state: Greg's trade-mode bubble, shipped and retired same-day
+## 2026-07-12 — The messenger built on a steady state: Greg's trade-mode bubble, shipped and retired same-day [HARVESTED — 2026-07-12]
 - What happened: the Greg-chip fix (a gold quote on material-made stock) was first built as a
   two-mode bubble — trade outages got a "Trade at the Market ▸" door. In play it nagged: Greg
   cycled through the tier's outages one after another, often pointing at trades the player
@@ -328,7 +328,7 @@ assets; the half-applied-fix staleness heuristic).
   state — an always-true trigger disqualifies the surface, not just the wording.
 - Route: GI candidate (design-side sibling of the attention/motion laws).
 
-## 2026-07-12 — The instrument's missing dragon: a world-model consumer the rework exposed
+## 2026-07-12 — The instrument's missing dragon: a world-model consumer the rework exposed [HARVESTED — 2026-07-12]
 - What happened: the relic rework Seal-gated all four restores; the first sim run capped EVERY
   seed at 48h with exactly 4 wants left. sim_economy's world had never spawned the dragon — the
   Seal had NO source in the instrument, so the new endgame was unmeasurable (the "-100%" verdict
@@ -346,7 +346,7 @@ assets; the half-applied-fix staleness heuristic).
   that resource — the code guards were all correct both times; the MODELS lagged.
 - Route: GI candidate (sibling of the steady-state-messenger entry; possibly one merged rule).
 
-## 2026-07-12 — The fixture that guessed at fullness instead of deriving it
+## 2026-07-12 — The fixture that guessed at fullness instead of deriving it [HARVESTED — 2026-07-12]
 - What happened: §69's mid-slope Seal test hand-picked dice (0.45/0.99) against an ASSUMED
   half-stock fullness; the real inspectionGrade math over the fixture landed below the guessed
   chance and the test failed green code. Same session, second instance: a renderForge
@@ -362,7 +362,7 @@ assets; the half-applied-fix staleness heuristic).
 - Route: skill reference (test-doctrine section — "derive from live registries" extended to
   derived math).
 
-## 2026-07-12 — The progress probe that matched itself: pgrep -f found the poller
+## 2026-07-12 — The progress probe that matched itself: pgrep -f found the poller [HARVESTED — 2026-07-12]
 - What happened: while waiting on the post-F1a acceptance sim, progress polling used
   `pgrep -f sim_economy` — which matched the polling shell's OWN command line. "Still running"
   was self-detection; ~20+ minutes were spent polling a process that was already dead, and the
@@ -377,7 +377,7 @@ assets; the half-applied-fix staleness heuristic).
   a probe that can pass without the observed effect certifies nothing.
 - Route: dev-method (probe-the-effect corollary; false-green family).
 
-## 2026-07-12 — Know the execution ceiling BEFORE launching a long job
+## 2026-07-12 — Know the execution ceiling BEFORE launching a long job [HARVESTED — 2026-07-12]
 - What happened: the post-F1a acceptance sim was launched inside ordinary tool calls. It
   structurally could not finish there: foreground calls cap ~600s, background nohup processes
   do not survive tool-call boundaries, and F1a's intended slower progression pushes exp-blind
@@ -394,7 +394,7 @@ assets; the half-applied-fix staleness heuristic).
   design problem, not a thing to retry.
 - Route: dev-method.
 
-## 2026-07-12 — `cd X && nohup A & nohup B &` runs B from the ORIGINAL directory
+## 2026-07-12 — `cd X && nohup A & nohup B &` runs B from the ORIGINAL directory [HARVESTED — 2026-07-12]
 - What happened: the parallel recovery attempt launched two sims with
   `cd X && nohup A & nohup B &`. Operator precedence parses this as `(cd X && nohup A) &` then
   `nohup B &` — B launched from the original cwd (`/`) and died at launch with module-not-found.
@@ -418,7 +418,7 @@ assets; the half-applied-fix staleness heuristic).
   working footprint when sizing anything.
 - Route: project-only (harness policy).
 
-## 2026-07-12 — Deliver-before-certify: an uncommitted green pass is one dead session from gone
+## 2026-07-12 — Deliver-before-certify: an uncommitted green pass is one dead session from gone [HARVESTED — 2026-07-12]
 - What happened: F1a was finished and twice suite-green (1667/0) in the container, but was held
   uncommitted pending the acceptance sim — a certification that structurally could not run (the
   ceiling entry above). The session died mid-poll and the pass died with the container; it
@@ -434,25 +434,3 @@ assets; the half-applied-fix staleness heuristic).
   suite-green pass FIRST, recording the pending certification in the commit message and
   handoff. Same shape as "versioned deliverables get a committed home."
 - Route: GI candidate.
-
-## 2026-07-12 — The detached-run pattern, proven: setsid + artifact poll + exit sentinel
-- What happened: the F1a harness certification ran as its options round's Option 2 —
-  `setsid bash -c 'cd <repo> && node sim > out 2> err; echo $? > exit'` detached, polled by
-  ARTIFACT (stderr tail + stdout size/mtime + the exit-code sentinel file), runs sequential per
-  the OOM policy. It survived every tool-call boundary; 3× bit-identical certified in ~15 min
-  of wall time. The step-6 "pathology" closed as pure execution ceiling: the dead session's
-  runs froze at 9,597 bytes and the certified run passed that exact byte mid-flight.
-- Root cause (of the prior failure this reverses): the dead session's background attempts used
-  bare nohup and a self-matching pgrep poll. Whether setsid or a container difference is the
-  discriminator is UNRESOLVED — so the pattern ships with its own failure detector rather than
-  a survival assumption.
-- Verification gap plugged: a detached run must fail LOUDLY — poll rule: output mtime frozen
-  >120s = dead, stop and rethink (never retry-forever). And the pattern was probed with a toy
-  (a 90s setsid writer loop read across three tool calls) BEFORE the real launch — boundary
-  survival measured, not assumed.
-- Plug/pattern to encode: cwd stated INSIDE the detached subshell (the operator-precedence
-  entry); scratch artifacts OUTSIDE the clone; an exit-code sentinel file as the completion
-  signal; stderr-only timing so stdout stays byte-comparable across doctrine runs; toy-probe
-  the mechanism before the real job.
-- Route: dev-method (the execution-ceiling entry's proven strategy; pairs with the
-  self-matching-probe and background-cwd entries).
