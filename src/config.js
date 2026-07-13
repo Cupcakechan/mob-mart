@@ -56,18 +56,25 @@ export const CONFIG = {
     // Option A: reputation rewards *service*, not the off-screen battle outcome.
     perSale: 2,                // rep gained per completed sale
     leavePenalty: 1,           // rep lost when a customer leaves unserved (patience timeout)
+    // FAME LEVELS (F1a, FAME_ECONOMY_DESIGN.md §4 — Daniel's Option 3, 2026-07-12): fame is the
+    // game's LEVEL track. levelThreshold(n) = round(base × growth^(n−1)) lifetime fame to BE
+    // level n; infinite headroom by construction. The two dials below are THE curve.
+    levels: { base: 25, growth: 1.6 },
+    // The seven named tiers survive as RUNGS anchored at LEVELS (min derives from the curve
+    // just below — one source of truth). Placement calibrated against the harness income model
+    // (rep(t) ≈ 3000·t^1.2 active hours): Friendly ~first minute, Trusted ~10min, Beloved
+    // ~40min, Renowned ~2h, Legendary ~9-10h, Mythic ~30h — the old ladder topped out at
+    // 1:24:37 with 643k lifetime at desire-death (128× its cap), which is what this fixes.
     tiers: [
-      { label: 'Neutral',  min: 0 },
-      { label: 'Friendly', min: 25 },   // TUNING SWEEP: tiers stretched (were 20/50/100) so rep
-      { label: 'Trusted',  min: 75 },   // stays meaningful past the first minutes; signage still
-      { label: 'Beloved',  min: 200 },  // makes Beloved a session-one goal, not a minute-five one
-      { label: 'Renowned', min: 500 },  // Fame (Pass 2): tiers read LIFETIME rep (never decreases)
-      { label: 'Legendary', min: 1500 },
-      { label: 'Mythic',   min: 5000 }, // Deep Sinks (Option 2, Daniel 2026-07-07): the reserved
-                                        // rung, now LIVE — gates the workers' DEEP training band
-                                        // (levels 6-10, workers.js). Budgets (x1.45), the crate
-                                        // (9 units / 70 gold), the Fame track node, and the HUD
-                                        // remainder all auto-flow from this one row.
+      { label: 'Neutral',   level: 0 },
+      { label: 'Friendly',  level: 2 },
+      { label: 'Trusted',   level: 6 },
+      { label: 'Beloved',   level: 10 },
+      { label: 'Renowned',  level: 13 },
+      { label: 'Legendary', level: 17 },
+      { label: 'Mythic',    level: 20 },  // still gates the workers' DEEP training band (index
+                                          // semantics 0-6 preserved — every gate consumer
+                                          // reads index/min exactly as before)
     ],
   },
 
@@ -124,6 +131,9 @@ export const CONFIG = {
     minAwaySec: 60,            // modal only shows after this much time away (quick reloads stay silent)
     efficiency: 1.0,           // multiplier on offline sale count (the classic "offline earns at X%"
                                // dial). 1.0 = full rate; lower it if offline ever outshines active play.
+    repFraction: 0.5,          // FAME HAIRCUT (F1a, Daniel 2026-07-12): offline sales pay HALF fame —
+                               // "word of mouth needs you present." Gold untouched; fame is the level
+                               // track and levels are earned by playing (FAME_ECONOMY_DESIGN.md §4).
   },
 
   fame: {
@@ -200,3 +210,15 @@ export const CONFIG = {
                                // Celebration runs ~2.15s (hop 700 + march ~1000 + enter 450), so
                                // 3.0 only ever fires when the visual didn't.
 };
+
+// FAME LEVELS (F1a): derive each rung's `min` from the level curve ONCE at load, so every
+// existing `.min` reader — reputationTier, the fame track, the HUD remainder, panels, the sim,
+// the suite — keeps its contract with zero call-site changes. Level 0 is the floor; level n
+// costs round(base × growth^(n−1)) lifetime fame. reputation.js exports the same math as
+// levelThreshold/fameLevel for the level-track surfaces.
+{
+  const L = CONFIG.reputation.levels;
+  for (const t of CONFIG.reputation.tiers) {
+    t.min = t.level <= 0 ? 0 : Math.round(L.base * L.growth ** (t.level - 1));
+  }
+}

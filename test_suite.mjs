@@ -4,6 +4,7 @@
 // Run: node test_suite.mjs   (exits non-zero on any failure)
 import { createInitialState } from './src/state.js';
 import { serializeSave, mergeSave } from './src/save.js';
+import { CONFIG } from './src/config.js';   // F1a: threshold reads derive from the LIVE table
 import { ITEMS, ITEM_ORDER } from './src/data/items.js';   // live-derived trio fixture (below)
 import {
   update, serveCurrent, hireWorker, canHireWorker,
@@ -371,10 +372,12 @@ console.log('M4 auto-serve worker — smoke test\n');
     const r = computeOffline(s, now);
     ok(r.sales === 9, 'offline: stock-limits sales to the 9 on the shelf');
     ok(r.gold === 3 * 12 + 2 * 18 + 4 * 15, 'offline: gold = real basePrices of consumed stock (132)');
-    ok(r.rep === 9 * 2, 'offline: rep = sales * perSale (18)');
+    ok(r.rep === Math.round(9 * 2 * (CONFIG.offline?.repFraction ?? 1)),
+       'offline: rep = sales × perSale × the fame haircut (F1a)');
     const gold0 = s.gold;
     ok(applyOffline(s, r) === true, 'applyOffline banks a non-zero result');
-    ok(s.gold === gold0 + 132 && s.reputation === 18, 'apply adds gold + rep');
+    ok(s.gold === gold0 + 132 && s.reputation === Math.round(18 * (CONFIG.offline?.repFraction ?? 1)),
+       'apply adds gold + rep');
     ok(s.items.club.stock === 0 && s.items.metal_helmet.stock === 0 && s.items.hp_flask.stock === 0,
        'apply consumes the actual shelf stock (exploit guard)');
   }
@@ -420,7 +423,8 @@ console.log('M4 auto-serve worker — smoke test\n');
     s.lastSeen = now - 30 * 1000;
     const r = computeOffline(s, now);
     ok(r.sales === 6, 'offline: Faster Counter L1 -> 6 sales in 30s (floor(30/4.615))');
-    ok(r.rep === 6 * 3, 'offline: Better Signage boosts offline rep/sale (18)');
+    ok(r.rep === Math.round(6 * 3 * (CONFIG.offline?.repFraction ?? 1)),
+       'offline: Better Signage boosts offline rep/sale (× the fame haircut)');
   }
 
   // Empty shelf -> zero (and applyOffline no-ops on a zero result).
@@ -536,7 +540,7 @@ console.log('M4 auto-serve worker — smoke test\n');
     s.gold = 99999;
     ok(isUpgradeUnlocked(s, 'backroom_storage') === false, 'backroom: locked below Beloved');
     ok(canBuyUpgrade(s, 'backroom_storage') === false, 'backroom: not buyable while locked');
-    s.reputation = 200; s.lifetimeRep = 200;        // Beloved — tiers read the LIFETIME track (Fame)
+    s.reputation = s.lifetimeRep = CONFIG.reputation.tiers[3].min;   // Beloved (live threshold) — tiers read the LIFETIME track (Fame)
     ok(canBuyUpgrade(s, 'backroom_storage') === true, 'backroom: buyable at Beloved with gold');
 
     // Registry-derived expectations (batch 1 grew the free shelf — reserve conjures per UNLOCKED
@@ -562,7 +566,8 @@ console.log('M4 auto-serve worker — smoke test\n');
     ok(r1.sales === liveUnits + perLvlUnits, `backroom L1: ${liveUnits + perLvlUnits} sales (live + reserve)`);
     ok(r1.reserveUsed === perLvlUnits, `backroom L1: ${perLvlUnits} reserve units drawn`);
     ok(r1.gold === liveGold + perLvlGold, `backroom L1: gold ${liveGold + perLvlGold} (live + reserve net of restock)`);
-    ok(r1.rep === (liveUnits + perLvlUnits) * 2, 'backroom L1: every sale grants rep (perSale 2)');
+    ok(r1.rep === Math.round((liveUnits + perLvlUnits) * 2 * (CONFIG.offline?.repFraction ?? 1)),
+       'backroom L1: every sale grants rep (perSale × the fame haircut)');
     ok((r1.consumed.club ?? 0) === 3 && (r1.consumed.metal_helmet ?? 0) === 2
        && (r1.consumed.hp_flask ?? 0) === 4,
        'backroom: consumed counts LIVE shelf units only (reserve never dents the real shelf)');
@@ -741,13 +746,13 @@ console.log('M4 auto-serve worker — smoke test\n');
   // Tiers read lifetime: a spent-down balance keeps every earned gate.
   {
     const s = shopState();
-    s.lifetimeRep = 500; s.reputation = 0;            // Renowned earned, wallet empty
-    ok(isUpgradeUnlocked(s, 'backroom_storage') === true, 'tier gates read LIFETIME (wallet at 0)');
+    s.lifetimeRep = CONFIG.reputation.tiers[4].min; s.reputation = 0;   // Renowned earned (live
+    ok(isUpgradeUnlocked(s, 'backroom_storage') === true, 'tier gates read LIFETIME (wallet at 0)');   // threshold), wallet empty
     ok(isPerkUnlocked(s, 'warm_welcome') === true, 'Renowned (new tier) unlocks Warm Welcome');
     ok(isPerkUnlocked(s, 'velvet_rope') === true && isPerkUnlocked(s, 'haggler_charm') === true,
        'lower-tier perks unlocked too');
     const low = shopState();
-    low.lifetimeRep = 200;                            // Beloved only
+    low.lifetimeRep = CONFIG.reputation.tiers[3].min;                   // Beloved only (live threshold)
     ok(isPerkUnlocked(low, 'warm_welcome') === false, 'Warm Welcome stays locked below Renowned');
   }
 
@@ -873,7 +878,7 @@ console.log('M4 auto-serve worker — smoke test\n');
     }
     ok(!sawTier2, 'no customer ever wants a locked item (400 spawns)');
     const open = shopState();
-    open.lifetimeRep = 500; open.gold = 800;
+    open.lifetimeRep = CONFIG.reputation.tiers[4].min; open.gold = 800;   // Renowned (live threshold)
     buyLicense(open, 'iron_sword');
     let sawSword = false;
     for (let i = 0; i < 400; i++) if (spawnCustomer(open).wantedItemId === 'iron_sword') sawSword = true;
@@ -885,7 +890,7 @@ console.log('M4 auto-serve worker — smoke test\n');
   {
     const { MONSTERS } = await import('./src/data/monsters.js');
     const s = shopState();
-    s.lifetimeRep = 1500;                             // Legendary (index 5) -> x1.30
+    s.lifetimeRep = CONFIG.reputation.tiers[5].min;   // Legendary (live threshold, index 5) -> x1.30
     let lo = Infinity, hi = -Infinity;
     for (let i = 0; i < 600; i++) {
       const c = spawnCustomer(s);
@@ -2797,13 +2802,17 @@ console.log('M4 auto-serve worker — smoke test\n');
   const { CONFIG } = await import('./src/config.js');
   const { ITEMS, ITEM_ORDER } = await import('./src/data/items.js');
 
-  // (a) The Mythic row: last rung, min 5000; Legendary players get their HUD goal line back.
+  // (a) The Mythic row: last rung, its min DERIVED from the level curve (F1a softened this
+  // section's old 5000 pin to a rule — the exact curve pins live in the newest batch, §72);
+  // Legendary players get their HUD goal line back.
   const top = CONFIG.reputation.tiers.at(-1);
-  ok(top.label === 'Mythic' && top.min === 5000, 'mythic: the reserved rung is live at 5000');
-  ok(reputationTier(5000).index === CONFIG.reputation.tiers.length - 1
-     && reputationTier(4999).label === 'Legendary',
-     'mythic: 5000 crosses, 4999 stays Legendary');
-  ok(nextTierInfo(1500)?.label === 'Mythic',
+  const L72 = CONFIG.reputation.levels;
+  ok(top.label === 'Mythic' && top.min === Math.round(L72.base * L72.growth ** (top.level - 1)),
+     'mythic: the reserved rung is live, min derived from the level curve');
+  ok(reputationTier(top.min).index === CONFIG.reputation.tiers.length - 1
+     && reputationTier(top.min - 1).label === 'Legendary',
+     'mythic: the live threshold crosses, one below stays Legendary');
+  ok(nextTierInfo(CONFIG.reputation.tiers[5].min)?.label === 'Mythic',
      'mythic: a Legendary shop sees "to Mythic" again (the horizon returns)');
 
   // (b) Registry + curve contract (exact pins live here, the newest section).
@@ -2819,12 +2828,12 @@ console.log('M4 auto-serve worker — smoke test\n');
   {
     const s = shopState();
     s.workers.mimic_merchant.owned = true;
-    s.gold = 1e9; s.lifetimeRep = 1500;                          // Legendary, deep band still shut
+    s.gold = 1e9; s.lifetimeRep = CONFIG.reputation.tiers[5].min;   // Legendary (live), deep band still shut
     const g0 = s.gold;
     for (let i = 0; i < 5; i++) ok(buyWorkerLevel(s, 'mimic_merchant'), `sinks: level ${i + 1} buys at Legendary`);
     ok(g0 - s.gold === 13485, `sinks: the shallow band costs exactly 13485 (spent ${g0 - s.gold})`);
     ok(canBuyWorkerLevel(s, 'mimic_merchant') === false, 'sinks: level 6 refuses below Mythic');
-    s.lifetimeRep = 5000;                                        // cross the rung
+    s.lifetimeRep = CONFIG.reputation.tiers[6].min;              // cross the rung (live Mythic)
     ok(canBuyWorkerLevel(s, 'mimic_merchant') === true, 'sinks: Mythic opens the deep band');
     while (canBuyWorkerLevel(s, 'mimic_merchant')) buyWorkerLevel(s, 'mimic_merchant');
     ok(workerLevel(s, 'mimic_merchant') === WORKERS.mimic_merchant.levels.maxLevel
@@ -2982,7 +2991,7 @@ console.log('M4 auto-serve worker — smoke test\n');
     ok(visitEligible(s) === false, 'visits: an unarmed state (no marketDayKey) is never eligible');
     s.marketDayKey = '2026-07-07';
     ok(visitEligible(s) === false, 'visits: below the required tier, still ineligible');
-    s.lifetimeRep = 1500;                                        // Legendary (requiredTier 5)
+    s.lifetimeRep = CONFIG.reputation.tiers[5].min;              // Legendary (live, requiredTier 5)
     ok(visitEligible(s) === true, 'visits: armed + Legendary = eligible');
     ok(trySpawnVisit(s, 0.99) === null && s.lastVisitDay === '',
        'visits: a failed roll spawns nothing and burns nothing');
@@ -3010,7 +3019,7 @@ console.log('M4 auto-serve worker — smoke test\n');
     let g = inspectionGrade(s);
     ok(g.fullness === 1 && g.categories === 3 && g.tip === 175,
        `visits: a full Neutral shop grades 175 (got ${g.tip})`);
-    s.lifetimeRep = 5000;                                        // Mythic: x1.45
+    s.lifetimeRep = CONFIG.reputation.tiers[6].min;              // Mythic (live): x1.45
     g = inspectionGrade(s);
     ok(g.tip === 254, `visits: the same shelf at Mythic grades 254 (got ${g.tip})`);
     const empty = shopState();
@@ -4576,6 +4585,76 @@ console.log('M4 auto-serve worker — smoke test\n');
   const { marketBannerCompact: mbc71 } = await import('./src/data/marketevents.js');
   ok(typeof mbc71 === 'function',
     'chip retirement: the pure formatter stays exported (tested above; the chip may return)');
+}
+
+// ============= SECTION 72 — FAME LEVELS (F1a — the fame & demand reform, Option 3) ============
+// Fame becomes the LEVEL track: levelThreshold(n) = round(base × growth^(n−1)), rungs anchored
+// at levels with min DERIVED at config load, offline fame haircut. Exact curve pins live HERE
+// (older sections softened to live-table reads this same pass). FAME_ECONOMY_DESIGN.md §4.
+{
+  const { levelThreshold, fameLevel, nextLevelInfo, reputationTier: rt72 } =
+    await import('./src/reputation.js');
+  const L = CONFIG.reputation.levels;
+
+  // (a) The curve — dial pins (newest batch) + formula law + monotonicity.
+  ok(L.base === 25 && L.growth === 1.6, 'fame levels: the curve dials (base 25, growth 1.6)');
+  ok(levelThreshold(0) === 0 && levelThreshold(1) === 25 && levelThreshold(2) === 40
+     && levelThreshold(20) === 188895,
+     'fame levels: threshold exacts (L1 25, L2 40, L20 188895)');
+  for (let n = 1; n <= 40; n++) {
+    if (levelThreshold(n) !== Math.round(L.base * L.growth ** (n - 1))
+        || levelThreshold(n) <= levelThreshold(n - 1)) {
+      ok(false, `fame levels: threshold law broke at L${n}`); break;
+    }
+    if (n === 40) ok(true, 'fame levels: 40 thresholds match the formula, strictly ascending');
+  }
+
+  // (b) fameLevel — exact at every boundary (the loop-not-log law).
+  ok(fameLevel(0) === 0 && fameLevel(24) === 0 && fameLevel(25) === 1,
+     'fame levels: level 0 floor, L1 at exactly 25');
+  {
+    let exact = true;
+    for (let n = 1; n <= 30; n++) {
+      if (fameLevel(levelThreshold(n)) !== n || fameLevel(levelThreshold(n) - 1) !== n - 1) exact = false;
+    }
+    ok(exact, 'fame levels: every threshold crosses exactly (n at min, n−1 one below)');
+  }
+
+  // (c) Rung placement — the seven names at their design levels; min derives from the curve;
+  // index semantics 0-6 preserved for every gate consumer.
+  const RUNGS = [['Neutral', 0], ['Friendly', 2], ['Trusted', 6], ['Beloved', 10],
+    ['Renowned', 13], ['Legendary', 17], ['Mythic', 20]];
+  ok(CONFIG.reputation.tiers.length === RUNGS.length
+     && CONFIG.reputation.tiers.every((t, i) => t.label === RUNGS[i][0] && t.level === RUNGS[i][1]
+        && t.min === levelThreshold(t.level)),
+     'fame levels: seven rungs at levels 0/2/6/10/13/17/20, min = levelThreshold(level)');
+  ok(rt72(levelThreshold(20)).index === 6 && rt72(levelThreshold(20) - 1).index === 5,
+     'fame levels: rung indices still 0-6 (gates keep their contract)');
+
+  // (d) nextLevelInfo — rung levels carry their label; plain levels don't; remaining is exact.
+  {
+    const atL12 = levelThreshold(12);
+    const info = nextLevelInfo(atL12);
+    ok(info.level === 13 && info.rungLabel === 'Renowned'
+       && info.remaining === levelThreshold(13) - atL12,
+       'fame levels: next-level info names a rung level (L13 = Renowned)');
+    const info2 = nextLevelInfo(levelThreshold(13));
+    ok(info2.level === 14 && info2.rungLabel === null,
+       'fame levels: a plain next level carries no rung label');
+  }
+
+  // (e) The offline fame haircut — dial pin (newest batch); behavior is asserted where the
+  // offline sections already compute through the dial.
+  ok(CONFIG.offline.repFraction === 0.5,
+     'fame levels: offline pays half fame (the haircut dial, F1a)');
+
+  // (f) Wiring pins: the HUD renders the level track.
+  {
+    const { readFileSync: rf72 } = await import('node:fs');
+    const hud = rf72('./src/ui/hud.js', 'utf8');
+    ok(hud.includes('fameLevel') && hud.includes('nextLevelInfo'),
+       'fame levels: the HUD badge + remainder ride the level track');
+  }
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

@@ -115,7 +115,10 @@ export function computeOffline(state, nowMs) {
     }
   }
 
-  const rep = sales * effectiveRepPerSale(state);                            // Better Signage applies offline too
+  const rep = Math.round(sales * effectiveRepPerSale(state)
+    * (CONFIG.offline?.repFraction ?? 1));   // FAME HAIRCUT (F1a): offline pays partial fame — the
+                                             // level track is earned by playing; gold rides full.
+                                             // Better Signage still applies (it's in the per-sale).
   // (Monster rep-milestones are NOT applied offline: the sim sells items, it doesn't simulate WHO
   // bought them — monster counts stay live-only, flagged in the handoff.)
   // "Bob prevented N robberies" (Daniel's idea, Pass B 2026-07-05): offline never simulates

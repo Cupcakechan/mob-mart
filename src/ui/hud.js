@@ -1,7 +1,6 @@
 // hud.js — top resource bar: Gold and Reputation (value + tier label + next-tier remainder).
 import { formatGold } from '../utils.js';
-import { reputationTier } from '../reputation.js';
-import { nextTierInfo } from '../data/fametrack.js';
+import { reputationTier, fameLevel, nextLevelInfo } from '../reputation.js';
 
 export function initHud(root) {
   root.innerHTML = `
@@ -33,15 +32,21 @@ export function renderHud(state) {
 
   const tier = document.getElementById('hud-tier');
   // Dual-track Fame: the NUMBER is the spendable balance; the BADGE is the lifetime tier —
-  // spending on perks lowers the number but can never lower the badge.
-  if (tier) tier.textContent = reputationTier(state.lifetimeRep ?? state.reputation).label;
+  // spending on perks lowers the number but can never lower the badge. F1a: the badge carries
+  // the fame LEVEL beside the rung ("Renowned · Lv 13") — levels are the frequent beat, rungs
+  // the rare one (FAME_ECONOMY_DESIGN.md §4).
+  if (tier) {
+    const fame = state.lifetimeRep ?? state.reputation;
+    tier.textContent = `${reputationTier(fame).label} \u00b7 Lv ${fameLevel(fame)}`;
+  }
 
-  // The one-line remainder ("· 32♛ to Trusted") — reads the LIFETIME track like the badge, so a
-  // perk spend never inflates the distance; empty at the top of the ladder.
+  // The one-line remainder — now counts to the next LEVEL (always exists; the curve is
+  // infinite), naming it when that level is a rung ("· 320♛ to Renowned"). Reads the LIFETIME
+  // track like the badge, so a perk spend never inflates the distance.
   const next = document.getElementById('hud-next');
   if (next) {
-    const info = nextTierInfo(state.lifetimeRep ?? state.reputation);
-    next.textContent = info ? `\u00b7 ${info.remaining}\u265b to ${info.label}` : '';
+    const info = nextLevelInfo(state.lifetimeRep ?? state.reputation);
+    next.textContent = `\u00b7 ${info.remaining}\u265b to ${info.rungLabel ?? `Lv ${info.level}`}`;
   }
 
   // Scrap (§14): hidden until the scavenger is hired or scrap is banked — the early HUD stays
