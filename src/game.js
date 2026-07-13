@@ -860,6 +860,17 @@ export function inspectionGrade(state) {
 // the current balance on perks can never revoke a gate the player already earned.
 export const fameOf = (state) => state.lifetimeRep ?? state.reputation;
 
+// SCARCITY TEETH (F3 Option 1, Daniel 2026-07-13): the leave penalty scales with the shop's
+// RUNG — a Renowned shop disappoints louder. The drain lands on SPENDABLE fame only (the perk
+// budget); the lifetime track never falls, so a bad afternoon costs goodwill, never levels.
+// Auto-wave and dismissal stay penalty-free by construction (they route through dismiss,
+// repDelta 0): Bob managing the line is service, not failure. ??-guarded so a save/config
+// without the dial degrades to the flat penalty, never NaN.
+export function leavePenaltyOf(state) {
+  return (CONFIG.reputation.leavePenalty ?? 1)
+    + (CONFIG.reputation.leavePenaltyPerTier ?? 0) * reputationTier(fameOf(state)).index;
+}
+
 export function isUpgradeUnlocked(state, id) {
   const u = UPGRADES[id];
   if (!u) return false;
@@ -1288,7 +1299,10 @@ export function update(state, dt) {
       if (c.patienceRemaining > 0) { stillWaiting.push(c); continue; }
       armReturnCooldown(state, c.monsterId);          // timed out and wandered off — gone for a beat
       const name = MONSTERS[c.monsterId]?.displayName ?? 'Someone';
-      state.reputation = Math.max(0, state.reputation - CONFIG.reputation.leavePenalty);
+      // SCARCITY TEETH (F3): tier-scaled penalty, derived once per leaver so the log line
+      // reports exactly what was charged. See leavePenaltyOf beside fameOf.
+      const pen = leavePenaltyOf(state);
+      state.reputation = Math.max(0, state.reputation - pen);
       // The leave-theft (roadmap 6 Pass B, Daniel 2026-07-05): a THIEF-flagged mob who times out
       // pockets ONE unit of his wanted item — in-stock only, no payment, the leave rep penalty
       // still applies on top. Bounded on purpose: leave-only, one unit, wanted-item-only. The
@@ -1302,12 +1316,12 @@ export function update(state, dt) {
         pushLog(state, { ...logLine(c.monsterId, 'theft', { name,
           item: ITEMS[c.wantedItemId]?.displayName, itemId: c.wantedItemId,
           serves: state.stats.monsterServes[c.monsterId] ?? 0 }),
-          repDelta: -CONFIG.reputation.leavePenalty, tier: 'leave', monsterId: c.monsterId });
+          repDelta: -pen, tier: 'leave', monsterId: c.monsterId });
       } else {
         pushLog(state, { ...logLine(c.monsterId, 'leave', { name,
           serves: state.stats.monsterServes[c.monsterId] ?? 0,
           gregHired: state.workers?.restocker?.owned === true }),  // Greg's leave remarks, hire-gated
-          repDelta: -CONFIG.reputation.leavePenalty, tier: 'leave', monsterId: c.monsterId });
+          repDelta: -pen, tier: 'leave', monsterId: c.monsterId });
       }
     }
     if (stillWaiting.length !== state.queue.length) {

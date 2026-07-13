@@ -4751,5 +4751,84 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
 }
 
+// ========== SECTION 74 — SCARCITY TEETH (F3 Option 1 — the fame & demand reform) ==========
+// The leave penalty scales with the shop's RUNG: base + perTier x tier index, charged to
+// SPENDABLE fame only — the lifetime tier track never falls, and auto-wave/dismissal stay
+// penalty-free (service, not failure). FAME_ECONOMY_DESIGN.md §7 (re-scoped).
+{
+  const { leavePenaltyOf, spawnCustomer: spawn74, dismissCurrent: dismiss74,
+    update: update74 } = await import('./src/game.js');
+  const { createInitialState: cis74 } = await import('./src/state.js');
+  const { mulberry32: rng74 } = await import('./src/data/trademarket.js');
+  const base = CONFIG.reputation.leavePenalty;
+  const perTier = CONFIG.reputation.leavePenaltyPerTier;
+
+  // (a) Dial contract (newest batch, exact).
+  ok(base === 1 && perTier === 1,
+     'scarcity teeth: dial exacts (leavePenalty 1, leavePenaltyPerTier 1)');
+  ok(perTier >= 0, 'scarcity teeth: the scale never inverts (perTier >= 0)');
+
+  // (b) The scaling function at every rung — thresholds read from the LIVE tier table.
+  {
+    const s = cis74();
+    for (let i = 0; i < CONFIG.reputation.tiers.length; i++) {
+      s.lifetimeRep = CONFIG.reputation.tiers[i].min;
+      ok(leavePenaltyOf(s) === base + perTier * i,
+         `scarcity teeth: rung ${i} (${CONFIG.reputation.tiers[i].label}) charges ${base + perTier * i}`);
+    }
+  }
+
+  // (c) The REAL leave path, seeded: a queued customer times out inside update(); spendable
+  // fame drops by exactly leavePenaltyOf, the LIFETIME track does not move (the never-falls
+  // law), and the log line reports the true charge.
+  {
+    const s = cis74();
+    s.screen = 'shop';
+    s.lifetimeRep = CONFIG.reputation.tiers[4].min;      // Renowned-band shop: pen = base+4
+    s.reputation = 500;
+    const realRandom = Math.random;
+    Math.random = rng74(74001);
+    const c = spawn74(s);
+    Math.random = realRandom;
+    ok(!!c, 'scarcity teeth: probe fixture spawned a customer');
+    c.patienceRemaining = 0.001;
+    s.queue.push(c);
+    const pen = leavePenaltyOf(s);
+    const repBefore = s.reputation, lifeBefore = s.lifetimeRep;
+    update74(s, 0.01);
+    ok(s.reputation === repBefore - pen && pen === base + perTier * 4,
+       `scarcity teeth: the leaver charged the tier-scaled ${pen} to spendable fame`);
+    ok(s.lifetimeRep === lifeBefore,
+       'scarcity teeth: the LIFETIME track never falls (a bad afternoon costs goodwill, not levels)');
+    const line = (s.log ?? []).find((l) => l.tier === 'leave');
+    ok(!!line && line.repDelta === -pen,
+       'scarcity teeth: the log line reports the true charge');
+  }
+
+  // (d) Auto-wave/dismissal stay penalty-free (they route through dismissCurrent, repDelta 0).
+  {
+    const s = cis74();
+    s.screen = 'shop';
+    const realRandom = Math.random;
+    Math.random = rng74(74002);
+    const c = spawn74(s);
+    Math.random = realRandom;
+    s.queue.push(c);
+    s.reputation = 300;
+    dismiss74(s);
+    ok(s.reputation === 300 && s.queue.length === 0,
+       'scarcity teeth: dismissal waves penalty-free — service, not failure');
+  }
+
+  // (e) Wiring pins: one derivation per leaver, both log branches honest.
+  {
+    const { readFileSync: rf74 } = await import('node:fs');
+    const src = rf74('./src/game.js', 'utf8');
+    ok(src.includes('const pen = leavePenaltyOf(state)')
+       && (src.match(/repDelta: -pen, tier: 'leave'/g) ?? []).length === 2,
+       'scarcity teeth: the leave block derives once and logs -pen in both branches (wiring pin)');
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

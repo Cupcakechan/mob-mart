@@ -56,6 +56,12 @@ export const CONFIG = {
     // Option A: reputation rewards *service*, not the off-screen battle outcome.
     perSale: 2,                // rep gained per completed sale
     leavePenalty: 1,           // rep lost when a customer leaves unserved (patience timeout)
+    leavePenaltyPerTier: 1,    // SCARCITY TEETH (F3 Option 1, Daniel 2026-07-13): the leave
+                               // penalty grows +this per fame RUNG index — a Renowned shop
+                               // (index 4) disappoints at 1+4=5, Mythic at 7. The drain lands
+                               // on SPENDABLE fame only (the perk budget); the lifetime tier
+                               // track never falls. Auto-wave/dismissal stay penalty-free
+                               // (service, not failure — unchanged law). 0 restores flat.
     // FAME LEVELS (F1a, FAME_ECONOMY_DESIGN.md §4 — Daniel's Option 3, 2026-07-12): fame is the
     // game's LEVEL track. levelThreshold(n) = round(base × growth^(n−1)) lifetime fame to BE
     // level n; infinite headroom by construction. The two dials below are THE curve.
