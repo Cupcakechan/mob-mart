@@ -361,3 +361,76 @@ assets; the half-applied-fix staleness heuristic).
   done in the author's head.
 - Route: skill reference (test-doctrine section — "derive from live registries" extended to
   derived math).
+
+## 2026-07-12 — The progress probe that matched itself: pgrep -f found the poller
+- What happened: while waiting on the post-F1a acceptance sim, progress polling used
+  `pgrep -f sim_economy` — which matched the polling shell's OWN command line. "Still running"
+  was self-detection; ~20+ minutes were spent polling a process that was already dead, and the
+  session read the silence as a game-side hang (the "terminal bug loop" that killed it).
+- Root cause: a substring process probe carries its own search term. The probe asserted the
+  MECHANISM ("a process matching this name exists") instead of the EFFECT (the sim's output
+  file growing).
+- Verification gap: nothing distinguished "sim alive" from "poller alive." The false positive
+  was structural — the probe could not fail while the poller ran.
+- Plug: poll the ARTIFACT — output-file growth/mtime — or use exact-match (`pgrep -x`); never a
+  substring the poller itself carries. Same family as the false-green behavioral-probe law:
+  a probe that can pass without the observed effect certifies nothing.
+- Route: dev-method (probe-the-effect corollary; false-green family).
+
+## 2026-07-12 — Know the execution ceiling BEFORE launching a long job
+- What happened: the post-F1a acceptance sim was launched inside ordinary tool calls. It
+  structurally could not finish there: foreground calls cap ~600s, background nohup processes
+  do not survive tool-call boundaries, and F1a's intended slower progression pushes exp-blind
+  control seeds to the 168h cap each. Two chained/solo attempts died silently at step 6
+  (~9.6KB of an expected ~20KB output); the session burned itself against a ceiling it never
+  measured.
+- Root cause: no runtime-vs-ceiling budget existed at launch. The pre-F1a full sim's 10-15min
+  was already over the foreground ceiling — a warning that was never read as one.
+- Verification gap: a long-running certification had no launch precondition ("fits inside one
+  execution window, or has a decided splitting/detachment strategy").
+- Plug: before launching any long job, state the budget — measured (or estimated) runtime vs.
+  the known ceiling — and if it doesn't fit, decide the strategy FIRST (options round if
+  non-obvious). A certification that cannot finish inside one tool call is an infrastructure
+  design problem, not a thing to retry.
+- Route: dev-method.
+
+## 2026-07-12 — `cd X && nohup A & nohup B &` runs B from the ORIGINAL directory
+- What happened: the parallel recovery attempt launched two sims with
+  `cd X && nohup A & nohup B &`. Operator precedence parses this as `(cd X && nohup A) &` then
+  `nohup B &` — B launched from the original cwd (`/`) and died at launch with module-not-found.
+- Root cause: `&&` binds tighter than `&`; the `cd` scopes only the first chain. A process
+  launch is an edit with a landing zone, and its landing zone is its cwd.
+- Verification gap: the launch reported nothing; death was discovered late, tangled with the
+  OOM kills of the runs that DID start.
+- Plug: every background launch states its own cwd (absolute paths, or a `cd` inside each
+  subshell: `(cd X && nohup A &)`) and verifies its process/artifact exists immediately after
+  launch — the landing-zone law applied to process launches.
+- Route: dev-method (landing-zone family, process launches).
+
+## 2026-07-12 — Parallel heavy Node sims OOM the 4GB container
+- What happened: the two parallel sim runs that did launch were OOM-killed at ~1.5-2GB each on
+  the 4GB container — a third simultaneous failure mode in the same recovery attempt.
+- Root cause: sim_economy's per-run footprint × parallelism exceeds container memory. The
+  parallel "speedup" was never viable here.
+- Verification gap: none new — the ceiling lesson above covers the missing budget; this pins
+  the measured number.
+- Plug: sequential sim runs are POLICY for this project's harness; treat ~2GB as one run's
+  working footprint when sizing anything.
+- Route: project-only (harness policy).
+
+## 2026-07-12 — Deliver-before-certify: an uncommitted green pass is one dead session from gone
+- What happened: F1a was finished and twice suite-green (1667/0) in the container, but was held
+  uncommitted pending the acceptance sim — a certification that structurally could not run (the
+  ceiling entry above). The session died mid-poll and the pass died with the container; it
+  survived ONLY because the delivery zip had been packaged mid-poll and Daniel retrieved it
+  from the dead chat.
+- Root cause: certification was treated as a gate on DELIVERY, when it was only ever a gate on
+  the acceptance VERDICT. The two have different failure costs: a deferred verdict costs
+  nothing; an undelivered pass costs the pass.
+- Verification gap: none mechanical — a process-ordering error. The recovery session inverted
+  it deliberately: commit suite-green first ("harness cert pending" in the message), certify as
+  its own follow-up.
+- Plug: when certification is long-running and the session is deep, commit/deliver the
+  suite-green pass FIRST, recording the pending certification in the commit message and
+  handoff. Same shape as "versioned deliverables get a committed home."
+- Route: GI candidate.

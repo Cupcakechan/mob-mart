@@ -10,30 +10,31 @@ Claude or ChatGPT can parse it cold.*
 
 ## §0 — START HERE (cold boot): where the project is, and what happens next
 
-**State as of 2026-07-12, end of the RELIC REWORK session (suite: 1611 green; `node
-test_suite.mjs` self-verifies a fresh clone):** the MVP, the full UX roadmap, Market Day, Deep
-Sinks, Special Visits (the Inspector, reauthored 1:1), the gear expansion (27 items), six door
-destinations, the whole of **§14** (DOUG, SCRAP, the RELIC FORGE), **THE ECONOMY AUDIT**
-(`sim_economy.mjs` + `ECONOMY_AUDIT.md`), **THE RETENTION RESET** (`TRADE_MARKET_DESIGN.md` +
-`RETENTION_RESEARCH.md`), **MARKET PASS A**, **THE DROP-RATE RETUNE**, **REFORM STEP 3** (DEMMY
-+ LEGGSY — roster nine, faucets eight), **EXPEDITIONS MVP** (step 4), **MARKET PASS B** (the
-ten-item trade tier; the Inspector's Scale/Seal drops), **THE MARKET ARC** (2026-07-12, five
-passes — the overlay D6-B, the daily special, the sale sign, the LED ticker + riders, Greg
-gold-only; the arc's dated section below), and now **REFORM STEP 5 — THE RELIC REWORK**
-(2026-07-12, browser-confirmed, commit 51e2ec3): HARD restores (Daniel's table — scrap ×3 to
-60/90/135/180, gold to 5k/10k/20k/40k, material lines + **ONE Inspector's Seal EACH**), four
-effects that literalize the card gags (Key: mishaps halved; Magnet: +1 combat score; Potion:
-the market honors yesterday's better gold — yesterday's special included; Cloak: +2 every
-material cap), the **SEAL SLOPE** (min(1, fullness/0.9) replaces the top-grade cliff —
-Daniel's 24/7-monitoring fix; the 0.9+ guarantee preserved), and the **PRESTIGE LAW recorded
-as BINDING**: relics carry over through prestige (step 8 must honor it). The instrument grew
-with the economy: sim_economy models the daily inspection (real grade + slope, seeded dice),
-the aware policy hoards found-relic lines (the reserve rule) and targets expeditions at
-restore deficits, horizon 48h → **168h**. **Verdicts 3× bit-identical: aware +34% over
-market-blind, +29% over expedition-blind (from +24%/+22%); median desire-curve death 96:00
-(spread 72–96h, quantized to inspection days — the relic arc IS the endgame clock now, from
-26:07 pre-rework).** LESSONS.md gained two entries (the instrument's missing dragon; the
-fixture that guessed at fullness).
+**State as of 2026-07-12, end of the F1a RECOVERY session (suite: 1667 green at tip
+`c10810b`; `node test_suite.mjs` self-verifies a fresh clone):** the MVP, the full UX roadmap,
+Market Day, Deep Sinks, Special Visits (the Inspector, reauthored 1:1), the gear expansion
+(27 items), six door destinations, the whole of **§14** (DOUG, SCRAP, the RELIC FORGE), **THE
+ECONOMY AUDIT** (`sim_economy.mjs` + `ECONOMY_AUDIT.md`), **THE RETENTION RESET**
+(`TRADE_MARKET_DESIGN.md` + `RETENTION_RESEARCH.md`), **MARKET PASS A**, **THE DROP-RATE
+RETUNE**, **REFORM STEP 3** (DEMMY + LEGGSY — roster nine, faucets eight), **EXPEDITIONS MVP**
+(step 4), **MARKET PASS B** (the ten-item trade tier; the Inspector's Scale/Seal drops), **THE
+MARKET ARC** (2026-07-12, five passes — the overlay D6-B, the daily special, the sale sign,
+the LED ticker + riders, Greg gold-only), **REFORM STEP 5 — THE RELIC REWORK** (51e2ec3 — the
+HARD-restore table incl. one Seal each, the four gag effects, the Seal SLOPE, and the
+**BINDING PRESTIGE LAW**: relics carry over; verdicts 3× bit-identical aware +34%/+29%, median
+death 96:00 quantized to inspection days — its dated section below), **REFORM STEP 6 —
+COMMISSIONS** (a5e6836, suite 1652 — the NAMED CLIENT: day-seeded deterministic orders against
+market-day deadlines, live-derived premium terms, zero-penalty lapse), **the Market Day HUD
+chip RETIREMENT** (18be9de, suite 1656 — board/forecast/ticker carry the market; F4 is the
+chip's designed successor), and now **F1a — FAME LEVELS** (c10810b, suite 1667 — the FAME &
+DEMAND REFORM's first pass): fame is a generated LEVEL track (`levelThreshold(n)`, base 25 ×
+growth 1.6), the seven names survive as RUNGS anchored at levels with mins DERIVED from the
+curve at load, the HUD badge reads "«Rung» · Lv N", and offline sales pay HALF fame
+(`repFraction: 0.5` — gold untouched). **F1a is suite-certified but HARNESS CERT PENDING** —
+the acceptance sim exceeds the container's execution limits; the certification strategy is an
+open options round (the NEXT block). Built in a session that died mid-certification and
+recovered from its delivery zip — the two 2026-07-12 sections at the bottom carry both
+stories, and LESSONS.md gained five entries from the postmortem.
 
 **THE DESIGN RESET (Daniel, 2026-07-10) — MEASURED by the audit (2026-07-11):** passive play
 reaches millions with nothing left to want. The sink stack is **228,483 gold** exactly; the
@@ -62,17 +63,34 @@ with this §0.
 1. **Market Pass A** — **DONE 2026-07-11**; 2. **Market Pass B** — **DONE 2026-07-12** (the
 full tier + forecast + Inspector drops + the iconic filtered list; the Pass B section at the
 bottom); 3. **Spider + Demon** — **DONE 2026-07-11**; 4. **Expeditions MVP** — **DONE
-2026-07-11**; 5. **Relic rework** (HARD restores — scrap+gold+MATERIALS incl. the reserved
-Inspector's Seal; economy effects in the scarce carrier slots); 6. **Commissions**
-(deadlines); 7. **Expedition depth** (parties, offline party management); 8. **Franchise**
-(rule-changing prestige, six-door factions — designed last, against what the harness
-measures then).
+2026-07-11**; 5. **Relic rework** — **DONE 2026-07-12** (51e2ec3); 6. **Commissions** —
+**DONE 2026-07-12** (a5e6836, the NAMED CLIENT); **then the FAME & DEMAND REFORM ARC**
+(`FAME_ECONOMY_DESIGN.md` §3 — the arc's home): **F1a fame levels — DONE 2026-07-12**
+(c10810b, harness cert pending) → **F2 demand honesty** (supply-aware want mix) → **F3
+scarcity teeth** (sized AFTER F2 sets the miss rate — the ordering is deliberate; includes
+the auto-wave/dismissal economics review) → **F4 demand surface** (the retired HUD chip's
+successor); 7. **Expedition depth** (parties, offline party management); 8. **Franchise**
+(rule-changing prestige, six-door factions — designed last, against what the harness measures
+then; **F1b — prestige spends fame — ships WITH it**, design already in the doc's §5).
 
-**NEXT SESSION — COMMISSIONS (reform step 6), opening with its options round.** The locked
-sequence's next entry: DEADLINES — timed orders as the next decision layer. No design exists
-yet beyond the sequence line; the round starts from TRADE_MARKET_DESIGN.md §6-8's direction +
-RETENTION_RESEARCH.md's ranked framework. Cold-boot ritual applies as always: this doc in
-full, the dev-method skill, sync-and-certify (suite must read **1611** at HEAD).
+**NEXT — THE F1a HARNESS CERTIFICATION, opening with its options round (an INFRASTRUCTURE
+decision, not a design one — solve "how does a ~25-minute sim run inside tool-call limits"
+BEFORE launching anything).** The measured constraints: foreground tool calls cap ~600s;
+background `nohup` processes do NOT survive tool-call boundaries; two parallel sims (~1.5-2GB
+each) OOM the 4GB container — sequential is policy. Candidate shapes from the postmortem:
+(a) one foreground sim-only run at max timeout (suite separately — the solo run reached step
+6 in <5min with ~1-2min of seeds left, it MAY just fit); (b) split the sim into blocks via
+flags — modifies the certified artifact, needs a doctrine ruling; (c) `setsid` detachment —
+unproven here. Two open questions ride the round: the **3×-bit-identical doctrine vs. F1a
+introducing zero new RNG paths** (does the doctrine demand three full runs of a deterministic
+change?), and the contemplated **CAP_SEC 168h → 240h** bump (decide DELIBERATELY — it
+lengthens the very sim that exceeds the ceiling). Also OPEN, instrument-before-concluding:
+the comm-blind step-6 disproportion — real perf pathology (comm-blind lapses re-place the
+order every rollover; a possible cascade) or purely the execution ceiling? The timing
+evidence is CONTAMINATED (the self-matching poll); add step timestamps INSIDE the sim's own
+output before ruling either way. **F2 (demand honesty) follows certification.** Cold-boot
+ritual applies as always: this doc in full, the dev-method skill, sync-and-certify (suite
+must read **1667** at HEAD).
 
 **THREE MEASURED FINDINGS from the relic rework, for Daniel's judgment (raise them BEFORE
 building anything that touches the economy):**
@@ -104,10 +122,15 @@ building anything that touches the economy):**
   (f) Standing small: expedition pacing + fame-tier fee discounts; the Job Board's real home
       (pure-lore Bestiary); P2 Mythic → 40k one-value pass; Doug's door-open feel pass; the
       HUD compact-numbers option; the itch dual-publish decision.
+  (g) **QUEUED BEHIND THE FAME & DEMAND ARC (order per FAME_ECONOMY_DESIGN.md §3's tail):**
+      ① Greg perks hidden pre-hire; ② Commission B1 — hard reserve + awareness bundle
+      (**Option 1 PICKED 2026-07-12**, decision log in the design doc §9); ③ B2 material
+      payment; ④ B3 extra slots via Bob upgrade.
 
 **Steps 7-8 behind all of it:** Expedition depth (parties, offline management), then Franchise
 (rule-changing prestige, six-door factions — designed against what the harness measures then,
-and BOUND by the prestige law: restored relics carry over).
+BOUND by the prestige law: restored relics carry over, and carrying **F1b** — prestige spends
+fame — whose design already lives in FAME_ECONOMY_DESIGN.md §5).
 
 **PARKED, in Daniel's own words (2026-07-11, post-step-4):** (a) **expedition pacing retune**
 — "up the gold charge," plus FAME-TIER DISCOUNTS on the fee (fame already carries budget
@@ -1876,3 +1899,118 @@ ruled), the ~1M purse at death (worker wages promoted), and the inspection-day q
 
 **NEXT:** Commissions (step 6) opens with its options round — §0 carries the full agenda and
 the parked queue.
+
+---
+
+## 2026-07-12 — COMMISSIONS (step 6) + THE CHIP RETIREMENT + the session that died (a5e6836, 18be9de)
+
+*This session's handoff update was never written — the session died mid-work (below). This
+section reconstructs it from the committed code and the recovery brief; design rationale that
+lived only in the dead transcript is gone, but every shipped fact here is read from HEAD.*
+
+**1. COMMISSIONS (reform step 6 — Daniel's Option 2, THE NAMED CLIENT; a5e6836, suite 1652):**
+a roster monster places an order for TRADE-TIER goods against a deadline counted in MARKET
+DAYS — the same clock the rotating rates and forecast run on, so "hold stores? trade today?
+wait for tomorrow's rate?" is ONE planning loop (design doc §8's whole point). The load-bearing
+mechanics, all suite-pinned in **§70**:
+  - **Determinism contract** (same standing as trademarket.js): `commissionForDay(dayKey,
+    itemIds)` is a PURE seeded function — `mulberry32(hashDayKey('commission:'+dayKey))`, no
+    Math.random — same day + same licenses = same order; a reload can never reroll the client.
+    Eligibility law applied: game.js passes the LICENSED trade tier, so an order can never
+    demand what the shop may not legally sell; null when nothing is eligible (early game stays
+    commission-free by construction). Client from the live non-special roster (the Inspector
+    inspects; he does not queue up orders).
+  - **`dayIndexOf`** makes both key families comparable integers — calendar 'YYYY-MM-DD' via
+    Date.UTC (DST can never make adjacent days differ by anything but 1) and the harness's
+    'sim-day-N'; any other shape returns null and the deadline machinery IDLES rather than
+    guesses.
+  - **Terms derive LIVE at fulfillment** (`commissionTerms`): per-unit = basePrice ×
+    itemGoldMult × globalGoldMult × `premiumMult 2.0` — the payout law holds, basePrice
+    untouched; rep = flat `repPerUnit 3` per unit. A persisted order can never mint a stale or
+    hand-edited price. Deliberately OUTSIDE the formula: Market-Day event mults and Bob's
+    saleTip. The premium buys TENSION, not wealth (finding ii's ruling: worker wages, not
+    commissions, are the planned perpetual drain).
+  - **Zero-penalty lapse** — the comic beat IS the cost (COMMISSION_VOICE.lapsed, the client's
+    exit line). Fulfillment deliberately does NOT touch stats.itemSales (loyalty ladders count
+    COUNTER sales; a side-channel increment would advance breakpoints silently).
+  - CONFIG.commission bands: count 2-4, deadline 2-3 market days, checkSec 5. Surface: the
+    market overlay's "Special Order" card (`mkt-commission`; its Fulfill button shares
+    .offer-trade, scoped by [data-item]); results.js gained the commission line pools;
+    save.js persists the order (additive, SAVE_VERSION unchanged). sim_economy gained
+    comm-aware/comm-blind policies.
+
+**2. THE MARKET DAY HUD CHIP RETIREMENT (Daniel's call; 18be9de, suite 1656):** the chip and
+its compact banner removed from initHud/renderHud (imports dropped, CSS removed); the EVENT
+SYSTEM is untouched — the log line, Bob's bubble, and the away modal still name the day's
+event. Rationale: board + forecast + ticker carry the market now; the chip predated all
+three. **§71** pins the retirement. **F4 (demand surface) is the chip's designed successor** —
+an ambient home for today's DEMAND rather than a corner banner.
+
+**3. DECISIONS LOCKED MID-SESSION (approved by Daniel, binding; decision log =
+FAME_ECONOMY_DESIGN.md §9):** Fame reform = **Option 3** (fame as generated level track +
+prestige currency), split **F1a now / F1b with step 8**, offline fame haircut approved.
+Commission **B1 = Option 1** (hard reserve + awareness bundle), queued behind the arc with
+B2/B3 and the Greg-perk visibility gate (§0's parked item (g)).
+
+**4. THE SESSION DEATH — infrastructure, NOT a game bug.** After building F1a (twice
+suite-green at 1667/0, uncommitted), the session entered what looked like a terminal bug loop.
+The postmortem, so it is never re-litigated: the post-F1a acceptance sim exceeds the
+container's execution limits — foreground tool calls cap ~600s, background nohup does not
+survive tool-call boundaries, and the reform's slower progression pushes exp-blind control
+seeds to the 168h cap each (the pre-F1a 10-15min full sim was already a warning). A parallel
+recovery attempt failed three ways at once (`cd X && nohup A & nohup B &` runs B from the
+ORIGINAL cwd; the two that launched OOM-killed at ~1.5-2GB each on 4GB). The "loop" itself was
+a **self-matching progress probe** — `pgrep -f sim_economy` caught the polling shell's own
+command line, reporting a dead process as running for ~20+ minutes. RULED OUT in-session (do
+not re-suspect): fameLevel's while loop (terminates; HUD-only, not in the sim path),
+reputationTier (bounded), log growth (pushLog is capped). F1a itself died uncommitted and was
+recovered from the delivery zip Daniel retrieved from the dead chat. **Five LESSONS.md entries
+(2026-07-12, the probe/ceiling/cwd/OOM/deliver-first set) carry the encoded rules.**
+
+**NEXT:** the F1a recovery (the section below), then the certification options round — §0
+carries the full agenda.
+
+---
+
+## 2026-07-12 — F1a: FAME LEVELS (the recovery session; c10810b, suite 1667; HARNESS CERT PENDING)
+
+**The recovery:** the verified zip (six files: FAME_ECONOMY_DESIGN.md new + config.js,
+reputation.js, offline.js, ui/hud.js, test_suite.mjs) applied over a clean `18be9de`; suite
+**1667/0** — the fourth green run of the identical bytes (twice in the dead session, once in
+Daniel's 2026-07-12 recovery check, once at application). Browser-confirmed by Daniel and
+**committed BEFORE any certification attempt** — the deliberate inversion of the dead
+session's core process error, which held a finished, twice-green pass hostage to a
+certification that structurally could not run, and lost it when the session died.
+
+**The design (`FAME_ECONOMY_DESIGN.md` is the arc's home; §4 is this pass's spec):** fame
+becomes the game's LEVEL track; **lifetimeRep stays the currency, unchanged — no save
+migration.** `levelThreshold(n) = round(25 × 1.6^(n−1))` lifetime fame to BE level n; infinite
+headroom by construction; the two dials in CONFIG.reputation.levels ARE the curve. The seven
+names survive as RUNGS anchored at levels — Neutral L0, Friendly L2, Trusted L6, Beloved L10,
+Renowned L13, Legendary L17, Mythic L20 — and each rung's `min` DERIVES from the curve at load
+(config.js's tail): **one source of truth.** Calibrated against the harness income fit
+rep(t) ≈ 3000·t^1.2: Friendly ~first minute, Trusted ~10min, Beloved ~40min, Renowned ~2h,
+Legendary ~9-10h, Mythic ~30h; ≈L23 at the old ladder's measured 643k/96h endpoint (the old
+ladder topped out at 1:24:37 — 128× its cap by desire-death — which is what this fixes).
+
+**The architecture (the load-bearing idea):** `reputationTier()` keeps its `{index, label,
+min}` return shape, so EVERY gate consumer — licenses, the workers' deep-training band,
+fame-scaled budgets, crates, fametrack, the sim — works untouched, index semantics 0-6
+preserved. New helpers in reputation.js: `levelThreshold(n)`, `fameLevel(rep)`,
+`nextLevelInfo(rep)`. HUD badge reads **"«Rung» · Lv N"**; the remainder line counts to the
+next LEVEL, naming the rung when the next level is one. Offline: **`repFraction: 0.5`** in
+CONFIG.offline, applied in offline.js — offline sales pay HALF fame ("word of mouth needs you
+present"), gold untouched, Better Signage still applies (it rides the per-sale).
+
+**The suite (§72 + the ladder conversion):** §72 pins the curve exactly — thresholds at named
+levels, rung placement, the haircut dial, HUD wiring. ~195 pre-existing assertions carried
+hand-typed OLD-ladder thresholds (the 1500-is-Legendary era); all converted to live-table
+reads (`tiers[i].min`; offline expectations derived through repFraction) — the
+derive-never-hand-type doctrine applied to the whole ladder. A top-level CONFIG import was
+added to the suite (block-scoped section imports checked legal — no duplicate binding).
+
+**CERT PENDING:** the acceptance sim never completed in the dead session (the section above);
+F1a is suite-certified only. The certification strategy — including the 3×-bit-identical
+doctrine question, the CAP_SEC 168h→240h dial, and the comm-blind step-6 open question — is
+the next options round; §0's NEXT block carries the full agenda. **F2 (demand honesty)
+follows certification.**
