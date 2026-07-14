@@ -177,3 +177,16 @@ export function boardQuipFor(event, dayKey) {
   if (pool.length === 0) return '';
   return pool[hashDayKey(`${dayKey ?? ''}:${event.id}`) % pool.length];
 }
+
+// DEMAND SURFACE (F4, FAME_ECONOMY_DESIGN.md §8 — Daniel's Option 1, 2026-07-13): the board's
+// third chalk row names TODAY's demand event — the ambient surface the Market Day event lost
+// when the HUD chip retired (the discovery gap). Board-voiced and COMPACT (the chalk face fits
+// ~one short line): "DEMAND: Weapons tip today" — the shelf that pays, in the market-crier
+// register, no percentage (the board advertises; the overlay informs — the sale-sign doctrine).
+// Pure and deterministic: the event is date-derived, so this recomputes identically on reload,
+// and the caller folds its key into the board's write-on/rewrite trigger. Empty string when no
+// event resolves (defensive; a live day always has one) so the row simply doesn't draw.
+export function boardEventLine(event) {
+  const label = CATEGORY_LABELS[event?.category] ?? event?.category ?? '';
+  return label ? `DEMAND: ${label} tip today` : '';
+}

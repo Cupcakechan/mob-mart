@@ -4078,6 +4078,7 @@ console.log('M4 auto-serve worker — smoke test\n');
 {
   const { boardLines: bl66, featuredOffer: feat66, tradeDayKey: tdk66, forecastDayKey: fdk66 }
     = await import('./src/data/trademarket.js');
+  const { eventIdForDay: eid66 } = await import('./src/data/marketevents.js');   // F4: contentKey pin
   const { CONFIG: CFG66 } = await import('./src/config.js');
   const { ITEMS: ITEMS66 } = await import('./src/data/items.js');
   const pct66 = Math.round((1 - CFG66.trade.feature.goldMult) * 100);
@@ -4091,8 +4092,8 @@ console.log('M4 auto-serve worker — smoke test\n');
       `sign: sim-day-${d} tomorrow line is the tease — name only, no recipe (the overflow law)`);
     ok(!L.today.includes('⇐') && !L.tomorrow.includes('⇐'),
       `sign: sim-day-${d} no recipe glyphs on the sign — the board advertises, the overlay informs`);
-    ok(L.contentKey === `${t.key}|${f.key}`,
-      `sign: sim-day-${d} contentKey composes both offer keys (the chalk re-write trigger)`);
+    ok(L.contentKey === `${t.key}|${eid66(tdk66(s))}|${f.key}`,
+      `sign: sim-day-${d} contentKey composes both offers + today's event (the chalk re-write trigger, F4)`);
   }
   // The scene consumes boardLines, not the recipe segments (the wiring pin, §64's style).
   const { readFileSync: rf66 } = await import('node:fs');
@@ -4827,6 +4828,72 @@ console.log('M4 auto-serve worker — smoke test\n');
     ok(src.includes('const pen = leavePenaltyOf(state)')
        && (src.match(/repDelta: -pen, tier: 'leave'/g) ?? []).length === 2,
        'scarcity teeth: the leave block derives once and logs -pen in both branches (wiring pin)');
+  }
+}
+
+// ========== SECTION 75 — DEMAND SURFACE (F4 Option 1 — the fame & demand reform) ==========
+// The market board's third chalk row names today's demand event ("DEMAND: Weapons tip today"),
+// and the overlay echoes it WITH the number ("Hero Parade · Weapons +50%") — the sale-sign
+// doctrine pair: the board advertises, the overlay informs. FAME_ECONOMY_DESIGN.md §8.
+{
+  const { boardEventLine, eventIdForDay, marketBannerText, MARKET_EVENTS, MARKET_EVENT_ORDER,
+    CATEGORY_LABELS } = await import('./src/data/marketevents.js');
+  const { boardLines } = await import('./src/data/trademarket.js');
+  const { createInitialState: cis75 } = await import('./src/state.js');
+
+  // (a) Every event's board line is board-SHORT (the chalk face fits ~one short line; the iconic
+  // rows' overflow bug is the cautionary tale) and names its category label.
+  for (const id of MARKET_EVENT_ORDER) {
+    const ev = MARKET_EVENTS[id];
+    const line = boardEventLine(ev);
+    ok(line.length > 0 && line.length <= 32,
+       `demand surface: ${id} board line is board-short (${line.length} <= 32)`);
+    ok(line.includes(CATEGORY_LABELS[ev.category] ?? ev.category),
+       `demand surface: ${id} board line names its shelf`);
+  }
+  // The board line carries NO percentage — advertising, not informing (the doctrine split).
+  ok(MARKET_EVENT_ORDER.every((id) => !/\d/.test(boardEventLine(MARKET_EVENTS[id]))),
+     'demand surface: board lines carry no number (the board advertises; the overlay informs)');
+  // Empty event → empty row (defensive: the row simply doesn't draw).
+  ok(boardEventLine(null) === '' && boardEventLine({}) === '',
+     'demand surface: a missing event yields an empty row, never a crash');
+
+  // (b) boardLines folds the demand row + its event id into the composed contentKey, so a new
+  // market day (which flips the event) triggers the single chalk write-on across all rows.
+  {
+    const s = cis75();
+    s.tradeDayKeyOverride = 'sim-day-7';
+    const L1 = boardLines(s), L2 = boardLines(s);
+    ok(L1.demand === boardEventLine(MARKET_EVENTS[eventIdForDay('sim-day-7')]),
+       'demand surface: boardLines.demand matches the day-derived event line');
+    ok(L1.contentKey.includes(eventIdForDay('sim-day-7')),
+       'demand surface: the event id rides the contentKey (chalk rewrite fires on event change)');
+    ok(L1.contentKey === L2.contentKey && L1.demand === L2.demand,
+       'demand surface: deterministic per day (a sign chalked once, not per reload)');
+    // A different day generally shifts the composed key (offer and/or event move).
+    const s2 = cis75(); s2.tradeDayKeyOverride = 'sim-day-8';
+    ok(boardLines(s2).contentKey !== L1.contentKey,
+       'demand surface: a new market day recomposes the board key');
+  }
+
+  // (c) The overlay's informative echo agrees with the board on WHICH event, and carries the
+  // number the board omits — derived from the same eventIdForDay∘tradeDayKey the board uses.
+  {
+    const ev = MARKET_EVENTS[eventIdForDay('sim-day-7')];
+    const echo = marketBannerText(ev, ev.payoutMult ?? 1.5);
+    ok(echo.includes(ev.displayName) && /\d/.test(echo),
+       'demand surface: the overlay echo names the event and carries the percentage');
+  }
+
+  // (d) Wiring pins: the render actually draws the demand row + the overlay element exists.
+  {
+    const { readFileSync: rf75 } = await import('node:fs');
+    const scene = rf75('./src/render/scene.js', 'utf8');
+    ok(scene.includes('demSegs') && scene.includes('L.demand'),
+       'demand surface: scene.js draws the demand row from boardLines (wiring pin)');
+    const market = rf75('./src/ui/market.js', 'utf8');
+    ok(market.includes('mkt-demand') && market.includes('marketBannerText'),
+       'demand surface: the overlay renders the informative echo (wiring pin)');
   }
 }
 

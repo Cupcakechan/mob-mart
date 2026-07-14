@@ -13,7 +13,7 @@ import { CONFIG } from '../config.js';
 import { ITEMS, ITEM_ORDER } from './items.js';
 import { MONSTERS, MONSTER_IDS } from './monsters.js';
 import { MATERIALS } from './materials.js';
-import { dayKeyOf, hashDayKey } from './marketevents.js';
+import { dayKeyOf, hashDayKey, eventIdForDay, boardEventLine, MARKET_EVENTS } from './marketevents.js';
 import { TRADE_VOICE } from './results.js';
 
 // The trade tier: items whose stock arrives by trade, never by gold restock. Registry-driven —
@@ -151,10 +151,15 @@ export function boardLines(state) {
   const t = featuredOffer(tradeDayKey(state));
   const f = featuredOffer(forecastDayKey(state));
   const pct = Math.round((1 - (CONFIG.trade?.feature?.goldMult ?? 0.6)) * 100);
+  // F4 demand surface: today's event line rides the same calendar day as the trade offer, so
+  // its id joins the contentKey — a new market day (which flips both offer and event) triggers
+  // the one chalk write-on across all three rows, and a mid-session event change rewrites too.
+  const evId = eventIdForDay(tradeDayKey(state));
   return {
     today: t ? `TODAY: ${ITEMS[t.itemId]?.displayName ?? t.itemId} — ${pct}% OFF` : '',
+    demand: boardEventLine(MARKET_EVENTS[evId]),
     tomorrow: f ? `Tomorrow: ${ITEMS[f.itemId]?.displayName ?? f.itemId}` : '',
-    contentKey: `${t?.key ?? ''}|${f?.key ?? ''}`,
+    contentKey: `${t?.key ?? ''}|${evId}|${f?.key ?? ''}`,
   };
 }
 

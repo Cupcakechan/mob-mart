@@ -13,6 +13,8 @@ import { MONSTERS, MONSTER_IDS } from '../data/monsters.js';
 import { tradeItemIds, featuredOffer, tradeDayKey, forecastDayKey, tickerSegments } from '../data/trademarket.js';
 import { currentTradeOffers, canTrade, materialCap, isItemUnlocked, effectiveMaxStock,
   canFulfillCommission, commissionTerms, commissionDaysLeft } from '../game.js';   // + reform step 6
+import { MARKET_EVENTS, eventIdForDay, marketBannerText } from '../data/marketevents.js';   // F4 demand echo
+import { CONFIG } from '../config.js';   // F4: the payout-mult default for the demand echo
 
 let handlers = { onTrade: () => {}, onDirty: () => {} };
 let rootEl = null;
@@ -78,6 +80,10 @@ export function initMarket(root, h) {
         <span class="special-badge">Special of the Day</span>
         <span id="mkt-special" class="offer-text"></span>
       </div>
+      <div class="market-demand">
+        <span class="demand-badge">Today's Demand</span>
+        <span id="mkt-demand" class="offer-text"></span>
+      </div>
       <div id="mkt-commission" class="market-commission hidden">
         <span class="commission-badge">Special Order</span>
         <span id="mkt-comm-text" class="offer-text"></span>
@@ -131,6 +137,17 @@ export function renderMarket(state) {
   // discount pass will make THIS price diverge from the row's.
   const specialEl = document.getElementById('mkt-special');
   if (specialEl) specialEl.innerHTML = offerRowHtml(featuredOffer(tradeDayKey(state)), state);
+
+  // F4 demand surface — the overlay's INFORMATIVE half of the doctrine pair (the board
+  // advertises "DEMAND: Weapons tip today"; here the number). Derived from the same calendar
+  // day as the board line (eventIdForDay ∘ tradeDayKey) so the two never disagree, and the
+  // mult is resolved through the same registry-override ?? CONFIG default the payout uses.
+  const demandEl = document.getElementById('mkt-demand');
+  if (demandEl) {
+    const ev = MARKET_EVENTS[eventIdForDay(tradeDayKey(state))];
+    const mult = ev ? (ev.payoutMult ?? CONFIG.market?.payoutMult ?? 1) : 1;
+    demandEl.textContent = ev ? marketBannerText(ev, mult) : 'Quiet market today.';
+  }
 
   // THE SPECIAL ORDER (reform step 6): the named client's row. Hidden when no order is live
   // (the scoped .market-commission.hidden override — the cascade-tie law). Terms render LIVE

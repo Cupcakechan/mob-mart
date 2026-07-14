@@ -714,6 +714,15 @@ body{
 .commission-badge{color:var(--good);font-weight:800;font-size:10px;letter-spacing:.6px;text-transform:uppercase;flex-shrink:0;}
 .market-commission .offer-text{flex:1;min-width:0;}
 .market-commission .comm-due{color:var(--bad);font-weight:700;}   /* last fulfillable day shouts */
+/* F4 demand surface — the overlay's INFORMATIVE echo of the board's demand line. The headline
+   rows' shape, a warm amber accent (distinct from gold special / green order) so the three read
+   as siblings. Carries the number the board omits (the board advertises, the overlay informs). */
+.market-demand{
+  background:#2a2318;border:1px solid #ffcf9e;border-radius:8px;padding:6px 10px;
+  margin-bottom:8px;display:flex;align-items:center;gap:8px;
+}
+.demand-badge{color:#ffcf9e;font-weight:800;font-size:10px;letter-spacing:.6px;text-transform:uppercase;flex-shrink:0;}
+.market-demand .offer-text{flex:1;min-width:0;}
 .market-offer-list{display:flex;flex-direction:column;gap:4px;overflow-y:auto;flex:1;min-height:0;}
 .market-offer-list .offer-row{padding:3px 4px;border-bottom:1px solid #3a2c50;}
 .market-offer-list .offer-row:last-child{border-bottom:none;}

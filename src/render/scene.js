@@ -406,6 +406,8 @@ const SPECIAL_BOARD = {
   nameFont:   "800 14px 'Segoe UI', system-ui, sans-serif",
   quipFont:   "700 14px 'Segoe UI', system-ui, sans-serif",
   headerColor: '#f6e7c8', nameColor: '#ffd75e', quipColor: '#f6e7c8',   // name nudged brighter
+  demandColor: '#ffcf9e',     // F4 demand row — a warm chalk between the gold offer and cream
+                              // forecast, so the three data rows read as distinct at a glance
   shade: 'rgba(0,0,0,.6)',    // 1px offset under every glyph — deepened from .35 for legibility
                               // of the gold recipe row on the mid-tone wood (Daniel's QA, Pass B)
   padX: 14,                   // text inset from the board's side edges
@@ -586,19 +588,25 @@ function drawSpecialBoard(ctx, state, tMs) {
   // wants bigger lettering now that the lines are short.
   const L = boardLines(state);
   const headSegs = L.today ? [{ t: 'text', s: L.today }] : [];
+  const demSegs = L.demand ? [{ t: 'text', s: L.demand }] : [];   // F4 demand surface
   const fcSegs = L.tomorrow ? [{ t: 'text', s: L.tomorrow }] : [];
-  // Chalk rewrite keys on both offers (boardLines carries the composed key).
+  // Chalk rewrite keys on all offers + today's event (boardLines carries the composed key).
   const contentKey = L.contentKey;
   if (boardFx.lastBoardKey === undefined) boardFx.lastBoardKey = contentKey;
   else if (boardFx.lastBoardKey !== contentKey) { boardFx.lastBoardKey = contentKey; boardFx.chalkStartMs = tMs; }
-  if (headSegs.length > 0 || fcSegs.length > 0) {
+  if (headSegs.length > 0 || demSegs.length > 0 || fcSegs.length > 0) {
     // "Weight" of a plan = text chars + a small fixed cost per icon, so the single write-on
-    // budget (chalkP across the whole sign) reveals both rows left-to-right as before.
+    // budget (chalkP across the whole sign) reveals every row left-to-right as before.
     const ICON_COST = 3;                                       // an icon+count ≈ 3 chars of budget
     const weigh = (segs) => segs.reduce((n, s) => n + (s.t === 'text' ? s.s.length : ICON_COST), 0);
+    // F4: three data rows now share the 110px face — re-spaced from the old two-row (37/80)
+    // layout to 33/55/77 so all four lines (header + three) sit evenly inside the writable
+    // face (MEASURED y2..109). The demand row uses the quip font/color — it's crier voice, not
+    // a headline offer. Row Y's are the one-value dials if Daniel re-letters the art.
     const rows = [
-      { segs: headSegs, font: B.nameFont, color: B.nameColor, ly: B.nameY, size: B.nameIconPx ?? 20, textPx: 14 },
-      { segs: fcSegs, font: B.quipFont, color: B.quipColor, ly: B.quipY + B.quipLineH, size: B.quipIconPx ?? 17, textPx: 14 },
+      { segs: headSegs, font: B.nameFont, color: B.nameColor, ly: 33, size: B.nameIconPx ?? 20, textPx: 14 },
+      { segs: demSegs, font: B.quipFont, color: B.demandColor ?? B.quipColor, ly: 55, size: B.quipIconPx ?? 17, textPx: 14 },
+      { segs: fcSegs, font: B.quipFont, color: B.quipColor, ly: 77, size: B.quipIconPx ?? 17, textPx: 14 },
     ];
     let budget = Math.round(rows.reduce((n, r) => n + weigh(r.segs), 0) * chalkP);
     for (const r of rows) {
