@@ -12,7 +12,7 @@ import { MATERIALS, MATERIAL_ORDER } from '../data/materials.js';
 import { MONSTERS, MONSTER_IDS } from '../data/monsters.js';
 import { tradeItemIds, featuredOffer, tradeDayKey, forecastDayKey, tickerSegments } from '../data/trademarket.js';
 import { currentTradeOffers, canTrade, materialCap, isItemUnlocked, effectiveMaxStock,
-  canFulfillCommission, commissionTerms, commissionDaysLeft } from '../game.js';   // + reform step 6
+  canFulfillCommission, commissionTerms, commissionDaysLeft, reservedFor } from '../game.js';   // + reform step 6, B1
 import { MARKET_EVENTS, eventIdForDay, marketBannerText } from '../data/marketevents.js';   // F4 demand echo
 import { CONFIG } from '../config.js';   // F4: the payout-mult default for the demand echo
 
@@ -164,11 +164,13 @@ export function renderMarket(state) {
       const have = state.items[c.itemId]?.stock ?? 0;
       const textEl = document.getElementById('mkt-comm-text');
       if (textEl) {
+        const held = reservedFor(state, c.itemId);   // B1: units set aside from the counter for this order
         textEl.innerHTML = `<b>${MONSTERS[c.monsterId]?.displayName ?? '???'}</b> orders `
           + `${c.count}× <b>${ITEMS[c.itemId]?.displayName ?? c.itemId}</b>`
           + ` · pays <b>${terms.gold}g</b> + ${terms.rep} fame`
           + ` · <span class="${left <= 1 ? 'comm-due' : ''}">${left <= 1 ? 'due tomorrow!' : `${left} days left`}</span>`
-          + ` · shelf <span class="${have >= c.count ? 'mat-ok' : 'mat-short'}">${have}/${c.count}</span>`;
+          + ` · shelf <span class="${have >= c.count ? 'mat-ok' : 'mat-short'}">${have}/${c.count}</span>`
+          + (held > 0 ? ` · <span class="comm-reserved">${held} held from the counter</span>` : '');
       }
       const fbtn = document.getElementById('mkt-comm-fulfill');
       if (fbtn) {

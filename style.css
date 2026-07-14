@@ -649,6 +649,16 @@ body{
 }
 .item-card .trade-hint:hover { text-decoration: underline; }
 
+/* COMMISSION HARD RESERVE (B1) — the shelf card's held indicator: N units set aside for the
+   Special Order, so Bob won't sell them to a walk-in. GOOD-green to sibling the commission row's
+   identity (an order is an opportunity). Sets its own display, so it CARRIES the scoped .hidden
+   override — the cascade-tie law (.item-card.hidden / .offer-row.hidden solve the same trap). */
+.item-card .item-reserve {
+  display: block; font-size: 10px; line-height: 1.2; color: var(--good); font-weight: 700;
+  margin-top: 2px;
+}
+.item-card .item-reserve.hidden { display: none; }
+
 /* --- Expedition Job Card row (reform step 4 MVP; the Bestiary grid cards) ---------------------- */
 .beast-exp-row { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
 .beast-exp { font-size: 10px; color: #cfc3e0; min-width: 0; }
@@ -714,6 +724,7 @@ body{
 .commission-badge{color:var(--good);font-weight:800;font-size:10px;letter-spacing:.6px;text-transform:uppercase;flex-shrink:0;}
 .market-commission .offer-text{flex:1;min-width:0;}
 .market-commission .comm-due{color:var(--bad);font-weight:700;}   /* last fulfillable day shouts */
+.market-commission .comm-reserved{color:var(--good);font-weight:700;}   /* B1: units held from the counter for the order */
 /* F4 demand surface — the overlay's INFORMATIVE echo of the board's demand line. The headline
    rows' shape, a warm amber accent (distinct from gold special / green order) so the three read
    as siblings. Carries the number the board omits (the board advertises, the overlay informs). */

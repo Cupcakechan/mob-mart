@@ -16,7 +16,7 @@ import { WORKERS, WORKER_ORDER, isWorkerOwned, sumWorkerEffect } from './data/wo
 import { sumEffect } from './data/upgrades.js';
 import { perkLevel } from './data/perks.js';
 import { itemGoldMult, globalGoldMult } from './data/milestones.js';
-import { effectiveWorkerInterval, effectiveRepPerSale, effectiveMaxStock } from './game.js';
+import { effectiveWorkerInterval, effectiveRepPerSale, effectiveMaxStock, sellableStock } from './game.js';
 
 // Compute the offline result for `state` as of `nowMs`. Returns
 //   { awaySec, cappedSec, sales, gold, rep, consumed: { itemId: count } }
@@ -86,7 +86,7 @@ export function computeOffline(state, nowMs) {
     // mint stock the Market Board is the sole source of. LIVE shelf units the player already
     // traded for still sell offline — that's real acquired stock, not conjured stock.
     const goldStocked = (ITEMS[id]?.acquisition ?? 'gold') === 'gold';
-    stocks[id] = unlocked ? (state.items[id]?.stock ?? 0) : 0;               // live shelf units
+    stocks[id] = unlocked ? sellableStock(state, id) : 0;                    // live shelf units, B1 reserve honored
     reserves[id] = (unlocked && goldStocked) ? reservePerItem * effectiveMaxStock(state, id) : 0;  // Extra Shelf compounds in
     goldPer[id] = Math.round((ITEMS[id]?.basePrice ?? 0) * itemGoldMult(state, id) * gMult) + saleTip;
   }

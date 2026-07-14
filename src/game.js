@@ -34,9 +34,40 @@ function armReturnCooldown(state, monsterId) {
   (state.mobCooldowns ??= {})[monsterId] = CONFIG.queue.returnCooldownSec ?? 18;
 }
 
+// COMMISSION HARD RESERVE (B1 — parked (g)②, Option 1 PICKED 2026-07-12, decision log
+// FAME_ECONOMY_DESIGN.md §9). A pending order SETS ASIDE its `count` units of the ordered item
+// from every COUNTER path — Bob won't hand them to a walk-in, the offline sim won't sell them, a
+// thief can't pocket them; only fulfilling the order (canFulfillCommission consumes RAW stock) or
+// its zero-penalty lapse releases them. DERIVED live from state.commission + shelf stock — nothing
+// new persisted (the order is already saved; the same "derive, never store" convention the terms
+// use). CONFIG.commission.hardReserve (?? true) is the kill switch: false makes reservedFor 0,
+// reverting every sellable read below to raw stock (the F3 perTier-0 pattern).
+export function reservedFor(state, itemId) {
+  if (!(CONFIG.commission?.hardReserve ?? true)) return 0;
+  const c = state?.commission;
+  if (!c || c.itemId !== itemId) return 0;
+  return Math.min(c.count, state.items?.[itemId]?.stock ?? 0);   // never reserve more than is on the shelf
+}
+
+// The single source of truth for "how many units may leave over the counter": total stock minus the
+// reserve. The serve gate, the bulk-buyer check, offline, and leave-theft all read THIS, never raw
+// stock — so a hard reserve is hard everywhere Bob (or a thief) could take a unit. F2 demand
+// deliberately does NOT: coupling it (a fully-reserved shelf reads unstocked) was built and reverted
+// after the acceptance sim — it concentrated walk-in demand onto the cheap shelves and cost
+// throughput (market-blind advantage 21%->0%), while the dead-queue it was meant to prevent stayed
+// ~0% either way. So demand reflects PHYSICAL stock; the reserve gates only who may BUY (decision
+// log, FAME_ECONOMY_DESIGN.md §9). Raw stock also drives shelf-room (restock/trade caps),
+// fulfillment, and the inspection grade (the reserved units sit on the shelf — the dragon grades
+// what he sees).
+export function sellableStock(state, itemId) {
+  return Math.max(0, (state?.items?.[itemId]?.stock ?? 0) - reservedFor(state, itemId));
+}
+
 // DEMAND HONESTY (F2 Option 1, Daniel 2026-07-13): the item-stage SUPPLY weight. Trade-tier
 // demand scales to what the shop can actually serve — three binary-signal levels read from
-// LIVE state (current shelf stock; lifetime counter sales), zero new bookkeeping. Gold-tier
+// LIVE state (current PHYSICAL shelf stock; lifetime counter sales), zero new bookkeeping. NOTE
+// (B1): demand reads raw stock, NOT sellableStock — coupling it to the commission reserve was
+// tested and reverted (see sellableStock above). Gold-tier
 // items and stateless picks (older headless tests) stay x1: the bias must never touch the
 // gold economy or shift legacy math. Every read is ?? -guarded — a missing dial or field
 // degrades to x1 (bias off), never NaN. Known nuance, accepted at the options round:
@@ -46,7 +77,7 @@ function armReturnCooldown(state, monsterId) {
 export function supplyWantWeight(state, itemId) {
   if (!state || (ITEMS[itemId]?.acquisition ?? 'gold') !== 'trade') return 1;
   const dial = CONFIG.queue.supplyWantBias ?? {};
-  if ((state.items[itemId]?.stock ?? 0) > 0) return dial.stocked ?? 1;
+  if ((state.items[itemId]?.stock ?? 0) > 0) return dial.stocked ?? 1;   // B1: PHYSICAL stock (reserve is orthogonal to demand)
   if ((state.stats?.itemSales?.[itemId] ?? 0) > 0) return dial.known ?? 1;
   return dial.unknown ?? 1;
 }
@@ -142,7 +173,9 @@ export function serveBlockReason(state) {
   if (state.serveCooldown > 0) return 'cooling-down';           // counter busy after the last sale
   const item = ITEMS[c.wantedItemId];
   if (!item) return 'no-item';
-  if ((state.items[c.wantedItemId]?.stock ?? 0) <= 0) return 'out-of-stock';
+  if ((state.items[c.wantedItemId]?.stock ?? 0) <= 0) return 'out-of-stock';   // raw shelf empty (unchanged)
+  if (sellableStock(state, c.wantedItemId) <= 0) return 'reserved';            // B1: stocked, but every unit
+                                                                              //     is held for a Special Order
   if (c.budget < item.basePrice) return 'cant-afford';
   return null;
 }
@@ -169,7 +202,7 @@ export function serveCurrent(state) {
   // LIVE stock so a shelf of one sells one (graceful degrade, never a block). Registry-driven:
   // the flag lives on the monster row; specials never carry it.
   const units = (monster.bulkBuyer === true
-    && (state.items[c.wantedItemId]?.stock ?? 0) >= 2
+    && sellableStock(state, c.wantedItemId) >= 2                  // B1: bulk can't dip into the reserve
     && c.budget >= item.basePrice * 2) ? 2 : 1;
 
   // Milestone bonuses (Regulars' Loyalty) multiply the PAYOUT, never the price — affordability
@@ -1310,7 +1343,7 @@ export function update(state, dt) {
       // turns an existing pure-loss event into a watch-his-patience decision. The theft-tier
       // line REPLACES the generic leave line (one event, one line, both facts).
       const steals = MONSTERS[c.monsterId]?.thief === true
-        && (state.items[c.wantedItemId]?.stock ?? 0) > 0;
+        && sellableStock(state, c.wantedItemId) > 0;             // B1: a thief can't pocket a RESERVED unit
       if (steals) {
         state.items[c.wantedItemId].stock -= 1;
         pushLog(state, { ...logLine(c.monsterId, 'theft', { name,

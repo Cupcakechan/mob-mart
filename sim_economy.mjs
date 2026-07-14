@@ -176,6 +176,11 @@ function runSim(seed, { tradeAware = true, expeditionAware = true, commissionAwa
                                // spends blocked on an out-of-stock want (stock <= 0, serveCurrent's
                                // own gate), integrated at policy resolution. The invisible
                                // throughput tax the diagnosis named — now a number.
+    let reservedFrontSec = 0;  // B1 DIAGNOSTIC: seconds the FRONT is blocked purely by the commission
+                               // RESERVE (stocked, but every sellable unit held for an order). With F2
+                               // decoupled the walk-in still WANTS a fully-held item and bonks the
+                               // "held for order" block — this counts that. Stays small because
+                               // fully-reserved windows are rare (trades refill above the order count).
     let lastInspectionDay = 0;   // the daily-inspection latch (relic rework — one visit per sim-day)
     let tierSeen = reputationTier(fameOf(s)).index;
     const foundSeen = new Set();
@@ -189,8 +194,10 @@ function runSim(seed, { tradeAware = true, expeditionAware = true, commissionAwa
       if (policyIn <= 0) {
         policyIn = POLICY_SEC;
         // F2 metric: integrate front-blocked out-of-stock time (1s resolution, the policy cadence).
+        // B1 rider: reserved-blocked front is its OWN bucket (the dead-queue check — see below).
         const front = s.queue[0];
         if (front && (s.items[front.wantedItemId]?.stock ?? 0) <= 0) oosFrontSec += POLICY_SEC;
+        else if (front && serveBlockReason(s) === 'reserved') reservedFrontSec += POLICY_SEC;
         // 1. The tutorial exception: manual serves only until Bob is hired.
         if (!isWorkerOwned(s, 'mimic_merchant') && serveBlockReason(s) === null) serveCurrent(s);
         // 2. Restock first — operating cost before wants (the locked policy).
@@ -329,7 +336,7 @@ function runSim(seed, { tradeAware = true, expeditionAware = true, commissionAwa
     const allServes = Object.values(s.stats.itemSales ?? {}).reduce((a, b) => a + b, 0);
     const tradeServes = tradeItemIds().reduce((a, id) => a + (s.stats.itemSales[id] ?? 0), 0);
     return { seed, events, samples, deathT, endT: t, goldAtDeath, scrapAtDeath,
-      oosFrontSec, tradeServes, allServes,
+      oosFrontSec, reservedFrontSec, tradeServes, allServes,
       goldEnd: s.gold, scrapEnd: s.scrap ?? 0, postRate, purchased, trades, runsSent,
       commissionsFilled,
       swordSold: s.stats.itemSales.iron_sword ?? 0,
@@ -536,6 +543,16 @@ console.log(commRateAdvMed > 0.02
   : `  VERDICT: FLAT — rate advantage ${(commRateAdvMed * 100).toFixed(2)}%: the premium redirects`
     + ` sales the shelf makes anyway. The commission's pull is the DECISION layer; the premium`
     + ` dial is open (a finding for Daniel, not a hidden failure).`);
+// B1 HARD RESERVE — the dead-queue check: F2 is DECOUPLED (demand reads physical stock), so a walk-in
+// can still want a fully-reserved item and hit the "held for order" block. This measures how often
+// that actually bites. It stays a thin sliver because trades keep trade stock above the order count,
+// so fully-reserved windows are rare. Measured across the full-aware runs (they place AND fill
+// orders, so the reserve window is live).
+const commReservedMed = median(runs.map((r) => (r.reservedFrontSec / Math.max(1, r.endT)) * 100));
+const commOosMed = median(runs.map((r) => (r.oosFrontSec / Math.max(1, r.endT)) * 100));
+console.log(`  B1 RESERVE: front-blocked-by-reserve median ${commReservedMed.toFixed(2)}% of run time`
+  + ` (vs out-of-stock ${commOosMed.toFixed(1)}%) — ${commReservedMed < 2 ? 'thin: fully-reserved'
+    + ' windows are rare, so held-for-order almost never bites (no dead queue)' : 'NOTABLE: check the roster / trade cadence'}.`);
 console.log('');
 
 // Seed-1 detail: savings velocity by phase + the two curves.

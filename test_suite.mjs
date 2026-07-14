@@ -4905,5 +4905,196 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
 }
 
+// ========== SECTION 76 — COMMISSION HARD RESERVE (B1 — Option 1, decision log design doc §9) ==========
+// A pending order SETS ASIDE its `count` units from EVERY counter path (serves, bulk, offline,
+// leave-theft), so Bob can't sell an order's goods to a walk-in and F2 can't steer traffic onto a
+// shelf being held. reservedFor/sellableStock derive live from state.commission — nothing new
+// persisted. RAW stock still drives shelf-room, fulfillment, and the inspection grade. Exact reserve
+// math lives HERE (the newest batch). FAME_ECONOMY_DESIGN.md §9.
+{
+  const { reservedFor, sellableStock, serveBlockReason: sbr76, serveCurrent: serve76,
+    canFulfillCommission: canFill76, fulfillCommission: fill76, supplyWantWeight: sww76,
+    refreshCommission: refresh76, update: up76 } = await import('./src/game.js');
+  const { computeOffline: off76, applyOffline: applyOff76 } = await import('./src/offline.js');
+  const { tradeItemIds: tii76 } = await import('./src/data/trademarket.js');
+  const { CONFIG: C76 } = await import('./src/config.js');
+  const { ITEMS: I76 } = await import('./src/data/items.js');
+  const TID = 'iron_buckler';   // a licensed trade-tier item (acquisition 'trade', basePrice 18)
+
+  // A shop that OWNS the trade license and carries a crafted order for exact count control (the
+  // placement path itself is §70's; this section isolates the RESERVE). No override armed, so the
+  // deadline machinery idles — the reserve is a pure function of the commission object + stock.
+  const withOrder = (stock, count) => {
+    const s = shopState();
+    s.licenses[TID] = true;
+    s.items[TID].stock = stock;
+    s.commission = { itemId: TID, count, monsterId: 'slime', days: 2, placedIndex: 3 };
+    return s;
+  };
+  // Park an affordable, patient front customer wanting `itemId` so the serve gate can be read.
+  const withFront = (s, monsterId, itemId) => { s.queue = [customer(monsterId, itemId, 999)]; return s; };
+
+  // (a) The reserve math — clamp, subtraction, and the no-order / other-item / kill-switch zeros.
+  {
+    const s = withOrder(5, 3);
+    ok(reservedFor(s, TID) === 3 && sellableStock(s, TID) === 2,
+       'reserve: stock 5, order 3 -> 3 reserved, 2 sellable');
+    const short = withOrder(1, 3);
+    ok(reservedFor(short, TID) === 1 && sellableStock(short, TID) === 0,
+       'reserve: a shelf SHORT of the order reserves only what it holds (min(count,stock)), 0 sellable');
+    ok(reservedFor(s, 'club') === 0 && sellableStock(s, 'club') === (s.items.club.stock ?? 0),
+       'reserve: an item the order does NOT name is fully sellable (reserve is per-item)');
+    const noOrder = shopState(); noOrder.items[TID].stock = 5;
+    ok(reservedFor(noOrder, TID) === 0 && sellableStock(noOrder, TID) === 5,
+       'reserve: no live order -> reserved 0, sellable == raw stock (transparent when idle)');
+  }
+
+  // (a2) The kill switch (CONFIG.commission.hardReserve false) reverts every read to raw stock.
+  {
+    ok((C76.commission.hardReserve ?? true) === true,
+       'reserve: hardReserve config flag is present and defaults true');
+    const saved = C76.commission.hardReserve;
+    try {
+      C76.commission.hardReserve = false;
+      const s = withOrder(5, 3);
+      ok(reservedFor(s, TID) === 0 && sellableStock(s, TID) === 5,
+         'reserve: kill switch OFF -> reservedFor 0, sellable == raw (the F3 perTier-0 pattern)');
+      ok(sbr76(withFront(withOrder(3, 3), 'slime', TID)) === null,
+         'reserve: kill switch OFF -> a would-be-reserved shelf serves normally');
+    } finally { C76.commission.hardReserve = saved; }
+  }
+
+  // (b) The serve gate — 'reserved' is its OWN reason (raw-empty stays 'out-of-stock'), and a
+  // fully-reserved serve is refused mutation-free. Partial reserve serves from the sellable pool.
+  {
+    const full = withFront(withOrder(3, 3), 'slime', TID);   // stock 3, order 3 -> sellable 0
+    ok(sbr76(full) === 'reserved',
+       'reserve: a fully-held shelf blocks with the distinct reason "reserved" (not out-of-stock)');
+    const st0 = full.items[TID].stock;
+    ok(serve76(full) === false && full.items[TID].stock === st0,
+       'reserve: serveCurrent refuses a reserved item and touches no stock');
+    const empty = withFront(withOrder(0, 3), 'slime', TID);  // raw empty
+    ok(sbr76(empty) === 'out-of-stock',
+       'reserve: a raw-empty shelf still reads out-of-stock (the reason meanings stay disjoint)');
+    const partial = withFront(withOrder(5, 3), 'slime', TID); // sellable 2
+    ok(sbr76(partial) === null && serve76(partial) === true,
+       'reserve: a partially-held shelf serves the walk-in from the sellable pool');
+    ok(partial.items[TID].stock === 4 && reservedFor(partial, TID) === 3
+       && sellableStock(partial, TID) === 1,
+       'reserve: the counter sale came from sellable (5->4); the order-3 reserve is intact');
+  }
+
+  // (c) Bulk-buyer (Leggsy) can never dip into the reserve: sellable 1 buys ONE, sellable 2+ buys two.
+  {
+    const one = withFront(withOrder(4, 3), 'spider', TID);   // sellable 1
+    ok(serve76(one) === true && one.items[TID].stock === 3 && reservedFor(one, TID) === 3,
+       'reserve: a bulk-buyer with 1 sellable buys ONE unit — the reserve is untouched (4->3)');
+    const two = withFront(withOrder(6, 3), 'spider', TID);   // sellable 3
+    ok(serve76(two) === true && two.items[TID].stock === 4 && reservedFor(two, TID) === 3,
+       'reserve: a bulk-buyer with 3 sellable takes its two, reserve still 3 (6->4)');
+  }
+
+  // (d) F2 stays DECOUPLED from the reserve — demand reads PHYSICAL stock, so a reserved shelf (full
+  // OR partial) still reads STOCKED. Coupling it (a fully-reserved shelf reads unstocked) was built
+  // and reverted: the acceptance sim showed it concentrated demand onto the cheap shelves and cost
+  // throughput (market-blind 21%->0%), while the dead-queue it targeted stayed ~0% either way
+  // (decision log §9). These pins GUARD against re-coupling — the reserve must not touch demand.
+  {
+    const dial = CONFIG.queue.supplyWantBias;
+    const full = withOrder(3, 3); delete full.stats.itemSales[TID];   // sellable 0, but raw stock 3
+    ok(sww76(full, TID) === dial.stocked,
+       'reserve+F2 DECOUPLED: a fully-reserved shelf STILL reads stocked (demand = physical stock, not sellable)');
+    const partial = withOrder(5, 3);
+    ok(sww76(partial, TID) === dial.stocked,
+       'reserve+F2 DECOUPLED: a partially-reserved shelf reads stocked too (reserve is orthogonal to demand)');
+    const empty = withOrder(0, 3); delete empty.stats.itemSales[TID];   // raw empty, never sold
+    ok(sww76(empty, TID) === dial.unknown,
+       'reserve+F2: a raw-empty never-sold shelf still falls to the UNKNOWN floor (F2 logic itself unchanged by B1)');
+  }
+
+  // (e) Leave-theft respects the reserve — a thief (Ratty) timing out on a fully-held shelf pockets
+  // NOTHING; on a sellable shelf he still takes his one unit (the reserve caps the loss).
+  {
+    const held = withOrder(3, 3);   // sellable 0
+    held.queue = [{ monsterId: 'rat', wantedItemId: TID, budget: 99, patienceRemaining: 0.01, state: 'queued' }];
+    up76(held, 0.05);
+    ok(held.items[TID].stock === 3 && held.log[0]?.tier === 'leave',
+       'reserve: a thief cannot pocket a RESERVED unit — an honest leave, shelf whole (3)');
+    const some = withOrder(5, 3);   // sellable 2
+    some.queue = [{ monsterId: 'rat', wantedItemId: TID, budget: 99, patienceRemaining: 0.01, state: 'queued' }];
+    up76(some, 0.05);
+    ok(some.items[TID].stock === 4 && reservedFor(some, TID) === 3,
+       'reserve: a thief still steals from the SELLABLE pool (5->4); the order-3 reserve survives');
+  }
+
+  // (f) Offline honors the reserve — Bob sells only sellable units while away; the held units
+  // survive the absence (a hard reserve is hard even with the tab closed).
+  {
+    const HOUR = 3600 * 1000, now = Date.now();
+    const base = () => {
+      const s = shopState();
+      s.workers.mimic_merchant.owned = true;
+      s.licenses[TID] = true;
+      for (const id of ITEM_ORDER) s.items[id].stock = 0;   // isolate the trade item
+      s.items[TID].stock = 5;
+      s.lastSeen = now - HOUR;                               // ample time — stock is the binder
+      return s;
+    };
+    const free = base();
+    const rFree = off76(free, now);
+    ok((rFree.consumed[TID] ?? 0) === 5,
+       'reserve+offline: with no order, Bob sells all 5 shelf units away (time-ample control)');
+    const withComm = base();
+    withComm.commission = { itemId: TID, count: 3, monsterId: 'slime', days: 2, placedIndex: 3 };
+    const rComm = off76(withComm, now);
+    ok((rComm.consumed[TID] ?? 0) === 2,
+       'reserve+offline: an order-3 reserve caps offline sales at the 2 sellable units');
+    applyOff76(withComm, rComm);
+    ok(withComm.items[TID].stock === 3,
+       'reserve+offline: the 3 reserved units survive the absence on the real shelf');
+  }
+
+  // (g) Fulfillment is unaffected — canFulfill / fulfill read RAW stock (the reserve's own consumer),
+  // and a fulfilled order releases the reserve by taking the units.
+  {
+    const s = withOrder(3, 3);   // exactly enough; every unit reserved AND every unit fulfillable
+    ok(canFill76(s) === true, 'reserve: a shelf covering the order fulfills (fulfillment reads RAW stock)');
+    ok(fill76(s) === true && s.items[TID].stock === 0 && s.commission === null,
+       'reserve: fulfilling consumes the count and clears the order (the reserve releases)');
+  }
+
+  // (g2) Integration through the REAL placement path (§70's machinery) — a placed order reserves too.
+  {
+    const s = shopState();
+    s.licenses[TID] = true;
+    s.tradeDayKeyOverride = 'sim-day-3';
+    refresh76(s);                                  // seats a real day-seeded order (only TID eligible)
+    const c = s.commission;
+    ok(!!c && c.itemId === TID, 'reserve: the armed machinery seats a real order for the licensed item');
+    s.items[TID].stock = c.count;                  // stock it to exactly the order
+    ok(reservedFor(s, TID) === c.count && sellableStock(s, TID) === 0,
+       'reserve: a REAL placed order reserves its whole count off the counter');
+  }
+
+  // (h) Awareness wiring (the §63f house pattern — text where headless can't reach the render):
+  // the shop-side indicator + its scoped hidden override, the overlay clause, and the serve label.
+  {
+    const { readFileSync: rf76 } = await import('node:fs');
+    const panels = rf76('./src/ui/panels.js', 'utf8');
+    ok(panels.includes('item-reserve') && panels.includes('reservedFor')
+       && panels.includes("'reserved': 'Held for order'"),
+       'reserve: panels.js carries the shop-side indicator, the reservedFor read, and the serve label');
+    const css = rf76('./style.css', 'utf8');
+    ok(css.includes('.item-reserve.hidden') && css.includes('.comm-reserved'),
+       'reserve: style.css carries the SCOPED .item-reserve.hidden override (cascade-tie law) + .comm-reserved');
+    const market = rf76('./src/ui/market.js', 'utf8');
+    ok(market.includes('comm-reserved') && market.includes('reservedFor'),
+       'reserve: the overlay Special Order row shows the held-from-counter clause');
+    const off = rf76('./src/offline.js', 'utf8');
+    ok(off.includes('sellableStock(state, id)'),
+       'reserve: offline sells sellableStock, not raw stock (wiring pin)');
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

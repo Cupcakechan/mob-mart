@@ -50,6 +50,14 @@ export const CONFIG = {
                                // wages, not commissions, are the planned perpetual drain.
     repPerUnit: 3,             // flat fame bonus per unit — modest beside serve rep by design
     checkSec: 5,               // update()'s rollover-check throttle (the market check's cadence)
+    hardReserve: true,         // COMMISSION B1 (parked (g)②, Option 1 PICKED 2026-07-12, decision
+                               // log FAME_ECONOMY_DESIGN.md §9): a pending order SETS ASIDE its
+                               // `count` units from every COUNTER path (serves, offline, leave-
+                               // theft) — Bob won't hand an order's goods to a walk-in, and a fully-
+                               // reserved shelf reads UNSTOCKED for F2 demand so traffic steers away
+                               // (no dead queue). Derives live from state.commission — NO new
+                               // persisted field. false reverts every sellable read to raw stock
+                               // (the kill switch — the F3 perTier-0 reversibility pattern).
   },
 
   reputation: {

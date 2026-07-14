@@ -19,7 +19,7 @@ import {
   serveBlockReason, canRestock, effectiveMaxStock, canBuyUpgrade, isUpgradeUnlocked,
   canHireWorker, effectiveWorkerInterval, isPerkUnlocked, canBuyPerk, effectiveRestockCost,
   isItemUnlocked, canBuyLicense, fameOf, restockAllCost, canRestockAll, canBuyWorkerLevel,
-  currentTradeOffers, materialCap, canStartExpedition, canRestoreRelic,
+  currentTradeOffers, materialCap, canStartExpedition, canRestoreRelic, reservedFor,
 } from '../game.js';
 import { reputationTier } from '../reputation.js';
 const reputationTierIndex = (state) => reputationTier(fameOf(state)).index;
@@ -127,6 +127,7 @@ export function initPanels(root, h) {
         <div class="item-sold"><b id="sold-${id}">0</b> sold<span id="next-${id}"></span></div>
         <button class="restock-btn" data-item="${id}">Restock &#9670;<span id="rcost-${id}">${it.restockCost}</span></button>
         <div class="trade-hint hidden">Trade at the Market &#9656;</div>
+        <div class="item-reserve hidden" id="reserve-${id}"></div>
         <button class="license-btn hidden" data-item="${id}"></button>
       </div>`;
   }).join('');
@@ -323,6 +324,7 @@ const REASON_LABEL = {
   'no-customer': 'No customer',
   'cooling-down': 'Serving\u2026',
   'out-of-stock': 'Out of stock',
+  'reserved': 'Held for order',       // B1: the wanted item is stocked but reserved for a Special Order
   'cant-afford': "Can't afford it",
   'no-item': '\u2014',
 };
@@ -357,6 +359,19 @@ export function renderPanels(state) {
   for (const id of ITEM_ORDER) {
     const stockEl = document.getElementById(`stock-${id}`);
     if (stockEl) stockEl.textContent = state.items[id]?.stock ?? 0;
+    // COMMISSION HARD RESERVE (B1): when a Special Order holds units of this item, show WHY some of
+    // the shelf won't sell at the counter (the shop-side awareness surface — the overlay carries the
+    // order's full terms; this card explains the counter's refusal). reservedFor>0 implies a live
+    // order for exactly this id, so state.commission is non-null in the branch below.
+    const reserveEl = document.getElementById(`reserve-${id}`);
+    if (reserveEl) {
+      const held = reservedFor(state, id);
+      reserveEl.classList.toggle('hidden', held <= 0);
+      if (held > 0) {
+        const client = MONSTERS[state.commission?.monsterId]?.displayName ?? 'an order';
+        reserveEl.textContent = `${held} held for ${client}`;
+      }
+    }
     const maxEl = document.getElementById(`max-${id}`);
     if (maxEl) maxEl.textContent = effectiveMaxStock(state, id);
     // Regulars' Loyalty: lifetime count + the next breakpoint = a visible want on every card.
