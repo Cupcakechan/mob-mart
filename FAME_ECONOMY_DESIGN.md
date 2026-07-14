@@ -146,11 +146,18 @@ between the honest +12% and a margin worth the market's ceremony by making PARTI
 numbers, not from this paragraph. Auto-wave stays penalty-free either way (Bob managing the
 line is service, not failure — unchanged law).
 
-## 8. F4 — Demand surface (sketch)
+## 8. F4 — Demand surface (SHIPPED 2026-07-13, 319083a — Daniel's Option 1; ARC COMPLETE)
 
-The chip's successor, ambient and diegetic. Candidates: second line on the market board chalk
-("Today: flasks fly"), a door-side demand sign, shelf-tab glow on the event category. One pass,
-one options round.
+Shipped as the board's third chalk row + the overlay echo — the sale-sign doctrine pair made
+literal: the board ADVERTISES ("HOT TODAY: Armor", `boardEventLine`, no number, deterministic,
+folded into the chalk write-on key), the overlay INFORMS ("Porcupine Migration · Armor +50%",
+same day-derived event, the number resolved through the payout default). scene.js re-spaced to
+four even rows (MEASURED against the 110px face). Economy-NEUTRAL by measurement: one sim run's
+stdout came back byte-identical to the F3 baseline, so the 3× doctrine didn't apply. A
+follow-up text pass (635c574) refined the board wording (Daniel: "tip" was the mechanic word)
+and gave the unhired worker cards in-voice `pitch` lines (fixing Doug mislabeled "restocker").
+**This closes the fame & demand reform arc (F1a→F4).** The original candidates (door-side sign,
+shelf-tab glow) stay documented, unbuilt.
 
 ## 9. Decision log
 
@@ -170,3 +177,10 @@ one options round.
   spendable fame; fiction-first, smallest). Certified first try, 3× bit-identical; every
   margin widened (+21/+36/+12.4) via perk-timing compounding. Throughput and memory levers
   stay documented, unbuilt.
+- 2026-07-13 — F4 = **Option 1** (board's demand chalk row + overlay echo). Economy-neutral
+  (sim byte-identical to the F3 baseline). **The arc (F1a→F4) is complete.** A follow-up text
+  pass refined the wording ("HOT TODAY" over "tip today") and added worker hire-line voices.
+- 2026-07-13 — Doug leveling = **Option 1** (faster scavenge runs via a new `scavengeSpeed`
+  effect; Bob/Greg ladder). Spec'd and QUEUED behind B1. Accepted side effect: relic timeline
+  accelerates slightly (pity floor bounds it). Option 3 (hold relic cadence) documented,
+  unbuilt. B1 (hard reserve) is the immediate next build — approach already picked, no round.

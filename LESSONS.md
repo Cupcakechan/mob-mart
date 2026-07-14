@@ -434,3 +434,23 @@ assets; the half-applied-fix staleness heuristic).
   suite-green pass FIRST, recording the pending certification in the commit message and
   handoff. Same shape as "versioned deliverables get a committed home."
 - Route: GI candidate.
+## 2026-07-13 — A passing acceptance metric can be passing for the WRONG reason (the F2 dial inversion) [HARVESTED — 2026-07-13]
+- What happened: pre-F2, the market-blind control PASSED at +48% — a healthy-looking margin
+  that certified the trade market as valuable. F2 (demand honesty) shipped its first-cut dials
+  (0.4/0.15), and the SAME control flipped to −20% (the blind bot now ran hotter). The +48% had
+  never been trade-margin value; it was mostly the mispriced-scarcity TAX falling on
+  non-participants (the blind bot's impossible trade asks were dead weight in ITS queue). F2
+  removed the defect and revealed the market's honest margin was only +12%.
+- Root cause: the acceptance metric (aware-vs-blind rate advantage) measured a DIFFERENCE, and
+  a difference can be inflated by a penalty on the control just as easily as by value in the
+  treatment. Nothing distinguished "the market is worth +48%" from "ignoring the market is
+  taxed −36% by an unrelated defect."
+- Why it mattered: had F2 shipped as-measured (its own acceptance was met), main would have
+  held an economy where ignoring the market WON, silently, because the number that used to
+  justify the market was measuring the defect F2 was removing.
+- Plug/principle: when softening or fixing a system moves a DIFFERENTIAL acceptance metric,
+  suspect the old value was partly the defect the fix removes — check the ABSOLUTE behavior of
+  both arms (here: the blind bot's post-death rate rose), not just the gap. A margin that only
+  exists because the control is penalized is not the treatment's value. Corollary to the
+  probe-the-effect family: measure what each arm actually does, not only how far apart they are.
+- Route: dev-method (acceptance-metric design; probe-the-effect family).

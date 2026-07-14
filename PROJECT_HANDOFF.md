@@ -56,7 +56,21 @@ budget); **the lifetime track never falls** (suite-pinned through the real leave
 and auto-wave/dismissal stay penalty-free. The fiction-first option turned out to carry real
 weight: the drain compounds through PERK TIMING (every blind bot leaks more goodwill than the
 full player), widening every margin — market-blind **+21%**, exp-blind **+36%**, comm-blind
-**+12.4%**, all 3× bit-identical.
+**+12.4%**, all 3× bit-identical. And **F4 — DEMAND SURFACE** (319083a, 2026-07-13, suite
+1714 — arc pass four, the LAST): the market board's third chalk row names today's demand event
+(`boardEventLine` → "HOT TODAY: Armor"), and the market overlay echoes it WITH the number
+("Porcupine Migration · Armor +50%") — the sale-sign doctrine pair (the board advertises, the
+overlay informs), closing the discovery gap the HUD chip's retirement left. A pure presentation
+pass: its sim stdout came back BYTE-IDENTICAL to the F3 baseline (proof it moved no economy
+path — the right certification for a display change). **THE FAME & DEMAND REFORM ARC IS
+COMPLETE** (F1a→F4); the queue is now the parked (g)/(h) items, B1 first.
+
+**A follow-up TEXT PASS (635c574, 2026-07-13, suite 1716):** the board demand row reads "HOT
+TODAY: «shelf»" (Daniel's read — "tip" was the internal mechanic word, broken English on the
+sign), and the unhired Workers cards now show an authored IN-VOICE `pitch` per worker (Bob the
+warm concierge, Greg the blunt gargoyle, Doug the good-bits gremlin) — fixing a real bug where
+unhired Doug read "Restocks automatically" (panels.js's old role-ternary; the `pitch` field is
+data-driven with a role fallback + a regression pin). Browser-confirmed.
 
 **THE DESIGN RESET (Daniel, 2026-07-10) — MEASURED by the audit (2026-07-11):** passive play
 reaches millions with nothing left to want. The sink stack is **228,483 gold** exactly; the
@@ -92,32 +106,61 @@ bottom); 3. **Spider + Demon** — **DONE 2026-07-11**; 4. **Expeditions MVP** �
 Option 1 + the Option B dial retune, all laws PASS) → **F3 scarcity teeth — DONE 2026-07-13**
 (7db7c21, the re-scoped Option 1: tier-scaled leave penalty on spendable fame; margins widened
 to +21/+36/+12.4; the auto-wave/dismissal economics review CLOSED with it — both stay free by
-law and by pin) → **F4 demand surface** (the retired HUD chip's
-successor); 7. **Expedition depth** (parties, offline party management); 8. **Franchise**
+law and by pin) → **F4 demand surface — DONE 2026-07-13** (319083a, Option 1: board's demand
+chalk row + overlay echo, sale-sign doctrine pair; economy byte-identical to F3). **← THE ARC
+IS COMPLETE (F1a→F4).** 7. **Expedition depth** (parties, offline party management); 8. **Franchise**
 (rule-changing prestige, six-door factions — designed last, against what the harness measures
 then; **F1b — prestige spends fame — ships WITH it**, design already in the doc's §5).
 
-**NEXT — F4: DEMAND SURFACE (the arc's last pre-capstone pass), opening with its options
-round.** The chip's designed successor, ambient and DIEGETIC (design doc §8): the Market Day
-event runs with no player-facing surface since the chip retired (the standing discovery gap) —
-log line, Bob's bubble, and the away modal name it, but nothing ambient advertises today's
-demand. Candidates from the sketch: a second line on the market board's chalk ("Today: flasks
-fly" — market-crier voice, the board-advertises doctrine), a door-side demand sign, shelf-tab
-glow on the event category. One pass, one options round. Behind F4: the parked (g) queue (B1
-first, priority raised) and (h). Cold-boot ritual as always: this doc in full, the dev-method
-skill, sync-and-certify (suite must read **1693** at HEAD).
+**NEXT — COMMISSION B1: HARD RESERVE (parked (g)②, priority-RAISED), opening with its build
+pass.** The approach is already PICKED — Option 1 hard reserve + awareness bundle (decided
+2026-07-12, decision log FAME_ECONOMY_DESIGN.md §9), so NO options round; it goes straight to
+build. THE PROBLEM (Daniel watched it live, 2026-07-13, and F2 SHARPENED it): a pending
+commission's required units are fair game for counter serves — Bob's auto-serve only gates on
+`stock > 0` (game.js), so he'll sell an order's Silver Keys to a walk-in and leave the order
+short. F2 made it worse — stocking the order's item flips it to full ×1 demand
+(`supplyWantWeight`), actively steering counter traffic onto exactly the shelf being held.
+THE FIX: a pending commission hard-reserves its `count` away from counter serves (the serve
+path subtracts reserved units from sellable stock), plus an awareness bundle so the player can
+SEE the reservation (the surfaces are the design call — the overlay's "shelf n/N" already
+exists; the shop-side reserve indicator is the new part). Watch: the reserve must not starve
+the want-pick into a dead queue (a fully-reserved shelf reads as out-of-stock to F2's
+`supplyWantWeight` — decide whether reserved-but-present counts as stocked for DEMAND while
+being unsellable for SERVES). Likely touches game.js (serve gate + a reservedStock helper),
+the overlay + a shop indicator, and the suite. **Economy-touching → 3× sim certification.**
+Cold-boot ritual as always: this doc in full, the dev-method skill, sync-and-certify (suite
+must read **1716** at HEAD).
 
-**MEASURED FINDINGS STANDING FOR DANIEL'S JUDGMENT (amended through F3's certification):**
-  (i)   **The commission margin keeps compounding**: +3.5% (F1a) → +6.0% (F2) → **+12.4%**
-        (F3) — scarcity of spendable rep makes the commission's fame bonus bite in perk
-        timing. B2/B3 remain its designed depth, now on top of a healthy channel.
+**THEN the rest of the parked queue, in order:** Doug leveling (spec below) → results-box
+flooding (h) → B2 material payment → B3 extra slots → Greg-perk visibility (g)①.
+
+**DOUG LEVELING — SPEC READY (Option 1 PICKED 2026-07-13, faster runs).** Doug is the ONLY
+worker with no `levels` block — untrainable, and the fametrack/training UI has nothing to show
+for him. The pass: add his `levels` block (Bob/Greg's exact ladder — name+desc, baseCost 2000,
+costGrowth 1.15, maxLevel 10, deep band deepFrom 6/deepTier 6/deepCostMult 3), with a NEW
+`scavengeSpeed` effect that shortens his interval. THE SEAM ALREADY EXISTS AND IS SCOPED:
+game.js `effectiveWorkerInterval` line ~929 returns `base` flat for the scavenge role — add
+`/ (1 + sumWorkerEffect(state, 'scavengeSpeed'))` there, mirroring how the restock branch
+above it divides by `trickleSpeed` (the leak-scope note on that line is why scavenge stays
+isolated — a serve/restock speed upgrade must NOT bleed into Doug). At +0.25/level the honest
+curve is −20%/−33% (base 24s → ~19s → ~16s). ACCEPTED SIDE EFFECT (Daniel's call): faster runs
+mean more scrap AND more relic-find rolls, so the relic timeline accelerates a bit — the pity
+floor (25 runs) still bounds it, and "a better scavenger finds relics sooner" is fine. The
+Option-3 alternative (dividing `chancePerRun` by the same factor to hold the relic cadence
+fixed) stays documented, unbuilt. **Economy-touching (scrap + relic rolls) → 3× sim cert.**
+
+**MEASURED FINDINGS STANDING FOR DANIEL'S JUDGMENT (final arc numbers, through F4 — F4 moved
+none of them, being economy-neutral):**
+  (i)   **The commission margin compounded across the arc**: +3.5% (F1a) → +6.0% (F2) →
+        **+12.4%** (F3) — scarcity of spendable rep makes the commission's fame bonus bite in
+        perk timing. B2/B3 remain its designed depth, now on top of a healthy channel.
   (ii)  **The market-blind trajectory**: +34% → +48% (tax-inflated) → +12% (honest) →
         **+21%** (honest + teeth). The reform arc's whole story in four numbers.
-  (iii) **Death-spread texture partly returned under F3**: 72:00 flat → **72–120h** (median
-        72:00) — the pacing concern from F2's collapse eased on its own. CAP_SEC 240h stays
-        DEFERRED.
-  (iv)  **F1a's calibration keeps holding**: median death fame 662k = level 22 by the live
-        curve, three passes running.
+  (iii) **Death-spread**: 96:00 (pre-arc) → 72:00 flat (F2's collapse) → **72–120h** (F3, median
+        72:00). CAP_SEC 240h stays DEFERRED (one market-blind control seed right-censors at
+        168h; its PASS is conservative — un-censoring isn't worth the sim runtime yet).
+  (iv)  **F1a's calibration held all four passes**: median death fame ~662k = level 22 by the
+        live curve; Mythic (L20) reached well before death.
 
 **MEASURED FINDINGS STANDING FOR DANIEL'S JUDGMENT (F1a certification, amended through F2):**
   (i)   **The commission margin RECOVERED under F2**: comm-blind +3.5% → **+6.0%** — demand
@@ -2166,3 +2209,64 @@ holding a third consecutive pass.
 **Also queued from Daniel's browser session:** the results-box flooding item — parked (h).
 
 **NEXT:** F4 (demand surface) opens with its options round — §0 carries the agenda.
+
+---
+
+## 2026-07-13 — F4: DEMAND SURFACE (arc pass FOUR, the last; 319083a, suite 1714; economy-neutral)
+
+**The build (Daniel's Option 1 — the board's third chalk row):** the Market Day event had no
+ambient surface after the HUD chip retired (the discovery gap — only the log line, Bob's
+bubble, and the away modal named it). F4 closes it with the sale-sign DOCTRINE PAIR:
+  - **The board advertises** — `boardEventLine(event)` (marketevents.js) composes a compact,
+    board-voiced row: "HOT TODAY: Armor" (the shelf that pays; no number). Deterministic (the
+    event is date-derived), folded into `boardLines`' `contentKey` so a new market day triggers
+    the single chalk write-on across all three rows (TODAY offer / demand / Tomorrow forecast).
+    scene.js re-spaced the board to four EVEN rows (header y13, then 33/55/77) — MEASURED
+    against the 110px writable face (opaque y2..109) — and draws the demand row in a warm amber
+    (`demandColor`) distinct from the gold offer and cream forecast.
+  - **The overlay informs** — a "Today's Demand" row in the market overlay (market.js) carries
+    the full fact via `marketBannerText`: "Porcupine Migration · Armor +50%". Derived from the
+    SAME `eventIdForDay ∘ tradeDayKey` the board uses, so the two can never disagree; the mult
+    resolves through the same registry-override ?? CONFIG default the payout uses. New CSS
+    `.market-demand` / `.demand-badge`, styled as a sibling to the special/commission rows.
+
+**§75** pins it: every event's board line board-short (≤32) and naming its shelf, NO digits on
+the board (the doctrine split), empty-on-missing (defensive), the contentKey folds the event
+id, determinism per day, the overlay echo names the event AND carries the number, and both
+wiring pins (scene draws `L.demand`; the overlay renders the echo). §66's contentKey pin was
+updated to the new three-part `offer|event|offer` format (derived from `eventIdForDay`, not
+hand-typed). `index.html` untouched → the Kongregate mirror stayed valid (§50i green).
+
+**Certification — the RIGHT kind for a presentation pass:** F4 introduces zero new economy
+paths, so the 3× bit-identical doctrine doesn't apply. Instead, ONE sim run CONFIRMED the
+economy was untouched: its stdout came back byte-identical to the F3 baseline (sha256
+5656693522f37…). Proof it moved nothing it shouldn't — economy-neutral by measurement, not
+assertion.
+
+**THE FAME & DEMAND REFORM ARC IS COMPLETE (F1a→F4).** Final margins: market-blind +21%,
+exp-blind +36%, comm-blind +12.4%; the market's honest rate edge is +12% with the rest carried
+by scarcity teeth and completion pressure. The arc's home doc: FAME_ECONOMY_DESIGN.md.
+
+---
+
+## 2026-07-13 — TEXT PASS: board wording + worker hire-line personalities (635c574, suite 1716)
+
+Two presentation fixes from Daniel's browser session, one commit, no economy paths touched:
+  - **Board wording**: the demand row now reads "HOT TODAY: «shelf»" instead of "DEMAND:
+    «shelf» tip today". Daniel's read: "tip" is the internal MECHANIC word (matching sales pay
+    a payout bonus, never a price change) and read as broken English on the sign. One-line
+    change in `boardEventLine`; §75's behavior pins (length/label/no-digits) held unchanged.
+  - **The "Restocker" bug + hire-line voices**: unhired Doug's Workers card read "Restocks
+    automatically" — panels.js's old unowned-branch role-ternary (`role === 'serve' ? ... :
+    'Restocks automatically'`) never learned Doug's 'scavenge' role. Fixed data-first: each
+    worker gains an authored IN-VOICE `pitch` field (workers.js), read by panels.js with a
+    role-based fallback so a future pitch-less worker degrades gracefully. The three voices
+    (COMEDY_BIBLE): **Bob** "Minds the counter so you don't have to. Impeccably." (warm
+    concierge), **Greg** "Refills the shelves. Won't make eye contact. That's the deal."
+    (blunt gargoyle, grumps at the job not the customer), **Doug** "Slips out the door for the
+    good bits. \u201cDoug finds, yes.\u201d" (Gollum-adjacent, "good bits"). A suite regression
+    pin (in the Doug section) now guarantees every worker has a pitch ≤80 chars and Doug's is
+    never "restocker".
+
+**NEXT:** Commission B1 (hard reserve) — the pickup; §0's NEXT block carries the spec. Doug
+leveling (Option 1) is spec'd and queued behind it.
