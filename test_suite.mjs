@@ -5096,5 +5096,213 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
 }
 
+// 77. DOUG LEVELING (Fleet Feet — the scavengeSpeed dial, 2026-07-14). Doug was the only worker
+// without a training ladder; this pass adds his `levels` block (Bob/Greg's exact shape) with a NEW
+// scavengeSpeed effect that shortens his run interval via effectiveWorkerInterval's scavenge branch.
+// Exact ladder COSTS stay pinned in the Bob section (same constants, not roster-dependent); this
+// newest section owns the NEW content: the effect, the interval math (the "upgrade matters" probe),
+// the scavenge-role scoping, and Doug's gate/persistence/fametrack flow. Economy-touching
+// (faster runs => more scrap + relic-find rolls) -> certified 3x bit-identical alongside this pass.
+{
+  const { WORKERS, workerLevel, workerLevelCost, isWorkerLevelMaxed, sumWorkerEffect } =
+    await import('./src/data/workers.js');
+  const { canBuyWorkerLevel, buyWorkerLevel } = await import('./src/game.js');
+  const { trackByTier } = await import('./src/data/fametrack.js');
+
+  const L = WORKERS.scavenger.levels;
+
+  // (a) The gap closes: Doug ships a training ladder now (he was the last untrainable worker).
+  ok(!!L, 'doug levels: Doug now ships a training ladder (the last untrainable worker, closed)');
+
+  // (b) Ladder-shape contract — Doug reuses Bob/Greg's exact ladder. The exact COST figures live in
+  // the Bob section (ladder constants, not roster-dependent); here one cost check DERIVES from the
+  // live formula over Doug's own params, so no exact is hand-typed twice ("derive never hand-type").
+  ok(L.baseCost === 2000 && L.costGrowth === 1.15 && L.maxLevel === 10
+     && L.deepFrom === 6 && L.deepTier === 6 && L.deepCostMult === 3,
+     'doug levels: Bob/Greg ladder shape — 2000/1.15, max 10, deep band 6-10 x3, Mythic-gated');
+  ok(typeof L.name === 'string' && L.name.length > 0 && typeof L.desc === 'string' && L.desc.length > 0,
+     'doug levels: an authored name + effect desc are present');
+  ok(workerLevelCost('scavenger', 0) === L.baseCost
+     && workerLevelCost('scavenger', 9) === Math.round(L.baseCost * L.costGrowth ** 9 * L.deepCostMult),
+     'doug levels: cost derives from the shared formula over Doug\u2019s params (deep bump on L10)');
+
+  // (c) The NEW effect (genuinely new content, so its exact lives here): scavengeSpeed +0.25/level.
+  ok(L.effect?.type === 'scavengeSpeed' && L.effect.perLevel === 0.25,
+     'doug levels: the new effect is scavengeSpeed +0.25/level');
+
+  // (d) The upgrade MATTERS — the interval math, expected DERIVED from the live formula over Doug's
+  // fixture (base/(1+0.25L)), and max must be materially faster than L0 (never an inert top level).
+  {
+    const base = WORKERS.scavenger.baseInterval;
+    const per = L.effect.perLevel;
+    const ivAt = (lvl) => effectiveWorkerInterval({ workers: { scavenger: { owned: true, level: lvl } } }, 'scavenger');
+    ok(ivAt(0) === base, 'doug speed: level 0 is the plain 24s dial — no effect until trained');
+    ok(ivAt(1) === base / (1 + per * 1) && ivAt(2) === base / (1 + per * 2),
+       'doug speed: L1/L2 shorten to base/(1+0.25L) — the -20%/-33% honest curve');
+    ok(ivAt(L.maxLevel) === base / (1 + per * L.maxLevel) && ivAt(L.maxLevel) < base * 0.5,
+       'doug speed: max level runs materially faster than level 0 (the upgrade is not inert)');
+  }
+
+  // (e) The leak guard (the seam's whole reason): a maxed Doug must NOT speed Bob's serve or Greg's
+  // restock — scavengeSpeed is scoped to the scavenge role. (§57 pins the reverse: trickleSpeed
+  // never speeds Doug.)
+  {
+    const dougMax = { workers: { scavenger: { owned: true, level: L.maxLevel } } };
+    ok(effectiveWorkerInterval(dougMax, 'mimic_merchant') === WORKERS.mimic_merchant.baseInterval
+       && effectiveWorkerInterval(dougMax, 'restocker') === WORKERS.restocker.baseInterval,
+       'doug speed: scavengeSpeed never bleeds into Bob serve or Greg restock (scoped)');
+  }
+
+  // (f) Ownership gate — a level on an unowned Doug sums to nothing (mirror of the saleTip inert pin).
+  {
+    const inert = createInitialState();
+    inert.workers.scavenger.level = 5;                          // level without ownership
+    ok(sumWorkerEffect(inert, 'scavengeSpeed') === 0,
+       'doug speed: an unowned scavengeSpeed level is inert (sums to 0)');
+  }
+
+  // (g) The gate + purchase path, both ways (mirrors Bob's): L1-5 open at hire below Mythic, L6
+  // demands Mythic, MAX closes; an unhired Doug cannot train. The shallow-band total DERIVES from
+  // the live formula (no hand-typed 13485).
+  {
+    const s = shopState();
+    s.workers.scavenger.owned = true;
+    s.gold = 1e9; s.lifetimeRep = CONFIG.reputation.tiers[5].min;   // Legendary — deep band still shut
+    const shallow = [0, 1, 2, 3, 4].reduce((t, l) => t + workerLevelCost('scavenger', l), 0);
+    const g0 = s.gold;
+    for (let i = 0; i < 5; i++) ok(buyWorkerLevel(s, 'scavenger'), `doug train: level ${i + 1} buys below Mythic`);
+    ok(g0 - s.gold === shallow, `doug train: the shallow band costs the live-summed ${shallow} (spent ${g0 - s.gold})`);
+    ok(canBuyWorkerLevel(s, 'scavenger') === false, 'doug train: level 6 refuses below Mythic (deep gate)');
+    s.lifetimeRep = CONFIG.reputation.tiers[6].min;                // cross into Mythic
+    ok(canBuyWorkerLevel(s, 'scavenger') === true, 'doug train: Mythic opens the deep band');
+    while (canBuyWorkerLevel(s, 'scavenger')) buyWorkerLevel(s, 'scavenger');
+    ok(workerLevel(s, 'scavenger') === L.maxLevel && isWorkerLevelMaxed(s, 'scavenger'),
+       'doug train: the ladder tops out at maxLevel and closes');
+    ok(canBuyWorkerLevel(shopState(), 'scavenger') === false,
+       'doug train: an unhired Doug cannot train (fail-closed)');
+  }
+
+  // (h) Persistence — the scavenger level round-trips, a hand-edited 999 clamps to the ladder, and a
+  // pre-pass save reads level 0 (the additive-schema guard, now covering Doug too).
+  {
+    const rt = shopState(); rt.workers.scavenger.owned = true; rt.workers.scavenger.level = 4;
+    ok(mergeSave(createInitialState(), serializeSave(rt)).workers.scavenger.level === 4,
+       'doug save: the scavenger level round-trips');
+    const tampered = mergeSave(createInitialState(), { workers: { scavenger: { owned: true, level: 999 } } });
+    ok(tampered.workers.scavenger.level === L.maxLevel, 'doug save: a hand-edited 999 clamps to the ladder');
+    const legacy = mergeSave(createInitialState(), { workers: { scavenger: { owned: true } } });
+    ok(legacy.workers.scavenger.level === 0, 'doug save: a pre-pass save reads level 0 (additive schema)');
+  }
+
+  // (i) The fametrack chip — Doug's deep band now lists itself on the Mythic node with zero wiring
+  // (the registry scan keys off any levels block carrying a deepTier). Derived name, not hand-typed.
+  {
+    const node = trackByTier().at(-1);                           // Mythic (Doug's deepTier)
+    ok(node.unlocks.some((u) => u.detail === 'deep training' && u.label.includes(WORKERS.scavenger.displayName)),
+       'doug track: Doug\u2019s deep band auto-lists on the Mythic node (registry-scanned)');
+  }
+}
+
+// ============================================================================================
+// §78 — DOUG'S CLOCK: render/logic agreement (the desync the BROWSER caught, 2026-07-14)
+// WHY THIS SECTION EXISTS: §77 asserted the interval MATH and passed 24/24 while Doug was
+// visibly broken on screen — he walked home from the portal, popped, and re-emerged from the
+// door with no idle beat. The renderer (scene.js drawScavenger) and the cameo gate (isDougOut)
+// each hardcoded baseInterval, which was CORRECT until training gave scavenge a speed dial.
+// Once it had one, `elapsed = 24 - timer` could never fall below (24 - trained), stranding the
+// idle and out-leg phases at every timer value. §77 could not see it: it tested the mechanism
+// (the interval number), never the effect (whether Doug is ever visibly home).
+// These pins assert the EFFECT. scene.js can't be imported headlessly (canvas), so the phase
+// budget is reconstructed from the SAME registry fields and the SAME shared clock the renderer
+// consumes — if those agree, the choreography does too.
+// ============================================================================================
+{
+  const { WORKERS, scavengeClock } = await import('./src/data/workers.js');
+  const { effectiveWorkerInterval: effIntClock, isDougOut } = await import('./src/game.js');
+  const d = WORKERS.scavenger;
+  const DL = d.levels;
+  const mkD = (level) => ({ workers: { scavenger: { owned: true, level, timer: 0 } } });
+  const rungs = [0, DL.deepFrom - 1, DL.maxLevel];   // base / pre-deep max / trained max — DERIVED
+
+  // (a) ONE SOURCE OF TRUTH — the clock the renderer reads IS the clock that fires runs. This is
+  // the pin that would have caught the original defect on the bench instead of in the browser.
+  for (const lv of rungs) {
+    const st = mkD(lv);
+    ok(Math.abs(scavengeClock(st) - effIntClock(st, 'scavenger')) < 1e-9,
+       `doug clock: L${lv} scavengeClock === effectiveWorkerInterval (render/logic agree)`);
+  }
+
+  // (b) The dial reaches the clock at all — a wrong state shape would read as level 0 and let
+  // every ratio pin below pass vacuously.
+  ok(Math.abs(scavengeClock(mkD(0)) - d.baseInterval) < 1e-9,
+     'doug clock: L0 is exactly baseInterval (untrained Doug keeps the authored cadence)');
+  ok(scavengeClock(mkD(DL.maxLevel)) < scavengeClock(mkD(0)),
+     'doug clock: a trained Doug runs strictly faster than an untrained one');
+
+  // (c) PHASE BUDGET at EVERY rung, rebuilt from the renderer's own registry fields. The legs
+  // must never overlap (scene.js's own walk guard) and an idle beat must survive to the top rung.
+  for (let lv = 0; lv <= DL.maxLevel; lv++) {
+    const interval = scavengeClock(mkD(lv));
+    const walk = Math.min(d.walkSec, interval / 4);      // scene.js's degenerate-interval guard
+    const idleSec = interval * d.idleFrac;
+    ok(idleSec > 0 && idleSec + walk <= interval - walk,
+       `doug clock: L${lv} phases fit — idle ${idleSec.toFixed(2)}s, legs never overlap`);
+  }
+
+  // (d) THE REGRESSION ITSELF — sweep a whole cycle at the trained max; every phase must be
+  // reachable. Pre-fix, 'idle' and 'out' were unreachable at ANY timer value: that was the pop.
+  {
+    const interval = scavengeClock(mkD(DL.maxLevel));
+    const walk = Math.min(d.walkSec, interval / 4);
+    const idleSec = interval * d.idleFrac;
+    const outEnd = idleSec + walk, backStart = interval - walk;
+    const seen = new Set();
+    for (let i = 0; i <= 2000; i++) {
+      const elapsed = interval - Math.max(0, Math.min(interval * (1 - i / 2000), interval));
+      if (elapsed < idleSec) seen.add('idle');
+      else if (elapsed < outEnd) seen.add('out');
+      else if (elapsed < backStart) seen.add('gone');
+      else seen.add('back');
+    }
+    for (const phase of ['idle', 'out', 'gone', 'back']) {
+      ok(seen.has(phase), `doug clock: a fully trained Doug still reaches the ${phase} phase`);
+    }
+  }
+
+  // (e) The cameo gate must TOGGLE across a cycle at every rung. Permanently-out (or
+  // permanently-home) is the same desync wearing a different hat — §14 battle cameos read this.
+  for (const lv of rungs) {
+    const st = mkD(lv);
+    const interval = scavengeClock(st);
+    let outN = 0, n = 0;
+    for (let i = 0; i <= 2000; i++, n++) {
+      st.workers.scavenger.timer = interval * (1 - i / 2000);
+      if (isDougOut(st)) outN++;
+    }
+    ok(outN > 0 && outN < n,
+       `doug clock: L${lv} isDougOut toggles across the cycle (out ${(100 * outN / n).toFixed(0)}%)`);
+  }
+
+  // (f) The hire gate outranks the clock at every rung — an unhired Doug is never out there.
+  ok(isDougOut({ workers: { scavenger: { owned: false, level: DL.maxLevel, timer: 0 } } }) === false,
+     'doug clock: an unhired Doug is never out (hire gate outranks the clock)');
+
+  // (g) SOURCE PIN (§0b precedent) — (a)-(f) prove the shared clock is CORRECT; only this proves
+  // the two former hardcode sites actually CONSUME it. Without this, re-deriving a clock from
+  // baseInterval in the renderer would sail through every pin above — precisely the false-green
+  // that let this ship: a headless suite cannot draw Doug, so the contract is pinned in source.
+  {
+    const { readFileSync } = await import('node:fs');
+    const sceneSrc = readFileSync('./src/render/scene.js', 'utf8');
+    const gameSrc = readFileSync('./src/game.js', 'utf8');
+    ok(/scavengeClock\(state\)/.test(sceneSrc),
+       'doug clock: scene.js drawScavenger consumes the shared scavengeClock');
+    ok(!/const\s+interval\s*=\s*WORKERS\.scavenger\?\.baseInterval/.test(sceneSrc),
+       'doug clock: scene.js never re-derives Doug\u2019s clock from baseInterval');
+    ok(!/const\s+interval\s*=\s*d\.baseInterval/.test(gameSrc),
+       'doug clock: isDougOut never re-derives Doug\u2019s clock from baseInterval');
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

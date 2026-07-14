@@ -85,6 +85,23 @@ export const WORKERS = {
                                   //     share these — drawScavenger (scene.js) stages the trip, and
                                   //     isDougOut (game.js) gates his battle-cameo lines — so the
                                   //     gag can never fire while he's visibly standing at home.
+    levels: {                     // Doug's training ladder (Doug leveling, 2026-07-14). Mirrors
+      name: 'Fleet Feet',         //   Bob/Greg's ladder shape exactly (2000 base, 1.15 growth, x3
+      desc: 'Faster scavenge runs (-20%)',   //   deep bump, Mythic-gated 6-10) — the exact curve
+                                  //   pins live in the Bob section. The desc states the LEVEL-1
+                                  //   honest number (Swift Wings' convention for a 0.25/level
+                                  //   divisor effect); the divisor isn't linear, so no single %.
+      effect: { type: 'scavengeSpeed', perLevel: 0.25 },   // NEW effect type: shortens the scavenge
+                                  //   interval in effectiveWorkerInterval's scavenge branch —
+                                  //   base / (1 + 0.25 x level): 24s -> 19.2 -> 16 ... -> ~6.9 at
+                                  //   max. Scoped to the scavenge role (a serve/restock speed
+                                  //   upgrade must NOT bleed in — the leak note on that seam), and
+                                  //   summed worker-side via sumWorkerEffect like saleTip/offlineReserve.
+                                  //   ACCEPTED (Daniel's call): faster runs => more scrap AND more
+                                  //   relic-find rolls; the pity floor (25 runs) still bounds relics.
+      baseCost: 2000, costGrowth: 1.15, maxLevel: 10,
+      deepFrom: 6, deepTier: 6, deepCostMult: 3,
+    },
   },
 };
 
@@ -132,4 +149,20 @@ export function sumWorkerEffect(state, type) {
     total += (L.effect.perLevel ?? 0) * workerLevel(state, id);
   }
   return total;
+}
+
+// Doug's scavenge CLOCK — the ONE source of truth for his run cadence. Three consumers must agree
+// EXACTLY or he desyncs on screen: effectiveWorkerInterval (game.js — the timer that fires runs),
+// isDougOut (game.js — the battle-cameo gate), and drawScavenger (render/scene.js — the walk
+// choreography). It lives in this LEAF so the renderer can read it without importing game.js
+// (game.js imports THIS module, so the dependency can only ever point one way — no cycle).
+// WHY THIS EXISTS: the render and the cameo gate each hardcoded baseInterval, which was correct
+// while scavenge had no speed dial ("scavenge has no speed perks — this IS the clock"). Doug's
+// training ladder (2026-07-14) added one, and the renderer kept dividing a 24s clock while the
+// timer ran on 10.67s: `elapsed = 24 - timer` never dropped below 13.33, which sits past the
+// out-leg entirely, so Doug walked home, popped, and re-emerged from the door with no idle beat.
+// Three call sites, one formula — that desync cannot recur.
+export function scavengeClock(state, id = 'scavenger') {
+  const base = WORKERS[id]?.baseInterval ?? 24;
+  return base / (1 + sumWorkerEffect(state, 'scavengeSpeed'));
 }

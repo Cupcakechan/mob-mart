@@ -6,7 +6,7 @@ import { MONSTERS } from '../data/monsters.js';
 import { ITEMS, ITEM_ORDER } from '../data/items.js';
 import { boardLines } from '../data/trademarket.js';   // Market Board sale sign (leaf, no cycle)
 import { sumEffect } from '../data/upgrades.js';
-import { WORKERS } from '../data/workers.js';   // Doug's scavenge clock (leaf data module, no cycle)
+import { WORKERS, scavengeClock } from '../data/workers.js';   // Doug's scavenge clock (leaf data module, no cycle)
 import { RELICS, RELIC_ORDER } from '../data/relics.js';   // the display (§14 Pass B)
 import { getSprite } from './sprites.js';
 
@@ -660,8 +660,12 @@ const DOUG_ANIMS = {
 function drawScavenger(ctx, state, tMs) {
   const w = state.workers?.scavenger;
   if (!w?.owned) return;                                     // hire-gated, like Bob's arc and Greg
-  const interval = WORKERS.scavenger?.baseInterval ?? 24;    // scavenge has no speed perks (scoped
-                                                             //   in game.js) — this IS the clock
+  const interval = scavengeClock(state);                     // Doug's TRAINED clock (workers.js) —
+                                                             //   MUST be the same clock that fires his
+                                                             //   runs. Hardcoding baseInterval here
+                                                             //   stranded `elapsed` past the out-leg
+                                                             //   once training shortened the timer:
+                                                             //   he popped home, no idle (2026-07-14).
   const walk = Math.min((WORKERS.scavenger?.walkSec ?? 2.6), interval / 4);         // degenerate-interval guard: legs never overlap
   const timer = Math.max(0, Math.min(w.timer ?? interval, interval));
   const elapsed = interval - timer;                          // 0 at run start, interval at homecoming

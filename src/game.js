@@ -7,7 +7,8 @@ import { MONSTERS, MONSTER_IDS } from './data/monsters.js';
 import { ITEMS, ITEM_ORDER } from './data/items.js';
 import { UPGRADES, upgradeLevel, upgradeCost, isMaxed, sumEffect } from './data/upgrades.js';
 import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost,
-  workerLevel, workerLevelCost, isWorkerLevelMaxed, sumWorkerEffect } from './data/workers.js';
+  workerLevel, workerLevelCost, isWorkerLevelMaxed, sumWorkerEffect,
+  scavengeClock } from './data/workers.js';
 import { randInt, pick, weightedPick } from './utils.js';
 import { WORKER_HIRE_LINES, DOUG_RETURN_LINES, RELIC_VOICE, TRADE_VOICE, INSPECTOR_VOICE,
   EXPEDITION_VOICE, EXPEDITION_DESTINATIONS, COMMISSION_VOICE } from './data/results.js';
@@ -959,7 +960,13 @@ export function effectiveWorkerInterval(state, id) {
   // Swift Wings' trickleSpeed is the RESTOCK dial only — without this scope it would silently
   // speed Doug's scavenge runs too (the exact leak the serve-scope note above warns about).
   if (WORKERS[id]?.role === 'restock') return base / (1 + sumPerkEffect(state, 'trickleSpeed'));
-  if (WORKERS[id]?.role !== 'serve') return base;             // scavenge (and future roles): the plain dial
+  // Doug's scavengeSpeed (his training ladder, 2026-07-14) is the SCAVENGE dial — same divisor
+  // form as trickleSpeed/serveSpeed, but summed via sumWorkerEffect (a worker LEVEL effect, not a
+  // perk, matching saleTip/offlineReserve). A distinct branch so future non-serve roles without a
+  // scavengeSpeed effect stay on the plain dial. Faster runs => more scrap + relic-find rolls
+  // (accepted, Daniel's call; the pity floor bounds relics — see workers.js).
+  if (WORKERS[id]?.role === 'scavenge') return scavengeClock(state, id);
+  if (WORKERS[id]?.role !== 'serve') return base;             // other future roles: the plain dial
   return base / (1 + sumEffect(state, 'serveSpeed'));
 }
 
@@ -1046,7 +1053,7 @@ export function isDougOut(state) {
   const d = WORKERS.scavenger;
   const w = state.workers?.scavenger;
   if (!d || w?.owned !== true) return false;
-  const interval = d.baseInterval, walk = Math.min(d.walkSec ?? 0, interval / 4);
+  const interval = scavengeClock(state), walk = Math.min(d.walkSec ?? 0, interval / 4);
   const elapsed = interval - Math.max(0, Math.min(w.timer ?? interval, interval));
   return elapsed >= interval * (d.idleFrac ?? 0) + walk && elapsed < interval - walk;
 }
