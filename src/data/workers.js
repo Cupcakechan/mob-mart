@@ -8,6 +8,11 @@ export const WORKERS = {
   mimic_merchant: {
     id: 'mimic_merchant',
     displayName: 'Bob',
+    pitch: 'Minds the counter so you don\u2019t have to. Impeccably.',   // unhired card hook (2026-07-13):
+                                  // one authored line per worker, IN VOICE (COMEDY_BIBLE), replacing
+                                  // the old role-ternary that called Doug a restocker. Bob: warm
+                                  // concierge, polite finality. Shown as static card copy (not a
+                                  // picked pool), so one line each; panels.js reads it with a fallback.
     spriteId: 'mimic_merchant',   // reuses Bob's existing sprite; auto-serve replays his serve anim
     role: 'serve',                // 'serve' | 'restock' (each role has its own updateWorkers branch)
     baseInterval: 6,              // <-- TUNABLE: seconds between auto-serve attempts (before serveSpeed)
@@ -26,6 +31,8 @@ export const WORKERS = {
   restocker: {
     id: 'restocker',
     displayName: 'Greg',          // the Restocker's name (Daniel, 2026-07-04) — a small gargoyle
+    pitch: 'Refills the shelves. Won\u2019t make eye contact. That\u2019s the deal.',   // Greg: blunt,
+                                  // grumps at the job not the customer (the cozy law) — the anti-Bob
     spriteId: 'restocker',        // static frame (greg.png -> restocker.png, 112x112); the flight
                                   // strip lands as greg_fly.png (112px frames, count auto-sliced)
     role: 'restock',
@@ -55,6 +62,8 @@ export const WORKERS = {
   scavenger: {
     id: 'scavenger',
     displayName: 'Doug',          // the Scavenger (§14 Pass A, Daniel 2026-07-10) — a gremlin with a
+    pitch: 'Slips out the door for the good bits. \u201cDoug finds, yes.\u201d',   // Doug: Gollum-adjacent
+                                  // third-person self-talk, "good bits"/"shinies" (never that word)
     spriteId: 'doug',             //   salvage pack. Static fallback doug.png (160×160); strips land as
                                   //   doug_idle.png / doug_walk_happy.png (960×160, 6 frames — Bob's
                                   //   exact strip shape). Drawn 1:1 (the sizing law): ~160px on screen.

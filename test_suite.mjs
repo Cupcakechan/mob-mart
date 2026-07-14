@@ -3197,6 +3197,14 @@ console.log('M4 auto-serve worker — smoke test\n');
      && d.baseInterval === 24 && d.scrapPerRun === 2 && d.offlineRunsCap === 3,
      'doug: registry contract — Beloved gate, 1200g, 24s runs, 2 scrap/run, offline cap 3');
 
+  // Unhired card copy (2026-07-13): every worker carries an authored in-voice pitch, and Doug's
+  // never mislabels him as a restocker (the bug the pitch field replaced — panels.js line 579).
+  ok(WORKER_ORDER.every((id) => typeof WORKERS[id].pitch === 'string' && WORKERS[id].pitch.length > 0
+       && WORKERS[id].pitch.length <= 80),
+     'workers: every worker has an authored unhired pitch (<=80 chars, the log-width law)');
+  ok(!/restock/i.test(WORKERS.scavenger.pitch) && /good bits|finds|shinies/i.test(WORKERS.scavenger.pitch),
+     'doug: the unhired pitch is in Doug\u2019s voice, never "restocker" (the line-579 regression guard)');
+
   // Fresh state: scrap exists at zero; Doug starts unhired.
   const fresh = createInitialState();
   ok(fresh.scrap === 0 && fresh.workers.scavenger?.owned === false,
@@ -4832,7 +4840,7 @@ console.log('M4 auto-serve worker — smoke test\n');
 }
 
 // ========== SECTION 75 — DEMAND SURFACE (F4 Option 1 — the fame & demand reform) ==========
-// The market board's third chalk row names today's demand event ("DEMAND: Weapons tip today"),
+// The market board's third chalk row names today's demand event ("HOT TODAY: Weapons"),
 // and the overlay echoes it WITH the number ("Hero Parade · Weapons +50%") — the sale-sign
 // doctrine pair: the board advertises, the overlay informs. FAME_ECONOMY_DESIGN.md §8.
 {

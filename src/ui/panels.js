@@ -576,7 +576,13 @@ export function renderPanels(state) {
         }
       }
     } else {
-      if (descEl) descEl.textContent = w.role === 'serve' ? 'Serves customers automatically' : 'Restocks automatically';
+      // Unhired card hook: the worker's authored in-voice pitch (workers.js), with the old
+      // role line as the ?? fallback so a future worker without a pitch degrades gracefully
+      // (never the "Doug is a restocker" bug again). Scavenge now has its own honest fallback too.
+      if (descEl) descEl.textContent = w.pitch
+        ?? (w.role === 'serve' ? 'Serves customers automatically'
+          : w.role === 'scavenge' ? 'Scavenges the beyond for salvage'
+          : 'Restocks the shelves automatically');
       lvlEl?.classList.add('hidden');                         // Back-to-Title re-renders must reset these
       trainBtn?.classList.add('hidden');
       if (buyBtn) {
