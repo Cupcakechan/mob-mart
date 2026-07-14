@@ -454,3 +454,32 @@ assets; the half-applied-fix staleness heuristic).
   exists because the control is penalized is not the treatment's value. Corollary to the
   probe-the-effect family: measure what each arm actually does, not only how far apart they are.
 - Route: dev-method (acceptance-metric design; probe-the-effect family).
+
+## 2026-07-13 — The crux check came after the recommendation: "are you sure?" must be self-administered
+- What happened: the B1 acceptance analysis recommended A (decouple F2) with the margin
+  recovery as primary evidence. That evidence had one load-bearing assumption — that the
+  coupled↔decoupled margin gap reflected real customer behavior, not a sim-bot artifact. If
+  the bot's restocking had been F2-demand-driven, the whole signal would have been the bot
+  chasing its own tail, and A would have been "flip a delegated design decision to fix a
+  number that doesn't map to real play." The check was two file reads of the bot's stocking
+  logic, available the entire time. It ran only after Daniel asked "are you sure?" — the
+  recommendation's own words concede it: "I was leaning on the margin recovery without
+  having checked what produces it." (The check came back favorable — bot stocks
+  demand-blind — but that's luck relative to process.)
+- Root cause: evidence-gathering was ordered by narrative momentum, not by "what single
+  fact, if wrong, invalidates this recommendation?" Hours of sim spend ran freely while the
+  cheap decisive read sat unread. Confidence was expressed before it was earned, then
+  repaired under challenge.
+- Why it mattered: a "go" on the unchecked recommendation would have spent the one-line
+  change + suite + 3× determinism cert on an unverified assumption — and if the check had
+  failed, a delegated decision would have been flipped on a bot artifact. Only Daniel's
+  manual challenge inserted the verification step the process should own.
+- Plug/principle: before any ship-gating recommendation, NAME the crux assumption it rests
+  on; if that assumption is cheaply checkable (a file read, a grep, a one-liner), check it
+  BEFORE recommending, not after a challenge. The mechanical tell: if "are you sure?" would
+  send you to read code you haven't read yet, that read belongs before the recommendation.
+  Distinct from verify-don't-assume (facts about current state) and from the differential-
+  metric rule (interpreting a number): this governs the ORDERING of verification relative
+  to expressed confidence.
+- Route: general instructions candidate (sibling of verify-don't-assume). One occurrence —
+  starts here per the promotion bar.
