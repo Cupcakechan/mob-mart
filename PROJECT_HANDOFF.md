@@ -112,27 +112,49 @@ IS COMPLETE (F1a→F4).** 7. **Expedition depth** (parties, offline party manage
 (rule-changing prestige, six-door factions — designed last, against what the harness measures
 then; **F1b — prestige spends fame — ships WITH it**, design already in the doc's §5).
 
-**NEXT — COMMISSION B1: HARD RESERVE (parked (g)②, priority-RAISED), opening with its build
-pass.** The approach is already PICKED — Option 1 hard reserve + awareness bundle (decided
-2026-07-12, decision log FAME_ECONOMY_DESIGN.md §9), so NO options round; it goes straight to
-build. THE PROBLEM (Daniel watched it live, 2026-07-13, and F2 SHARPENED it): a pending
-commission's required units are fair game for counter serves — Bob's auto-serve only gates on
-`stock > 0` (game.js), so he'll sell an order's Silver Keys to a walk-in and leave the order
-short. F2 made it worse — stocking the order's item flips it to full ×1 demand
-(`supplyWantWeight`), actively steering counter traffic onto exactly the shelf being held.
-THE FIX: a pending commission hard-reserves its `count` away from counter serves (the serve
-path subtracts reserved units from sellable stock), plus an awareness bundle so the player can
-SEE the reservation (the surfaces are the design call — the overlay's "shelf n/N" already
-exists; the shop-side reserve indicator is the new part). Watch: the reserve must not starve
-the want-pick into a dead queue (a fully-reserved shelf reads as out-of-stock to F2's
-`supplyWantWeight` — decide whether reserved-but-present counts as stocked for DEMAND while
-being unsellable for SERVES). Likely touches game.js (serve gate + a reservedStock helper),
-the overlay + a shop indicator, and the suite. **Economy-touching → 3× sim certification.**
-Cold-boot ritual as always: this doc in full, the dev-method skill, sync-and-certify (suite
-must read **1716** at HEAD).
+**COMMISSION B1: HARD RESERVE — DONE 2026-07-14 (97a540f, suite 1746, 3× bit-identical
+`7864f924…`).** A pending order hard-reserves its `count` units: `reservedFor(state,itemId)` =
+min(count, stock) when the order names that item, and `sellableStock` = stock − reserved is the
+single source of truth for "how many units may leave the counter." Sellable gates the serve path,
+the bulk-buyer double-sale, leave-theft, AND offline (Bob won't sell held units while you're away);
+raw stock still drives shelf-room, fulfillment (consumes the reserve), the inspection grade (held
+units physically sit on the shelf), and the "Stock: N/max" display. A distinct `'reserved'` serve-
+block reason ("Held for order") sits between out-of-stock and cant-afford. Awareness bundle: the
+shelf card shows "N held for [client]" (green), the Market overlay row shows "N held from the
+counter", plus the serve-button label. `CONFIG.commission.hardReserve` (?? true) is the kill switch.
+No new persisted state (the reserve derives from the saved order). New suite **§76** (30 pins — exact
+totals live here now).
 
-**THEN the rest of the parked queue, in order:** Doug leveling (spec below) → results-box
-flooding (h) → B2 material payment → B3 extra slots → Greg-perk visibility (g)①.
+**THE F2 DECISION WAS REVERSED BY THE SIM (2026-07-14) — a real finding, recorded.** The parked
+spec's delegated call was to COUPLE F2 to the reserve (a fully-reserved shelf reads UNSTOCKED for
+demand, steering walk-ins off the held item, to prevent a dead queue). Built that way first; it was
+WRONG. The acceptance sim (kill-switch-off counterfactual reproduced HEAD's +21/+36/+12.4 exactly)
+showed the coupling COLLAPSED all three margins → market-blind **+21%→0% (WEAK)**, exp-blind 36→15,
+comm-blind **+12.4%→−1.83% (FLAT)**. Mechanism (verified against the sim code, NOT assumed): the bot
+stocks demand-BLIND (`restockAll` + trade-everything), so the loss is not a restock artifact —
+coupling concentrates walk-in demand onto the cheap gold shelves, which drain faster than the 1s
+restock (serving runs at 0.1s) → OOS-front 50.9→58.6 while the pricey reserved stock sits idle. And
+the dead-queue the coupling was meant to prevent is a NON-ISSUE either way (0.02–0.05% of run time).
+**Decoupling F2 — demand reads PHYSICAL stock; the reserve gates only who may BUY — recovered every
+margin to PASS** (+15/+26/+10.8) and is the cleaner model. §76(d) now GUARDS against re-coupling.
+Two accepted costs of the shipped decoupled form: (1) a walk-in on a fully-held shelf gets a legible
+"Held for order" block instead of being steered away (0.02% of queue time); (2) sim seed 4 runs to
+the 168h cap one want short (73/74 — soft, deterministic, separable from B1).
+
+**KNOWN LIMIT OF THE ACCEPTANCE SIM (record for future economy passes):** the greedy bot fulfills
+orders the instant it can, so it never experiences the walk-in DRAIN that B1 exists to prevent — the
+harness can only ever see B1's COST, never its benefit. A future sim enhancement (bot stocks toward
+an order, walk-ins eat it before the deadline, measure fulfillment success with/without the reserve)
+is the only thing that would measure B1's worth directly; not built. Two vetoable scope decisions
+baked into B1, each a one-line revert: the reserve covers OFFLINE and LEAVE-THEFT, not just the live
+counter.
+
+**NEXT — DOUG LEVELING (spec below; Option 1 PICKED 2026-07-13, faster runs), opening with its build
+pass.** Cold-boot ritual as always: this doc in full, the dev-method skill, sync-and-certify (suite
+must read **1746** at HEAD, tip **97a540f**).
+
+**THEN the rest of the parked queue, in order:** results-box flooding (h) → B2 material payment →
+B3 extra slots → Greg-perk visibility (g)①.
 
 **DOUG LEVELING — SPEC READY (Option 1 PICKED 2026-07-13, faster runs).** Doug is the ONLY
 worker with no `levels` block — untrainable, and the fametrack/training UI has nothing to show
@@ -293,7 +315,7 @@ with the Rat. **Option-3 art polish: SCRUBBED** (see §9 — the 128px-frame + M
 convention is PERMANENT, do not resurrect).
 **Workflow note: NO DevLog for Mob Mart** — Daniel opted out (2026-07-03). Skip the DevLog draft
 step at feature completion for this project.
-**Last updated:** 2026-07-10 — §14 complete (Doug + scrap + cameos + the Relic Forge); §0 added as the cold-boot front door; NEXT = the economy audit (spec in §0).
+**Last updated:** 2026-07-14 — Commission B1 (hard reserve) SHIPPED (97a540f, suite 1746), F2 coupling reversed by the sim to decoupled; NEXT = Doug leveling. Earlier: 2026-07-10 — §14 complete (Doug + scrap + cameos + the Relic Forge); §0 added as the cold-boot front door.
 
 ---
 

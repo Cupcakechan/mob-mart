@@ -484,3 +484,50 @@ assets; the half-applied-fix staleness heuristic).
 - Route: general instructions candidate (sibling of verify-don't-assume). One occurrence —
   starts here per the promotion bar.
 
+## 2026-07-14 — Documented "setsid survives the tool-call boundary" was false here; the working detach is subshell-wrapped
+- What happened: the B1 3× sim certification needed long-running (~6 min/run) detached processes
+  that outlive a single tool call. The recorded pattern — plain `setsid … &` — did NOT survive:
+  the backgrounded job either never launched (setsid misbehaves when the caller is already a
+  process-group leader under dash's `&`) or was reaped when the tool call returned. `nohup … &`
+  launched but died at the boundary too (SIGTERM to the process group, not just SIGHUP). Several
+  tool calls were spent rediscovering this before a heartbeat probe pinned down what persists.
+- Root cause: the container's default shell is `/bin/sh` (dash — no `disown`), and the tool tears
+  down the invocation's process group/session on return. Only a process reparented to init in a
+  NEW session survives, and getting there under dash needs the fork forced.
+- What actually works (verified by a cross-boundary heartbeat): `( setsid bash script.sh & )` —
+  the subshell exits immediately, orphaning the setsid child to init in its own session; the loop
+  body lives in a SCRIPT FILE (create → run → poll a sentinel file), never inline (multi-line
+  inline bodies also failed to launch). Poll an artifact (output-file mtime / a `*_done.txt`
+  sentinel + per-run sha), never a process name. `/usr/bin/time` is absent (127) — time with epoch
+  deltas. Sequential runs only (parallel node OOMs the 4GB box). A single full sim run also exceeds
+  the tool-call ceiling (~290s), so detachment is mandatory, not optional.
+- Why it mattered: without the working pattern there is no way to run the 3× bit-identical
+  certification the economy doctrine requires — the whole ship gate depends on it.
+- Plug/principle: detach with `( setsid bash <scriptfile> & )` and artifact-poll a sentinel; treat
+  "a backgrounded job survives the boundary" as something to PROVE with a heartbeat in the current
+  container, not assume from a prior session's note.
+- Route: dev-method skill (the sim-run / long-job section) — supersedes the "setsid detached
+  survives" note carried in the handoff.
+
+## 2026-07-14 — The acceptance sim measures a feature's COST but is blind to a "prevent-a-bad-outcome" BENEFIT
+- What happened: B1 (hard reserve) exists to stop walk-ins draining a pending order's units before
+  it's fulfilled. Every sim number for B1 measured only its cost (sellable capacity removed): fills
+  were 5-vs-5 with and without the reserve, and turning the reserve on could only ever LOWER the
+  aware-vs-blind margins. The greedy bot fulfills an order the instant it can, so it never
+  experiences the drain B1 prevents — the benefit is structurally invisible to the harness.
+- Root cause: the acceptance instrument measures CHANNEL value (does using trade / expeditions /
+  commissions beat ignoring them?) via post-exhaustion rate advantage. A feature whose worth is
+  "prevents a bad outcome the optimal greedy bot never triggers" has no channel to show up in — the
+  metric and the feature's purpose are orthogonal.
+- Why it mattered: read naively, the sim said B1 was a pure margin loss and nearly argued against a
+  fix for a real, player-visible bug. The correct reading was "the harness can't see the benefit,"
+  which reframes the decision as a judgment call plus a cost-minimization (couple vs decouple), not
+  a pass/fail.
+- Plug/principle: before treating a sim margin move as a verdict, ask whether the harness can even
+  MEASURE the feature's purpose. For "prevents X" features the greedy bot may never trigger X, so a
+  margin dip is cost-only, not net harm — accept it on judgment, or build a sim mode that actually
+  induces X (here: bot stocks toward an order, walk-ins eat it before the deadline, measure
+  fulfillment success with/without the reserve). Sibling of the idle-honest / instrument-scope
+  awareness, applied to the acceptance metric.
+- Route: dev-method (acceptance-metric design — what the instrument can and cannot measure).
+
