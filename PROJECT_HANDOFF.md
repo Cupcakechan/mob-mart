@@ -10,8 +10,8 @@ Claude or ChatGPT can parse it cold.*
 
 ## §0 — START HERE (cold boot): where the project is, and what happens next
 
-**State as of 2026-07-12, end of the F1a RECOVERY session (suite: 1667 green at tip
-`c10810b`; `node test_suite.mjs` self-verifies a fresh clone):** the MVP, the full UX roadmap,
+**State as of 2026-07-14, end of the DOUG LEVELING + SIM INSTRUMENT session (suite: 1797 green
+at tip `8fe8012`; `node test_suite.mjs` self-verifies a fresh clone):** the MVP, the full UX roadmap,
 Market Day, Deep Sinks, Special Visits (the Inspector, reauthored 1:1), the gear expansion
 (27 items), six door destinations, the whole of **§14** (DOUG, SCRAP, the RELIC FORGE), **THE
 ECONOMY AUDIT** (`sim_economy.mjs` + `ECONOMY_AUDIT.md`), **THE RETENTION RESET**
@@ -63,7 +63,9 @@ full player), widening every margin — market-blind **+21%**, exp-blind **+36%*
 overlay informs), closing the discovery gap the HUD chip's retirement left. A pure presentation
 pass: its sim stdout came back BYTE-IDENTICAL to the F3 baseline (proof it moved no economy
 path — the right certification for a display change). **THE FAME & DEMAND REFORM ARC IS
-COMPLETE** (F1a→F4); the queue is now the parked (g)/(h) items, B1 first.
+COMPLETE** (F1a→F4); the queue is now the parked (g)/(h) items, B1 first. **SUPERSEDED
+2026-07-14:** B1 shipped (97a540f) and Doug leveling shipped + certified (b9ac048), closing the
+queue's head. The live queue is the **HUD / BESTIARY UI ROUND** — see the NEXT block below.
 
 **A follow-up TEXT PASS (635c574, 2026-07-13, suite 1716):** the board demand row reads "HOT
 TODAY: «shelf»" (Daniel's read — "tip" was the internal mechanic word, broken English on the
@@ -149,30 +151,95 @@ is the only thing that would measure B1's worth directly; not built. Two vetoabl
 baked into B1, each a one-line revert: the reserve covers OFFLINE and LEAVE-THEFT, not just the live
 counter.
 
-**NEXT — DOUG LEVELING (spec below; Option 1 PICKED 2026-07-13, faster runs), opening with its build
-pass.** Cold-boot ritual as always: this doc in full, the dev-method skill, sync-and-certify (suite
-must read **1746** at HEAD, tip **97a540f**).
+**NEXT — THE HUD / BESTIARY UI ROUND (Daniel, 2026-07-14), two passes, in this order.** Cold-boot
+ritual as always: this doc in full, the dev-method skill, sync-and-certify (suite must read
+**1797** at HEAD, tip **8fe8012**). Both passes are UI-only and open with an options round.
+
+  **(1) SCRAP CHIP + MENU BUTTON OVERLAP.** Daniel reports the two overlap on screen. Both live in
+  the top bar: the scrap chip is `#hud-scrap-chip` (index.html:19, a `.hud-chip.scrap` carrying the
+  ⚙ text-glyph + `#hud-scrap` value) and the Menu button is `#menu-btn` (index.html:15,
+  `.menu-btn`). NOT YET DIAGNOSED — do not assume a cause. The scrap chip is
+  conditionally shown (hud.js:52-55: hidden until the scavenger is hired or scrap is banked, "the
+  early HUD stays two-chip clean"), so the likeliest shape is a layout that fits at two chips and
+  collides at three — but MEASURE the rendered geometry before proposing anything. NOTE: fixing
+  this almost certainly touches `style.css`, which means the **`?v=N` cache-bust must be
+  incremented in BOTH entry shells** (index.html and index.kongregate.html) or Daniel tests a
+  stale sheet.
+
+  **(2) THE BESTIARY / EXPEDITION SPLIT.** Daniel: "re-work the Bestiary tab which is actually used
+  for Expeditions — see how we can improve it, and look at where the real bestiary can be." THE
+  ARTIFACT AGREES WITH HIM, and his own earlier decision already called this shot. What exists
+  today: the `bestiary-panel` (panels.js:105) holds one `#beast-cards` grid; each card is
+  simultaneously a loyalty ledger (portrait, name, one pip per `MONSTER_BREAKPOINT`, next-breakpoint
+  hint, `#bestiary-completion` in the title) AND an expedition job card (`Send ◆{fee}` button,
+  lifetime run count, live `away Ns` timer — panels.js:283-284, 464-477). It is the EXPEDITION
+  surface wearing the Bestiary label. **The binding prior decision (Daniel, 2026-07-11, recorded at
+  panels.js:293): "the grid cards are the JOB CARDS — a pure lore Bestiary is a later, separate
+  surface."** So the "real bestiary" was never lost; it was DEFERRED, and this round is the pickup.
+  Also binding (Daniel, 2026-07-08, panels.js:299): VIP/special visitors get bestiary entries in
+  their OWN section under the grid, never rows in it — the grid filter (`!MONSTERS[id].special`)
+  enforces it and VIP cards never carry a Send button. Open questions for the options round: does
+  the job grid keep the "Bestiary" label or get renamed to what it is; does the lore Bestiary
+  become a sixth nav tab (`nav.js` TABS + `PANEL_FOR` are a two-line registry — a new tab is
+  nearly free) or a sub-view; and what lore content exists to fill it (CHECK THE REGISTRY, don't
+  assume — `MONSTERS` fields at writing time, not from memory).
 
 **THEN the rest of the parked queue, in order:** results-box flooding (h) → B2 material payment →
 B3 extra slots → Greg-perk visibility (g)①.
 
-**DOUG LEVELING — SPEC READY (Option 1 PICKED 2026-07-13, faster runs).** Doug is the ONLY
-worker with no `levels` block — untrainable, and the fametrack/training UI has nothing to show
-for him. The pass: add his `levels` block (Bob/Greg's exact ladder — name+desc, baseCost 2000,
-costGrowth 1.15, maxLevel 10, deep band deepFrom 6/deepTier 6/deepCostMult 3), with a NEW
-`scavengeSpeed` effect that shortens his interval. THE SEAM ALREADY EXISTS AND IS SCOPED:
-game.js `effectiveWorkerInterval` line ~929 returns `base` flat for the scavenge role — add
-`/ (1 + sumWorkerEffect(state, 'scavengeSpeed'))` there, mirroring how the restock branch
-above it divides by `trickleSpeed` (the leak-scope note on that line is why scavenge stays
-isolated — a serve/restock speed upgrade must NOT bleed into Doug). At +0.25/level the honest
-curve is −20%/−33% (base 24s → ~19s → ~16s). ACCEPTED SIDE EFFECT (Daniel's call): faster runs
-mean more scrap AND more relic-find rolls, so the relic timeline accelerates a bit — the pity
-floor (25 runs) still bounds it, and "a better scavenger finds relics sooner" is fine. The
-Option-3 alternative (dividing `chancePerRun` by the same factor to hold the relic cadence
-fixed) stays documented, unbuilt. **Economy-touching (scrap + relic rolls) → 3× sim cert.**
+**DOUG LEVELING — DONE 2026-07-14 (b9ac048, suite 1797, certified 3× bit-identical).** Option 1 as
+spec'd: `WORKERS.scavenger.levels` = **Fleet Feet** ("Faster scavenge runs (-20%)"), effect
+`scavengeSpeed` +0.25/level, baseCost 2000, costGrowth 1.15, maxLevel 10, deepFrom 6/deepTier
+6/deepCostMult 3. The clock: 24s → 10.67s (L5, the pre-Mythic max) → 6.86s (L10). Training UI,
+fametrack chip, and save-clamp all lit up with ZERO wiring (every one is registry-scanned).
+Accepted side effect held: faster runs = more scrap AND more relic rolls.
+
+  **THE BUG THIS PASS TAUGHT — read before touching any dial.** `baseInterval` was hardcoded as
+  "Doug's clock" in THREE places. That was CORRECT while scavenge had no speed dial, and
+  scene.js's comment said so in as many words ("scavenge has no speed perks — this IS the clock").
+  The ladder falsified that comment and only `effectiveWorkerInterval` got rewired, so the renderer
+  kept dividing a 24s clock while the timer ran on 10.67s: `elapsed = 24 − timer` could never fall
+  below 13.33, stranding the idle and out-leg phases at every timer value. Doug walked home from
+  the portal, POPPED, and re-emerged from the door with no idle beat. **The suite passed 24/24
+  through all of it** — §77 asserted the interval MATH and never asked whether Doug is ever
+  visibly standing still. Daniel's browser was the first thing to actually look at him. The fix:
+  `scavengeClock(state)` in `src/data/workers.js` (the LEAF — so the renderer reads it without
+  importing game.js) is now the ONE source of truth, consumed by `effectiveWorkerInterval`,
+  `isDougOut`, and `drawScavenger`. §78 guards it, including a SOURCE pin (§0b precedent) because
+  a headless suite cannot draw Doug — pins (a)-(f) prove the helper is right, only (g) proves the
+  renderer calls it. Negative control verified: re-inserting the hardcode drops the suite to
+  1795/2.
+
+  **CAMEO DRIFT — DECIDED, NOT A DEFECT (Daniel, 2026-07-14; recorded at the isDougOut seam).**
+  The gone window scales with training (L0 11.6s/48% → L5 2.27s/21% → L10 1.37s/20%) because the
+  walk legs are near-fixed while the cycle shrinks. Two consequences, BOTH accepted, neither to be
+  "fixed": (1) FREQUENCY — a trained Doug cameos half as often; a maxed Doug is a blur, and
+  glimpsing him less IS the joke. (2) TIMING — at L10 the gone window is shorter than the report
+  delay (~1-2s, or `reportFallbackSec` 3.0s), so a cameo NEVER displays while he's visibly out;
+  accepted because the battle log is RETROSPECTIVE — it reports a fight that already resolved, and
+  Doug genuinely WAS beyond the door then. This retired a SECOND falsified comment ("the ~12s gone
+  window dwarfs that, so a boundary straddle is rare and harmless" — true only at L0).
+
+**THE SIM INSTRUMENT — REPAIRED 2026-07-14 (2784bec).** See the dated section at the bottom for
+the whole story. The headline a cold session needs: **every acceptance margin recorded in this doc
+before 2026-07-14 is VOID as a comparison — not beaten, VOID.**
 
 **MEASURED FINDINGS STANDING FOR DANIEL'S JUDGMENT (final arc numbers, through F4 — F4 moved
 none of them, being economy-neutral):**
+
+  > **⚠ VOID AS COMPARISONS — READ THIS FIRST (2026-07-14).** Every margin in the two blocks
+  > below, and every acceptance margin recorded anywhere in this doc dated before 2026-07-14,
+  > was produced by the OLD sim instrument, which is now known to have been broken. It medianed
+  > over 3 seeds and silently coerced a cap-hit into a sentinel (a blind cap-hit became ≈
+  > +47800%, an aware cap-hit −100%), so with n=3 the "median" was simply THE LARGER OF THE TWO
+  > REAL VALUES — a coin flip wearing a statistic's clothes. It ranked a build that beat its
+  > control 2-of-2 BELOW one that beat it 1-of-2. These numbers are **VOID, not beaten**: do NOT
+  > diff them against current output, do NOT treat a current margin as an improvement over them,
+  > and do NOT retune anything toward them. They are kept only as the arc's narrative record.
+  > The current certified numbers (repaired instrument, tip 8fe8012) are in the 2026-07-14 dated
+  > section. Re-baselining any older claim means re-running the sim; there is no arithmetic that
+  > converts an old number into a new one.
+
   (i)   **The commission margin compounded across the arc**: +3.5% (F1a) → +6.0% (F2) →
         **+12.4%** (F3) — scarcity of spendable rep makes the commission's fame bonus bite in
         perk timing. B2/B3 remain its designed depth, now on top of a healthy channel.
@@ -315,7 +382,7 @@ with the Rat. **Option-3 art polish: SCRUBBED** (see §9 — the 128px-frame + M
 convention is PERMANENT, do not resurrect).
 **Workflow note: NO DevLog for Mob Mart** — Daniel opted out (2026-07-03). Skip the DevLog draft
 step at feature completion for this project.
-**Last updated:** 2026-07-14 — Commission B1 (hard reserve) SHIPPED (97a540f, suite 1746), F2 coupling reversed by the sim to decoupled; NEXT = Doug leveling. Earlier: 2026-07-10 — §14 complete (Doug + scrap + cameos + the Relic Forge); §0 added as the cold-boot front door.
+**Last updated:** 2026-07-14 — DOUG LEVELING shipped + certified (b9ac048, suite 1797) after the browser caught a render/logic clock desync; THE SIM INSTRUMENT REPAIRED (2784bec — cap-hits counted not averaged, all 5 seeds; **every pre-2026-07-14 margin is VOID as a comparison**); cameo drift decided-not-fixed (8fe8012). NEXT = the HUD / Bestiary UI round. Earlier: 2026-07-14 — Commission B1 (hard reserve) SHIPPED (97a540f, suite 1746), F2 coupling reversed by the sim to decoupled. Earlier: 2026-07-10 — §14 complete (Doug + scrap + cameos + the Relic Forge); §0 added as the cold-boot front door.
 
 ---
 
@@ -2292,3 +2359,78 @@ Two presentation fixes from Daniel's browser session, one commit, no economy pat
 
 **NEXT:** Commission B1 (hard reserve) — the pickup; §0's NEXT block carries the spec. Doug
 leveling (Option 1) is spec'd and queued behind it.
+
+---
+
+## 2026-07-14 — DOUG LEVELING + THE SIM INSTRUMENT REPAIR (b9ac048, 2784bec, 8fe8012; suite 1746 → 1797)
+
+Three passes, three commits. The middle one matters most: **the sim that certifies this project's
+economy was measuring wrong, and had been for the whole reform arc.**
+
+**PASS 1 — DOUG LEVELING (b9ac048, suite 1746 → 1797).** Option 1 as spec'd; the §0 NEXT block
+carries the shipped values and the bug it taught. Built clean, suite green at 1770 — and Daniel's
+browser immediately found Doug popping: the renderer and the cameo gate each hardcoded
+`baseInterval` while only the timer got the new dial. Fixed with `scavengeClock(state)` in the leaf
+(`src/data/workers.js`), consumed by all three sites. §78 added (27 pins), incl. a SOURCE pin
+because a headless suite can't draw Doug. **Negative control run:** re-inserting the hardcode drops
+the suite to 1795/2, so §78 catches the real defect rather than merely agreeing with the fix.
+
+**PASS 2 — THE INSTRUMENT (2784bec).** THE SESSION'S REAL FINDING. Doug's first cert came back
+market-blind **+8% WEAK** against a recorded +15% baseline. The counterfactual (Doug's block
+reverted) reproduced the recorded 15/26/10.8 exactly, so the delta was cleanly Doug's — but the
+per-seed numbers inverted the headline:
+
+| | old score | aware wins | spread |
+|---|---|---|---|
+| baseline (pre-Doug) | **+15% PASS** | 1/2 | **−5.2% … +14.9%** |
+| Doug build | **+8% WEAK** | **2/2** | **+4.2% … +7.6%** |
+
+The baseline's own control BEAT it on seed 1 and it still scored higher. Cause: each arm reduced to
+`median(...)` over `SEEDS.slice(0, 3)`, and `(a.postRate ?? 0) / Math.max(1, b.postRate ?? 0) - 1`
+coerced a null postRate (a run that never died) into a sentinel — so with n=3 and a sentinel always
+sorting to one end, the median was the larger of the two real values. **Doug never earned that
+WEAK.**
+
+The repair (Daniel picked Option 2) applies the sim's OWN convention, already used by its death
+block (`runs.filter((r) => r.deathT !== null)` — cap-hits excluded BEFORE the median): blind arms
+widened to all 5 seeds; cap-hits COUNTED and reported categorically, never averaged; an `EVIDENCE:`
+line prints median + spread + win count so a marginal verdict LOOKS marginal. Verdict rule
+(Daniel's call): **any blind cap-hit is PASS-worthy** — a bot stranded forever by ignoring a system
+is the maximum tax, not a missing datum.
+
+**CERTIFIED 3× bit-identical** (`3fcb54d5…`, ×3, ~290s/run, 20 runs): market-blind **+26.5%**
+(spread 13.3–32.6, wins 4/4), expedition-blind **+46.9%** (26.0–54.6, 4/4), commission-blind
+**+22.3%** (6.3–25.9, 3/3). **These are NOT comparable to 15/26/10.8** — different instrument AND
+different build (see below). The shape is what to trust: unanimous wins, every spread above zero.
+
+**WHY THE BUILD CHANGED UNDER US (subtle, worth knowing):** `isDougOut` gates `logLine`'s candidate
+pool, and `logLine` has an anti-repeat re-draw (`messages.js:43-45`) that fires CONDITIONALLY on
+pool contents. So changing the cameo gate changes the number of `pick()` calls, which shifts the
+seeded PRNG stream, which re-aligns every downstream random event. A cosmetic gate moved the whole
+economy trajectory. **Any change touching a conditionally-drawn random path voids prior sim
+numbers** even when it cannot possibly affect the economy on paper.
+
+**PASS 3 — CAMEO DRIFT (8fe8012, comment-only).** Decided, not fixed — see §0. Recorded at the seam
+so it can't be mistaken for a defect later.
+
+**FINDINGS LEFT OPEN FOR DANIEL (neither touched, both real):**
+  (i)  **The AWARE bot cap-hits in 1/5 seeds.** Seed 3 stranded at the 168h cap with 1 want left
+       (Restore The Everything Cloak), having sold 878 swords vs ~1,200 in every other seed; its
+       blind bot cap-hit too. May be an honest cold tail, may be the relic-find pity floor not
+       doing what we think at the far end. The repaired instrument FLAGS it (`AWARE never finished
+       in 1/5 (!)`); the old one would have buried it as a −100% sentinel. `exit 1` on a cap-hit is
+       documented behaviour, not a crash.
+  (ii) **Doug compresses content life.** Median desire-death 96h → 72h despite ADDING 10 wants,
+       because faster scavenging pulls the long-pole relic restores (20k+135s, 40k+180s) forward.
+       Mechanistically clear, never decided on.
+
+**THE PATTERN ACROSS ALL THREE PASSES (the thing to carry forward):** this session retired TWO
+comments that were true when written and were falsified by a new dial — scene.js's "scavenge has no
+speed perks — this IS the clock" and isDougOut's "the ~12s gone window dwarfs that". Both had
+reasoned correctly about the world as it stood. **A comment at a live seam is a CLAIM with an
+expiry date, and adding a dial is what expires it.** The first cost a browser bug; the second was
+caught only because the first taught us to look. When a pass introduces a dial, grep every comment
+that reasons about the value that dial now moves.
+
+**NEXT:** the HUD / Bestiary UI round — §0's NEXT block carries both passes with their real
+anchors.

@@ -531,3 +531,123 @@ assets; the half-applied-fix staleness heuristic).
   awareness, applied to the acceptance metric.
 - Route: dev-method (acceptance-metric design — what the instrument can and cannot measure).
 
+## 2026-07-14 — A comment at a live seam is a CLAIM with an expiry date; adding a dial is what expires it
+- What happened: Doug's training ladder gave the scavenge role its first speed dial. Two comments
+  that were TRUE when written became false the instant it landed. (1) `scene.js`: "scavenge has no
+  speed perks (scoped in game.js) — this IS the clock", sitting above
+  `const interval = WORKERS.scavenger?.baseInterval ?? 24`. (2) `game.js` `isDougOut`: "the ~12s
+  gone window dwarfs that, so a boundary straddle is rare and harmless." I rewired
+  `effectiveWorkerInterval` and missed both. The renderer kept dividing a 24s clock while the timer
+  ran on 10.67s, so `elapsed = 24 - timer` could never fall below 13.33 — stranding the idle and
+  out-leg phases at EVERY timer value. Doug walked home from the portal, popped, and re-emerged
+  from the door with no idle beat. Daniel's browser found it in minutes.
+- Root cause: `baseInterval` was hardcoded as "Doug's clock" in three places. That was CORRECT
+  under the old world and the comments documented WHY it was correct — which made them read as
+  reassurance rather than as a dependency on an assumption I was in the act of breaking. A comment
+  explaining why something is safe is a load-bearing claim about the world; a new dial silently
+  retires it and nothing fails.
+- Why it mattered: the suite passed **24/24** through all of it. §77 asserted the interval MATH
+  (L0 24s → L10 6.86s, leak guards, cost ladder) and never asked whether Doug is ever visibly
+  standing still. A green suite certified a visibly broken feature. The SECOND falsified comment
+  was found only because the first taught me to go looking — otherwise it would have shipped too.
+- Plug/principle: **when a pass introduces a dial, grep every comment that reasons about the value
+  that dial now moves** — the comments that assert safety are exactly the ones that just became
+  false. Fix shipped: `scavengeClock(state)` in the LEAF (`src/data/workers.js`, so the renderer
+  reads it without importing game.js) is the single source of truth for all three consumers.
+  Guard shipped: suite §78, including a SOURCE pin (§0b precedent) — pins (a)-(f) prove the helper
+  is correct, only (g) proves the renderer actually CALLS it. Negative control verified: restoring
+  the hardcode drops the suite to 1795/2.
+- Route: dev-method (introducing a dial = a comment-sweep obligation at every site that reads the
+  old value).
+
+## 2026-07-14 — "Test the effect, not the mechanism" was already my standing rule and still didn't fire, because the effect wasn't headlessly testable
+- What happened: the rule ("a behavioral probe asserts the EFFECT the user sees — never the
+  internal mechanism that should produce it") is already harvested into the general instructions,
+  and I broke it anyway on the Doug pass. §77's 24 pins all asserted mechanism.
+- Root cause: the rule's worked examples are DOM-shaped (computed `display` vs
+  `classList.contains('hidden')`), where the effect IS reachable from the test. Doug's effect is
+  "a human sees him stand still" — the suite is headless and CANNOT draw him. Facing an untestable
+  effect, I silently fell back to testing the mechanism and read the green as coverage. The gap
+  never announced itself: no failing pin, no missing assertion, just 24 green ones aimed one layer
+  too low.
+- Why it mattered: this is the failure the rule exists to prevent, and having the rule was not
+  enough. The rule assumed the effect is always reachable; when it isn't, the fallback is invisible
+  and feels like compliance.
+- Plug/principle: **when the effect genuinely cannot be asserted in the test runtime, that absence
+  is itself a finding — say so out loud and pin the next-best contract, don't quietly test the
+  mechanism and call it covered.** For a cross-file contract a headless suite can't execute, the
+  next-best pin is a SOURCE scan (does the consumer actually call the shared helper?) plus an
+  explicit "not verified: browser/rendered behaviour" line in the delivery. Both shipped here.
+- Route: general instructions (refines the existing effect-vs-mechanism rule with the
+  effect-unreachable case).
+
+## 2026-07-14 — A reduction that coerces "no measurement" into a number turns a verdict into a coin flip
+- What happened: every acceptance arm in `sim_economy.mjs` reduced to
+  `median(blind.map((b) => (a.postRate ?? 0) / Math.max(1, b.postRate ?? 0) - 1))` over
+  `SEEDS.slice(0, 3)`. A run that never dies has NO postRate (null by design). `?? 0` and
+  `Math.max(1, …)` silently converted that ABSENCE into a value: a blind cap-hit became ≈ +47800%,
+  an aware cap-hit −100%. With n=3 and a sentinel always sorting to one end, the "median" was
+  simply THE LARGER OF THE TWO REAL VALUES.
+- Root cause: null-safety idioms (`?? 0`, `Math.max(1, x)`) applied to a divisor whose null means
+  "this run has no measurement", not "this run measured zero". They exist to prevent a crash and
+  did so — by fabricating data.
+- Why it mattered: it ranked a build that beat its control **2-of-2** BELOW one that beat it
+  **1-of-2**, handing the Doug pass a WEAK it hadn't earned and nearly buying a needless retune of
+  a correct feature. It had been the arc's decision-maker for every economy pass, so every recorded
+  margin (15/26/10.8 and all their predecessors) is VOID as a comparison. Worse, the instrument
+  reported a bare median with no spread and no win count, so a coin flip and a solid result printed
+  identically — there was no surface on which to notice.
+- Plug/principle: **a reduction over possibly-absent measurements must COUNT the absences, never
+  coerce them** — an absent outcome is a different KIND of result and belongs in its own
+  categorical line. And **a verdict must report its own power** (n, spread, wins), or a marginal
+  number reads as authority. Fix shipped (2784bec): `acceptanceStats` filters to comparable pairs
+  using the sim's OWN existing convention (its death block already did
+  `runs.filter((r) => r.deathT !== null)` before medianing — the acceptance blocks simply never
+  adopted it), blind arms widened to all 5 seeds, and an `EVIDENCE:` line prints median + spread +
+  wins + cap-hit counts. Verified by replaying both historical datasets through the repaired
+  reduction before trusting it.
+- Route: dev-method (acceptance-metric design — absent outcomes are categorical, and a verdict
+  reports its power).
+
+## 2026-07-14 — A cosmetic change shifted the seeded PRNG stream and voided every sim number
+- What happened: the `scavengeClock` fix changed `isDougOut`'s truth pattern (out 48% → 21% of a
+  cycle). `isDougOut` only gates which battle-cameo LINES are eligible — pure flavour text, zero
+  economy. But `logLine` has an anti-repeat re-draw (`messages.js:43-45`) that fires CONDITIONALLY
+  on pool contents: `if (pool.length > 1 && choice.text === lastPicked.get(key)) choice = pick(…)`.
+  So changing the pool changes whether a SECOND `pick()` happens, which changes the number of RNG
+  draws, which re-aligns the entire seeded stream downstream.
+- Root cause: determinism depends on the DRAW COUNT, not on whether the drawn value matters. Any
+  branch that conditionally consumes randomness makes every seemingly-inert change upstream of it
+  a potential trajectory change.
+- Why it mattered: caught before it misled anyone, but only just — the pre-fix Doug margins
+  (+8%/+29%/+3.1%) were already quoted to Daniel and were rendered meaningless by a comment-and-
+  clock fix that cannot affect the economy on paper. Post-fix the same build measured
+  +26.5%/+46.9%/+22.3%.
+- Plug/principle: **any change touching a conditionally-drawn random path voids prior sim numbers**,
+  even when it provably cannot affect the economy. Before quoting a margin as a comparison, ask
+  whether anything since has moved the draw count. Retro-fitting: conditional re-draws are a
+  determinism hazard worth knowing about wherever seeded reproducibility is the certification
+  mechanism.
+- Route: dev-method (seeded-sim determinism — draw count, not draw value, is the invariant).
+
+## 2026-07-14 — `git fetch` without a merge left local HEAD stale, and `git status` then reported committed work as uncommitted
+- What happened: mid-session I fetched to inspect Daniel's pushed tip (`git log origin/HEAD`) and
+  confirmed my working tree matched it (`git diff origin/HEAD --stat` → empty). But I never
+  fast-forwarded, so my local branch pointer stayed one commit behind. Two passes later
+  `git status` showed `M sim_economy.mjs` — work that was already pushed. Had I run a checkpoint on
+  that reading, it would have re-committed an already-committed file.
+- Root cause: `git status` compares the working tree to LOCAL HEAD, while `git diff origin/HEAD`
+  compares it to the REMOTE. Both were accurate; they answer different questions. A fetch updates
+  the remote-tracking ref only — it moves nothing local, so the "I'm synced" feeling from reading
+  `git log origin/HEAD` is about the remote, not about me.
+- Why it mattered: caught by the standing rule that `git status` is a READ, not a ritual — the
+  unexpected file was the tell. The existing instruction ("after any pull, `git log -1` must show
+  the expected remote tip") covers pull; the trap here is fetch-WITHOUT-pull, which feels like
+  syncing and isn't.
+- Plug/principle: **after inspecting a remote with fetch, either fast-forward or state explicitly
+  that local HEAD is behind** — and treat any `git status` disagreement with a known-pushed commit
+  as a stale-pointer hypothesis FIRST, before concluding work is uncommitted. Recovery used here:
+  back up the working files, `git reset --hard origin/HEAD`, verify by diff that nothing was lost,
+  restore the in-progress file.
+- Route: general instructions (git workflow — fetch is not sync).
+
