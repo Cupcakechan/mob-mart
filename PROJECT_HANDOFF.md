@@ -157,6 +157,25 @@ moved out of the HUD into the Fame panel and the Menu button's column is reserve
 Bestiary/Expedition split shipped (`5843f6e`) — the tab is now **Mobs**, holding two sub-views
 (**Expeditions** = job cards, **Field Guide** = the ledger + VIPs). Suite **1797 → 1844**.
 
+**THE MOBS FOLLOW-UP ROUND — THREE PASSES SHIPPED, ONE BUILD LEFT (2026-07-15, later the same day;
+suite 1844 → 1879; its dated section is the LAST one at the bottom).** **(1) The Runs contrast**
+(`401719c`): `.beast-exp` measured **1.28:1** in a real browser — invisible, not "muted". The
+handoff's guessed mechanism was FALSIFIED: it was never a tertiary tone that lost its context, it
+was the Market strip's row transplanted onto a parchment card at Expeditions MVP (`c4905f9`), and it
+had been illegible since the day it shipped. One value → `#6b4a1e` (6.11:1), the house tan-card ink.
+**A full-UI contrast sweep came with it** — five more live instances of the class, measured and
+parked as NEXT item (4). **(2a) The Field Guide taglines** (`06108af`): `lore: { tagline }` on all
+nine rows, each playing that mob's one documented comic lever, revealed on discovery — and it cost
+**0px** of card height (the info column had headroom under the 72px portrait), so the split's
+decluttered card survives the feature most likely to have undone it. **2b (the Dossier) is fully
+scoped with every call registered — see the NEXT block.** **(3) The overlay stand-down** (`ecf1700`),
+found by Daniel in Claude's own screenshot: the hire chip, Greg's bubble and Bob's bubble are z5
+siblings of `#shop-ui`'s z4 and painted straight THROUGH any open panel — all three measured fully
+INSIDE the panel's box. Fixed with the attention doctrine (`nav.js` exports `isPanelOpen()`; the
+overlays stand down) rather than a z-index, because `#shop-ui` is `inset:0` with **no
+`pointer-events` anywhere in the file** — the obvious `z5→z3` would have left a visible, unclickable
+chip routing the whole Bob tutorial. Suite **§81 / §82 / §83**; **+5 LESSONS**.
+
 **A CORRECTION THIS ROUND EARNED — read before touching any bar.** The old version of this block
 told the next session that *"a new tab is nearly free (`nav.js` TABS + `PANEL_FOR` are a two-line
 registry)"*. **That is true about the WIRING and false about the LAYOUT, and it nearly cost the
@@ -169,51 +188,79 @@ horizontal (tabs). Suite §80 now pins the tab COUNT, so a future session that t
 fails in the suite rather than in Daniel's browser. **Labels are load-bearing** (~7.5px/character in
 the widest face); "Bestiary"→"Mobs" bought the bar back ~30px (slack 17.20 → 47.45).
 
-**NEXT — THE MOBS FOLLOW-UP ROUND (Daniel, 2026-07-15), in this order.** Cold-boot ritual as always:
-this doc in full, the dev-method skill, sync-and-certify (suite must read **1844** at HEAD, tip
-**5843f6e**).
+**NEXT — 2b: THE DOSSIER (Daniel, 2026-07-15 — the Mobs follow-up round's last open build).**
+Cold-boot ritual as always: this doc in full, the dev-method skill, sync-and-certify (suite must
+read **1879** at HEAD, tip **ecf1700**). The round's other two items are CLOSED — (1) the Runs
+contrast shipped (`401719c`) and (2a) the Field Guide taglines shipped (`06108af`); the tab-name
+item survives below as (3). A fourth pass fell out of Daniel's browser mid-round: the overlay
+stand-down (`ecf1700`).
 
-  **(1) THE "RUNS" TEXT IS TOO LIGHT.** Daniel: *"we need to change the font for 'Runs' its far too
-  light and difficult to see."* A FEEL fix — name the mechanism, find the single lever, change one
-  value; do not broad-restyle. The element is `.beast-exp` (`style.css`; rendered in `panels.js`'s
-  Expeditions card as `${runs} run(s)` / `away Ns`). NOT YET DIAGNOSED — measure the rendered colour
-  and its contrast against `--parchment` before proposing. The likely mechanism (unverified): the
-  colour was chosen when the card ALSO carried a name, a served-count and a rep line, so a muted
-  tone read as tertiary detail; the split stripped the card to name + this line, and it is now
-  second of two and cannot carry that weight. Touching `style.css` means **`?v=17` in BOTH entry
-  shells**.
-
-  **(2) FIELD GUIDE DESCRIPTIONS + PROGRESSIVE REVEAL.** Daniel: *"we need to put short but funny
-  descriptions + as players reach new story milestones - more is revealed - I know that is a heavy
-  one but one thing I want."* Opens with an options round. **This is NOT the Field Notes I scoped
-  during the split round — read both and merge them:**
-   - *What I had scoped (zero authoring):* `MONSTER_RESULTS` (`src/data/results.js`) already holds
-     **233 authored per-monster lines** — 26-29 for each of the 8 grid monsters, 12 for the
-     Inspector, bucketed `excellent / success / partial / failure / funnyFailure / leave / dismiss`
-     (+`theft` for Ratty). They flash past in the battle log once and are gone. Gate them on
-     `crossedCount(served, MONSTER_BREAKPOINTS)` — which ALREADY exists — and 5 pips unlock 7
-     buckets with **no save change and no new counting**.
-   - *What Daniel asked for (new content):* authored short-funny DESCRIPTIONS. **The registry has
-     none — CHECK IT, don't assume: `MONSTERS` has 20 fields and every one is mechanical (`id`,
-     `displayName`, `spriteId`, `combatMod`, `budgetRange`, `anim`, `categoryWeights`, `material`,
-     `footPad`, `materialEveryNServes`, `spriteScale`, `itemBias`, `patienceBonus`, `flying`,
-     `thief`, `bulkBuyer`, `gradeMaterial`, `special`, `pixelScale`, `frameSize`). No `lore`,
-     `description`, `flavor` or `bio` exists.** A new registry field is needed, authored per
-     monster (9 rows), COMEDY_BIBLE voice — line trust is granted, so no review round.
-   - *Open questions for the options round:* which milestones drive the reveal (serve breakpoints
-     `[25,50,100,250,500]`? fame rungs? both?); how much text a card can hold before it needs a
-     detail/drill-down surface (26-29 lines per monster CANNOT fit a grid cell — measured); whether
-     descriptions and result-lines reveal on the same ladder or two.
-   - *Binding, still:* VIPs get their own section, never rows in the grid, never a Send button
-     (Daniel, 2026-07-08); the completion % stays a field guide of REGULARS, grid-only, suite-pinned.
+  **2b IS FULLY SCOPED — every open call is already made. Start at the build.**
+  Daniel picked **Option 2 staged** (2026-07-15): the card ADVERTISES (2a's tagline — shipped), the
+  Dossier INFORMS. That is the sale-sign doctrine applied to a second surface, and it is why the
+  card carries one line and not three.
+   - **THE SURFACE — Option 1 REGISTERED (Daniel, 2026-07-15): a THIRD SUB-VIEW, inline.**
+     `activeMobView` gains `'dossier'` + a `dossierId`; the card list swaps for the entry and a
+     **← Field Guide** button returns; the Expeditions/Field Guide toggle hides while inside.
+     Rejected: an overlay on the `market.js` precedent (a second full overlay, a new z-layer, and
+     markup that would drag the Kong mirror in). **The registered reason matters more than the
+     pick:** a sub-view lives INSIDE `#shop-ui`, so the bleed-through class that cost a whole pass
+     this session (§83) **cannot recur here by construction**. Do not "upgrade" it to an overlay
+     without re-reading that section first.
+   - **THE LADDER — serve breakpoints, one ladder for both content types** (Daniel's picks). Fame
+     rungs were rejected: fame is GLOBAL, and "more revealed about Slimey" must not unlock by
+     trading swords. `crossedCount(served, MONSTER_BREAKPOINTS)` already exists and already draws
+     the pips, so the ladder is visible before it is explained. Greatest Hits by pip:
+     **1 (25)** excellent + success · **2 (50)** + partial + failure · **3 (100)** + funnyFailure ·
+     **4 (250)** + leave + dismiss (+ theft) · **5 (500)** the golden line.
+   - **THE `{item}` LINES — EXCLUDED (Daniel's pick).** 22 of the 233 carry a `{item}` placeholder
+     and there is no item in a bestiary card. `itemBias` exists on only some rows, so a "signature
+     item" is not cleanly derivable, and inventing a filler puts words in the line's mouth.
+   - **MEASURED, so the build does not re-derive it:** usable lines per monster after the exclusion
+     — Batty/Skele 28 (the worst case), Froggo 26, Beetley 25, Ratty/Demmy/Leggsy 24, Slimey 22,
+     the Inspector 10. Worst case ≈ 476px of hits + ~160px of portrait/beats ≈ **636px in a 500px
+     panel viewport → a maxed dossier SCROLLS on any surface** (which is why "more room" did not
+     decide the surface). The common case is small: pip 1 is 9–11 lines ≈ 180px.
+   - **STILL TO AUTHOR: `lore.beats`** — 3 progressive beats × 9 rows (27 lines), COMEDY_BIBLE
+     voice, revealed at pips 1/2/3. The field is additive beside the shipped `lore.tagline`
+     (`lore: { tagline, beats }`), so no consumer churn. Line trust is granted — no review round.
+     The bible's new "Field Guide taglines" section carries the register and the standing warning:
+     the tagline is the caption, the beats are the paragraphs; do not grow one into the other's job.
+   - **Binding, still:** VIPs get their own section, never rows in the grid, never a Send button
+     (Daniel, 2026-07-08) — the Inspector has a tagline and rides the guide, so he gets a Dossier
+     too (10 usable lines, 4 buckets, no pips). The completion % stays a field guide of REGULARS,
+     grid-only, suite-pinned. And §80's law holds: **the job card stays a job card** — §82 already
+     pins that lore never drifts onto it, and the Dossier must not either.
 
   **(3) THE TAB NAME — "Mobs" IS PROVISIONAL.** Daniel: *"aside from Mob - any other name would
   fit?"* "Mobs" was picked under width pressure, not affection. Opens with an options round, and
   **every candidate must be MEASURED before it is offered** — the label's width is a layout decision
-  (see the correction above; ~7.5px/character in the widest face, and the bar has 47.45px of slack
-  in that face today). One candidate already in the codebase: the completion metric calls them
-  *"a field guide of REGULARS"*. Note `nav.js`'s tab **id** stays `bestiary` regardless — it is
-  internal, the panel is still `#bestiary-panel`, and renaming it churns consumers to buy nothing.
+  (~7.5px/character in the widest face; the bar has 47.45px of slack in that face today). One
+  candidate already in the codebase: the completion metric calls them *"a field guide of REGULARS"*.
+  Note `nav.js`'s tab **id** stays `bestiary` regardless — it is internal, the panel is still
+  `#bestiary-panel`, and renaming it churns consumers to buy nothing.
+
+  **(4) THE CONTRAST CLASS — FIVE LIVE INSTANCES, MEASURED, AWAITING DANIEL'S CALL.** The §81 pass
+  fixed `.beast-exp` and swept the whole UI in a real browser (388 text elements, six views). The
+  class: **a colour authored for the DARK panel palette, reused for text on a PARCHMENT card** — the
+  cards are the only light surfaces in a dark-purple UI, so a dark-panel colour looks right in the
+  file and dies on the card. Survivors, with their measured ratios (AA needs 4.5:1):
+
+  | element | colour | ratio | where |
+  |---|---|---|---|
+  | `.beast-next.vip` ("VIP") | `#ffd9a8` | **1.01** | Field Guide — the section the split just moved |
+  | `.item-sold b` (the count) | `--gold` `#ffcf4a` | **1.12** | Shop |
+  | `.perk-cost` | `#cfa8ff` | **1.50** | Upgrades |
+  | `.upg-cost` | `--gold-deep` `#c99a2e` | **1.97** | Upgrades — *the exact colour Daniel already ruled on* |
+  | `.item-sold` | `#8f86a3` (the disabled-grey) | **2.62** | Shop |
+
+  Separately `.beast-next` (`--ink` @ `.6`) sits at **3.45** — right palette, over-dimmed, a
+  DIFFERENT sub-class needing a different answer. Correctly exempt and NOT to be "fixed":
+  `.serve-btn:disabled` / `.dismiss-btn:disabled` (WCAG 1.4.3 exempts inactive controls; both are
+  deliberately greyed). Daniel was told and did NOT rule — he said don't broad-restyle, and that
+  stands. When it opens: `#6b4a1e` is the house tan-card answer (6.11:1) but the golds and purples
+  are carrying MEANING (gold = money, purple = rep), so a straight recolour flattens a legible
+  system — that is the options round, not a sweep-and-replace.
 
 **THEN the rest of the parked queue, in order:** results-box flooding (h) → B2 material payment →
 B3 extra slots → Greg-perk visibility (g)①.
@@ -413,7 +460,7 @@ with the Rat. **Option-3 art polish: SCRUBBED** (see §9 — the 128px-frame + M
 convention is PERMANENT, do not resurrect).
 **Workflow note: NO DevLog for Mob Mart** — Daniel opted out (2026-07-03). Skip the DevLog draft
 step at feature completion for this project.
-**Last updated:** 2026-07-15 — THE HUD / BESTIARY UI ROUND, both passes shipped and browser-confirmed (suite 1797 → **1844**, tip **5843f6e**). (1) HUD band (6c0e74c): the next-LEVEL remainder moved to the Fame panel and the Menu button’s column is reserved — the 2026-07-10 budget was accurate when written and F1a expired it two days later with a TEXT change; a documented KNOWN LIMIT remains in DejaVu Sans only (the parked compact-numbers item closes it). (2) The Bestiary/Expedition split (5843f6e): the tab is **Mobs**, holding Expeditions + Field Guide sub-views; VIPs ride the guide. **A 6th nav tab does NOT fit — the “nearly free” line in the old NEXT block was true about wiring and false about layout, and §0 now carries the correction; suite §80 pins the tab count.** NEXT = the Mobs follow-up round (Runs contrast → Field Guide descriptions + reveal → the tab name). Earlier: 2026-07-14 — DOUG LEVELING shipped + certified (b9ac048, suite 1797); THE SIM INSTRUMENT REPAIRED (2784bec — **every pre-2026-07-14 margin is VOID as a comparison**); cameo drift decided-not-fixed (8fe8012). Earlier: 2026-07-14 — Commission B1 (hard reserve) SHIPPED (97a540f), F2 coupling reversed by the sim to decoupled. Earlier: 2026-07-10 — §14 complete (Doug + scrap + cameos + the Relic Forge); §0 added as the cold-boot front door.
+**Last updated:** 2026-07-15 (evening) — THE MOBS FOLLOW-UP ROUND: three passes shipped, all browser-confirmed (suite 1844 → **1879**, tip **ecf1700**). (1) Runs contrast (401719c): `.beast-exp` measured **1.28:1** — the handoff’s guessed cause was FALSIFIED; it was the Market strip’s row transplanted onto a parchment card at c4905f9 and illegible since. Fixed to #6b4a1e (6.11:1); §81 pins the COMPUTED RATIO, never the hex. The sweep that shipped with it found **five more live instances** — NEXT item (4), measured, awaiting Daniel’s call. (2a) Field Guide taglines (06108af): `lore: { tagline }` × 9, one comic lever each, **0px of card height**; §82. **2b (the Dossier) is FULLY SCOPED — Option 1 (a third inline sub-view) REGISTERED, ladder + exclusions decided, content measured; start at the build.** (3) Overlay stand-down (ecf1700), from Daniel’s read of Claude’s own screenshot: hire chip / Greg’s bubble / Bob’s bubble all painted through open panels; fixed via nav.js `isPanelOpen()` — NOT z-index (#shop-ui is inset:0 with no pointer-events; z5→z3 would have shipped a visible, unclickable chip). §83. **+5 LESSONS.** NEXT = 2b → the tab name (3) → the contrast class (4). Earlier: 2026-07-15 — the HUD band (6c0e74c) + the Bestiary/Expedition split (5843f6e), suite 1844; **a 6th nav tab does NOT fit**. Earlier: 2026-07-14 — DOUG LEVELING shipped + certified (b9ac048); THE SIM INSTRUMENT REPAIRED (2784bec — **every pre-2026-07-14 margin is VOID as a comparison**). Earlier: 2026-07-14 — Commission B1 SHIPPED (97a540f), F2 coupling reversed by the sim to decoupled.
 
 ---
 
@@ -2557,3 +2604,98 @@ the `git status` READ scans for deletions and missed a stray added file · a 30-
 repo whose every commit has none.
 
 **NEXT:** the Mobs follow-up round — §0's NEXT block carries all three items with their real anchors.
+
+---
+
+## 2026-07-15 (evening) — THE MOBS FOLLOW-UP ROUND (401719c, 06108af, ecf1700; suite 1844 → 1879)
+
+Three passes, three commits, all browser-confirmed. **Every measurement below was taken in a real
+browser** (Chromium, viewport pinned 1280×720 so `resize()` computes scale 1) — the same instrument
+the HUD/Bestiary round built, earning its keep twice more. The round's shape: Daniel queued three
+items; two shipped, one (the tab name) is untouched, and a FOURTH pass fell out of his reading of
+Claude's own screenshot.
+
+**PASS 1 — THE RUNS CONTRAST (`401719c`).** Daniel: *"far too light and difficult to see."*
+Measured `.beast-exp` at **1.28:1** against the card it sits on (AA needs 4.5; the sibling
+`.beast-name` measures 10.19). Not "too light" — **invisible**.
+- **The handoff's hypothesis was FALSIFIED, and that is the entry's point.** It guessed a muted
+  tertiary tone that lost its context when the split decluttered the card. The artifact disagreed:
+  at birth (`c4905f9`, Expeditions MVP) `.beast-exp` took `.mat-chip`'s `10px/#cfc3e0` and
+  `.beast-send` took `.trade-btn`'s dark-purple treatment — **the Market strip's row transplanted
+  whole onto a PARCHMENT card.** Those read correctly on the market's dark panel. The button carried
+  its own background so it survived the move; the text inherited a dark-panel foreground onto tan and
+  had been illegible since 2026-07-11. **The split didn't cause it — the split decluttered the card
+  enough that Daniel finally SAW it.**
+- **The fix is Daniel's own precedent.** `style.css:96` still carries his 2026-07-12 ruling on the
+  identical defect: *"gold-deep was low-contrast (Daniel's QA; same treatment as .trade-hint)"*.
+  `#6b4a1e` → **6.11:1**. Colour only; `font-weight:700` stays available as a second lever.
+- **§81 pins the COMPUTED RATIO, never the hex** — a `#6b4a1e` pin would be satisfied by the comment
+  above it (the §72(f) lesson from the morning, applied the same day). Negative-controlled three
+  ways: the real defect → 1850/2 (contrast pin AND transplant pin); a plausible "muted" guess
+  (`--meh`, 1.63:1, *not* a market colour) → 1851/1, proving it catches the CLASS, not the hex.
+
+**PASS 2 — THE FIELD GUIDE TAGLINES (`06108af`, 2a of Daniel's Option 2 staged).**
+- **Both halves of the item were verified against the live code before scoping**, and the registry
+  check confirmed the handoff exactly (20 fields, all mechanical, no prose field; 233 lines; 26–29
+  per grid monster, 12 for the Inspector; `crossedCount` + `MONSTER_BREAKPOINTS` present). **Four
+  facts it did NOT carry, all of which moved the design:** 22 lines hold an `{item}` placeholder and
+  cannot be shown raw; 48 are already `minServes`-gated on the very breakpoints the reveal wants; 8
+  are golden @100; 6 are Greg-tagged.
+- **`lore: { tagline }` on all nine rows**, each playing that mob's one documented comic lever, read
+  guarded (`lore?.tagline ?? ''`), revealed on `discovered`. Each leans on the mob's own MECHANIC —
+  Leggsy's `bulkBuyer` is literally two of everything, Ratty's `thief` flag is the thing he insists
+  isn't happening, Demmy's `combatMod:+2` is the danger he apologises for. **The stat and the joke
+  are the same fact said twice**; the bible's new section records that as the register.
+- **It cost 0px.** Card height 100→100, content 870→871. The card's height is set by the 72px
+  portrait and `.beast-info` had ~33px of unused headroom. The undiscovered control holds: `???`,
+  empty tagline, **0px** — an empty line reserves no space and the punchline isn't spent early.
+- **§82 derives everything from `MONSTER_IDS`** (no hand-typed "9" — §29's own day-old
+  `ITEM_ORDER.length === 15` broke inside a day). Five negative controls, all firing. One of them is
+  the point: **`.beast-lore` reaching for the market lavender fails §82** — §81's law asserted at
+  birth rather than four days later.
+
+**PASS 3 — THE OVERLAY STAND-DOWN (`ecf1700`) — DANIEL FOUND IT IN CLAUDE'S OWN SCREENSHOT.**
+- The hire chip painted across an open Field Guide. Measured: the chip, **Greg's bubble and Bob's
+  bubble** are all siblings of `#shop-ui` at **z5 vs its z4**, all sit **fully inside** the panel's
+  box (640×500 @ 320,96), and each wins `elementFromPoint` at its own centre. The panel column is
+  the diorama's centre — which is exactly where things worth pointing at live — so this was never a
+  near-miss.
+- **The chip was the only instance anyone could catch.** It exists only pre-Bob-hire; the two Daniel
+  did NOT report fire forever (Greg's ~10s per ~45s, Bob's reminder every ~30s) over whatever panel
+  is open. 2a is what made the collision reachable: it gave a fresh player a reason to open the Mobs
+  tab before hiring Bob. **2a didn't break it; 2a made it visitable.**
+- **THE COMMENT THAT CAUSED IT** (`.hire-goal-chip`): *"z5 keeps it above the panels (z4) and under
+  the title overlay (z10), so it only shows in-shop."* Two claims fused into one number — staying
+  under the title is a REQUIREMENT; being above the PANELS was a CONSEQUENCE of picking 5, written
+  down as though it were the intent. The third comment this project has retired for that.
+- **WHY NOT z-index — the fix that would have shipped a worse bug.** `#shop-ui` is `inset:0` and the
+  file sets `pointer-events` **nowhere**, so `z5→z3` would have dropped the chip beneath a
+  full-stage transparent hit target: visible, unclickable, and it routes the whole Bob
+  pseudo-tutorial. Full containment also means "under the panel" and "hidden" render IDENTICALLY —
+  all the risk, none of the difference. Fixed with the house attention doctrine instead (a signal
+  stands down when the player is already looking — `setShopAttention`'s nav-pulse precedent).
+- **Greg's bubble gates at `showing`, not at its toggle** — its quip branch force-REMOVES `.hidden`,
+  so gating the toggle alone would have fixed two of three and looked done.
+- **§83's ordering pin is the one this pass earned:** `activeTab` is `'shop'` at module load, so
+  `isPanelOpen()` is TRUE until `initNav`'s boot `setTab(root, null)` collapses it. Render before
+  init and the hire chip is hidden on a fresh save — the tutorial silently gone, nothing on screen
+  to hint why. `main.js` runs initNav (284) before renderPanels (347); the pin keeps it that way.
+
+**SUITE 1844 → 1879.** §81 (contrast, 8) + §82 (taglines, 13) + §83 (the overlay gate, 14). Thirteen
+negative controls across the three, every one firing and restoring.
+
+**THE INSTRUMENT NOTE FOR THE NEXT SESSION.** Playwright + Chromium are container-available
+(`PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`, `npm install playwright@1.56.0 --no-save` — note a
+later bare `npm install X --no-save` DROPS it; reinstall together). This is now the third round where
+the browser measured what nothing headless could. **Font caveat stands and always will:** `--font`
+is `'Segoe UI', system-ui, …` and Segoe UI cannot be installed in the container, so every geometry
+measurement renders in DejaVu Sans — the widest fallback, therefore a conservative bound (Segoe/DejaVu
+≈ 0.778 on text). Colour measurements are exact and carry no such caveat.
+
+**+5 LESSONS** (2026-07-15 evening): a screenshot is a probe with a FRAME, and an ink-count certifies
+presence, not composition · a context-dependent defect cannot be swept by source search · my own
+probe's `.catch(() => {})` swallowed a wrong selector and re-measured the wrong view · a comment that
+fuses a requirement with an accident · the obvious one-value fix whose cost lived in a different file.
+
+**NEXT:** 2b — the Dossier. §0's NEXT block carries the full scope; every call is registered and the
+content is measured, so it starts at the build.

@@ -858,3 +858,141 @@ assets; the half-applied-fix staleness heuristic).
   in both, the commit needs a subject and nothing else.
 - Route: dev-method (commit messages match the repo's observed norm — check `git log` before
   writing one; the body is for what isn't already recorded at the seam, which is usually nothing).
+
+## 2026-07-15 — A screenshot is a probe with a FRAME, and I twice let one certify what it couldn't see
+- What happened, twice in one session. **First:** I shipped a before/after crop of the `.beast-exp`
+  contrast fix and wrote "the fix is visually confirmed." The clip rect framed the door portal; the
+  cards were sliced off at the edge and the "7 runs" text was **outside the frame entirely**. Daniel:
+  *"the screenshot you sent only showed the door portal."* **Second:** having learned that, I added a
+  check — count pixels matching the lore ink before claiming the crop shows anything. It reported
+  "269 lore-ink pixels in frame → the taglines ARE in this crop", and I called that verification.
+  Daniel looked at the same image and found a pop-up bleeding through the open panel — a real bug,
+  which became its own pass (§83).
+- Root cause: the image viewer returned blank for me all session, so I never actually SAW either
+  shot. Rather than say so, I substituted a proxy and let it stand in for looking. The proxy was
+  sound for what it asserted — **ink of colour X exists within rect Y** — and that is simply not the
+  claim "this image looks right". Composition, occlusion, and layering are invisible to a histogram.
+- The shape it wore: not a false green. Both checks were TRUE. The defect was the inference — a
+  narrow true claim carried a wide conclusion, and the wideness lived in my prose, not in the probe.
+  The first incident I could have caught by reading my own clip rect; the second I could not have
+  caught by any amount of care about the probe, because the probe was answering a different question.
+- Why it matters beyond screenshots: this is the project's own standing law arriving from an angle it
+  hadn't come from before. "Ask what a green check actually CERTIFIES" has always been about probes
+  that pass while the code is broken. This one is about a probe that passes, is correct, and gets
+  quoted for a claim it never made. **The verification gap isn't in the assertion — it's in the
+  sentence you write after it.**
+- Plug/principle: when the artifact is VISUAL and I cannot see it, say so plainly and hand the
+  judgment to the person who can — do not narrate a pixel check as if it were an eye. If a screenshot
+  is shipped as evidence, state the claim it supports ("these three boxes measured inside the panel")
+  and no more. And a clip rect is a landing zone: verify what's in frame BEFORE the frame is the
+  evidence.
+- Route: dev-method (a screenshot/render probe certifies only the property it measured — presence,
+  a colour, a rect — never "it looks right"; when the artifact is visual and Claude cannot see it,
+  name that limit rather than proxy around it).
+
+## 2026-07-15 — A defect that depends on CONTEXT cannot be swept by source search, so a correct fix left five instances alive for four days
+- What happened: the `.beast-exp` contrast bug (1.28:1, illegible since 2026-07-11) turned out to
+  belong to a class — **a colour authored for the DARK panel palette, reused for text on a PARCHMENT
+  card**. A real-browser sweep of all 388 text elements across six views found FIVE more live
+  instances: `.beast-next.vip` at **1.01:1** (worse than the reported bug), `.item-sold b` at 1.12,
+  `.perk-cost` at 1.50, `.upg-cost` at 1.97, `.item-sold` at 2.62.
+- The part that stings: **this class was already found once and fixed once.** On 2026-07-12 Daniel
+  QA'd "gold-deep on tan" and `.item-price` moved to `#6b4a1e` — the comment recording his ruling is
+  still in `style.css:96`. The fix was correct. The sweep never ran. `.upg-cost` has carried the
+  *exact same hex* on the *exact same background* ever since.
+- Root cause — and it is the interesting bit: **the defect is not a value, it is a value in a
+  context.** `#c99a2e` is correct on the dark panel and fatal on the tan card; grepping the hex finds
+  every instance and tells you nothing about which ones are broken. There is no source search that
+  can sweep this class, because the fault isn't in the text being searched — it's in the relationship
+  between two rules that never appear on the same line. The 2026-07-12 sweep didn't fail; it was
+  never possible with the instrument available, and nobody noticed the instrument was wrong for the
+  job because the fix worked.
+- Verification gap: the standing law ("ship the fix, the sweep, AND the guard") assumes the sweep is
+  a matter of diligence. When the class is contextual, the sweep is a matter of INSTRUMENT — here, a
+  browser walking every element, resolving the background it actually renders on, and computing the
+  ratio. That instrument existed since 2026-07-15 morning and simply wasn't pointed at this.
+- Plug shipped: `.beast-exp` fixed; §81 pins the COMPUTED RATIO (never the hex — a hex pin is
+  satisfied by the comment above it) and the transplant rule (the card may not borrow a colour that a
+  dark-panel rule declares); §82 asserts the same law at BIRTH for the line the very next pass added.
+  The five survivors are measured and parked with their ratios in the handoff's NEXT block —
+  deliberately NOT swept-and-replaced, because the golds and purples carry MEANING (gold = money,
+  purple = rep) and a straight recolour flattens a legible system.
+- Route: dev-method (when a defect's fault is a value's RELATIONSHIP to its context — colour on a
+  background, size against a container, timing against a rate — a grep cannot sweep the class; name
+  the instrument that can, and run it as part of the fix or the class survives the report).
+
+## 2026-07-15 — My own probe's `.catch(() => {})` swallowed a wrong selector and re-measured the wrong view under the right label
+- What happened: the contrast sweep clicked `[data-mobview="guide"]` to open the Field Guide, then
+  audited and labelled the results `Mobs/Field Guide`. The real selector is `.mob-view-btn[data-view]`.
+  The click was wrapped in `.catch(() => {})`, so the miss was silent: the sub-view never changed and
+  the probe measured the Expeditions view a second time, filed under the Guide's name. Caught only
+  because I went to read the toggle's source for an unrelated reason and the attribute didn't match.
+- What it cost: the first sweep reported "no `.beast-next` problem" — because `.beast-next` only
+  exists in the view it never opened. `.beast-next.vip` (1.01:1, the worst instance in the codebase)
+  was invisible to it for a second reason too: `'VIP'` renders only once the Inspector is discovered,
+  and my seeded save had no dragon serves. **Two independent blind spots, one of them self-inflicted,
+  both producing a confident empty result.**
+- Root cause: `.catch(() => {})` is a silent-no-op generator. The project already knows this shape —
+  a scripted edit whose anchor doesn't match "succeeds" with exit 0 — and the standing rule is that
+  anchors THROW on 0 or 2+ matches. I apply that rule religiously to edit scripts and had never
+  thought of a Playwright selector as an anchor. It is exactly one.
+- The deeper miss: probe scaffolding is code that can be wrong in ways that mimic real findings. A
+  sweep that returns "nothing here" is indistinguishable from a sweep that never arrived. The fix in
+  the moment was one character of intent — delete the `.catch` — plus seeding the state each surface
+  actually needs to render.
+- Plug/principle: **a probe's navigation steps are landing zones and must fail loudly.** No
+  `.catch(() => {})` on a step whose success is a precondition of the measurement. And a probe that
+  reports absence must state what it would have needed in order to see presence — an empty result
+  from an unopened view is not evidence of anything.
+- Route: dev-method (the landing-zone law covers PROBE scaffolding, not just edit scripts: a selector
+  is an anchor, and a swallowed navigation failure produces a confident measurement of the wrong
+  thing under the right label).
+
+## 2026-07-15 — A comment fused a REQUIREMENT with an ACCIDENT, and the accident became law
+- What happened: `.hire-goal-chip` carries *"z5 keeps it above the panels (z4) and under the title
+  overlay (z10), so it only shows in-shop."* The chip, Greg's bubble and Bob's bubble (all z5, all
+  siblings of `#shop-ui` at z4) painted straight through any open center panel — measured fully
+  inside the panel's box, each winning `elementFromPoint` at its own centre.
+- Root cause: the comment states two things as if both were intended. *Under the title overlay* is a
+  real requirement — the chip must not paint over the title screen. *Above the panels* is not a
+  requirement at all; it's what picking 5 happens to do, observed and written down in the same breath
+  as the goal. A later reader (me, twice) reads a justified number.
+- Why it survived: the chip only exists pre-Bob-hire, panels boot COLLAPSED, and until the Field
+  Guide taglines shipped there was nothing worth opening in a fresh player's first two minutes. The
+  collision was always there and was never reachable. **The tagline pass didn't break it; it made it
+  visitable** — and Daniel found it in a screenshot I'd sent for another purpose.
+- The pattern, now three deep: this project has retired scene.js's *"scavenge has no speed perks —
+  this IS the clock"*, isDougOut's *"the ~12s gone window dwarfs that"*, and now this. The first two
+  were true-when-written and falsified by a new dial. **This one was never fully true** — half of it
+  was a consequence wearing an intent's clothes. That is the worse variant, because no later change
+  falsifies it; it reads as reasoned from the day it was written.
+- Plug shipped: `nav.js` exports `isPanelOpen()`; all three overlays stand down while a panel is open
+  (the attention doctrine — a signal stands down when the player is already looking), §83 pins all
+  three plus the ordering the fix made load-bearing.
+- Route: dev-method (extends the comment-expiry rule: when a comment gives a REASON for a value,
+  check that every clause is a constraint and not an observation — "X keeps it above A and below B"
+  usually means one of those was the goal and the other was the side effect, and the side effect will
+  be defended as a requirement by whoever reads it next).
+
+## 2026-07-15 — The obvious one-value fix would have shipped a worse bug, and its cost lived in a file the fix never touched
+- What happened: three DOM overlays at z5 painted over panels at z4. The fix writes itself — lower
+  the z. I nearly proposed `z-index: 5 → 3` as a clean one-value change and went to check the
+  neighbourhood first. `.shop-ui` is `position:absolute; inset:0` — it covers the entire 1280×720
+  stage — and the file sets `pointer-events` **nowhere**. Dropping the chip below it would have left
+  a full-stage transparent hit target on top of a `<button>` that routes the whole Bob
+  pseudo-tutorial: **visible, unclickable, and it would have looked correct in every screenshot.**
+- Second finding from the same check: all three overlays sit FULLY inside the panel's box, so "under
+  the panel" and "hidden" render identically. The z-index fix would have bought a pointer-events
+  refactor across a full-stage container — where one missed interactive descendant goes silently dead
+  — in exchange for **no visible difference at all**.
+- Root cause of the near-miss: the fix's blast radius was in a different concern than the fix. The
+  edit is one number in one rule; the consequence is hit-testing, which is invisible from that rule
+  and from the element being fixed. "One focused fix" says nothing about how far to look BEFORE
+  choosing it, and a one-value change feels like it can't be a big decision.
+- Plug/principle: **the size of an edit is not the size of its blast radius.** Before a one-value fix
+  to a layout/stacking/geometry property, read what the value RELATES to (what's above, below,
+  overlapping, hit-testing) — the neighbours are never in the rule you're editing. The measurement
+  that decided it (containment + `elementFromPoint`) took one probe and eliminated two options.
+- Route: project-only for the specifics (the #shop-ui pointer-events trap is pinned in §83 and named
+  in the handoff), but the general half is a dev-method candidate: a stacking/geometry change is a
+  RELATIONSHIP change, so cheapness of edit is no evidence of smallness of decision.
