@@ -996,3 +996,125 @@ assets; the half-applied-fix staleness heuristic).
 - Route: project-only for the specifics (the #shop-ui pointer-events trap is pinned in §83 and named
   in the handoff), but the general half is a dev-method candidate: a stacking/geometry change is a
   RELATIONSHIP change, so cheapness of edit is no evidence of smallness of decision.
+
+## 2026-07-15 — A suite pin asserted an order that `.filter()` makes unbreakable, so it tested nothing; a negative control found it, the rule didn't
+- What broke / what happened: §84 pinned "the four Dossier notes appear in registry order" —
+  order is content here, since the notes escalate deliberately (ordinary → stranger → deeper →
+  the one that recontextualises), so a shuffle breaks the writing without breaking a type, a
+  symbol, or a count. The pin asserted against `dossierFor()`'s returned array. Then a negative
+  control reversed the order **in the renderer** and the suite returned 1936 passed, 0 failed.
+- Root cause: `dossierFor` builds its notes with `(m.lore?.notes ?? []).filter(...)`, and
+  `.filter()` PRESERVES order. The pin was asserting an invariant the implementation is
+  *structurally incapable* of violating — it could not have failed from a data-layer bug in any
+  universe. It was green by construction, forever. Meanwhile the ONE place order could actually
+  break (the renderer, `const notes = d.notes.map(...)`) was never in the pin's field of view.
+- Why it isn't the effect/mechanism family (2026-07-12, 2026-07-14 — both harvested): those two
+  are about the effect being UNREACHABLE and falling back to the mechanism. Here the effect was
+  entirely reachable — the rendered HTML string was sitting right there, and four other pins in
+  the same section were already asserting against it. I tested the mechanism because the
+  mechanism was what I had just been *looking at*: I'd written `dossier.js` minutes earlier, its
+  array was the freshest thing in my head, and the pin got aimed at what was nearest rather than
+  at what could fail. Proximity to the implementation is itself a risk factor, and it is one
+  neither existing entry names.
+- Verification gap it exposed: a green pin and an INERT pin are indistinguishable from the
+  suite's output. Nothing in a passing run reports "this assertion is incapable of failing."
+  Coverage counts assertions, not assertions-that-can-fail, so a tautological pin inflates the
+  number while defending nothing — worse than no pin, because it occupies the slot a real one
+  would have taken and reads as done.
+- What actually caught it: the negative control, and I nearly didn't run that one — it was the
+  fourth of four, added almost as an afterthought after the three that mattered. The controls
+  were aimed at the FEATURE's defects (a caption-length note, a recycled log line, a dropped
+  note); this one happened to be aimed at the PIN's reasoning, and it was the only one that
+  found anything.
+- Plug shipped (fix + guard): the pin now reads the RENDERED HTML — it locates each label's
+  index in `dossierHtml`'s output and asserts the positions ascend. Re-ran the same control:
+  1935/1 with the right message. Standing correction: **negative-control the pin, not only the
+  feature** — for any assertion, ask "what change would make this fail?", and if the honest
+  answer is "nothing the code can do", the pin is decoration. Test: if the pin's subject is
+  downstream of an order-preserving/shape-preserving operation, the pin is probably tautological
+  and belongs further down the pipe.
+- Route: dev-method candidate — the tautological-pin test ("what change would make this fail?"),
+  and the corollary that a pass's negative controls should include at least one aimed at the
+  PIN's reasoning rather than the feature's defects. Distinct from, and a refinement of, the
+  false-green family.
+
+## 2026-07-15 — A spec that declared itself complete named the FIELD and the LADDER but never what the content should DO, and "start at the build" made asking feel like re-litigating
+- What broke: pass 2b (the Dossier) was delivered suite-green at 1940/0, fully verified,
+  negative-controlled, every measured finding reported — and Daniel rejected the content
+  wholesale. Two defects, both invisible to every check the pass ran.
+- Root cause, defect one — CAPTIONS INSTEAD OF PARAGRAPHS: the handoff said "STILL TO AUTHOR:
+  `lore.beats` — 3 progressive beats × 9 rows, COMEDY_BIBLE voice, revealed at pips 1/2/3." It
+  named the field, the count, the ladder and the voice. It never named what a BEAT should do.
+  I filled that gap by pattern-matching to the nearest existing thing — the taglines I had just
+  read — and wrote 27 more taglines averaging 64 chars. A tagline STATES what a creature
+  permanently is; a note tells you about a time it DID something. Nothing happened in any of
+  mine. The word "progressive" was doing enormous work in that spec and I never interrogated it.
+- Root cause, defect two — CONSTRAINT TRANSPLANT: I capped the beats at 80 chars because
+  COMEDY_BIBLE states 80 as a law. It is not a law; it is the LOG's budget, and the bible says
+  so in the same breath ("The log is a small scrolling widget"). The Dossier is a page. I
+  imported a constraint along with the voice, and the constraint was the thing that made stories
+  impossible — 80 chars cannot hold a setup, an event and a landing. The rejected draft was
+  *structurally* prevented from being what was wanted, by a rule I applied without checking what
+  it was for.
+- Root cause, defect three — REGISTER CLASH: the spec's ladder ("Greatest Hits by pip: 1 (25)
+  excellent + success…") had me bucket 211 recycled `results.js` lines under the notes. A
+  battle-log line is the mob's POV IN A MOMENT; a field guide speaks in permanent truths. The
+  page read wrong no matter how funny the individual lines were. This one was IN the spec and I
+  implemented it faithfully — the spec was wrong, and the pass's job was to notice.
+- Verification gap it exposed: nothing I ran could see any of it. `node --check`, the ESM import,
+  1940 green assertions, five negative controls, a jsdom structural probe, three measured
+  findings honestly reported — all of it certified that the machine did exactly what the spec
+  said. **A pass can be perfectly verified against a spec and still deliver the wrong thing;
+  verification measures conformance, and conformance is silent about whether the spec was right.**
+- The aggravating factor, and the real lesson: the handoff said **"2b IS FULLY SCOPED — every
+  open call is already made. Start at the build."** I read that as a closed door. A spec that
+  declares its own completeness is the most dangerous kind, because raising a question against it
+  feels like re-litigating a decision the person already made — and the more thorough the spec
+  looks, the stronger that feeling. But "every open call is made" is a claim about the calls
+  someone THOUGHT to make. It cannot cover the ones nobody noticed were open, and "what is a beat
+  actually FOR?" was exactly such a call: invisible to the person who wrote the spec precisely
+  because they knew the answer and never had to say it.
+- Plug shipped: rebuilt as Option 2 — four labelled field notes per mob (36 stories, 167–193
+  chars), the buckets deleted entirely, the golden kept as the pip-5 capstone because it was
+  always authored as a permanent truth. Guards: §84(b) pins a length FLOOR of 120 (an odd thing
+  to assert, and the point — the failure mode here is writing SHORT), and §84(f) pins that
+  nothing from `results.js` reaches the surface except the golden, asserted against rendered HTML
+  so a future "just a few of the good ones" fails in the suite rather than in Daniel's browser.
+  COMEDY_BIBLE now carries the tagline/note distinction, the 120–200 range, and a "what does NOT
+  go on this surface" section.
+- Route: dev-method candidate, two parts. (1) **Before authoring to a spec's content field, state
+  in one sentence what that content is FOR, and check it against a sample** — a five-line sample
+  round would have cost minutes and saved the pass. (2) **"Fully scoped / start at the build" is
+  not a gag order**: it closes the calls that were MADE, and a call nobody noticed was open is
+  still open. Also a bible-level rule now shipped: a constraint stated in one surface's section
+  is that surface's, not a universal — check what a rule is FOR before carrying it somewhere new.
+
+## 2026-07-15 — The `.hidden` cascade tie fired a THIRD time; three instances means the class is structural and the per-instance fix is the wrong altitude
+- What happened: the Dossier needed `#mob-views` (the Expeditions/Field Guide toggle) to hide
+  while inside the third sub-view. `.mob-views` sets `display:inline-flex` and is declared at
+  style.css line 485; the bare `.hidden{display:none}` utility sits at line 244. Both are 0-1-0,
+  so source order hands the tie to `.mob-views` and the toggle would have been a SILENT NO-OP.
+  Caught at design time, before writing the line, because the law already existed — scoped
+  `.mob-views.hidden` shipped at birth and §84(j) pins it plus a guard-the-guard that the
+  declaration order really is what makes the override load-bearing.
+- Why it is still a lesson despite being caught: this is the THIRD live instance (`.offer-row`,
+  `.beast-cards`, now `.mob-views`), and the underlying entry (2026-07-12, harvested) is about
+  diagnosing the tie. Three instances is no longer a recurring bug — it is a structural property
+  of the stylesheet: **`.hidden` is declared near the top of a 833-line file, so EVERY component
+  below it that sets its own `display` ties and wins.** Every future component that wants to be
+  hideable inherits the trap. The per-instance fix (a scoped override each time) is correct and
+  is also the wrong altitude — it treats a systemic property as a series of coincidences, and it
+  only ever fires when someone remembers the law.
+- Verification gap: nothing headless catches a specificity tie. Each instance is guarded by a
+  text-pin asserting the scoped override exists — which means the guard only exists for ties
+  someone already noticed. A component added tomorrow gets no pin and no warning.
+- Plug shipped: the per-instance override, as before (correct, just not sufficient). The
+  structural fix is QUEUED, not taken — moving `.hidden` to the end of the cascade (or raising
+  its specificity) would make every future `.hidden` toggle work by default and let the three
+  scoped overrides be deleted, but it changes behaviour for every `.hidden` consumer in the file
+  and is an options round, not a sweep. Recorded in the handoff's queue rather than done under
+  the cover of a docs pass.
+- Route: project-level for the fix (handoff queue). Skill candidate for the general half: **a
+  utility class that sets a property component classes also set is a cascade landmine unless it
+  is declared LAST — and the third instance of any defect class is the signal to fix the class,
+  not the instance.**

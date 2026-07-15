@@ -167,8 +167,10 @@ had been illegible since the day it shipped. One value → `#6b4a1e` (6.11:1), t
 parked as NEXT item (4). **(2a) The Field Guide taglines** (`06108af`): `lore: { tagline }` on all
 nine rows, each playing that mob's one documented comic lever, revealed on discovery — and it cost
 **0px** of card height (the info column had headroom under the 72px portrait), so the split's
-decluttered card survives the feature most likely to have undone it. **2b (the Dossier) is fully
-scoped with every call registered — see the NEXT block.** **(3) The overlay stand-down** (`ecf1700`),
+decluttered card survives the feature most likely to have undone it. **(2b) The Dossier**
+(`8599aba`, suite 1936) — four labelled field notes per mob on the serve pips, the golden line as
+the pip-5 capstone; **shipped on its SECOND design after Daniel rejected the first, see the block
+below.** **(3) The overlay stand-down** (`ecf1700`),
 found by Daniel in Claude's own screenshot: the hire chip, Greg's bubble and Bob's bubble are z5
 siblings of `#shop-ui`'s z4 and painted straight THROUGH any open panel — all three measured fully
 INSIDE the panel's box. Fixed with the attention doctrine (`nav.js` exports `isPanelOpen()`; the
@@ -188,49 +190,56 @@ horizontal (tabs). Suite §80 now pins the tab COUNT, so a future session that t
 fails in the suite rather than in Daniel's browser. **Labels are load-bearing** (~7.5px/character in
 the widest face); "Bestiary"→"Mobs" bought the bar back ~30px (slack 17.20 → 47.45).
 
-**NEXT — 2b: THE DOSSIER (Daniel, 2026-07-15 — the Mobs follow-up round's last open build).**
-Cold-boot ritual as always: this doc in full, the dev-method skill, sync-and-certify (suite must
-read **1879** at HEAD, tip **ecf1700**). The round's other two items are CLOSED — (1) the Runs
-contrast shipped (`401719c`) and (2a) the Field Guide taglines shipped (`06108af`); the tab-name
-item survives below as (3). A fourth pass fell out of Daniel's browser mid-round: the overlay
-stand-down (`ecf1700`).
+**2b — THE DOSSIER: DONE 2026-07-15 (`8599aba`, suite 1936).** The Mobs follow-up round's last
+open build, and the round is now CLOSED except for the tab name. Four labelled field notes per mob,
+revealed one per serve pip at 25/50/100/250, with the mob's golden line as the pip-5 capstone
+("The Legend"). A THIRD inline sub-view as registered: `activeMobView` gains `'dossier'` + a
+`dossierId`, the card list swaps for the entry, a **← Field Guide** button returns, the two-view
+toggle hides while inside. New pure leaf `src/data/dossier.js` (`dossierFor(id, served)` returns
+ONLY revealed content, so a renderer bug cannot leak a locked note); `lore.notes` = 4 ×
+`{ label, text }` on all nine rows; suite **§84**.
 
-  **2b IS FULLY SCOPED — every open call is already made. Start at the build.**
-  Daniel picked **Option 2 staged** (2026-07-15): the card ADVERTISES (2a's tagline — shipped), the
-  Dossier INFORMS. That is the sale-sign doctrine applied to a second surface, and it is why the
-  card carries one line and not three.
-   - **THE SURFACE — Option 1 REGISTERED (Daniel, 2026-07-15): a THIRD SUB-VIEW, inline.**
-     `activeMobView` gains `'dossier'` + a `dossierId`; the card list swaps for the entry and a
-     **← Field Guide** button returns; the Expeditions/Field Guide toggle hides while inside.
-     Rejected: an overlay on the `market.js` precedent (a second full overlay, a new z-layer, and
-     markup that would drag the Kong mirror in). **The registered reason matters more than the
-     pick:** a sub-view lives INSIDE `#shop-ui`, so the bleed-through class that cost a whole pass
-     this session (§83) **cannot recur here by construction**. Do not "upgrade" it to an overlay
-     without re-reading that section first.
-   - **THE LADDER — serve breakpoints, one ladder for both content types** (Daniel's picks). Fame
-     rungs were rejected: fame is GLOBAL, and "more revealed about Slimey" must not unlock by
-     trading swords. `crossedCount(served, MONSTER_BREAKPOINTS)` already exists and already draws
-     the pips, so the ladder is visible before it is explained. Greatest Hits by pip:
-     **1 (25)** excellent + success · **2 (50)** + partial + failure · **3 (100)** + funnyFailure ·
-     **4 (250)** + leave + dismiss (+ theft) · **5 (500)** the golden line.
-   - **THE `{item}` LINES — EXCLUDED (Daniel's pick).** 22 of the 233 carry a `{item}` placeholder
-     and there is no item in a bestiary card. `itemBias` exists on only some rows, so a "signature
-     item" is not cleanly derivable, and inventing a filler puts words in the line's mouth.
-   - **MEASURED, so the build does not re-derive it:** usable lines per monster after the exclusion
-     — Batty/Skele 28 (the worst case), Froggo 26, Beetley 25, Ratty/Demmy/Leggsy 24, Slimey 22,
-     the Inspector 10. Worst case ≈ 476px of hits + ~160px of portrait/beats ≈ **636px in a 500px
-     panel viewport → a maxed dossier SCROLLS on any surface** (which is why "more room" did not
-     decide the surface). The common case is small: pip 1 is 9–11 lines ≈ 180px.
-   - **STILL TO AUTHOR: `lore.beats`** — 3 progressive beats × 9 rows (27 lines), COMEDY_BIBLE
-     voice, revealed at pips 1/2/3. The field is additive beside the shipped `lore.tagline`
-     (`lore: { tagline, beats }`), so no consumer churn. Line trust is granted — no review round.
-     The bible's new "Field Guide taglines" section carries the register and the standing warning:
-     the tagline is the caption, the beats are the paragraphs; do not grow one into the other's job.
-   - **Binding, still:** VIPs get their own section, never rows in the grid, never a Send button
-     (Daniel, 2026-07-08) — the Inspector has a tagline and rides the guide, so he gets a Dossier
-     too (10 usable lines, 4 buckets, no pips). The completion % stays a field guide of REGULARS,
-     grid-only, suite-pinned. And §80's law holds: **the job card stays a job card** — §82 already
-     pins that lore never drifts onto it, and the Dossier must not either.
+  **THIS SHIPPED ON ITS SECOND DESIGN, AND THE FIRST ONE'S GRAVE IS LOAD-BEARING.** The first
+  draft implemented the old spec faithfully — `lore.beats` (3 short beats/mob) plus a "Greatest
+  Hits" section bucketing the 211 usable `results.js` lines by tier across the pips. It was
+  suite-green at 1940/0, negative-controlled, and **Daniel rejected the content wholesale.** Two
+  reasons, both now binding:
+   - **A tagline STATES what a creature permanently is; a note tells you about a time it DID
+     something.** The beats were 27 more taglines (avg 64 chars) — captions wearing a paragraph's
+     clothes. Nothing happened in any of them.
+   - **The battle log's register is not the guide's.** A `results.js` line is the mob's POV IN A
+     MOMENT; a field guide speaks in permanent truths. Recycling the log into the guide read wrong
+     no matter how good the individual lines were. **§84(f) now pins that NOTHING from results.js
+     reaches a Dossier except the golden** — which earns its place because it was always authored
+     as a bestiary capstone. If a future pass wants "just a few of the good ones" back, that pin
+     fails, and it should.
+  Two dead constraints retired with it: the **80-char budget is the LOG's**, not a universal (the
+  log is a small scrolling widget; the Dossier is a page — notes run 120–200, and **§84(b) pins the
+  FLOOR**, because the failure mode here is writing SHORT). And the "636px worst case → a maxed
+  dossier scrolls" measurement described the buckets draft; the four-notes shape is ~500px maxed.
+  The `{item}` exclusion, the two-gate minServes rule and the tier ladder are all MOOT — they were
+  machinery for the Greatest Hits, and they left with it.
+
+  **THE WRITING'S RULES, now in COMEDY_BIBLE ("The Dossier field notes"):** the four escalate
+  (ordinary → stranger → deeper → the one that recontextualises), and **order is content** — §84
+  pins the RENDERED order. **The label is doing comic work, not filing**: a straight-faced dossier
+  heading over absurd content, authored PER MOB (the Inspector gets JURISDICTION and THE SEAL,
+  Slimey gets DIET and PROPERTY RECOVERED); §84 pins that the roster hasn't collapsed toward a
+  shared schema. **Bob is the turn** — he appears in 24 of the 36, and the fourth note usually
+  turns on him, because the shop's register is that *Bob already knows and lets them have it.*
+  A new mob needs four notes before it ships; a **sixth breakpoint** would require a **fifth** note
+  from every mob, and §84(a) derives that count from `MONSTER_BREAKPOINTS` rather than reading a
+  constant — so the suite says so the day the rung lands, not the day a player reaches it.
+
+  **Binding, and it held:** VIPs get no pips (trophies, not ladders — and the arithmetic agrees:
+  once a calendar day makes pip 3 a hundred days away), so the Inspector's four notes arrive
+  together on his first visit and he has no Legend (§54 gave him no golden). §80's law held: the
+  job card stays a job card. The surface stayed INLINE, not an overlay — **that reason outranks the
+  pick**: a sub-view lives inside `#shop-ui`, so §83's bleed-through class cannot recur by
+  construction. Do not "upgrade" it without re-reading §83.
+
+**NEXT — (3) THE TAB NAME.** Cold-boot ritual as always: this doc in full, the dev-method skill,
+sync-and-certify (suite must read **1936** at HEAD, tip `8599aba`).
 
   **(3) THE TAB NAME — "Mobs" IS PROVISIONAL.** Daniel: *"aside from Mob - any other name would
   fit?"* "Mobs" was picked under width pressure, not affection. Opens with an options round, and
@@ -261,6 +270,21 @@ stand-down (`ecf1700`).
   stands. When it opens: `#6b4a1e` is the house tan-card answer (6.11:1) but the golds and purples
   are carrying MEANING (gold = money, purple = rep), so a straight recolour flattens a legible
   system — that is the options round, not a sweep-and-replace.
+
+  **(5) THE `.hidden` CASCADE — THE CLASS, NOT THE INSTANCE (new 2026-07-15; an options round, not
+  a sweep).** `.hidden{display:none}` is declared at `style.css` line 244, near the top of an
+  833-line file, so **every component below it that sets its own `display` ties at 0-1-0 and WINS**
+  — a `.hidden` toggle on it is a silent no-op. Three live instances now (`.offer-row`,
+  `.beast-cards`, `.mob-views`), each carrying a scoped `X.hidden` override and a suite text-pin.
+  That per-instance fix is correct and is the wrong altitude: it treats a structural property of
+  the stylesheet as a run of coincidences, and it only ever fires when someone remembers the law.
+  A component added tomorrow gets no pin and no warning, because nothing headless catches a
+  specificity tie. **The structural fix** — move `.hidden` to the END of the cascade, or raise its
+  specificity — would make every future toggle work by default and let all three overrides be
+  deleted. NOT taken unilaterally: it changes behaviour for every `.hidden` consumer in the file
+  (a component that legitimately relies on winning that tie would break silently), so it needs a
+  measured sweep of every `.hidden` user and Daniel's pick. LESSONS 2026-07-15 carries the
+  reasoning.
 
 **THEN the rest of the parked queue, in order:** results-box flooding (h) → B2 material payment →
 B3 extra slots → Greg-perk visibility (g)①.
@@ -460,7 +484,7 @@ with the Rat. **Option-3 art polish: SCRUBBED** (see §9 — the 128px-frame + M
 convention is PERMANENT, do not resurrect).
 **Workflow note: NO DevLog for Mob Mart** — Daniel opted out (2026-07-03). Skip the DevLog draft
 step at feature completion for this project.
-**Last updated:** 2026-07-15 (evening) — THE MOBS FOLLOW-UP ROUND: three passes shipped, all browser-confirmed (suite 1844 → **1879**, tip **ecf1700**). (1) Runs contrast (401719c): `.beast-exp` measured **1.28:1** — the handoff’s guessed cause was FALSIFIED; it was the Market strip’s row transplanted onto a parchment card at c4905f9 and illegible since. Fixed to #6b4a1e (6.11:1); §81 pins the COMPUTED RATIO, never the hex. The sweep that shipped with it found **five more live instances** — NEXT item (4), measured, awaiting Daniel’s call. (2a) Field Guide taglines (06108af): `lore: { tagline }` × 9, one comic lever each, **0px of card height**; §82. **2b (the Dossier) is FULLY SCOPED — Option 1 (a third inline sub-view) REGISTERED, ladder + exclusions decided, content measured; start at the build.** (3) Overlay stand-down (ecf1700), from Daniel’s read of Claude’s own screenshot: hire chip / Greg’s bubble / Bob’s bubble all painted through open panels; fixed via nav.js `isPanelOpen()` — NOT z-index (#shop-ui is inset:0 with no pointer-events; z5→z3 would have shipped a visible, unclickable chip). §83. **+5 LESSONS.** NEXT = 2b → the tab name (3) → the contrast class (4). Earlier: 2026-07-15 — the HUD band (6c0e74c) + the Bestiary/Expedition split (5843f6e), suite 1844; **a 6th nav tab does NOT fit**. Earlier: 2026-07-14 — DOUG LEVELING shipped + certified (b9ac048); THE SIM INSTRUMENT REPAIRED (2784bec — **every pre-2026-07-14 margin is VOID as a comparison**). Earlier: 2026-07-14 — Commission B1 SHIPPED (97a540f), F2 coupling reversed by the sim to decoupled.
+**Last updated:** 2026-07-15 (late) — THE MOBS FOLLOW-UP ROUND: four passes shipped, all browser-confirmed (suite 1844 → **1936**, tip **8599aba**). (1) Runs contrast (401719c): `.beast-exp` measured **1.28:1** — the handoff’s guessed cause was FALSIFIED; it was the Market strip’s row transplanted onto a parchment card at c4905f9 and illegible since. Fixed to #6b4a1e (6.11:1); §81 pins the COMPUTED RATIO, never the hex. The sweep that shipped with it found **five more live instances** — NEXT item (4), measured, awaiting Daniel’s call. (2a) Field Guide taglines (06108af): `lore: { tagline }` × 9, one comic lever each, **0px of card height**; §82. **(2b) THE DOSSIER (8599aba, suite 1936):** a third inline sub-view; `lore.notes` = 4 × `{label, text}` per mob revealed on the serve pips, golden line as the pip-5 capstone; new pure leaf `src/data/dossier.js`; §84. **It shipped on its SECOND design — the first was suite-green at 1940/0 and Daniel rejected the content wholesale** (captions instead of stories; battle-log lines recycled into a surface whose register is permanent truths). §84(f) now pins that nothing from results.js reaches a Dossier except the golden, and §84(b) pins a length FLOOR. (3) Overlay stand-down (ecf1700), from Daniel’s read of Claude’s own screenshot: hire chip / Greg’s bubble / Bob’s bubble all painted through open panels; fixed via nav.js `isPanelOpen()` — NOT z-index (#shop-ui is inset:0 with no pointer-events; z5→z3 would have shipped a visible, unclickable chip). §83. **+8 LESSONS** (51 total). NEXT = the tab name (3) → the contrast class (4). Earlier: 2026-07-15 — the HUD band (6c0e74c) + the Bestiary/Expedition split (5843f6e), suite 1844; **a 6th nav tab does NOT fit**. Earlier: 2026-07-14 — DOUG LEVELING shipped + certified (b9ac048); THE SIM INSTRUMENT REPAIRED (2784bec — **every pre-2026-07-14 margin is VOID as a comparison**). Earlier: 2026-07-14 — Commission B1 SHIPPED (97a540f), F2 coupling reversed by the sim to decoupled.
 
 ---
 
@@ -2699,3 +2723,72 @@ fuses a requirement with an accident · the obvious one-value fix whose cost liv
 
 **NEXT:** 2b — the Dossier. §0's NEXT block carries the full scope; every call is registered and the
 content is measured, so it starts at the build.
+
+---
+
+## 2026-07-15 (late) — 2b: THE DOSSIER (`8599aba`; suite 1879 → 1936)
+
+**What shipped.** The Field Guide's cards became clickable: a card opens that mob's Dossier — a
+third inline sub-view showing four labelled field notes revealed one per serve pip (25/50/100/250),
+then the mob's golden line as **The Legend** at pip 5. Files: new pure leaf `src/data/dossier.js`;
+`lore.notes` = 4 × `{ label, text }` on all nine registry rows; `panels.js` (the sub-view, the
+delegated card-click, the back button, pure `dossierHtml`); `style.css`; both entry shells (v18 →
+**v19**); `COMEDY_BIBLE.md`; suite **§84** (57 assertions).
+
+**THE PASS SHIPPED ON ITS SECOND DESIGN.** The first draft implemented the old spec faithfully —
+three short `lore.beats` per mob plus a "Greatest Hits" section bucketing 211 recycled `results.js`
+lines by tier across the pips. It was suite-green at **1940/0**, five negative controls fired
+correctly, a jsdom probe confirmed the structure, and three measured findings were honestly
+reported. Daniel rejected the content wholesale. The pass was *perfectly verified against a spec
+that was wrong in two places*, which is the session's durable lesson: **verification measures
+conformance, and conformance is silent about whether the spec was right.**
+
+  **Defect one — captions, not stories.** The spec named the field, the count, the ladder and the
+  voice, but never what a beat should DO. That gap got filled by pattern-matching to the nearest
+  existing thing (the taglines), producing 27 more taglines at avg 64 chars. **A tagline STATES
+  what a creature permanently is; a note tells you about a time it DID something.** Aggravated by a
+  constraint transplant: the 80-char cap is the LOG's budget (a small scrolling widget), not a
+  universal — and 80 chars cannot hold a setup, an event and a landing, so the draft was
+  *structurally prevented* from being what was wanted.
+
+  **Defect two — a register clash.** A `results.js` line is the mob's POV IN A MOMENT; a field
+  guide speaks in permanent truths. Recycling the log into the guide read wrong regardless of line
+  quality. The one recycled line that survives is the golden, because it was always authored as a
+  bestiary capstone ("The heroes have a name for Slimey now. He thinks it's a compliment. It is.").
+
+**A HOLE THE NEGATIVE CONTROLS FOUND IN THE SUITE ITSELF — the sharpest finding of the session.**
+§84 pinned "the notes appear in registry order" (order is content — the four escalate). The pin
+asserted against `dossierFor()`'s returned array. A control that reversed the order **in the
+renderer** passed: 1936/0. Root cause: `dossierFor` builds its notes with `.filter()`, and
+**`.filter()` preserves order** — the pin was asserting an invariant the implementation is
+structurally incapable of violating. Green by construction, forever, defending nothing, while the
+one place order could actually break was never in its field of view. **This is NOT the
+effect/mechanism family** (2026-07-12, 2026-07-14, both harvested): those are about the effect being
+unreachable. Here the effect was entirely reachable — the rendered HTML was right there and four
+other pins in the same section already read it. The pin got aimed at the mechanism because the
+mechanism was what had just been written. Fixed to read the rendered HTML; the same control now
+fires. **Standing correction: negative-control the PIN, not only the feature — ask "what change
+would make this fail?", and if the honest answer is "nothing the code can do", the pin is
+decoration.**
+
+**Design decisions worth keeping.** The surface stayed INLINE, not an overlay, and the registered
+reason outranks the pick: a sub-view lives inside `#shop-ui`, so §83's bleed-through class cannot
+recur by construction. The way IN was the one call the spec never made — the card is the only
+surface that names a monster, so clicking the card opens it: zero new markup, and the card keeps
+carrying one line rather than growing a button. Undiscovered cards refuse (the silhouette's reveal
+is protected). VIPs get no pips, so the Inspector's four notes arrive together on his first visit
+and he has no Legend (§54 gave him no golden).
+
+**THE `.hidden` CASCADE FIRED A THIRD TIME** — `.mob-views` sets `display:inline-flex` and is
+declared after the bare `.hidden` utility, so "the toggle hides while inside" would have been a
+silent no-op. Caught at design time because the law existed; scoped override shipped at birth,
+§84(j) pins it plus a guard-the-guard that the declaration order is what makes it load-bearing.
+Three instances means the class is structural, not incidental — **queued as NEXT item (5)**.
+
+**Dead spec, recorded so nobody re-derives it:** the `{item}` exclusion, the two-gate `minServes`
+rule, the tier ladder and the "usable lines per monster" table were all machinery for the Greatest
+Hits and left with it. So did the "636px worst case → a maxed dossier scrolls" measurement — the
+four-notes shape is ~500px maxed. Ratty's all-`{item}` theft pool is moot.
+
+**+3 LESSONS** (48 → 51): the tautological pin; the fully-scoped spec that never said what the
+content was FOR; the cascade tie's third instance.
