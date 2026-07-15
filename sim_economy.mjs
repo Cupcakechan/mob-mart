@@ -356,6 +356,56 @@ const kfmt = (n) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 100000 ? 0 : 1).repl
 const pad = (v, w) => String(v).padStart(w);
 const median = (arr) => [...arr].sort((a, b) => a - b)[Math.floor(arr.length / 2)];
 
+// ── ACCEPTANCE STATISTICS (instrument repair, 2026-07-14; Daniel picked Option 2) ─────────────
+// WHY THIS EXISTS: each blind arm used to reduce to
+//     median(blind.map((b) => (a.postRate ?? 0) / Math.max(1, b.postRate ?? 0) - 1))
+// taken over SEEDS.slice(0, 3). Two defects rode in that one line.
+//   (1) A run that never died has NO postRate (null — see runSim). But `?? 0` and `Math.max(1, …)`
+//       silently COERCED that absence into a number: a blind cap-hit became ~+47800%, an aware
+//       cap-hit became -100%. Those are sentinels, not measurements.
+//   (2) With n=3 and a sentinel always sorting to one end, the median was simply THE LARGER OF
+//       THE TWO REAL VALUES — a coin flip wearing a statistic's clothes.
+// Together they scored a build that beat its control 2-of-2 BELOW one that beat it 1-of-2, which
+// is how the Doug pass got a WEAK verdict it hadn't earned and nearly bought a needless retune.
+// THE FIX is the sim's OWN convention, already used by the death block above:
+//     const deaths = runs.filter((r) => r.deathT !== null);   // cap-hits excluded BEFORE the median
+// A cap-hit is a different OUTCOME, not a worse number, so it is counted and reported
+// categorically and never averaged. The spread and win count print so that a marginal verdict
+// LOOKS marginal instead of reading as authority.
+function acceptanceStats(blindRuns, awareRuns) {
+  const paired = blindRuns.map((b) => ({ b, a: awareRuns.find((r) => r.seed === b.seed) }));
+  const comparable = paired.filter((p) => p.b.postRate != null && p.a?.postRate != null);
+  const advs = comparable.map((p) => p.a.postRate / p.b.postRate - 1);   // both REAL: no coercion
+  return {
+    n: paired.length,
+    blindCapHits: paired.filter((p) => p.b.postRate == null).length,
+    awareCapHits: paired.filter((p) => p.a?.postRate == null).length,
+    comparable: advs.length,
+    wins: advs.filter((x) => x > 0).length,
+    med: advs.length ? median(advs) : null,
+    min: advs.length ? Math.min(...advs) : null,
+    max: advs.length ? Math.max(...advs) : null,
+  };
+}
+// A blind bot that never exhausts its wants inside CAP_SEC is the MAXIMUM tax — the system it
+// ignores is load-bearing enough to strand it forever. Daniel's call (2026-07-14): ANY cap-hit is
+// PASS-worthy. Otherwise the advantage must clear the bar on the seeds that ARE comparable.
+const acceptancePass = (st, threshold) =>
+  st.blindCapHits > 0 || (st.med !== null && st.med > threshold);
+const pct = (x, d = 1) => `${(x * 100).toFixed(d)}%`;
+function evidenceLine(st) {
+  const parts = [];
+  if (st.blindCapHits > 0) {
+    parts.push(`blind NEVER FINISHED in ${st.blindCapHits}/${st.n} seeds (maximum tax — categorical)`);
+  }
+  if (st.awareCapHits > 0) parts.push(`AWARE never finished in ${st.awareCapHits}/${st.n} (!)`);
+  parts.push(st.comparable
+    ? `rate advantage on ${st.comparable} comparable seed(s): median ${pct(st.med)}`
+      + `  spread ${pct(st.min)}..${pct(st.max)}  aware wins ${st.wins}/${st.comparable}`
+    : 'no comparable seeds — every pairing hit the cap');
+  return `  EVIDENCE: ${parts.join('  |  ')}`;
+}
+
 // A compact fixed-width column chart (linear scale, carry-forward buckets) — the report's curves.
 function renderChart(title, samples, getV, unit, cols = 100, rows = 14) {
   const tMax = samples[samples.length - 1].t || 1;
@@ -470,8 +520,8 @@ if (deaths.length) {
 // sink working at scale), which DELAYS its finite-checklist completion. Death time stopped
 // measuring "losing"; the verdict now reads the POST-EXHAUSTION RATE ADVANTAGE (the economy a
 // player is left running forever) plus the forfeited tier sales. Death deltas print SIGNED.
-console.log('== REFORM ACCEPTANCE — market-BLIND control (seeds 1–3) vs the aware runs above ==');
-const blind = SEEDS.slice(0, 3).map((seed) => runSim(seed, { tradeAware: false }));
+console.log(`== REFORM ACCEPTANCE — market-BLIND control (all ${SEEDS.length} seeds) vs the aware runs above ==`);
+const blind = SEEDS.map((seed) => runSim(seed, { tradeAware: false }));
 const signed = (x) => `${x < 0 ? '-' : '+'}${hms(Math.abs(x))}`;
 for (const b of blind) {
   const a = runs.find((r) => r.seed === b.seed);
@@ -484,21 +534,18 @@ for (const b of blind) {
     // participant (aware's sell-out gaps). Read BEFORE designing any scarcity tooth.
     + `  |  OOS-front ${hms(Math.round(b.oosFrontSec))} vs ${hms(Math.round(a.oosFrontSec))}`);
 }
-const rateAdvMed = median(blind.map((b) => {
-  const a = runs.find((r) => r.seed === b.seed);
-  return (a.postRate ?? 0) / Math.max(1, b.postRate ?? 0) - 1;
-}));
-console.log(rateAdvMed > 0.10
-  ? `  VERDICT: PASS — the aware economy runs ${(rateAdvMed * 100).toFixed(0)}% hotter forever`
-    + ` (and the blind shop forfeits every tier sale); ignoring the market is a permanent tax.`
-  : `  VERDICT: WEAK — aware rate advantage only ${(rateAdvMed * 100).toFixed(0)}%; the market's`
-    + ` teeth need retuning before this pass can claim acceptance.`);
+const mktStats = acceptanceStats(blind, runs);
+console.log(evidenceLine(mktStats));
+console.log(acceptancePass(mktStats, 0.10)
+  ? `  VERDICT: PASS — the aware economy runs permanently hotter (and the blind shop forfeits`
+    + ` every tier sale); ignoring the market is a permanent tax.`
+  : `  VERDICT: WEAK — the market's teeth need retuning before this pass can claim acceptance.`);
 console.log('');
 
 // STEP-4 ACCEPTANCE — same evolved metric: the expedition-blind bot trades but never sends;
 // its supply-starved tier must run measurably colder than the full player's.
-console.log('== STEP-4 ACCEPTANCE — expedition-BLIND control (seeds 1–3) vs the full-aware runs ==');
-const expBlind = SEEDS.slice(0, 3).map((seed) => runSim(seed, { expeditionAware: false }));
+console.log(`== STEP-4 ACCEPTANCE — expedition-BLIND control (all ${SEEDS.length} seeds) vs the full-aware runs ==`);
+const expBlind = SEEDS.map((seed) => runSim(seed, { expeditionAware: false }));
 for (const b of expBlind) {
   const a = runs.find((r) => r.seed === b.seed);
   const delay = (b.deathT ?? b.endT) - (a.deathT ?? a.endT);
@@ -507,15 +554,13 @@ for (const b of expBlind) {
     + `  |  post-death ${b.postRate?.toFixed(0) ?? '-'} vs ${a.postRate?.toFixed(0) ?? '-'} gold/min`
     + `  |  runs 0 vs ${a.runsSent}`);
 }
-const expRateAdvMed = median(expBlind.map((b) => {
-  const a = runs.find((r) => r.seed === b.seed);
-  return (a.postRate ?? 0) / Math.max(1, b.postRate ?? 0) - 1;
-}));
-console.log(expRateAdvMed > 0.10
-  ? `  VERDICT: PASS — the full economy runs ${(expRateAdvMed * 100).toFixed(0)}% hotter than the`
-    + ` expedition-starved one; the supply valve is load-bearing.`
-  : `  VERDICT: WEAK — rate advantage only ${(expRateAdvMed * 100).toFixed(0)}%; the valve needs`
-    + ` a bigger haul or a shorter clock before step 4 can claim acceptance.`);
+const expStats = acceptanceStats(expBlind, runs);
+console.log(evidenceLine(expStats));
+console.log(acceptancePass(expStats, 0.10)
+  ? `  VERDICT: PASS — the full economy runs measurably hotter than the expedition-starved one;`
+    + ` the supply valve is load-bearing.`
+  : `  VERDICT: WEAK — the valve needs a bigger haul or a shorter clock before step 4 can claim`
+    + ` acceptance.`);
 console.log('');
 
 // STEP-6 ACCEPTANCE — the commission-blind bot trades and runs but lets every Special Order
@@ -524,8 +569,8 @@ console.log('');
 // is (premiumMult−1) × a few units every couple of days — structurally small beside the whole
 // economy. The commission's real pull is the DECISION layer (hold vs sell, deadline vs rate);
 // the premium dial (CONFIG.commission.premiumMult) stays open if Daniel wants teeth.
-console.log('== STEP-6 ACCEPTANCE — commission-BLIND control (seeds 1–3) vs the full-aware runs ==');
-const commBlind = SEEDS.slice(0, 3).map((seed) => runSim(seed, { commissionAware: false }));
+console.log(`== STEP-6 ACCEPTANCE — commission-BLIND control (all ${SEEDS.length} seeds) vs the full-aware runs ==`);
+const commBlind = SEEDS.map((seed) => runSim(seed, { commissionAware: false }));
 for (const b of commBlind) {
   const a = runs.find((r) => r.seed === b.seed);
   const delay = (b.deathT ?? b.endT) - (a.deathT ?? a.endT);
@@ -533,16 +578,13 @@ for (const b of commBlind) {
     + `  (${signed(delay)})  |  fills 0 vs ${a.commissionsFilled}`
     + `  |  post-death ${b.postRate?.toFixed(0) ?? '-'} vs ${a.postRate?.toFixed(0) ?? '-'} gold/min`);
 }
-const commRateAdvMed = median(commBlind.map((b) => {
-  const a = runs.find((r) => r.seed === b.seed);
-  return (a.postRate ?? 0) / Math.max(1, b.postRate ?? 0) - 1;
-}));
-console.log(commRateAdvMed > 0.02
-  ? `  VERDICT: PASS — the full economy runs ${(commRateAdvMed * 100).toFixed(1)}% hotter; the`
-    + ` premium channel is worth working.`
-  : `  VERDICT: FLAT — rate advantage ${(commRateAdvMed * 100).toFixed(2)}%: the premium redirects`
-    + ` sales the shelf makes anyway. The commission's pull is the DECISION layer; the premium`
-    + ` dial is open (a finding for Daniel, not a hidden failure).`);
+const commStats = acceptanceStats(commBlind, runs);
+console.log(evidenceLine(commStats));
+console.log(acceptancePass(commStats, 0.02)
+  ? `  VERDICT: PASS — the full economy runs hotter; the premium channel is worth working.`
+  : `  VERDICT: FLAT — the premium redirects sales the shelf makes anyway. The commission's pull`
+    + ` is the DECISION layer; the premium dial is open (a finding for Daniel, not a hidden`
+    + ` failure).`);
 // B1 HARD RESERVE — the dead-queue check: F2 is DECOUPLED (demand reads physical stock), so a walk-in
 // can still want a fully-reserved item and hit the "held for order" block. This measures how often
 // that actually bites. It stays a thin sliver because trades keep trade stock above the order count,
