@@ -560,7 +560,7 @@ assets; the half-applied-fix staleness heuristic).
 - Route: dev-method (introducing a dial = a comment-sweep obligation at every site that reads the
   old value).
 
-## 2026-07-14 — "Test the effect, not the mechanism" was already my standing rule and still didn't fire, because the effect wasn't headlessly testable
+## 2026-07-14 — "Test the effect, not the mechanism" was already my standing rule and still didn't fire, because the effect wasn't headlessly testable [HARVESTED — 2026-07-15]
 - What happened: the rule ("a behavioral probe asserts the EFFECT the user sees — never the
   internal mechanism that should produce it") is already harvested into the general instructions,
   and I broke it anyway on the Doug pass. §77's 24 pins all asserted mechanism.
@@ -630,7 +630,7 @@ assets; the half-applied-fix staleness heuristic).
   mechanism.
 - Route: dev-method (seeded-sim determinism — draw count, not draw value, is the invariant).
 
-## 2026-07-14 — `git fetch` without a merge left local HEAD stale, and `git status` then reported committed work as uncommitted
+## 2026-07-14 — `git fetch` without a merge left local HEAD stale, and `git status` then reported committed work as uncommitted [HARVESTED — 2026-07-15]
 - What happened: mid-session I fetched to inspect Daniel's pushed tip (`git log origin/HEAD`) and
   confirmed my working tree matched it (`git diff origin/HEAD --stat` → empty). But I never
   fast-forwarded, so my local branch pointer stayed one commit behind. Two passes later
@@ -814,7 +814,7 @@ assets; the half-applied-fix staleness heuristic).
   set BEFORE writing the new markup — `getElementById` on a duplicated id fails silently and is
   invisible to every headless gate).
 
-## 2026-07-15 — The `git status` READ scans for deletions; a stray 0-byte file walked straight past it
+## 2026-07-15 — The `git status` READ scans for deletions; a stray 0-byte file walked straight past it [HARVESTED — 2026-07-15]
 - What happened: the HUD-band checkpoint went out, Daniel ran it, and the remote came back with TWO
   commits: the real pass (8 files, correct) and a second one adding a **0-byte file literally named
   `1825`** at the repo root — the suite's pass count, almost certainly a stray `> 1825` redirect
