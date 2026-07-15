@@ -26,6 +26,20 @@ const reputationTierIndex = (state) => reputationTier(fameOf(state)).index;
 
 let handlers = { onServe: () => {}, onDismiss: () => {}, onRestock: () => {}, onRestockAll: () => {}, onBuyUpgrade: () => {}, onBuyPerk: () => {}, onBuyLicense: () => {}, onHireWorker: () => {}, onOpenMarket: () => {}, onDirty: () => {} };
 let activeCategory = 'weapon';   // shelf sub-tab (not persisted; category comes from the item registry)
+let activeMobView = 'expeditions';  // Mobs sub-view: 'expeditions' | 'guide' (not persisted — a view, not a preference)
+
+// Switch the Mobs panel's sub-view (the setShelfCategory precedent). The tab holds two surfaces
+// because a 6th nav tab does NOT fit — see the bottom-bar budget in style.css and LESSONS
+// 2026-07-04. The completion % belongs to the FIELD GUIDE ("a field guide of REGULARS"), so it
+// rides the view rather than the panel title, or it would advertise a ledger you can't see.
+function setMobView(view) {
+  activeMobView = view;
+  document.querySelectorAll('.mob-view-btn').forEach((b) =>
+    b.classList.toggle('active', b.dataset.view === activeMobView));
+  document.getElementById('mob-view-expeditions')?.classList.toggle('hidden', view !== 'expeditions');
+  document.getElementById('mob-view-guide')?.classList.toggle('hidden', view !== 'guide');
+  document.getElementById('bestiary-completion')?.classList.toggle('hidden', view !== 'guide');
+}
 
 // Switch the shelf's category sub-tab. Shared by the tab buttons and Bob's license bubble (which
 // routes straight to the target license's category), so tab state can never drift between the two.
@@ -128,8 +142,19 @@ export function initPanels(root, h) {
     </section>
 
     <section id="bestiary-panel" class="panel bestiary-panel hidden">
-      <h2 class="panel-title">Bestiary <span class="subtitle-hint" id="bestiary-completion"></span></h2>
-      <div id="beast-cards" class="beast-cards"></div>
+      <h2 class="panel-title">Mobs
+        <span class="mob-views" id="mob-views">
+          <button class="mob-view-btn active" data-view="expeditions" type="button">Expeditions</button>
+          <button class="mob-view-btn" data-view="guide" type="button">Field Guide</button>
+        </span>
+        <span class="subtitle-hint hidden" id="bestiary-completion"></span>
+      </h2>
+      <div class="mob-view" id="mob-view-expeditions">
+        <div id="beast-cards" class="beast-cards"></div>
+      </div>
+      <div class="mob-view hidden" id="mob-view-guide">
+        <div id="guide-cards" class="beast-cards"></div>
+      </div>
     </section>
 
     <section class="panel log-panel">
@@ -293,10 +318,33 @@ export function initPanels(root, h) {
       </div>
     </div>`).join('');
 
-  // Bestiary cards (Pass 4a; data-driven — Gobbo will auto-appear from the registry). DISPLAY
-  // LAYER ONLY: the Pass-1 loyalty ledger (state.stats.monsterServes) is the single source of
-  // truth; this pass adds no new counting, no save change. One pip per MONSTER_BREAKPOINT.
-  document.getElementById('beast-cards').innerHTML = MONSTER_IDS.filter((id) => !MONSTERS[id].special).map((id) => {
+  // THE SPLIT (Daniel, 2026-07-15). One card used to be two things at once: a loyalty ledger AND
+  // an expedition job card. It was the expedition surface wearing the Bestiary label. Now the tab
+  // is "Mobs" and holds two sub-views:
+  //   #beast-cards (Expeditions) — job cards ONLY: portrait, name, runs/away, Send.
+  //   #guide-cards (Field Guide) — the ledger: portrait, name, served + rep bonus, pips, next.
+  // A 6th nav tab was the obvious shape and is FORBIDDEN: the 2026-07-04 law ("panel ends 454,
+  // 5-tab nav reaches ~470-480, a 6th tab does NOT fit — redesign, don't shrink") still measures
+  // true, so the split is VERTICAL (sub-views), not horizontal (tabs).
+  // DISPLAY LAYER ONLY, still: state.stats.monsterServes remains the single source of truth; this
+  // pass adds no counting and no save change. Ids are view-prefixed because the same monster now
+  // owns a card in BOTH views and getElementById needs them unique.
+  const gridIds = MONSTER_IDS.filter((id) => !MONSTERS[id].special);
+
+  document.getElementById('beast-cards').innerHTML = gridIds.map((id) => {
+    const m = MONSTERS[id];
+    return `<div class="beast-card" id="job-card-${id}" data-beast="${id}">
+        <img class="beast-portrait" src="assets/sprites/${m.spriteId ?? id}.png" alt=""
+             onerror="this.style.display='none'">
+        <div class="beast-info">
+          <div class="beast-name" id="job-name-${id}">${m.displayName}</div>
+          <div class="beast-exp-row"><span class="beast-exp" id="beast-exp-${id}"></span><button
+            class="beast-send" data-beast="${id}">Send &#9670;${CONFIG.expedition?.fee ?? 25}</button></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('guide-cards').innerHTML = gridIds.map((id) => {
     const m = MONSTERS[id];
     const pips = MONSTER_BREAKPOINTS.map(() => '<span class="beast-pip"></span>').join('');
     return `<div class="beast-card" data-beast="${id}">
@@ -305,8 +353,6 @@ export function initPanels(root, h) {
         <div class="beast-info">
           <div class="beast-name" id="beast-name-${id}">${m.displayName}</div>
           <div class="beast-sub" id="beast-sub-${id}"></div>
-          <div class="beast-exp-row"><span class="beast-exp" id="beast-exp-${id}"></span><button
-            class="beast-send" data-beast="${id}">Send &#9670;${CONFIG.expedition?.fee ?? 25}</button></div>
         </div>
         <div class="beast-progress">
           <div class="beast-pips" id="beast-pips-${id}">${pips}</div>
@@ -316,19 +362,29 @@ export function initPanels(root, h) {
   }).join('');
 
   // Expeditions (reform step 4): the grid cards are the JOB CARDS (Daniel, 2026-07-11 — a pure
-  // lore Bestiary is a later, separate surface). One binding pass; VIP cards never carry the
-  // button (the grid filter above already excludes specials).
+  // lore Bestiary is a later, separate surface; that surface is now the Field Guide view beside
+  // this one). One binding pass; VIP cards never carry the button (the grid filter excludes them).
   document.querySelectorAll('.beast-send').forEach((btn) =>
     btn.addEventListener('click', () => handlers.onExpedition(btn.dataset.beast)));
 
-  // VIP VISITORS (Daniel, 2026-07-08): special rows DO get bestiary entries — their own section
-  // under the grid, not rows in it. Same card system, same discovered/silhouette reveal (a mystery
-  // card until the first visit), but no pips/next — VIPs are trophies, not ladders, and the
+  // The sub-view toggle. Ephemeral UI state (module-level, like nav's activeTab) — deliberately
+  // NOT saved: it's a view, not a preference, and a save change was explicitly out of scope.
+  // Defaults to Expeditions: that is what this tab has always actually done, so the muscle memory
+  // survives the rename.
+  document.getElementById('mob-views')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.mob-view-btn');
+    if (btn) setMobView(btn.dataset.view);
+  });
+
+  // VIP VISITORS (Daniel, 2026-07-08): special rows DO get bestiary entries — their own section,
+  // not rows in the grid. They ride the FIELD GUIDE now, which is where trophies belong: they were
+  // never jobs (no Send button, by that same decision) and a job list is no place for them. Same
+  // discovered/silhouette reveal, but no pips/next — VIPs are trophies, not ladders, and the
   // completion % stays a field guide of REGULARS (grid-only, suite-pinned). Built JS-side so
   // index.html (and the Kong mirror) stay untouched; idempotence-guarded like all init work.
   const vipIds = MONSTER_IDS.filter((id) => MONSTERS[id].special);
   if (vipIds.length && !document.getElementById('beast-vip-cards')) {
-    document.getElementById('beast-cards')?.insertAdjacentHTML('afterend',
+    document.getElementById('guide-cards')?.insertAdjacentHTML('afterend',
       `<div class="beast-vip-header">VIP Visitors</div>
        <div id="beast-vip-cards">${vipIds.map((id) => {
         const m = MONSTERS[id];
@@ -712,20 +768,26 @@ export function renderPanels(state) {
     if (standing) standing.innerHTML = fameStandingHtml(state);
   }
 
-  // --- Bestiary: lifetime serves -> loyalty pips + studied % (display over the Pass-1 ledger) ---
+  // --- Mobs: lifetime serves -> loyalty pips + studied % (display over the Pass-1 ledger) ---
+  // Each grid monster now owns a card in BOTH sub-views, so this walks querySelectorAll, not
+  // querySelector: the singular form silently updated only the first card in the DOM and left the
+  // Field Guide's silhouette stuck on forever.
   const comp = bestiaryCompletion(state);
   const compEl = document.getElementById('bestiary-completion');
   if (compEl) compEl.textContent = `${comp.pct}% studied`;
   for (const id of MONSTER_IDS) {
-    const card = document.querySelector(`.beast-card[data-beast="${id}"]`);
-    if (!card) continue;
+    const cards = document.querySelectorAll(`.beast-card[data-beast="${id}"]`);
+    if (!cards.length) continue;
     const served = state.stats?.monsterServes?.[id] ?? 0;
     // Undiscovered = never served: silhouette + ??? until first serve. Moot for the launch trio on
     // existing saves, but it makes a NEW monster's debut (Gobbo, next pass) a reveal, not a row.
     const discovered = served > 0;
-    card.classList.toggle('undiscovered', !discovered);
-    const nameEl = document.getElementById(`beast-name-${id}`);
-    if (nameEl) nameEl.textContent = discovered ? (MONSTERS[id]?.displayName ?? id) : '???';
+    cards.forEach((c) => c.classList.toggle('undiscovered', !discovered));
+    // The name rides both views (job card and guide card) — same monster, same reveal.
+    for (const nid of [`beast-name-${id}`, `job-name-${id}`]) {
+      const nameEl = document.getElementById(nid);
+      if (nameEl) nameEl.textContent = discovered ? (MONSTERS[id]?.displayName ?? id) : '???';
+    }
     const crossed = crossedCount(served, MONSTER_BREAKPOINTS);
     const isVip = MONSTERS[id]?.special === true;
     const subEl = document.getElementById(`beast-sub-${id}`);

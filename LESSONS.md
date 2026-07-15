@@ -756,3 +756,60 @@ assets; the half-applied-fix staleness heuristic).
   measure across every available face and report the SPREAD rather than a single number) + skill
   reference (html-game.md): a CSS font stack naming a platform font means the layout has as many
   worst cases as it has target platforms.
+
+## 2026-07-15 — "A new tab is nearly free" was true about the WIRING and false about the LAYOUT, and I nearly built on it
+- What happened: the handoff's NEXT block framed the Bestiary/Expedition split's open question as
+  "does the lore Bestiary become a sixth nav tab (`nav.js` TABS + `PANEL_FOR` are a two-line
+  registry — **a new tab is nearly free**) or a sub-view". That parenthetical is accurate: adding a
+  tab IS two lines. I presented an options round on top of it and Daniel picked the option that
+  needs the tab. Only when I went to build did I check the bottom bar — where `style.css` and
+  LESSONS 2026-07-04 both carry a binding law: **"panel ends 454, 5-tab nav reaches ~470-480, a 6th
+  tab does NOT fit — redesign, don't shrink."** Measured it again: 5 tabs leave 17.2px of slack in
+  the widest face, and a 6th overlaps the customer panel at every label I tried; even in Segoe UI
+  only a ≤4-character label fits. The option I recommended was unbuildable as specified.
+- Root cause: the claim was TRUE in the dimension it was written about (registry wiring) and FALSE
+  in the dimension I was about to use it in (layout). That's a distinct failure from a stale
+  comment — nothing expired, nothing was wrong. A cost estimate silently carries the axis it was
+  measured on, and "free" always means "free in some currency". Two lines of JS; ~90px of bar.
+- Why it mattered: it survived a whole options round. I wrote the options, recommended one, and
+  Daniel picked — all downstream of a cost claim I never priced on the axis that governs. The
+  saving grace was accidental: this same session had just spent itself on a top-bar overlap, so
+  "fixed-position bar" was primed. Without that I'd have added the tab and Daniel's browser would
+  have caught it — the nav sitting on the Serve button.
+- Plug/principle: **when a handoff or design doc calls something cheap, ask "cheap in what?" and
+  price it on every axis the change actually touches** — wiring, layout, save shape, suite. For UI
+  specifically, any change that adds or renames a thing in a fixed-position bar is a LAYOUT change
+  first and a registry change second. Shipped: the split went vertical (sub-views inside the Mobs
+  tab) instead of horizontal; the 6th-tab law is now encoded in suite §80 as a tab COUNT pin, so it
+  fails in CI instead of in a browser; and `nav.js` says out loud that labels are load-bearing.
+  Negative control: adding a 6th tab drops the suite to 1843/1.
+- Route: dev-method (a cost claim inherits the axis it was measured on; re-price it on the axis
+  your change touches — and a claim in a handoff is a claim, subject to the same artifact-wins rule
+  as a comment).
+
+## 2026-07-15 — Splitting one card set into two turned every singular DOM lookup into a coin flip
+- What happened: the split gives each monster a card in BOTH sub-views (a job card and a field-guide
+  card). The existing render loop opened with
+  `const card = document.querySelector('.beast-card[data-beast="${id}"]')` — singular. It had been
+  correct for as long as there was exactly one card per monster. The instant there were two, it
+  silently bound to whichever came first in the DOM and the Field Guide's cards would have kept
+  their `undiscovered` silhouette forever, `???` and blacked-out, no matter how many you served.
+- Why it would have shipped: nothing errors. `querySelector` returns a real element; the class
+  toggles; the suite is headless and cannot draw a panel. The bug is invisible until you serve a
+  monster, switch to the Field Guide, and notice the portrait is still a black cutout — which on a
+  fresh save is indistinguishable from correct behaviour, because nothing IS discovered yet.
+- Root cause: duplicating a DOM element set silently invalidates every `getElementById` /
+  `querySelector` written against it. `getElementById` is worse than `querySelector` here: two
+  cards wanting `beast-name-slime` is invalid HTML that no tool complains about, and the second one
+  just never updates. The signature is a lookup whose CORRECTNESS depended on a uniqueness
+  assumption that the pass itself is in the act of removing — the same shape as the Doug clock
+  (a hardcode that was correct until the pass added a dial).
+- Plug shipped: the loop walks `querySelectorAll` and toggles every card; ids are view-prefixed
+  (`job-name-*` vs `beast-name-*`) so uniqueness is restored rather than papered over; the name
+  write walks both ids explicitly. Guard: §80(e) pins the plural form AND pins that the singular
+  lookup is gone — the second half matters, because the plural form can be added while a stray
+  singular survives elsewhere. Negative control: reverting to `querySelector` drops the suite to
+  1842/2.
+- Route: dev-method (when a pass makes a DOM element set non-unique, grep every lookup against that
+  set BEFORE writing the new markup — `getElementById` on a duplicated id fails silently and is
+  invisible to every headless gate).

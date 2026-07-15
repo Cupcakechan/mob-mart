@@ -1086,7 +1086,7 @@ console.log('M4 auto-serve worker — smoke test\n');
   const c0 = bestiaryCompletion(s0);
   ok(c0.crossed === 0 && c0.pct === 0, 'bestiary: fresh state is 0 crossed, 0%');
   ok(c0.total === total,
-     `bestiary: total scales with the roster (${MONSTER_IDS.length} x ${MONSTER_BREAKPOINTS.length} = ${total})`);
+     `bestiary: total scales with the GRID roster (${gridIds.length} x ${MONSTER_BREAKPOINTS.length} = ${total})`);
 
   const s1 = createInitialState();
   s1.stats.monsterServes.slime = 100;   // crosses 25 / 50 / 100 -> exactly 3
@@ -5461,6 +5461,104 @@ console.log('M4 auto-serve worker — smoke test\n');
        'hud band: both entry shells carry the SAME style.css cache-bust');
     ok(ver(idx79) >= 15,
        'hud band: the cache-bust advanced for this pass\u2019s style.css change (>= v15)');
+  }
+}
+
+
+// ===== SECTION 80 — THE BESTIARY / EXPEDITION SPLIT (Daniel, 2026-07-15 — Option 3, pass one) =====
+// One card was two things: a loyalty ledger AND an expedition job card — the expedition surface
+// wearing the Bestiary label. Now the tab is "Mobs" with two sub-views (Expeditions / Field Guide).
+// The obvious shape — a 6th nav tab — is FORBIDDEN by the 2026-07-04 law ("panel ends 454, 5-tab
+// nav reaches ~470-480, a 6th tab does NOT fit — redesign, don't shrink"), which MEASURED true
+// again on 2026-07-15: a 6th tab overlaps the customer panel in every fallback face, and even in
+// Segoe UI at any label longer than ~4 characters. So the split is VERTICAL, not horizontal.
+// A headless suite cannot draw a panel (the §0b/§78 precedent), so the DOM contract is pinned in
+// SOURCE. Exact totals for this pass live HERE.
+{
+  const { readFileSync: rf80 } = await import('node:fs');
+  const nav80 = rf80('./src/ui/nav.js', 'utf8');
+  const pnl80 = rf80('./src/ui/panels.js', 'utf8');
+  const css80 = rf80('./style.css', 'utf8');
+
+  // --- (a) THE 6TH-TAB LAW, encoded. The nav is right-anchored and grows LEFTWARD into the
+  // customer panel, so tab COUNT is a layout constraint, not a menu preference. ---
+  const tabsBlock = /const TABS = \[([\s\S]*?)\];/.exec(nav80)?.[1];
+  ok(!!tabsBlock, 'split: guard-the-guard — the TABS block was found in nav.js');
+  const tabCount = (tabsBlock.match(/\{\s*id:/g) ?? []).length;
+  ok(tabCount === 5,
+     `split: the nav holds exactly 5 tabs — a 6th does NOT fit the bottom-bar budget (found ${tabCount})`);
+  ok(/\{\s*id:\s*'bestiary',\s*label:\s*'Mobs'\s*\}/.test(tabsBlock),
+     'split: the tab is labelled "Mobs" (id stays \u2018bestiary\u2019 — internal, and the panel still is)');
+  ok(!/label:\s*'Bestiary'/.test(nav80),
+     'split: no tab still claims the "Bestiary" label (the surface was never one)');
+
+  // --- (b) THE SPLIT ITSELF: each sub-view's card carries its OWN job and not the other's.
+  // Sliced out of the source so a Send button drifting back onto a guide card fails here.
+  // NOTE the anchor: the outer close is `</div>`).join('');` — a lazy match to the first
+  // `.join('')` truncates the guide template mid-way, because it builds its pips with an INNER
+  // .join(''). That cut the capture before `beast-sub` and the pin failed honestly first time. ---
+  const sliceTpl = (which) => {
+    const start = pnl80.indexOf(`getElementById('${which}').innerHTML =`);
+    if (start === -1) return null;
+    const end = pnl80.indexOf("\n  }).join('');", start);
+    return end === -1 ? null : pnl80.slice(start, end);
+  };
+  const jobTpl = sliceTpl('beast-cards');
+  const guideTpl = sliceTpl('guide-cards');
+  ok(!!jobTpl && !!guideTpl && jobTpl !== guideTpl,
+     'split: guard-the-guard — both card templates were found in panels.js, and they are distinct');
+  ok(jobTpl.includes('beast-send') && jobTpl.includes('beast-exp'),
+     'split: the Expeditions card carries the Send button and the runs/away line');
+  ok(!jobTpl.includes('beast-pip') && !jobTpl.includes('beast-sub'),
+     'split: the Expeditions card carries NO ledger (no pips, no served count)');
+  ok(guideTpl.includes('beast-pip') && guideTpl.includes('beast-sub'),
+     'split: the Field Guide card carries the ledger (pips + served count)');
+  ok(!guideTpl.includes('beast-send'),
+     'split: the Field Guide card carries NO Send button (it is not a job list)');
+
+  // --- (c) VIPs ride the FIELD GUIDE. Binding (Daniel, 2026-07-08): special rows get their own
+  // section, never rows in the grid, and never a Send button. They were never jobs — so when the
+  // surface split, they belong with the trophies. ---
+  ok(/getElementById\('guide-cards'\)\?\.insertAdjacentHTML/.test(pnl80),
+     'split: the VIP section is inserted under the FIELD GUIDE, not the job grid');
+  ok(!/getElementById\('beast-cards'\)\?\.insertAdjacentHTML/.test(pnl80),
+     'split: the VIP section never attaches to the Expeditions grid');
+
+  // --- (d) THE CASCADE-TIE LAW, live: .beast-cards sets its own display and is declared AFTER the
+  // bare .hidden utility, so it WINS the 0-1-0 tie — a .hidden toggle on a card container would be
+  // a silent no-op. The sub-views toggle exactly this, so the scoped overrides are load-bearing. ---
+  ok(css80.includes('.beast-cards.hidden'),
+     'split: style.css carries the scoped .beast-cards.hidden override (the cascade-tie law)');
+  ok(css80.includes('.mob-view.hidden'),
+     'split: style.css carries the scoped .mob-view.hidden override');
+  {
+    const iHidden = css80.indexOf('\n.hidden{');
+    const iCards = css80.indexOf('\n.beast-cards{');
+    ok(iHidden !== -1 && iCards !== -1 && iCards > iHidden,
+       'split: guard-the-guard — .beast-cards IS declared after .hidden, so the tie is real and the scoped override is required');
+  }
+
+  // --- (e) The render loop must address BOTH cards per monster. querySelector (singular) silently
+  // updated only the first card in the DOM and stranded the Field Guide's silhouette forever —
+  // caught before delivery; pinned so it cannot come back. ---
+  ok(/querySelectorAll\(`\.beast-card\[data-beast="\$\{id\}"\]`\)/.test(pnl80),
+     'split: the render loop walks querySelectorAll — both sub-views\u2019 cards update');
+  ok(!/const card = document\.querySelector\(`\.beast-card\[data-beast/.test(pnl80),
+     'split: the singular querySelector card lookup is gone (it updated only the first view)');
+
+  // --- (f) The completion hint belongs to the Field Guide ("a field guide of REGULARS"), so it
+  // rides that view rather than the panel title — the title must not advertise a ledger the
+  // current view isn't showing. ---
+  ok(/bestiary-completion'\)\?\.classList\.toggle\('hidden'/.test(pnl80),
+     'split: the completion hint follows the Field Guide view');
+
+  // --- (g) style.css changed, so the cache-bust must advance in BOTH shells. ---
+  {
+    const ver = (s) => { const m = /style\.css\?v=(\d+)/.exec(s); return m ? Number(m[1]) : null; };
+    const vi = ver(rf80('./index.html', 'utf8'));
+    const vk = ver(rf80('./index.kongregate.html', 'utf8'));
+    ok(vi !== null && vi === vk, 'split: both entry shells carry the SAME style.css cache-bust');
+    ok(vi >= 16, 'split: the cache-bust advanced for this pass\u2019s style.css change (>= v16)');
   }
 }
 

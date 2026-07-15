@@ -473,6 +473,23 @@ body{
   color:#b6abc9;font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;margin-left:10px;
 }
 .beast-cards{display:flex;flex-direction:column;gap:10px;}
+/* THE CASCADE-TIE LAW, live ammunition: the bare .hidden utility and .beast-cards are BOTH 0-1-0,
+   and .beast-cards is declared LATER — so it WINS, and a bare .hidden toggle on a card container
+   is a silent no-op. Not a theoretical risk: the Mobs sub-views toggle exactly this. Scoped at
+   birth, like .offer-row.hidden and .hud-chip.hidden. */
+.beast-cards.hidden{display:none;}
+.mob-view.hidden{display:none;}
+/* Mobs sub-views (2026-07-15): the tab holds Expeditions + Field Guide because a 6th nav tab does
+   NOT fit (bottom-bar budget below). Segmented control in the panel title; the completion hint
+   rides the Field Guide view, so the title never advertises a ledger you can't currently see. */
+.mob-views{display:inline-flex;gap:4px;margin-left:10px;vertical-align:middle;}
+.mob-view-btn{
+  background:transparent;color:#c9bfa8;border:1px solid var(--panel-edge);border-radius:6px;
+  padding:3px 10px;font-family:var(--font);font-size:11px;font-weight:800;letter-spacing:.6px;
+  text-transform:uppercase;cursor:pointer;
+}
+.mob-view-btn:hover{color:#e8e0cd;border-color:#8a7fa0;}
+.mob-view-btn.active{background:#3b2a55;color:var(--gold);border-color:#8a7fa0;}
 .beast-card{
   display:flex;align-items:center;gap:16px;
   background:var(--parchment);color:var(--ink);border:2px solid var(--wood-edge);

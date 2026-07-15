@@ -1,15 +1,24 @@
-// nav.js — bottom navigation. Swaps ONLY the center panel (Shop / Upgrades / Workers / Bestiary)
+// nav.js — bottom navigation. Swaps ONLY the center panel (Shop / Upgrades / Workers / Mobs)
 // so the corner panels (Current Customer with Serve/Send Away, Battle Results) stay live on every
 // tab. Owns visibility; content is rendered by panels.js. (Bestiary activated in Pass 4a.)
+//
+// LABELS ARE LOAD-BEARING: this bar is right-anchored and grows LEFTWARD into the customer panel,
+// so a label's WIDTH is a layout decision (style.css's bottom-bar budget; LESSONS 2026-07-04).
+// 'Bestiary' -> 'Mobs' on 2026-07-15 because the tab holds two sub-views now (Expeditions + Field
+// Guide) and neither name alone was true — the short label also buys the bar ~46px of slack back.
+// A SIXTH tab does NOT fit at any label length: measured 2026-07-15, it overlaps the customer
+// panel in every fallback face. Redesign the bar before you add one.
 const TABS = [
   { id: 'shop',     label: 'Shop' },
   { id: 'upgrades', label: 'Upgrades' },
   { id: 'workers',  label: 'Workers' },
   { id: 'fame',     label: 'Fame' },
-  { id: 'bestiary', label: 'Bestiary' },
+  { id: 'bestiary', label: 'Mobs' },
 ];
 
 // Which center panel each tab shows. Tabs without an entry here don't swap the center.
+// The 'bestiary' id is kept deliberately: it is internal, the panel is still #bestiary-panel, and
+// renaming it would churn every consumer to buy nothing.
 const PANEL_FOR = { shop: 'items-panel', upgrades: 'upgrades-panel', workers: 'workers-panel', fame: 'fame-panel', bestiary: 'bestiary-panel' };
 
 let navRoot = null;          // kept for the attention hook below
