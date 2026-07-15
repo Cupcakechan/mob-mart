@@ -353,6 +353,7 @@ export function initPanels(root, h) {
         <div class="beast-info">
           <div class="beast-name" id="beast-name-${id}">${m.displayName}</div>
           <div class="beast-sub" id="beast-sub-${id}"></div>
+          <div class="beast-lore" id="beast-lore-${id}"></div>
         </div>
         <div class="beast-progress">
           <div class="beast-pips" id="beast-pips-${id}">${pips}</div>
@@ -394,6 +395,7 @@ export function initPanels(root, h) {
             <div class="beast-info">
               <div class="beast-name" id="beast-name-${id}">${m.displayName}</div>
               <div class="beast-sub" id="beast-sub-${id}"></div>
+              <div class="beast-lore" id="beast-lore-${id}"></div>
             </div>
             <div class="beast-progress"><div class="beast-next vip" id="beast-next-${id}"></div></div>
           </div>`;
@@ -802,6 +804,14 @@ export function renderPanels(state) {
     }
     const pipsEl = document.getElementById(`beast-pips-${id}`);
     if (pipsEl) [...pipsEl.children].forEach((pip, i) => pip.classList.toggle('filled', i < crossed));
+    // THE FIELD GUIDE TAGLINE (2026-07-15, pass 2a): the mob's one comic lever, in his own row.
+    // Gated on `discovered` for the same reason the name is — an unmet mob is a silhouette, and
+    // handing over his punchline before he has ever walked in spends the joke early. Guarded read:
+    // a future mob with no lore renders an empty line, never `undefined`. The Dossier (2b) is where
+    // lore.beats unfold on the pips; the card carries only this one line, so the split's decluttered
+    // card survives the feature that would most easily undo it.
+    const loreEl = document.getElementById(`beast-lore-${id}`);
+    if (loreEl) loreEl.textContent = discovered ? (MONSTERS[id]?.lore?.tagline ?? '') : '';
     const nextEl = document.getElementById(`beast-next-${id}`);
     if (nextEl) {
       const nb = nextBreakpoint(served, MONSTER_BREAKPOINTS);

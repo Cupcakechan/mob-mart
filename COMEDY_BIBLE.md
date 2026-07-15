@@ -564,3 +564,40 @@ CARD is its gag compressed to one line (the registry `card` field): the Skeleton
 anything, eventually” — the object IS the punchline, the card just says it out loud. Rules as
 everywhere: PG, punch at the end, no second-person, log width; the mob keeps its dignity —
 reactions are curious/covetous/confused, never mocked.
+---
+
+## The Field Guide taglines (2026-07-15, pass 2a — `MONSTERS[id].lore.tagline`)
+
+The Field Guide card's ONE line per mob. A different job from the battle log: the log is the mob's
+POV in a moment, the tagline is **the guide's POV on the mob forever** — a naturalist's note,
+present tense, deadpan, describing a permanent truth rather than an event. It never narrates a
+fight and never ages: a line that only lands at 25 serves is a battle line, not a tagline.
+
+Rules as everywhere — ≤80 chars, no second person, PG, punch word LAST — plus the guide's own:
+**one lever, one line.** The tagline IS that mob's comic lever compressed to a sentence, so the
+bible's standing test bites hardest here: *cover the name and it should still be obvious who it
+is.* The shape that keeps working is the section's oldest lever — build a straight-faced frame,
+then drop it (bathos): a real fact about the monster, then the fact that undoes it.
+
+Gated on DISCOVERED (first serve / first visit), for the same reason the name is: an unmet mob is
+a silhouette, and handing over the punchline before he has ever walked in spends the joke early.
+
+| Mob | Lever | Tagline |
+|---|---|---|
+| **Slimey** | innocent literalism | Absorbs everything he touches. Retains nothing he learns. |
+| **Batty** | anxiety & flight | Ambushes from perfect silence. Ruins it immediately by screaming. |
+| **Skele** | deadpan + fragility | Death holds no fear for him. Stairs do. |
+| **Froggo** | professional dissatisfaction | Has never enjoyed a dungeon. Has never missed one either. |
+| **Ratty** | cheerful acquisition | Has never stolen anything. Has found a truly remarkable amount. |
+| **Beetley** | the overprepared tiny soldier | Reports for duty daily. No one has ever assigned him any. |
+| **Demmy** | the apologetic menace | The most dangerous mob in the queue. Terribly sorry about it. |
+| **Leggsy** | earnest bulk shopping | Buys two of everything. Eight legs, eight needs, one system. |
+| **The Inspector** | officialdom in a monster shop | Grades the shop against criteria nobody has ever seen. |
+
+Note how each tagline leans on the mob's own MECHANIC where one exists — Leggsy's `bulkBuyer` is
+literally "two of everything", Ratty's `thief` flag is the thing he insists isn't happening,
+Demmy's combatMod +2 is the danger he apologises for. The mechanic and the joke are the same fact
+said twice; that is why the roster reads as characters rather than stat blocks.
+
+**Pass 2b adds `lore.beats`** — the progressive reveal on the serve pips, in the Dossier. Those
+are the paragraphs; this is the caption. Do not grow the tagline into the beats' job.

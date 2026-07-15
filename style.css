@@ -499,6 +499,12 @@ body{
 .beast-info{flex:1 1 auto;min-width:0;}
 .beast-name{font-weight:800;font-size:19px;line-height:1.15;}
 .beast-sub{font-size:13px;font-weight:600;opacity:.72;line-height:1.3;}
+/* The Field Guide tagline (2026-07-15). Italic sets flavour apart from the mechanical `Served N`
+   line above it without a second colour. #6b4a1e is the house TAN-CARD ink (.item-price /
+   .trade-hint / .beast-exp) at 6.11:1 — NOT a dark-panel colour. This card is parchment: the one
+   palette in this file that reads correctly here is the one that already reads correctly here.
+   See §81 (the wrong-palette law) before reaching for a purple, a lavender or a gold. */
+.beast-lore{font-size:12px;font-style:italic;color:#6b4a1e;line-height:1.3;margin-top:3px;}
 .beast-progress{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:0 0 auto;}
 .beast-pips{display:flex;gap:5px;}
 .beast-pip{width:13px;height:13px;border-radius:50%;border:2px solid var(--gold-deep);background:transparent;}

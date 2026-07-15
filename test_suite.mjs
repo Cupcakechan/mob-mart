@@ -5641,5 +5641,90 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
 }
 
+// ===== SECTION 82 — THE FIELD GUIDE TAGLINE (Daniel, 2026-07-15 — Option 2 staged, pass 2a) =====
+// Daniel: "we need to put short but funny descriptions + as players reach new story milestones -
+// more is revealed." This is pass 2a: the registry field and the card line. Pass 2b (the Dossier)
+// carries the reveal — lore.beats on the pips, plus the 233 MONSTER_RESULTS lines that currently
+// flash past the battle log ONCE and are gone.
+// EVERY assertion here DERIVES from MONSTER_IDS: the roster has grown from 3 to 9 and will grow
+// again, and a hand-typed "9 taglines" is the exact defect the 2026-07-04 batch-2 lesson recorded
+// (§29's own day-old ITEM_ORDER.length === 15 broke within a day). Exact totals for this pass live
+// HERE per doctrine; older sections keep the softened rules.
+{
+  const { readFileSync: rf82 } = await import('node:fs');
+  const { MONSTERS: M82, MONSTER_IDS: IDS82 } = await import('./src/data/monsters.js');
+  const pnl82 = rf82('./src/ui/panels.js', 'utf8');
+  const css82 = rf82('./style.css', 'utf8');
+  const taglines = IDS82.map((id) => M82[id]?.lore?.tagline);
+
+  // --- (a) THE CONTRACT: every mob in the guide has a line. The Inspector included — he rides the
+  // Field Guide (2026-07-08: VIPs are trophies, their own section, never the grid). ---
+  ok(taglines.every((t) => typeof t === 'string' && t.length > 0),
+     `lore: every monster in the live roster carries lore.tagline (${taglines.filter(Boolean).length}/${IDS82.length})`);
+
+  // --- (b) THE BIBLE'S LAWS, applied to a new surface. 80 chars is the log's budget; the guide
+  // card measured ~50 chars/line in the widest fallback face, so a tagline may wrap to two lines
+  // but must never become a paragraph. ---
+  ok(taglines.every((t) => (t ?? '').length <= 80),
+     `lore: every tagline fits the 80-char budget (longest ${Math.max(...taglines.map((t) => (t ?? '').length))})`);
+  ok(taglines.every((t) => !/\byou\b/i.test((t ?? '').replace(/you'd/gi, ''))),
+     'lore: no tagline breaks the no-second-person hygiene law (the guide describes, never addresses)');
+  ok(new Set(taglines).size === taglines.length,
+     'lore: every tagline is distinct — a duplicated line means a copy-pasted row, not a character');
+
+  // --- (c) THE WRITE AND THE READ. A registry field with no consumer is a dropped step wearing a
+  // feature's clothes (the always-on law), so pin BOTH ends: the template that makes the element
+  // and the writer that fills it. A headless suite cannot draw a card (the §0b/§78/§80 precedent). ---
+  ok(/id="beast-lore-\$\{id\}"/.test(pnl82),
+     'lore: the guide card template emits the beast-lore element (the WRITE)');
+  ok(/beast-lore-\$\{id\}`\)[\s\S]{0,200}?lore\?\.tagline/.test(pnl82),
+     'lore: panels.js READS lore?.tagline into that element — guarded, so a lore-less mob renders empty');
+
+  // --- (d) THE SPLIT'S LAW HOLDS (§80). The job card is portrait + name + runs + Send. Lore is a
+  // LEDGER concern; a tagline drifting onto the Expeditions card re-merges the two surfaces the
+  // 2026-07-15 split just separated. Sliced with the §80 anchor (the outer `</div>`).join('') —
+  // a lazy match to the first .join('') truncates the guide template at its inner pips join. ---
+  const slice82 = (marker) => {
+    const i = pnl82.indexOf(marker);
+    const j = pnl82.indexOf("</div>`;\n  }).join('')", i);
+    return i < 0 || j < 0 ? null : pnl82.slice(i, j);
+  };
+  const jobTpl82 = slice82("document.getElementById('beast-cards').innerHTML");
+  const guideTpl82 = slice82("document.getElementById('guide-cards').innerHTML");
+  ok(!!jobTpl82 && !!guideTpl82, 'lore: guard-the-guard — both sub-view templates were sliced');
+  ok(guideTpl82.includes('beast-lore'),
+     'lore: the FIELD GUIDE card carries the tagline (the ledger surface owns the character)');
+  ok(!jobTpl82.includes('beast-lore'),
+     'lore: the EXPEDITIONS job card does NOT — it is a job card, and §80 keeps it one');
+
+  // --- (e) THE WRONG-PALETTE LAW (§81), applied to the line this pass adds. New text on the
+  // parchment card is exactly where the .beast-exp defect was born, so it is asserted at birth
+  // this time — as a computed ratio, never a hex. ---
+  const rootBody82 = /:root\s*\{([\s\S]*?)\}/.exec(css82)?.[1] ?? '';
+  const parch82 = /--parchment\s*:\s*(#[0-9a-fA-F]{6})/.exec(rootBody82)?.[1] ?? null;
+  const loreBody = /^\.beast-lore\s*\{([^}]*)\}/m.exec(css82)?.[1] ?? null;
+  const loreColor = loreBody ? /(?:^|;)\s*color\s*:\s*(#[0-9a-fA-F]{6})/.exec(loreBody)?.[1] ?? null : null;
+  ok(!!parch82 && !!loreColor, 'lore: guard-the-guard — .beast-lore declares a hex colour and :root a parchment');
+  {
+    const lin82 = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+    const lum82 = ([r, g, b]) => 0.2126 * lin82(r / 255) + 0.7152 * lin82(g / 255) + 0.0722 * lin82(b / 255);
+    const rgb82 = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+    const [hi, lo] = [lum82(rgb82(loreColor)), lum82(rgb82(parch82))].sort((a, b) => b - a);
+    const ratio = (hi + 0.05) / (lo + 0.05);
+    ok(ratio >= 4.5,
+       `lore: .beast-lore clears WCAG AA on the parchment card — ${ratio.toFixed(2)}:1 (the §81 law, `
+       + 'asserted at birth rather than four days later)');
+  }
+
+  // --- (f) style.css changed again; this section owns the current floor. ---
+  {
+    const ver82 = (s) => { const m = /style\.css\?v=(\d+)/.exec(s); return m ? Number(m[1]) : null; };
+    const vi82 = ver82(rf82('./index.html', 'utf8'));
+    const vk82 = ver82(rf82('./index.kongregate.html', 'utf8'));
+    ok(vi82 !== null && vi82 === vk82, 'lore: both entry shells carry the SAME style.css cache-bust');
+    ok(vi82 >= 18, `lore: the cache-bust advanced for this pass\u2019s style.css change (>= v18, found ${vi82})`);
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

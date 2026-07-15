@@ -6,6 +6,14 @@
 // exists (true auto-flow; the old per-item wantWeights needed every monster touched per item).
 // (Gobbo the goblin was redesigned into Froggo the grumpy FROG before implementation — Daniel,
 // 2026-07-04; id + all PNG naming = `frog`. Rat remains an open call, handoff §13.)
+// LORE (Field Guide, 2026-07-15 — Daniel's "short but funny descriptions + more revealed as
+// players reach milestones"; Option 2 staged, pass 2a). `lore.tagline` is the ONE line a Field
+// Guide card carries once the mob is discovered — the card ADVERTISES, and pass 2b's Dossier
+// INFORMS (the sale-sign doctrine, applied to a second surface). COMEDY_BIBLE voice: each tagline
+// plays that mob's one comic lever, ≤80 chars, no second person, punch word last — cover the name
+// and it should still be obvious who it is. Optional by contract: every read site guards
+// (`lore?.tagline ?? ''`), so a future mob without one degrades to no line, never a crash.
+// Pass 2b adds `lore.beats` (the progressive reveal) beside it — additive, no consumer churn.
 export const MONSTERS = {
   slime: {
     id:'slime', displayName:'Slimey', spriteId:'slime', combatMod:-2, budgetRange:[10,20],
@@ -17,6 +25,7 @@ export const MONSTERS = {
                                    // 512x128 strip); strip absent -> static slime.png (graceful)
     categoryWeights: { consumable: 3, weapon: 2, armor: 1 },   // the flask fan, by category
     material: 'slime_core', materialEveryNServes: 10,   // drop law: servedNow % N === 0 (game.js)
+    lore: { tagline: "Absorbs everything he touches. Retains nothing he learns." },
                          // — deterministic, plannable, throttled. All six Ns RETUNED ~2.5× on
                          // 2026-07-11 (Daniel: 4–6 felt like confetti; ~1 material/min roster-wide now)
   },
@@ -28,6 +37,7 @@ export const MONSTERS = {
                                    // field — absent = static <id>.png, then the placeholder rect)
     categoryWeights: { armor: 3, consumable: 2, weapon: 1 },   // the armor lover, by category
     material: 'echo_fang', materialEveryNServes: 10,
+    lore: { tagline: "Ambushes from perfect silence. Ruins it immediately by screaming." },
   },
   skeleton: {
     id:'skeleton', displayName:'Skele', spriteId:'skeleton', combatMod:1, budgetRange:[12,24],
@@ -36,6 +46,7 @@ export const MONSTERS = {
     anim: { frames: 4, fps: 6 },   // idle rattle/sway: skeleton_idle.png, SHARED contract as above
     categoryWeights: { weapon: 3, armor: 2, consumable: 1 },   // sword guy, by category
     material: 'femur_charm', materialEveryNServes: 12,
+    lore: { tagline: "Death holds no fear for him. Stairs do." },
   },
   frog: {
     id:'frog', displayName:'Froggo', spriteId:'frog', combatMod:0, budgetRange:[16,30],
@@ -57,6 +68,7 @@ export const MONSTERS = {
     categoryWeights: { consumable: 3, weapon: 2, armor: 1 },
     material: 'bogstone_bauble', materialEveryNServes: 15,   // premium customer, stingier drop
     itemBias: { greater_flask: 3, iron_sword: 2 },   // the tier-2 customer: once licensed, his
+    lore: { tagline: "Has never enjoyed a dungeon. Has never missed one either." },
                                                      // signature goods dominate WITHIN the category
                                                      // (pre-license the unlock filter hides them).
   },
@@ -91,6 +103,7 @@ export const MONSTERS = {
                                                                // unattended is interesting
     material: 'stolen_trinket', materialEveryNServes: 10,   // the scrounger sheds loot readily
     itemBias: { rusty_key: 3, tattered_shirt: 2 },   // signature loves: a THIEF craves the key,
+    lore: { tagline: "Has never stolen anything. Has found a truly remarkable amount." },
                                                      // and the cheapest shirt is peak scrounger
   },
   beetle: {
@@ -111,6 +124,7 @@ export const MONSTERS = {
     categoryWeights: { armor: 4, weapon: 2, consumable: 1 },   // armor-first by a wide margin
     itemBias: { wooden_shield: 2, iron_buckler: 2 },           // signature loves: MORE shell
     material: 'carapace_shard', materialEveryNServes: 12,
+    lore: { tagline: "Reports for duty daily. No one has ever assigned him any." },
   },
 
   demon: {
@@ -132,6 +146,7 @@ export const MONSTERS = {
     categoryWeights: { weapon: 3, consumable: 2, armor: 1 },   // sword-first; flasks for the nerves
     itemBias: { iron_sword: 3, greater_flask: 2 },   // signature loves: the TRADE item leads
     material: 'infernal_ember', materialEveryNServes: 15,   // premium-rare, the Froggo logic
+    lore: { tagline: "The most dangerous mob in the queue. Terribly sorry about it." },
   },
 
   spider: {
@@ -156,6 +171,7 @@ export const MONSTERS = {
     categoryWeights: { consumable: 3, armor: 2, weapon: 1 },   // leg maintenance first
     itemBias: { bandages: 3, zip_tonic: 2 },   // signature loves: bandages BY THE PAIR is the joke
     material: 'silk_bundle', materialEveryNServes: 12,
+    lore: { tagline: "Buys two of everything. Eight legs, eight needs, one system." },
   },
 
   dragon: {
@@ -190,6 +206,7 @@ export const MONSTERS = {
     // the restock loop itself is what gets celebrated.
     anim: { frames: 4, fps: 6 },
     categoryWeights: { weapon: 1, armor: 1, consumable: 1 },   // an inspector samples impartially
+    lore: { tagline: "Grades the shop against criteria nobody has ever seen." },
   },
 };
 
