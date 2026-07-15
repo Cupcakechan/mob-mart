@@ -151,38 +151,69 @@ is the only thing that would measure B1's worth directly; not built. Two vetoabl
 baked into B1, each a one-line revert: the reserve covers OFFLINE and LEAVE-THEFT, not just the live
 counter.
 
-**NEXT — THE HUD / BESTIARY UI ROUND (Daniel, 2026-07-14), two passes, in this order.** Cold-boot
-ritual as always: this doc in full, the dev-method skill, sync-and-certify (suite must read
-**1797** at HEAD, tip **8fe8012**). Both passes are UI-only and open with an options round.
+**THE HUD / BESTIARY UI ROUND — BOTH PASSES DONE (2026-07-15).** Details in the dated section at
+the bottom. In short: **(1)** the Scrap/Menu overlap is fixed (`6c0e74c`) — the next-LEVEL remainder
+moved out of the HUD into the Fame panel and the Menu button's column is reserved; **(2)** the
+Bestiary/Expedition split shipped (`5843f6e`) — the tab is now **Mobs**, holding two sub-views
+(**Expeditions** = job cards, **Field Guide** = the ledger + VIPs). Suite **1797 → 1844**.
 
-  **(1) SCRAP CHIP + MENU BUTTON OVERLAP.** Daniel reports the two overlap on screen. Both live in
-  the top bar: the scrap chip is `#hud-scrap-chip` (index.html:19, a `.hud-chip.scrap` carrying the
-  ⚙ text-glyph + `#hud-scrap` value) and the Menu button is `#menu-btn` (index.html:15,
-  `.menu-btn`). NOT YET DIAGNOSED — do not assume a cause. The scrap chip is
-  conditionally shown (hud.js:52-55: hidden until the scavenger is hired or scrap is banked, "the
-  early HUD stays two-chip clean"), so the likeliest shape is a layout that fits at two chips and
-  collides at three — but MEASURE the rendered geometry before proposing anything. NOTE: fixing
-  this almost certainly touches `style.css`, which means the **`?v=N` cache-bust must be
-  incremented in BOTH entry shells** (index.html and index.kongregate.html) or Daniel tests a
-  stale sheet.
+**A CORRECTION THIS ROUND EARNED — read before touching any bar.** The old version of this block
+told the next session that *"a new tab is nearly free (`nav.js` TABS + `PANEL_FOR` are a two-line
+registry)"*. **That is true about the WIRING and false about the LAYOUT, and it nearly cost the
+round.** The bottom bar is right-anchored and grows LEFTWARD into the customer panel. The binding
+law (LESSONS 2026-07-04, and the budget at `style.css`'s `.nav` rule) is **"panel ends 454, 5-tab
+nav reaches ~470-480, a 6th tab does NOT fit — redesign, don't shrink"**, and it MEASURED true again
+on 2026-07-15: a 6th tab overlaps the customer panel in every fallback face, and even in Segoe UI at
+any label longer than ~4 characters. That is why the split went VERTICAL (sub-views) instead of
+horizontal (tabs). Suite §80 now pins the tab COUNT, so a future session that trusts "nearly free"
+fails in the suite rather than in Daniel's browser. **Labels are load-bearing** (~7.5px/character in
+the widest face); "Bestiary"→"Mobs" bought the bar back ~30px (slack 17.20 → 47.45).
 
-  **(2) THE BESTIARY / EXPEDITION SPLIT.** Daniel: "re-work the Bestiary tab which is actually used
-  for Expeditions — see how we can improve it, and look at where the real bestiary can be." THE
-  ARTIFACT AGREES WITH HIM, and his own earlier decision already called this shot. What exists
-  today: the `bestiary-panel` (panels.js:105) holds one `#beast-cards` grid; each card is
-  simultaneously a loyalty ledger (portrait, name, one pip per `MONSTER_BREAKPOINT`, next-breakpoint
-  hint, `#bestiary-completion` in the title) AND an expedition job card (`Send ◆{fee}` button,
-  lifetime run count, live `away Ns` timer — panels.js:283-284, 464-477). It is the EXPEDITION
-  surface wearing the Bestiary label. **The binding prior decision (Daniel, 2026-07-11, recorded at
-  panels.js:293): "the grid cards are the JOB CARDS — a pure lore Bestiary is a later, separate
-  surface."** So the "real bestiary" was never lost; it was DEFERRED, and this round is the pickup.
-  Also binding (Daniel, 2026-07-08, panels.js:299): VIP/special visitors get bestiary entries in
-  their OWN section under the grid, never rows in it — the grid filter (`!MONSTERS[id].special`)
-  enforces it and VIP cards never carry a Send button. Open questions for the options round: does
-  the job grid keep the "Bestiary" label or get renamed to what it is; does the lore Bestiary
-  become a sixth nav tab (`nav.js` TABS + `PANEL_FOR` are a two-line registry — a new tab is
-  nearly free) or a sub-view; and what lore content exists to fill it (CHECK THE REGISTRY, don't
-  assume — `MONSTERS` fields at writing time, not from memory).
+**NEXT — THE MOBS FOLLOW-UP ROUND (Daniel, 2026-07-15), in this order.** Cold-boot ritual as always:
+this doc in full, the dev-method skill, sync-and-certify (suite must read **1844** at HEAD, tip
+**5843f6e**).
+
+  **(1) THE "RUNS" TEXT IS TOO LIGHT.** Daniel: *"we need to change the font for 'Runs' its far too
+  light and difficult to see."* A FEEL fix — name the mechanism, find the single lever, change one
+  value; do not broad-restyle. The element is `.beast-exp` (`style.css`; rendered in `panels.js`'s
+  Expeditions card as `${runs} run(s)` / `away Ns`). NOT YET DIAGNOSED — measure the rendered colour
+  and its contrast against `--parchment` before proposing. The likely mechanism (unverified): the
+  colour was chosen when the card ALSO carried a name, a served-count and a rep line, so a muted
+  tone read as tertiary detail; the split stripped the card to name + this line, and it is now
+  second of two and cannot carry that weight. Touching `style.css` means **`?v=17` in BOTH entry
+  shells**.
+
+  **(2) FIELD GUIDE DESCRIPTIONS + PROGRESSIVE REVEAL.** Daniel: *"we need to put short but funny
+  descriptions + as players reach new story milestones - more is revealed - I know that is a heavy
+  one but one thing I want."* Opens with an options round. **This is NOT the Field Notes I scoped
+  during the split round — read both and merge them:**
+   - *What I had scoped (zero authoring):* `MONSTER_RESULTS` (`src/data/results.js`) already holds
+     **233 authored per-monster lines** — 26-29 for each of the 8 grid monsters, 12 for the
+     Inspector, bucketed `excellent / success / partial / failure / funnyFailure / leave / dismiss`
+     (+`theft` for Ratty). They flash past in the battle log once and are gone. Gate them on
+     `crossedCount(served, MONSTER_BREAKPOINTS)` — which ALREADY exists — and 5 pips unlock 7
+     buckets with **no save change and no new counting**.
+   - *What Daniel asked for (new content):* authored short-funny DESCRIPTIONS. **The registry has
+     none — CHECK IT, don't assume: `MONSTERS` has 20 fields and every one is mechanical (`id`,
+     `displayName`, `spriteId`, `combatMod`, `budgetRange`, `anim`, `categoryWeights`, `material`,
+     `footPad`, `materialEveryNServes`, `spriteScale`, `itemBias`, `patienceBonus`, `flying`,
+     `thief`, `bulkBuyer`, `gradeMaterial`, `special`, `pixelScale`, `frameSize`). No `lore`,
+     `description`, `flavor` or `bio` exists.** A new registry field is needed, authored per
+     monster (9 rows), COMEDY_BIBLE voice — line trust is granted, so no review round.
+   - *Open questions for the options round:* which milestones drive the reveal (serve breakpoints
+     `[25,50,100,250,500]`? fame rungs? both?); how much text a card can hold before it needs a
+     detail/drill-down surface (26-29 lines per monster CANNOT fit a grid cell — measured); whether
+     descriptions and result-lines reveal on the same ladder or two.
+   - *Binding, still:* VIPs get their own section, never rows in the grid, never a Send button
+     (Daniel, 2026-07-08); the completion % stays a field guide of REGULARS, grid-only, suite-pinned.
+
+  **(3) THE TAB NAME — "Mobs" IS PROVISIONAL.** Daniel: *"aside from Mob - any other name would
+  fit?"* "Mobs" was picked under width pressure, not affection. Opens with an options round, and
+  **every candidate must be MEASURED before it is offered** — the label's width is a layout decision
+  (see the correction above; ~7.5px/character in the widest face, and the bar has 47.45px of slack
+  in that face today). One candidate already in the codebase: the completion metric calls them
+  *"a field guide of REGULARS"*. Note `nav.js`'s tab **id** stays `bestiary` regardless — it is
+  internal, the panel is still `#bestiary-panel`, and renaming it churns consumers to buy nothing.
 
 **THEN the rest of the parked queue, in order:** results-box flooding (h) → B2 material payment →
 B3 extra slots → Greg-perk visibility (g)①.
@@ -382,7 +413,7 @@ with the Rat. **Option-3 art polish: SCRUBBED** (see §9 — the 128px-frame + M
 convention is PERMANENT, do not resurrect).
 **Workflow note: NO DevLog for Mob Mart** — Daniel opted out (2026-07-03). Skip the DevLog draft
 step at feature completion for this project.
-**Last updated:** 2026-07-14 — DOUG LEVELING shipped + certified (b9ac048, suite 1797) after the browser caught a render/logic clock desync; THE SIM INSTRUMENT REPAIRED (2784bec — cap-hits counted not averaged, all 5 seeds; **every pre-2026-07-14 margin is VOID as a comparison**); cameo drift decided-not-fixed (8fe8012). NEXT = the HUD / Bestiary UI round. Earlier: 2026-07-14 — Commission B1 (hard reserve) SHIPPED (97a540f, suite 1746), F2 coupling reversed by the sim to decoupled. Earlier: 2026-07-10 — §14 complete (Doug + scrap + cameos + the Relic Forge); §0 added as the cold-boot front door.
+**Last updated:** 2026-07-15 — THE HUD / BESTIARY UI ROUND, both passes shipped and browser-confirmed (suite 1797 → **1844**, tip **5843f6e**). (1) HUD band (6c0e74c): the next-LEVEL remainder moved to the Fame panel and the Menu button’s column is reserved — the 2026-07-10 budget was accurate when written and F1a expired it two days later with a TEXT change; a documented KNOWN LIMIT remains in DejaVu Sans only (the parked compact-numbers item closes it). (2) The Bestiary/Expedition split (5843f6e): the tab is **Mobs**, holding Expeditions + Field Guide sub-views; VIPs ride the guide. **A 6th nav tab does NOT fit — the “nearly free” line in the old NEXT block was true about wiring and false about layout, and §0 now carries the correction; suite §80 pins the tab count.** NEXT = the Mobs follow-up round (Runs contrast → Field Guide descriptions + reveal → the tab name). Earlier: 2026-07-14 — DOUG LEVELING shipped + certified (b9ac048, suite 1797); THE SIM INSTRUMENT REPAIRED (2784bec — **every pre-2026-07-14 margin is VOID as a comparison**); cameo drift decided-not-fixed (8fe8012). Earlier: 2026-07-14 — Commission B1 (hard reserve) SHIPPED (97a540f), F2 coupling reversed by the sim to decoupled. Earlier: 2026-07-10 — §14 complete (Doug + scrap + cameos + the Relic Forge); §0 added as the cold-boot front door.
 
 ---
 
@@ -2434,3 +2465,95 @@ that reasons about the value that dial now moves.
 
 **NEXT:** the HUD / Bestiary UI round — §0's NEXT block carries both passes with their real
 anchors.
+
+---
+
+## 2026-07-15 — THE HUD / BESTIARY UI ROUND (6c0e74c, 5843f6e; suite 1797 → 1844)
+
+Both passes UI-only, both browser-confirmed, both opened with an options round. **Everything below
+was MEASURED in a real browser** (Playwright + Chromium, viewport pinned 1280×720 so `resize()`
+computes scale 1 and every rect is stage-local) — this round exists because nothing headless can
+measure CSS geometry, and two budgets had quietly gone false.
+
+**PASS 1 — THE HUD BAND (`6c0e74c`).** The Scrap chip rendered under the Menu button. The handoff
+guessed "fits at two chips, collides at three"; **that was wrong** — three chips at fresh numbers
+clear by ~32px, and two chips never collide at any number. The trigger is row WIDTH, and two faults
+compounded:
+- **`.hud` and `#menu-btn` were BOTH anchored `right:16px`.** The band ran to the button's own right
+  edge and the button (z6 over the HUD's z5) painted over whatever reached it. The 2026-07-10 budget
+  reasoned carefully about the wall-shelf to its LEFT and the dock BELOW and never named its
+  right-hand neighbour. Now `right:104px` = 16 margin + ~72 button + 16 breath → 780px usable.
+- **F1a expired the budget's "~770px" two days after it was written.** Measured: pre-F1a ~757px (the
+  budget was ACCURATE when authored), post-F1a ~969px — the badge gained "· Lv N", and `#hud-next`
+  went from rendering `''` past the last rung to ALWAYS populated, because the level curve is
+  infinite. **The expiring change was TEXT, not a dial** — which generalises the 2026-07-14 lesson.
+- Also: the budget said "don't shrink" but the CSS never set `flex-shrink:0`, so flex squeezed the
+  chips and wrapped their text (45→58px tall) rather than failing visibly. Now enforced.
+- **The fix (Daniel's call, from his annotated screenshot): MOVE the next-level remainder to the Fame
+  panel**, which already owned the next-RUNG one. New pure `fameStandingHtml(state)` export
+  (`panels.js`, the `gregBubbleFor` precedent) renders both beats — and SKIPS the rung line when the
+  next level IS that rung, because `nextLevelInfo` and `nextTierInfo` then return the same number for
+  the same destination and it stutters. Three shapes, all suite-pinned.
+- **Daniel's premise needed one correction:** he believed the line already lived in the Fame tab. It
+  did not — the tab carried the RUNG line (`· 136893♛ to Mythic`), not the LEVEL line
+  (`· 18047♛ to Lv 18`). Different number, different destination. So this was a real move, not a
+  delete. **Artifact wins, including over the person who wrote the design.**
+- **KNOWN LIMIT, accepted and documented in the budget comment.** Worst case vs the 780px band by
+  face: Segoe UI ~687 (+93) · Noto ~718 (+62) · FreeSans ~737 (+43) · Liberation ~742 (+38) ·
+  Poppins ~755 (+25) · **DejaVu Sans ~817 (−37 — the one face that does not fit)**. DejaVu resolves
+  only when BOTH `'Segoe UI'` and `system-ui` miss (a minimal Linux profile); such a player at
+  7-digit gold sees the Scrap value's tail clipped. **The parked compact-numbers item cuts ~75px and
+  closes it** — it stays parked; it was not needed for any mainstream platform.
+
+**PASS 2 — THE BESTIARY / EXPEDITION SPLIT (`5843f6e`).** Daniel's read was right and the artifact
+agreed: one card was a loyalty ledger AND an expedition job card at once. Option 3 picked, built as
+pass one of two.
+- **Tab renamed `Bestiary` → `Mobs`** (id stays `bestiary` — internal), holding two sub-views:
+  **Expeditions** (job cards: portrait, name, runs/away, `Send ◆25`) and **Field Guide** (the ledger:
+  pips, `Served N · +X% rep`, `next 50`, `N% studied`, VIP Visitors).
+- **VIPs moved to the Field Guide** — they were never jobs (no Send button, by the 2026-07-08
+  decision), so when the surface split they went with the trophies. Both binding decisions intact.
+- **The completion hint rides the Field Guide view**, not the panel title — the title must not
+  advertise a ledger the current view isn't showing.
+- **A 6th tab was the obvious shape and is FORBIDDEN** — see §0's correction. The split went vertical.
+- **Two traps caught before delivery, both now pinned:** (a) `.beast-cards{display:flex}` is declared
+  AFTER the bare `.hidden` utility, so it WINS the 0-1-0 tie — a `.hidden` toggle on a card container
+  would have been a **silent no-op**. Live ammunition, not theory; scoped overrides added at birth.
+  (b) the render loop's `querySelector` (singular) was correct only while each monster had ONE card;
+  with two it binds to whichever is first in the DOM, and the Field Guide's cards would have stayed
+  `???`/silhouetted forever — indistinguishable from correct on a fresh save. Now `querySelectorAll`,
+  ids view-prefixed (`job-name-*` vs `beast-name-*`).
+
+**SUITE 1797 → 1844.** §79 (HUD band, 25) + §80 (the split, 19) + §72(f) refined 1→4. **§72(f) is
+the one to remember:** it pinned `hud.includes('nextLevelInfo')` and **stayed green straight through
+the removal that invalidated it** — because the comment explaining the move contains the string. A
+source pin must match a STRUCTURE (an import list, a call shape), never a bare symbol name; comments
+are text too. Both sections negative-controlled: reverting the reservation → 1823/2, dropping
+`flex-shrink:0` → 1824/1, breaking the no-stutter guard → 1824/1, adding a 6th tab → 1843/1,
+a Send button on a guide card → 1843/1, reverting to `querySelector` → 1842/2, VIPs on the job grid
+→ 1842/2. Every one restores to green.
+
+**Also fixed:** §23's pin printed *"total scales with the roster (9 x 5 = 40)"* — the assertion was
+right (`gridIds` = 8 non-special × 5 breakpoints), the message interpolated `MONSTER_IDS.length`. It
+only surfaces on failure, where it would mislead. Now reads GRID roster.
+
+**A measurement caveat that shaped the whole round.** `--font` is `'Segoe UI', system-ui,
+-apple-system, sans-serif`. **Segoe UI is a Windows font and cannot be installed in the container**,
+so every pixel measured here rendered in a fallback (DejaVu Sans — the widest face available, and
+therefore a conservative bound). Daniel's annotated screenshot was the calibration artifact: its
+un-wrapped badge sits at max-content width, giving **Segoe/DejaVu ≈ 0.778 on text**, validated to
+**1.6%** by decomposition (fixed padding/borders/gaps do NOT scale with the face; only text does).
+Without that calibration the first recommendation was over-built — it bundled compact numbers and a
+padding trim that were necessary only in a font no Windows player has. **A rendered-geometry
+measurement must name the face it was taken in.** Also: **the worst case of a composite string is not
+at the maximum of any single input** — "Renowned · Lv 16 · 17293♛ to Legendary" is 44px wider than
+the endgame "Mythic · Lv 23", because the longest rung NAME and the rung-naming remainder co-occur
+mid-ladder. Sweep every rung from the live curve; never spot-check the extreme.
+
+**+7 LESSONS** (2026-07-15): CSS budgets expire on TEXT changes and only a browser notices · a
+source-text pin is satisfied by prose · a pixel measurement is only valid in its font · "nearly free"
+was true about wiring and false about layout · splitting a card set breaks every singular DOM lookup ·
+the `git status` READ scans for deletions and missed a stray added file · a 30-line commit body in a
+repo whose every commit has none.
+
+**NEXT:** the Mobs follow-up round — §0's NEXT block carries all three items with their real anchors.

@@ -813,3 +813,48 @@ assets; the half-applied-fix staleness heuristic).
 - Route: dev-method (when a pass makes a DOM element set non-unique, grep every lookup against that
   set BEFORE writing the new markup — `getElementById` on a duplicated id fails silently and is
   invisible to every headless gate).
+
+## 2026-07-15 — The `git status` READ scans for deletions; a stray 0-byte file walked straight past it
+- What happened: the HUD-band checkpoint went out, Daniel ran it, and the remote came back with TWO
+  commits: the real pass (8 files, correct) and a second one adding a **0-byte file literally named
+  `1825`** at the repo root — the suite's pass count, almost certainly a stray `> 1825` redirect
+  while checking the total. `git add .` staged it faithfully. It pushed.
+- Root cause: the doctrine's `git status` READ exists because `git add .` will happily stage a
+  **deletion** that's already in the working tree — a 417-line doc vanished that way once, and the
+  rule has been "scan for `deleted:` lines" ever since. That's one half of the surface. The mirror
+  case is an unexpected **addition**, and the READ as practiced doesn't look for it: nothing about a
+  new file at the root reads as alarming in a status list you're scanning for the word "deleted".
+  Harmless here (empty, unreferenced), but the same blind spot passes a stray key file, a scratch
+  dump, or a `.env`.
+- What actually caught it: not the READ — the checkpoint block's expected-files comment. The block
+  said "8 files, 0 deletions"; the remote had 9. The comment exists because a file that was never
+  touched doesn't appear in `git status` at all, so the READ needs an expectation to diff against.
+  It turned out to catch the opposite failure too: an expectation is symmetric, and a scan is not.
+- Plug/principle: **the `git status` READ is a two-sided diff against the expected file list, not a
+  keyword hunt for `deleted:`.** Unexpected ADDED paths stop the checkpoint exactly as unexpected
+  deletions do. The expected-files comment is what makes both visible; it stays mandatory, and it
+  should be read as a set, not a count.
+- Route: dev-method (extend the git-status READ rule: scan for unexpected additions as well as
+  deletions; the expected-files comment is the diff target for both directions).
+
+## 2026-07-15 — I wrote a 30-line commit body into a repo whose every commit has a zero-line body
+- What happened: Daniel: "that git commit is way too long — why did you make it that long?" He'd
+  already shortened it himself. I'd handed him a multi-paragraph body: the diagnosis, the
+  measurements, the negative controls, the known limit.
+- Root cause, two layers. (1) I wrote the commit as a record of the INVESTIGATION rather than of the
+  CHANGE — and the investigation had been long, so the message was long. (2) Worse, it was
+  REDUNDANT: every fact in it was already written in three artifacts I had just delivered — the
+  re-authored budget comment (the measurements), LESSONS.md (the lessons), §79's header (the
+  diagnosis). The commit was a fourth copy. Length was the symptom; duplication was the fault.
+- The part that stings: `git log` is an ARTIFACT, and the norm was one command away. Twelve of
+  twelve prior commits have a zero-line body — single-line subjects, every one. I spent this whole
+  session refusing to read a value from memory when a file could tell me, re-measuring a CSS budget
+  rather than trusting its comment, and re-reading every landing zone before editing it. Then I
+  wrote to the commit log without once looking at the commit log.
+- Plug/principle: **"the artifact wins" covers CONVENTIONS, not just contents.** Before writing into
+  any shared surface — commits, PR text, changelogs, docs — read what's already there and match its
+  shape. And a commit message records the CHANGE; if the reasoning is worth more than a line, it
+  belongs in a comment at the seam or in LESSONS, where it will actually be found. If it's already
+  in both, the commit needs a subject and nothing else.
+- Route: dev-method (commit messages match the repo's observed norm — check `git log` before
+  writing one; the body is for what isn't already recorded at the seam, which is usually nothing).
