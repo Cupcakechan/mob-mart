@@ -21,7 +21,7 @@ import {
   isItemUnlocked, canBuyLicense, fameOf, restockAllCost, canRestockAll, canBuyWorkerLevel,
   currentTradeOffers, materialCap, canStartExpedition, canRestoreRelic, reservedFor,
 } from '../game.js';
-import { reputationTier } from '../reputation.js';
+import { reputationTier, nextLevelInfo } from '../reputation.js';
 const reputationTierIndex = (state) => reputationTier(fameOf(state)).index;
 
 let handlers = { onServe: () => {}, onDismiss: () => {}, onRestock: () => {}, onRestockAll: () => {}, onBuyUpgrade: () => {}, onBuyPerk: () => {}, onBuyLicense: () => {}, onHireWorker: () => {}, onOpenMarket: () => {}, onDirty: () => {} };
@@ -46,6 +46,31 @@ export function gregBubbleFor(state, target) {
   if ((ITEMS[target]?.acquisition ?? 'gold') !== 'gold') return null;
   return { clickable: canRestock(state, target),
     html: `${ITEMS[target].displayName} out &mdash; <b>Restock &#9670; ${effectiveRestockCost(state, target)}</b>` };
+}
+
+// Pure: the Fame panel's standing line — the dual-track header (lifetime BADGE number vs spendable
+// WALLET) plus BOTH remainders. Exported (the gregBubbleFor precedent) so the suite can pin the
+// wording and the no-stutter rule without a DOM.
+//
+// The next-LEVEL remainder MOVED here from the HUD on 2026-07-15 (Daniel's call): the HUD row had
+// outgrown its band and was running under the Menu button, and this panel already owned the next-
+// RUNG remainder — so the two progress beats now read together on one surface. style.css's LAYOUT
+// BUDGET carries the measurements.
+export function fameStandingHtml(state) {
+  const fame = fameOf(state);
+  const lvl = nextLevelInfo(fame);
+  const next = nextTierInfo(fame);
+  // The level line, worded exactly as the HUD worded it (a move, not a rewrite): it names the
+  // RUNG when the next level happens to be one.
+  const levelPart = ` \u00b7 ${lvl.remaining}\u265b to ${lvl.rungLabel ?? `Lv ${lvl.level}`}`;
+  // The rung line is SKIPPED when the next level already IS that rung: nextLevelInfo and
+  // nextTierInfo then return the SAME number for the SAME destination, so printing both stutters
+  // ("· 17293♛ to Legendary · 17293♛ to Legendary"). Past the last rung nextTierInfo is null, but
+  // the level curve is infinite — hence the ladder line, and a level remainder that keeps counting.
+  const rungPart = lvl.rungLabel ? ''
+    : (next ? ` \u00b7 ${next.remaining}\u265b to ${next.label}` : ' \u00b7 top of the ladder');
+  return `lifetime <b>&#9819; ${Math.floor(fame)}</b> \u00b7 to spend <b>&#9819; ${Math.floor(state.reputation)}</b>`
+    + levelPart + rungPart;
 }
 
 export function initPanels(root, h) {
@@ -674,11 +699,9 @@ export function renderPanels(state) {
     }
   }
 
-  // --- Fame track: reached/current node state + the dual-track standing line. The header is the
-  // spendable-vs-lifetime separator the panel owes: the BADGE-driving number (lifetime) and the
-  // WALLET (spendable) side by side, plus the same remainder the HUD carries. ---
+  // --- Fame track: reached/current node state + the dual-track standing line (fameStandingHtml
+  // above owns the wording). ---
   {
-    const fame = fameOf(state);
     const tierIdx = reputationTierIndex(state);
     document.querySelectorAll('.fame-node').forEach((node) => {
       const i = Number(node.dataset.tier);
@@ -686,12 +709,7 @@ export function renderPanels(state) {
       node.classList.toggle('current', i === tierIdx);
     });
     const standing = document.getElementById('fame-standing');
-    if (standing) {
-      const next = nextTierInfo(fame);
-      standing.innerHTML =
-        `lifetime <b>&#9819; ${Math.floor(fame)}</b> \u00b7 to spend <b>&#9819; ${Math.floor(state.reputation)}</b>`
-        + (next ? ` \u00b7 ${next.remaining}&#9819; to ${next.label}` : ' \u00b7 top of the ladder');
-    }
+    if (standing) standing.innerHTML = fameStandingHtml(state);
   }
 
   // --- Bestiary: lifetime serves -> loyalty pips + studied % (display over the Pass-1 ledger) ---

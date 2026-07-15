@@ -26,19 +26,50 @@ body{
 }
 #scene{position:absolute;inset:0;width:1280px;height:720px;image-rendering:pixelated;}
 
-/* HUD (top). LAYOUT BUDGET (re-measured 2026-07-10 — the Scrap chip broke the 2026-07-07 budget,
-   the bottom-bar lesson replayed): the wall-shelf unit owns x60..372, so the HUD box stays
-   BAND-BOUND at left:396 (plank edge + breath) .. right:16. The row is now LEFT-ANCHORED —
-   three chips (Gold/Rep/Scrap) reach ~770px at endgame numbers (7-digit gold, MYTHIC badge),
-   which a centered row walked into the market dock's column. Separation is now VERTICAL and
-   structural: chips own y16..62; the market chip docks at top:68 (fully BELOW the row), so no
-   number width can ever collide. A 4th chip does NOT fit the band — redesign, don't shrink. */
-.hud{position:absolute;top:16px;left:396px;right:16px;z-index:5;}
+/* HUD (top). LAYOUT BUDGET (re-measured 2026-07-15 in a real browser — every number here is
+   MEASURED at stage scale 1, not estimated). The band:
+     - the wall-shelf unit owns x60..372, so the row starts at left:396 (plank edge + breath);
+     - #menu-btn is the RIGHT-HAND NEIGHBOUR and shares this exact y-strip (top:16, z6 over the
+       HUD's z5). It spans x~1192..1264 (right:16 + ~72px wide). The 2026-07-10 budget missed it
+       entirely and treated the band as free to x1264 — so the row simply ran UNDERNEATH it from
+       ~10k gold onward. The band therefore STOPS short: right:104px = 16 (stage margin)
+       + ~72 (button) + 16 (breath) -> the row owns x396..1176, i.e. 780px USABLE.
+       The ~72px is measured in a fallback face; Segoe UI renders it narrower, so this
+       over-reserves slightly — the safe direction. If the button's LABEL changes, re-measure.
+   The content, worst case (7-digit gold + the widest rung badge), MEASURED per face against the
+   780px band now that the next-LEVEL remainder lives in the Fame panel (moved 2026-07-15):
+     Segoe UI ~687 (+93)  |  Noto ~718 (+62)  |  FreeSans ~737 (+43)  |  Liberation ~742 (+38)
+     |  Poppins ~755 (+25)  |  DejaVu Sans ~817 (-37, the one face that does NOT fit)
+   Segoe UI is projected from a real screenshot and validated to 1.6%; it covers every Windows
+   player, and -apple-system (Mac/iOS) and Roboto/Noto (Android/Linux) all sit inside the fitting
+   band. DejaVu only ever resolves when BOTH 'Segoe UI' and system-ui miss and the generic
+   sans-serif fallback lands on it — a minimal/headless Linux profile. KNOWN LIMIT, accepted:
+   such a player at 7-digit gold sees the Scrap value's tail clipped by ~37px. Compact HUD numbers
+   (the parked follow-up) close it — they cut ~75px and put every face in the band.
+   Before this pass the row was ~834 in Segoe (collided by ~38) and wrapped besides. The
+   2026-07-10 note claimed ~770px at endgame and was ACCURATE when written (measured ~757px
+   pre-F1a) — F1a widened the Rep chip by ~213px two days later and expired it. A CSS budget is a
+   claim with an expiry date; the thing that expires it is a TEXT change, and nothing headless
+   measures CSS geometry, so only a browser ever notices.
+   Retired from the old note: its market-chip dock line (that chip was retired at 18be9de — the
+   y-band below the row is free now) and its "chips own y16..62" claim (they wrapped to y16..74
+   whenever the row overflowed). Both are why flex-shrink is now OFF below: the old row met an
+   over-full band by silently squeezing and wrapping to two lines instead of failing visibly.
+   A 4th chip does NOT fit the band — redesign, don't shrink. */
+.hud{position:absolute;top:16px;left:396px;right:104px;z-index:5;}
 .hud-chip{
   display:flex;align-items:center;gap:10px;background:var(--panel-bg);
   border:2px solid var(--panel-edge);padding:8px 18px;border-radius:12px;
   box-shadow:0 4px 0 rgba(0,0,0,.4);
+  flex-shrink:0;                  /* the budget above says "don't shrink" — this is what MAKES it
+                                     true. Without it flex silently squeezed the chips and wrapped
+                                     their text (45px -> 58px tall) the moment the row outgrew the
+                                     band, which is a deformation, not a failure you'd notice. */
 }
+/* Scoped override at birth (the cascade-tie law): .hud-chip sets its own display, so the bare
+   .hidden utility is a 0-1-0 TIE with it and only wins by source order. The Scrap chip toggles
+   .hidden (hud.js), so it gets the scoped form like .title-overlay/.menu-overlay/.market-* do. */
+.hud-chip.hidden{display:none;}
 .hud-icon{color:var(--gold);font-size:20px;}
 .hud-label{color:#c9bfa8;font-weight:700;text-transform:uppercase;letter-spacing:1px;font-size:13px;}
 .hud-value{color:var(--gold);font-weight:800;font-size:22px;min-width:40px;text-align:right;}
@@ -139,8 +170,11 @@ body{
 .dismiss-btn:hover:not(:disabled){background:rgba(255,255,255,.06);color:#fff;}
 .dismiss-btn:disabled{opacity:.35;cursor:not-allowed;}
 
-/* HUD holds two chips (Gold + Rep) in a row, centered INSIDE the band above (never the stage) */
-.hud{display:flex;gap:12px;justify-content:flex-start;}  /* left-anchored (2026-07-10): resources left, system right */
+/* The row itself: up to THREE chips (Gold + Rep + Scrap; Scrap is hire-gated, hud.js) laid out
+   LEFT-ANCHORED (2026-07-10) inside the band above — resources left, system right. The old note
+   here said "two chips ... centered"; both were already false (Scrap landed 2026-07-10, and the
+   same commit switched this to flex-start). */
+.hud{display:flex;gap:12px;justify-content:flex-start;}
 .hud-icon.rep{color:#b794f6;}
 .hud-tier{
   color:#e6ddf7;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:1px;

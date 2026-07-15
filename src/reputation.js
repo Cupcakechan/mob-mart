@@ -34,8 +34,9 @@ export function fameLevel(reputation) {
   return n;
 }
 
-// The HUD remainder's data: how far to the NEXT level — and when that level is a named rung,
-// its label rides along so the line can say "to Renowned" instead of "to Lv 13".
+// The Fame panel remainder's data: how far to the NEXT level — and when that level is a named
+// rung, its label rides along so the line can say "to Renowned" instead of "to Lv 13".
+// (Consumer moved HUD -> Fame panel on 2026-07-15; the function itself is unchanged.)
 export function nextLevelInfo(reputation) {
   const next = fameLevel(reputation) + 1;
   const rung = (CONFIG.reputation.tiers ?? []).find((t) => t.level === next);

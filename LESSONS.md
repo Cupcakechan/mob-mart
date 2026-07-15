@@ -651,3 +651,108 @@ assets; the half-applied-fix staleness heuristic).
   restore the in-progress file.
 - Route: general instructions (git workflow — fetch is not sync).
 
+
+## 2026-07-15 — A CSS layout budget is a claim with an expiry date, and nothing headless can measure the thing it claims
+- What happened: Daniel's Scrap chip sat under the Menu button. `style.css` carried a careful,
+  explicitly re-measured LAYOUT BUDGET above `.hud` (dated 2026-07-10) reasoning about the
+  wall-shelf on the left and about vertical separation from the market chip. It was ACCURATE when
+  written — I re-measured its claim and got ~757px against its stated "~770px at endgame". F1a
+  landed **two days later** and widened the Rep chip by ~213px: the badge gained "· Lv N", and
+  `#hud-next` went from rendering `''` past the last rung (`nextTierInfo` returned null) to being
+  ALWAYS populated, because the level curve is infinite. Nothing failed. The budget kept sitting
+  there reading like a guarantee for three days while the row it described no longer existed.
+- Root cause / the generalisation: the 2026-07-14 lesson said "adding a DIAL is what expires it."
+  Too narrow. F1a added no dial — it changed **text**, and text has width. The rule is: a comment
+  that reasons about a VALUE is expired by any change to that value, whatever shape the change
+  wears. The same comment carried two more dead claims nobody noticed: "the market chip docks at
+  top:68" (that chip was retired at 18be9de — the only surviving mention of `top:68` in the whole
+  codebase was the comment itself) and "chips own y16..62" (they wrapped to y16..74 whenever the
+  row overflowed). A second `.hud` comment claimed "two chips ... centered"; both halves had been
+  false since 2026-07-10.
+- The CSS-specific twist — why this class is worse than the Doug one: **nothing headless measures
+  geometry.** `node --check` parses, the module import binds, the suite reads source text — none of
+  them can tell you a flex row is 1013px wide in an 796px band. The Doug bug at least had a
+  testable helper underneath. A CSS budget's only true verifier is a browser, so a stale one can
+  outlive every gate the project owns indefinitely. It did.
+- Second fault, independent and older: `.hud` and `#menu-btn` were BOTH anchored `right:16px`. The
+  band ran to the button's own right edge; the button (z6 over the HUD's z5) simply painted over
+  whatever reached it. The budget reasoned carefully about the shelf to its left and the dock below
+  and never mentioned its immediate right-hand NEIGHBOUR. Latent and harmless while the row was
+  short — the 2026-07-10 pass added the Scrap chip and moved the row within ~40px of it.
+- Third fault: the budget said "redesign, don't shrink" but the CSS never set `flex-shrink:0`, so
+  flex shrank anyway — chips squeezed and their text wrapped (45px → 58px tall) instead of failing
+  visibly. A law asserted in prose and unimplemented in code is not a law.
+- Plug shipped: measured the real thing in a real browser (Playwright + Chromium, viewport pinned
+  to 1280×720 so `resize()` computes scale 1 and every rect is stage-local). Band reserved
+  (`right:104px` = 16 margin + ~72 button + 16 breath), `flex-shrink:0` added, budget re-authored
+  with MEASURED per-face numbers and its dead clauses retired. Guard = suite §79: the reservation
+  is pinned as an ORDERING law (`.hud` right > `.menu-btn` right by ≥ the button's width) — the
+  only part of a layout expressible headlessly. Negative control verified: reverting the
+  reservation drops the suite to 1823/2, removing `flex-shrink:0` to 1824/1.
+- Route: dev-method (generalise the expiry rule from "a dial" to "any change to a reasoned-about
+  value") + skill reference (html-game.md): a fixed-position bar's budget must name every NEIGHBOUR
+  in its band, not just its own extents, and must be re-measured in a browser whenever any string
+  it contains changes.
+
+## 2026-07-15 — A source-text pin is satisfied by a COMMENT, so it sailed green through the change that invalidated it
+- What happened: §72(f) pinned `hud.includes('fameLevel') && hud.includes('nextLevelInfo')` with
+  the message "the HUD badge + remainder ride the level track". I removed the `nextLevelInfo`
+  import from `hud.js` and moved the remainder to `panels.js`. **The suite stayed 1797/0.** The pin
+  passed because the comment I wrote explaining the move contains the string `nextLevelInfo`. Had I
+  written that comment slightly differently it would have failed — the pin's verdict depended on my
+  prose, not on the code.
+- It happened twice in one pass. My own new §79 pin `!/the market chip docks at top:68/` failed
+  immediately — because the re-authored budget comment QUOTED the dead claim while retiring it. The
+  pin was right; the file was right; the collision was between a text matcher and documentation
+  that legitimately mentions what it documents.
+- Root cause: `includes('symbol')` asserts "this string appears somewhere in this file", but it was
+  written to mean "this module USES this symbol." Those diverge the moment anyone writes prose. The
+  §0b and §78 source pins work because they match STRUCTURE (`getSprite('…')` call shape,
+  `scavengeClock(state)` call shape); a bare symbol name matches everything, including the note
+  explaining why the symbol is gone.
+- Why it mattered: this is the false-green shape the project already knows in a new costume — a
+  probe that cannot fail certifies nothing. Worse than the Doug case, because it doesn't merely
+  fail to notice a regression: it actively vouches for the opposite of the truth, and the more
+  carefully you document a removal the more firmly the pin insists it didn't happen.
+- Plug shipped: §72(f) refined (not softened) to what it always MEANT — the level track reaches the
+  player, badge in the HUD and remainder in the Fame panel — and re-expressed against the parsed
+  IMPORT LIST rather than raw file text, with a guard-the-guard assertion that the scanner found
+  both import lists at all. Comment reworded so it describes the retired claim without restating
+  it verbatim.
+- Route: dev-method (a source pin must match a STRUCTURE — an import list, a call shape — never a
+  bare symbol name, because comments are text too; and when a pass makes a source pin's subject
+  vanish, check that the pin actually FAILS before believing the green).
+
+## 2026-07-15 — A pixel measurement is only valid in the font it was taken in; I nearly shipped a fix sized for the wrong face
+- What happened: I measured the HUD in the container's browser and built a whole analysis on it —
+  worst-case row 1013.73px, "no single cut is sufficient", a recommendation bundling compact
+  numbers AND a padding trim AND the remainder's removal. All of it was measured in **DejaVu Sans**.
+  The shipped stack is `'Segoe UI', system-ui, -apple-system, sans-serif`; Segoe UI is a *Windows*
+  font and cannot be installed here, so every number came from the fallback. Daniel's screenshot
+  calibrated it: Segoe UI is ~22% narrower on text. His cut ALONE clears the worst case by ~93px.
+  My "necessary" extra surgery was necessary only in a font no player of his has.
+- What saved it: the screenshot was the artifact. Its un-wrapped badge sat at max-content width
+  (shrink-free), giving a clean ratio — Segoe 128.0px vs DejaVu 164.53px. Projecting by
+  DECOMPOSITION (fixed padding/borders/gaps don't scale with the face; only text does) and
+  validating against the one chip fully visible in his shot came out 1.6% off. Reproducing his
+  exact state also confirmed a dual-track inference: his `lifetimeRep` is 55740 against a spendable
+  52002, which is why my first control "failed" — I'd guessed his cropped-out gold chip.
+- Second trap in the same pass: **the worst case of a composite string is not at the maximum of any
+  single input.** I assumed endgame (7-digit gold, Mythic) was widest. It isn't — "Renowned · Lv 16
+  · 17293♛ to Legendary" is 44px wider than "Mythic · Lv 23", because the longest RUNG NAME and the
+  rung-naming remainder co-occur mid-ladder. A fix verified only at endgame ships and still
+  collides. Sweep every rung from the live curve; never spot-check the extreme.
+- Root cause: "the artifact wins" is a rule about FILES, and I applied it to files. It's really a
+  rule about the ENVIRONMENT: a measurement inherits every assumption of the machine that took it,
+  and a container is not a player's browser. Font is the sharpest case because CSS names fonts it
+  cannot guarantee.
+- Plug shipped: measured the fixed build across every installed face and recorded the table in the
+  budget comment. Result: Segoe ~687 (+93), Noto ~718 (+62), FreeSans ~737 (+43), Liberation ~742
+  (+38), Poppins ~755 (+25) — and DejaVu ~817 (−37), the one face that does NOT fit. Accepted as a
+  documented KNOWN LIMIT: DejaVu only resolves when both 'Segoe UI' and system-ui miss, and the
+  parked compact-numbers follow-up (~75px) closes it.
+- Route: dev-method (a rendered-geometry measurement must name the face it was taken in; where the
+  real font can't be installed, calibrate off a user artifact and project by decomposition, then
+  measure across every available face and report the SPREAD rather than a single number) + skill
+  reference (html-game.md): a CSS font stack naming a platform font means the layout has as many
+  worst cases as it has target platforms.

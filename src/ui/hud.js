@@ -1,6 +1,8 @@
-// hud.js — top resource bar: Gold and Reputation (value + tier label + next-tier remainder).
+// hud.js — top resource bar: Gold and Reputation (value + tier label). The next-LEVEL remainder
+// used to live here too; it moved to the Fame panel's standing line on 2026-07-15 (see style.css's
+// LAYOUT BUDGET) — the row had outgrown the band and was running under the Menu button.
 import { formatGold } from '../utils.js';
-import { reputationTier, fameLevel, nextLevelInfo } from '../reputation.js';
+import { reputationTier, fameLevel } from '../reputation.js';
 
 export function initHud(root) {
   root.innerHTML = `
@@ -14,7 +16,6 @@ export function initHud(root) {
       <span class="hud-label">Rep</span>
       <span class="hud-value" id="hud-rep">0</span>
       <span class="hud-tier" id="hud-tier">&mdash;</span>
-      <span class="hud-next" id="hud-next"></span>
     </div>
     <div class="hud-chip scrap hidden" id="hud-scrap-chip" title="Salvage — Doug's haul from beyond the door">
       <span class="hud-icon scrap" aria-hidden="true">&#9881;</span>
@@ -40,14 +41,12 @@ export function renderHud(state) {
     tier.textContent = `${reputationTier(fame).label} \u00b7 Lv ${fameLevel(fame)}`;
   }
 
-  // The one-line remainder — now counts to the next LEVEL (always exists; the curve is
-  // infinite), naming it when that level is a rung ("· 320♛ to Renowned"). Reads the LIFETIME
-  // track like the badge, so a perk spend never inflates the distance.
-  const next = document.getElementById('hud-next');
-  if (next) {
-    const info = nextLevelInfo(state.lifetimeRep ?? state.reputation);
-    next.textContent = `\u00b7 ${info.remaining}\u265b to ${info.rungLabel ?? `Lv ${info.level}`}`;
-  }
+  // The next-LEVEL remainder ("· 18047♛ to Lv 18") USED to render here. Retired from the HUD
+  // 2026-07-15 (Daniel's call) and moved to the Fame panel's standing line, which is the panel
+  // that already owned the rung remainder — one progress surface instead of two. The MEASURED
+  // reason: the span cost ~146px of a band with none to spare, and the row was running under the
+  // Menu button from ~10k gold onward. panels.js renders it now; reputation.js still exports
+  // nextLevelInfo for it.
 
   // Scrap (§14): hidden until the scavenger is hired or scrap is banked — the early HUD stays
   // two-chip clean. Glyph follows the gold/rep text-glyph convention (⚙); icon_scrap.png stays

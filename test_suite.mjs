@@ -4661,12 +4661,31 @@ console.log('M4 auto-serve worker — smoke test\n');
   ok(CONFIG.offline.repFraction === 0.5,
      'fame levels: offline pays half fame (the haircut dial, F1a)');
 
-  // (f) Wiring pins: the HUD renders the level track.
+  // (f) Wiring pins: the level track REACHES THE PLAYER. The badge rides it in the HUD; the
+  // next-level REMAINDER moved to the Fame panel on 2026-07-15 (§79 owns that pass's exacts), so
+  // this names BOTH surfaces now — refined to what the probe always MEANT, not softened.
+  // The SHAPE matters: these read the IMPORT LIST, not raw file text. The old form
+  // (`hud.includes('nextLevelInfo')`) is satisfied by a COMMENT that merely mentions the symbol —
+  // it sailed green straight through the move that invalidated it. A pin that cannot fail
+  // certifies nothing.
   {
     const { readFileSync: rf72 } = await import('node:fs');
-    const hud = rf72('./src/ui/hud.js', 'utf8');
-    ok(hud.includes('fameLevel') && hud.includes('nextLevelInfo'),
-       'fame levels: the HUD badge + remainder ride the level track');
+    const namedImports = (src, mod) => {
+      const m = new RegExp(`import\\s*\\{([^}]*)\\}\\s*from\\s*'${mod}'`, 's').exec(src);
+      return m ? m[1].split(',').map((s) => s.trim().split(/\s+as\s+/)[0].trim()).filter(Boolean) : [];
+    };
+    const hud72 = rf72('./src/ui/hud.js', 'utf8');
+    const pnl72 = rf72('./src/ui/panels.js', 'utf8');
+    const hudRep = namedImports(hud72, '\\.\\./reputation\\.js');
+    const pnlRep = namedImports(pnl72, '\\.\\./reputation\\.js');
+    ok(hudRep.length > 0 && pnlRep.length > 0,
+       'fame levels: guard-the-guard — the import scanner found both reputation.js import lists');
+    ok(hudRep.includes('fameLevel') && hud72.includes('fameLevel(fame)'),
+       'fame levels: the HUD badge rides the level track');
+    ok(!hudRep.includes('nextLevelInfo'),
+       'fame levels: the HUD no longer imports the remainder (it moved to the Fame panel — §79)');
+    ok(pnlRep.includes('nextLevelInfo') && pnl72.includes('nextLevelInfo(fame)'),
+       'fame levels: the Fame panel remainder rides the level track');
   }
 }
 
@@ -5301,6 +5320,147 @@ console.log('M4 auto-serve worker — smoke test\n');
        'doug clock: scene.js never re-derives Doug\u2019s clock from baseInterval');
     ok(!/const\s+interval\s*=\s*d\.baseInterval/.test(gameSrc),
        'doug clock: isDougOut never re-derives Doug\u2019s clock from baseInterval');
+  }
+}
+
+
+// ===== SECTION 79 — THE HUD BAND: Menu-button reservation + the remainder's move (2026-07-15) =====
+// Daniel's browser: the Scrap chip sat UNDER the Menu button. MEASURED in a real browser at stage
+// scale 1 — the cause was NOT "three chips don't fit" (three chips at fresh numbers clear the
+// button by ~32px). Two faults compounded:
+//   (1) .hud and #menu-btn were BOTH anchored right:16px, so the band ran to the button's own
+//       right edge — the button (z6) simply painted over whatever reached it. Nothing reserved it.
+//   (2) F1a widened the Rep chip by ~213px two days AFTER the 2026-07-10 budget was measured
+//       (the badge gained "· Lv N"; #hud-next went from '' past the last rung to ALWAYS populated
+//       because the level curve is infinite). The budget's "~770px" was accurate when written and
+//       expired unnoticed — nothing headless measures CSS geometry.
+// The fix Daniel picked: MOVE the next-level remainder to the Fame panel (which already owned the
+// next-rung one), and reserve the button's column. Exact totals for this pass live HERE.
+{
+  const { readFileSync: rf79 } = await import('node:fs');
+  const { fameStandingHtml: fsh79 } = await import('./src/ui/panels.js');
+  const { levelThreshold: lt79, fameLevel: fl79 } = await import('./src/reputation.js');
+  const { nextTierInfo: nti79 } = await import('./src/data/fametrack.js');
+  const css79 = rf79('./style.css', 'utf8');
+  const hud79 = rf79('./src/ui/hud.js', 'utf8');
+  const tiers79 = CONFIG.reputation.tiers;
+
+  // --- (a) The HUD markup: the remainder span is GONE; the badge survives; still three chips. ---
+  ok(!hud79.includes('hud-next'),
+     'hud band: the #hud-next span is gone from the HUD markup');
+  ok(hud79.includes('id="hud-tier"') && hud79.includes('id="hud-gold"') && hud79.includes('id="hud-rep"')
+     && hud79.includes('id="hud-scrap"'),
+     'hud band: Gold / Rep / badge / Scrap all survive the cut');
+  ok((hud79.match(/class="hud-chip/g) ?? []).length === 3,
+     'hud band: the row is still exactly three chips (Gold, Rep, Scrap)');
+
+  // --- (b) THE STRUCTURAL LAW this pass exists to encode: the band must STOP before #menu-btn.
+  // Expressible headlessly only as an ORDERING law (hud.right > menu.right by at least the
+  // button's width). The width itself is MEASURED (~72px in a fallback face; Segoe UI renders it
+  // narrower, so the reservation over-reserves — the safe direction) and cannot be derived
+  // without a layout engine, which is exactly why fault (1) went unseen for so long. ---
+  const cssRight = (sel) => {
+    const m = new RegExp(`\\${sel}\\{([^}]*)\\}`, 's').exec(css79);
+    const r = m && /right:\s*(\d+)px/.exec(m[1]);
+    return r ? Number(r[1]) : null;
+  };
+  const hudRight = cssRight('.hud');
+  const menuRight = cssRight('.menu-btn');
+  const MENU_BTN_W = 72;                       // MEASURED 71.34px (fallback face), rounded up
+  ok(hudRight !== null && menuRight !== null,
+     'hud band: guard-the-guard — the CSS scanner found both right: offsets');
+  ok(hudRight > menuRight,
+     'hud band: the HUD band stops SHORT of #menu-btn (the fault was: both equal at 16px)');
+  ok(hudRight - menuRight >= MENU_BTN_W,
+     `hud band: the reservation clears the Menu button's own width (>= ${MENU_BTN_W}px)`);
+
+  // --- (c) "Don't shrink" is now ENFORCED, not merely asserted in prose. Without flex-shrink:0
+  // an over-full row squeezed the chips and wrapped their text (45px -> 58px tall) instead of
+  // failing visibly — a deformation nobody files a bug about. ---
+  ok(/\.hud-chip\{[^}]*flex-shrink:\s*0/s.test(css79),
+     'hud band: .hud-chip carries flex-shrink:0 (the budget\u2019s "don\u2019t shrink" law made real)');
+
+  // --- (d) The cascade-tie law (the .offer-row.hidden precedent): .hud-chip sets its own
+  // display, so the bare .hidden utility only wins by SOURCE ORDER. The Scrap chip toggles
+  // .hidden, so it needs the scoped form. ---
+  ok(css79.includes('.hud-chip.hidden'),
+     'hud band: style.css carries the scoped .hud-chip.hidden override (the cascade-tie law)');
+
+  // --- (e) The budget comment's FALSIFIED claims are actually retired, not just contradicted.
+  // A comment at a live seam is a claim with an expiry date; these three expired. ---
+  ok(!/the market chip docks at top:68/.test(css79),
+     'hud band: the dead "market chip docks at top:68" claim is gone (that chip retired at 18be9de)');
+  ok(!/reach ~770px at endgame/.test(css79),
+     'hud band: the expired "~770px at endgame" figure is gone (F1a added ~213px)');
+  ok(/LAYOUT BUDGET \(re-measured 2026-07-15/.test(css79),
+     'hud band: the budget is re-dated to its measurement, not its first authoring');
+
+  // --- (f) THE STANDING LINE — behavioural, at all three shapes, every number DERIVED from the
+  // live curve. This is the effect the player reads, not the mechanism that produces it. ---
+  const strip = (h) => h.replace(/<[^>]+>/g, '').replace(/&#9819;/g, '\u265b');
+  const stateAt = (fame) => ({ reputation: fame, lifetimeRep: fame });
+
+  // (f1) Next level is PLAIN (not a rung) -> BOTH remainders, level first, rung second.
+  {
+    const rungLevels = new Set(tiers79.map((t) => t.level));
+    const lastRung = Math.max(...rungLevels);
+    // a level below the last rung whose NEXT level is not itself a rung
+    const lv = [...Array(lastRung).keys()].find((n) => n > 0 && !rungLevels.has(n + 1)
+                                                  && nti79(lt79(n) + 1) !== null);
+    ok(lv !== undefined, 'hud band: fixture — a plain-next-level rung exists on the live curve');
+    const fame = lt79(lv) + 1;
+    const line = strip(fsh79(stateAt(fame)));
+    const expLvl = `\u00b7 ${lt79(lv + 1) - fame}\u265b to Lv ${lv + 1}`;
+    const expRung = `\u00b7 ${nti79(fame).remaining}\u265b to ${nti79(fame).label}`;
+    ok(line.includes(expLvl), `hud band: standing line carries the LEVEL remainder ("${expLvl}")`);
+    ok(line.includes(expRung), `hud band: standing line carries the RUNG remainder ("${expRung}")`);
+    ok(line.indexOf(expLvl) < line.indexOf(expRung),
+       'hud band: the frequent beat (level) reads before the rare one (rung)');
+    ok(line.includes(`lifetime \u265b ${fame}`) && line.includes(`to spend \u265b ${fame}`),
+       'hud band: the dual-track header survives the move');
+  }
+
+  // (f2) Next level IS a rung -> ONE remainder. nextLevelInfo and nextTierInfo return the SAME
+  // number for the SAME destination here, so a naive append stutters
+  // ("· 17293♛ to Legendary · 17293♛ to Legendary"). THE no-stutter law.
+  {
+    const rungLv = tiers79.find((t) => t.level > 0).level;
+    const fame = lt79(rungLv - 1) + 1;
+    ok(fl79(fame) === rungLv - 1, 'hud band: fixture — one level below a rung (guard-the-guard)');
+    const label = tiers79.find((t) => t.level === rungLv).label;
+    const line = strip(fsh79(stateAt(fame)));
+    const expect = `\u00b7 ${lt79(rungLv) - fame}\u265b to ${label}`;
+    ok(line.includes(expect), `hud band: next-level-IS-a-rung names the rung ("${expect}")`);
+    ok(line.split(`to ${label}`).length - 1 === 1,
+       'hud band: the rung is named exactly ONCE — no stutter when both remainders agree');
+    ok(!/to Lv \d+/.test(line),
+       'hud band: no redundant "to Lv N" beside the rung it already names');
+  }
+
+  // (f3) Past the last rung -> the ladder line, but the LEVEL remainder keeps counting (the curve
+  // is infinite; the rung ladder is not). This is the case F1a created and the HUD used to render
+  // as an empty span pre-F1a.
+  {
+    const lastRung = Math.max(...tiers79.map((t) => t.level));
+    const fame = lt79(lastRung + 2) + 1;
+    ok(nti79(fame) === null, 'hud band: fixture — past the last rung (guard-the-guard)');
+    const line = strip(fsh79(stateAt(fame)));
+    ok(line.includes('top of the ladder'),
+       'hud band: past the last rung the standing line says "top of the ladder"');
+    ok(line.includes(`\u00b7 ${lt79(lastRung + 3) - fame}\u265b to Lv ${lastRung + 3}`),
+       'hud band: the level remainder keeps counting past the last rung (infinite curve)');
+  }
+
+  // --- (g) The cache-bust must move in BOTH shells or Daniel tests a stale sheet — this pass
+  // changed style.css, so the version is pinned ABOVE the value it had at the previous tip. ---
+  {
+    const idx79 = rf79('./index.html', 'utf8');
+    const kong79 = rf79('./index.kongregate.html', 'utf8');
+    const ver = (s) => { const m = /style\.css\?v=(\d+)/.exec(s); return m ? Number(m[1]) : null; };
+    ok(ver(idx79) !== null && ver(idx79) === ver(kong79),
+       'hud band: both entry shells carry the SAME style.css cache-bust');
+    ok(ver(idx79) >= 15,
+       'hud band: the cache-bust advanced for this pass\u2019s style.css change (>= v15)');
   }
 }
 
