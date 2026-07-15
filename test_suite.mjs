@@ -5562,5 +5562,84 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
 }
 
+// ===== SECTION 81 — THE WRONG-PALETTE LAW: .beast-exp's contrast (Daniel, 2026-07-15) =====
+// Daniel: "the font for 'Runs' is far too light and difficult to see." MEASURED in a real browser
+// (Chromium, live cascade) at 1.28:1 against the card it sits on — invisible, not "muted". AA wants
+// 4.5:1; the sibling .beast-name on the same card measures 10.19:1.
+//
+// THE MECHANISM (measured, and it falsified the handoff's guess). This was NOT a tertiary tone that
+// lost its context when the split decluttered the card. Expeditions MVP (c4905f9) transplanted the
+// Market strip's row wholesale onto a PARCHMENT card: .beast-exp took .mat-chip's `10px/#cfc3e0`
+// and .beast-send took .trade-btn's dark-purple treatment. Those read correctly on the market's
+// DARK panel. The button carried its own background, so it survived the move intact; the TEXT
+// inherited a dark-panel foreground onto tan and has been illegible since the day it shipped.
+// The split didn't cause it — the split decluttered the card enough that Daniel finally SAW it.
+//
+// WHY A GUARD AND NOT JUST A FIX: this is a CLASS, and it has bitten before. On 2026-07-12 Daniel
+// QA'd `gold-deep on tan` and .item-price moved to #6b4a1e — the instance was fixed and the sweep
+// never ran. The parchment cards are the only light surfaces in a dark-purple UI, so a dark-panel
+// colour looks right in the file and goes invisible on the card. This pins the EFFECT (a computed
+// contrast ratio), never the hex — a pin on `#6b4a1e` would be satisfied by the comment above it
+// (the §72(f) lesson: a source pin must match a structure, and comments are text too).
+// SCOPE: this section owns the FIXED instance. The sweep's other live instances are Daniel's call
+// as their own pass — see the handoff's NEXT block.
+{
+  const { readFileSync: rf81 } = await import('node:fs');
+  const css81 = rf81('./style.css', 'utf8');
+
+  // WCAG 2.x relative luminance + contrast, the same math the browser probe used.
+  const lin81 = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const lum81 = ([r, g, b]) => 0.2126 * lin81(r / 255) + 0.7152 * lin81(g / 255) + 0.0722 * lin81(b / 255);
+  const contrast81 = (a, b) => {
+    const [hi, lo] = [lum81(a), lum81(b)].sort((x, y) => y - x);
+    return (hi + 0.05) / (lo + 0.05);
+  };
+  const rgb81 = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const ruleOf = (sel) => new RegExp(`^\\${sel}\\s*\\{([^}]*)\\}`, 'm').exec(css81)?.[1] ?? null;
+  const declOf = (body, prop) => (body ? new RegExp(`(?:^|;)\\s*${prop}\\s*:\\s*([^;]+)`).exec(body)?.[1]?.trim() ?? null : null);
+
+  // --- (a) DERIVED, never hand-typed: the card's own background resolves through :root. ---
+  const rootBody = /:root\s*\{([\s\S]*?)\}/.exec(css81)?.[1] ?? '';
+  const parchHex = /--parchment\s*:\s*(#[0-9a-fA-F]{6})/.exec(rootBody)?.[1] ?? null;
+  ok(!!parchHex, 'palette: guard-the-guard — :root declares --parchment');
+
+  const cardBg = declOf(ruleOf('.beast-card'), 'background');
+  ok(cardBg !== null && cardBg.includes('var(--parchment)'),
+     'palette: guard-the-guard — .beast-card still renders on var(--parchment) (if this moves, the '
+     + 'ratio below is measuring the wrong surface)');
+
+  // --- (b) THE FIX, asserted as the EFFECT the player sees — a ratio, not a hex. ---
+  const expColor = declOf(ruleOf('.beast-exp'), 'color');
+  ok(!!expColor && /^#[0-9a-fA-F]{6}$/.test(expColor),
+     'palette: guard-the-guard — .beast-exp declares a plain hex colour');
+  const ratio81 = contrast81(rgb81(expColor), rgb81(parchHex));
+  ok(ratio81 >= 4.5,
+     `palette: .beast-exp ("N runs") clears WCAG AA on the parchment card — ${ratio81.toFixed(2)}:1 `
+     + `(needs 4.5; it shipped at 1.28 and Daniel could not read it)`);
+
+  // --- (c) THE TRANSPLANT ITSELF. The defect was not "a bad hex" — it was a DARK-PANEL colour
+  // reused on tan. Derive the market strip's own foregrounds from the live CSS and assert the card
+  // never borrows one. This is the rule that would have caught the bug at birth. ---
+  const darkPanelColors = ['.mat-chip', '.market-forecast', '.tick-quip']
+    .map((s) => declOf(ruleOf(s), 'color'))
+    .filter((c) => c && /^#[0-9a-fA-F]{6}$/.test(c))
+    .map((c) => c.toLowerCase());
+  ok(darkPanelColors.length >= 2,
+     `palette: guard-the-guard — the dark-panel foregrounds were found (${darkPanelColors.length})`);
+  ok(!darkPanelColors.includes(expColor.toLowerCase()),
+     'palette: .beast-exp does not borrow a DARK-PANEL foreground — the card is parchment, and a '
+     + 'colour authored for the market strip is invisible on it');
+
+  // --- (d) style.css changed again, so the bust advances again. This section owns the current
+  // floor (the exact-totals doctrine: the newest batch holds the exact, older ones soften). ---
+  {
+    const ver81 = (s) => { const m = /style\.css\?v=(\d+)/.exec(s); return m ? Number(m[1]) : null; };
+    const vi81 = ver81(rf81('./index.html', 'utf8'));
+    const vk81 = ver81(rf81('./index.kongregate.html', 'utf8'));
+    ok(vi81 !== null && vi81 === vk81, 'palette: both entry shells carry the SAME style.css cache-bust');
+    ok(vi81 >= 17, `palette: the cache-bust advanced for this pass\u2019s style.css change (>= v17, found ${vi81})`);
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

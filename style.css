@@ -712,7 +712,13 @@ body{
 
 /* --- Expedition Job Card row (reform step 4 MVP; the Bestiary grid cards) ---------------------- */
 .beast-exp-row { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
-.beast-exp { font-size: 10px; color: #cfc3e0; min-width: 0; }
+/* THE WRONG-PALETTE LAW (measured 2026-07-15). This row was transplanted whole from the Market
+   strip at Expeditions MVP (c4905f9): .mat-chip's `10px/#cfc3e0` and .trade-btn's dark-purple
+   button, which read correctly on the market's DARK panel. .beast-send kept its own background so
+   it survived the move; the TEXT inherited a dark-panel foreground onto a PARCHMENT card and has
+   measured 1.28:1 ever since — invisible, not "muted". #6b4a1e is the house tan-card treatment
+   (.item-price / .trade-hint, Daniel's 2026-07-12 QA on the same defect class): 6.11:1, AA. */
+.beast-exp { font-size: 10px; color: #6b4a1e; min-width: 0; }
 .beast-send {
   background: #3b2a55; color: var(--gold); border: 1px solid var(--gold); border-radius: 6px;
   padding: 2px 7px; font-weight: 800; font-size: 10px; cursor: pointer; flex-shrink: 0;
