@@ -5726,5 +5726,82 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
 }
 
+// ===== SECTION 83 — THE DIORAMA OVERLAY GATE (Daniel, 2026-07-15 — Option 1) =====
+// His screenshot: the hire chip painting through an open Field Guide. The three diorama DOM
+// overlays (hire chip / Greg's bubble / Bob's bubble) are SIBLINGS of #shop-ui at z5 vs its z4, so
+// they render over any open center panel. MEASURED in a real browser: all three sit FULLY inside
+// the panel's box (640x500 @ 320,96) and win elementFromPoint at their own centres — the panel
+// column is the diorama's centre, which is exactly where things worth pointing at live.
+//
+// THE COMMENT THAT CAUSED IT (style.css, .hire-goal-chip): "z5 keeps it above the panels (z4) and
+// under the title overlay (z10), so it only shows in-shop." Two claims fused into one number —
+// staying under the title is a REQUIREMENT; being above the panels was a CONSEQUENCE of picking 5,
+// recorded as though it were the intent. The third comment this project has retired for reasoning
+// about the world as it stood (cf. scavenge's "this IS the clock", isDougOut's "~12s dwarfs that").
+//
+// WHY NOT z-index: full containment means "under the panel" and "hidden" look identical, so lowering
+// z buys nothing and costs pointer-events:none on a full-stage container (#shop-ui is inset:0 and
+// the file sets pointer-events NOWHERE) — where one missed interactive descendant goes silently
+// dead. The fix is the house attention doctrine instead: a signal stands down when the player is
+// already looking (setShopAttention's nav-pulse precedent).
+// SOURCE PINS, per §0b/§78/§80: a headless suite cannot paint a panel. They match STRUCTURE, never
+// bare symbol names — §72(f) stayed green through the removal that invalidated it because the
+// COMMENT explaining the move contained the string, and the comments above are full of these names.
+{
+  const { readFileSync: rf83 } = await import('node:fs');
+  const nav83 = rf83('./src/ui/nav.js', 'utf8');
+  const pnl83 = rf83('./src/ui/panels.js', 'utf8');
+  const main83 = rf83('./src/main.js', 'utf8');
+  const navMod = await import('./src/ui/nav.js');
+
+  // --- (a) THE READER, tested for real. isPanelOpen touches no DOM (a pure read of module state),
+  // so unlike the rest of this section it does not need a source pin. ---
+  ok(typeof navMod.isPanelOpen === 'function', 'overlay: nav.js exports isPanelOpen()');
+  ok(typeof navMod.isPanelOpen() === 'boolean', 'overlay: isPanelOpen() returns a boolean');
+  ok(/export function isPanelOpen\(\)\s*\{\s*return activeTab !== null;\s*\}/.test(nav83),
+     'overlay: isPanelOpen derives from activeTab — setTab\u2019s own collapsed contract, not a second flag');
+
+  // --- (b) THE RE-RENDER. A tab change was a pure visibility swap and is not one any more: the
+  // overlays gate on isPanelOpen(), which panels.js only re-reads on a render. Without this an
+  // overlay lingers across the panel until the next unrelated uiDirty (a spawn, a serve). ---
+  ok(/let dirty = \(\) => \{\};/.test(nav83),
+     'overlay: nav.js holds a dirty callback defaulted to a no-op (a caller that omits it cannot crash)');
+  ok(/dirty = typeof onDirty === 'function' \? onDirty : \(\) => \{\};/.test(nav83),
+     'overlay: initNav stores onDirty defensively — a non-function argument degrades, never throws');
+  ok(/root\.querySelectorAll\('\.nav-btn'\)\.forEach\([\s\S]{0,160}?\);\s*(?:\/\/[^\n]*\n\s*)*dirty\(\);\s*\}/.test(nav83),
+     'overlay: setTab marks the UI dirty, so the overlays stand down on the NEXT FRAME, not the next spawn');
+
+  // --- (c) THE WIRING. The import LIST is the structure; a bare-name search would pass on prose. ---
+  ok(/import \{[^}]*\bisPanelOpen\b[^}]*\} from '\.\/nav\.js';/.test(pnl83),
+     'overlay: panels.js imports isPanelOpen from nav.js (the import list, not a mention)');
+  ok(/const panelOpen = isPanelOpen\(\);/.test(pnl83),
+     'overlay: panels.js reads the gate ONCE per render and shares it across the three overlays');
+  ok(/initNav\(document\.getElementById\('nav'\),\s*\(\) => \{ state\.uiDirty = true; \}\)/.test(main83),
+     'overlay: main.js passes the onDirty handler into initNav');
+
+  // --- (d) ALL THREE OVERLAYS GATED. Fixing only the reported one leaves the door open — and the
+  // two Daniel did NOT report are the ones that fire forever (Greg ~10s per ~45s, Bob's reminder
+  // every ~30s) over whatever panel is open. ---
+  ok(/hireChip\.classList\.toggle\('hidden', bobOwned \|\| panelOpen\)/.test(pnl83),
+     'overlay: the hire chip stands down while a panel is open (the instance Daniel caught)');
+  ok(/const showing = \(state\.gregBubble\?\.showFor \?\? 0\) > 0 && isWorkerOwned\(state, 'restocker'\)\s*\n?\s*&& !panelOpen;/.test(pnl83),
+     'overlay: Greg\u2019s bubble gates at `showing` — which collapses BOTH branches, including the '
+     + 'quip branch that force-REMOVES .hidden and would otherwise paint through');
+  ok(/const show = !!cur && isWorkerOwned\(state, 'mimic_merchant'\) && !panelOpen;/.test(pnl83),
+     'overlay: Bob\u2019s license bubble stands down while a panel is open');
+
+  // --- (e) THE ORDERING THIS PASS MADE LOAD-BEARING. activeTab is 'shop' at module load, so
+  // isPanelOpen() is TRUE until initNav's boot `setTab(root, null)` collapses it. Render first and
+  // the chip is hidden on a fresh save — the pseudo-tutorial silently gone, with nothing to see. ---
+  {
+    const iNav = main83.indexOf("initNav(document.getElementById('nav')");
+    const iRender = main83.search(/^renderPanels\(state\);/m);
+    ok(iNav > 0 && iRender > 0, 'overlay: guard-the-guard — both call sites were found in main.js');
+    ok(iNav < iRender,
+       'overlay: initNav runs BEFORE the first renderPanels — nav boots collapsed, and a render '
+       + 'ahead of it would read activeTab\u2019s module default (\u2018shop\u2019) and hide the hire chip at boot');
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

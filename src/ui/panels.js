@@ -1,7 +1,7 @@
 // panels.js — DOM panels: current customer (front), Shelf (restock), Upgrades view, Workers view,
 // battle log. The Shelf / Upgrades / Workers panels share the center slot; the bottom nav toggles
 // which is visible.
-import { setShopAttention, openTab } from './nav.js';
+import { setShopAttention, openTab, isPanelOpen } from './nav.js';
 import { compactGold } from '../utils.js';
 import { ITEM_BREAKPOINTS, MONSTER_BREAKPOINTS, MONSTER_REP_PER_BREAKPOINT,
   nextBreakpoint, crossedCount, bestiaryCompletion } from '../data/milestones.js';
@@ -696,13 +696,31 @@ export function renderPanels(state) {
     }
   }
 
+  // --- THE DIORAMA OVERLAY GATE (Daniel, 2026-07-15 — his screenshot: a pop-up bleeding through
+  // an open Field Guide). The three DOM overlays below (hire chip, Greg's bubble, Bob's bubble) are
+  // siblings of #shop-ui at z5 vs its z4, so they paint straight THROUGH any open center panel.
+  // MEASURED: all three sit fully INSIDE the panel's box (640x500 @ 320,96) — the panel column is
+  // the diorama's centre, which is exactly where things worth pointing at live, so this was never
+  // a near-miss. The chip's own CSS comment ("z5 keeps it above the panels (z4) and under the title
+  // overlay (z10)") fused a real requirement with an accident: staying under the title is the rule;
+  // being over the PANELS was just a consequence of picking 5, written down as if it were intended.
+  //
+  // The fix is the house attention doctrine, not a z-index: a signal stands down when the player is
+  // already looking (setShopAttention's "switching to Shop clears the nav pulse — the card takes
+  // over"). Hiding costs nothing that lowering z would not also cost — full containment means
+  // "under the panel" and "hidden" render identically — and it avoids pointer-events surgery on a
+  // full-stage container, where one missed descendant goes silently dead.
+  // NOTE these were never bugs the player could report except via the chip: Greg's bubble pops
+  // ~10s per ~45s and Bob's reminder every ~30s, both over whatever panel happens to be open.
+  const panelOpen = isPanelOpen();
+
   // --- Bob's hire arc: the goal chip shows while the FIRST merchant is unhired; hiring hides it
   // (hireWorker sets uiDirty, so it vanishes the same render). Old saves with owned already true
   // never see it. Cost reads the live worker registry, so a hireCost retune can't drift the label.
   const hireChip = document.getElementById('hire-goal-chip');
   if (hireChip) {
     const bobOwned = isWorkerOwned(state, 'mimic_merchant');
-    hireChip.classList.toggle('hidden', bobOwned);
+    hireChip.classList.toggle('hidden', bobOwned || panelOpen);
     if (!bobOwned) hireChip.innerHTML =
       `The counter needs a merchant!<br><b>Hire Bob &mdash; &#9670; ${workerHireCost('mimic_merchant')}</b>`;
   }
@@ -717,7 +735,11 @@ export function renderPanels(state) {
   // there) — trade outages are the steady state and no longer summon Greg.
   const gregBubble = document.getElementById('greg-bubble');
   if (gregBubble) {
-    const showing = (state.gregBubble?.showFor ?? 0) > 0 && isWorkerOwned(state, 'restocker');
+    // `showing` gates BOTH branches deliberately: false collapses quip -> null and target -> null,
+    // so the else-branch's toggle hides it. Gating the toggle alone would leave the quip branch
+    // (which force-REMOVES .hidden) painting over the panel.
+    const showing = (state.gregBubble?.showFor ?? 0) > 0 && isWorkerOwned(state, 'restocker')
+      && !panelOpen;
     const quip = showing ? state.gregBubble?.quip : null;
     if (quip) {
       // The hire quip: pure flavor for one window — no target, no affordability, not clickable.
@@ -749,7 +771,7 @@ export function renderPanels(state) {
   const bobBubble = document.getElementById('bob-bubble');
   if (bobBubble) {
     const cur = state.bobSpeech?.current;
-    const show = !!cur && isWorkerOwned(state, 'mimic_merchant');
+    const show = !!cur && isWorkerOwned(state, 'mimic_merchant') && !panelOpen;
     bobBubble.classList.toggle('hidden', !show);
     if (show) {
       bobBubble.textContent = cur.text;

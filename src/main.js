@@ -281,7 +281,9 @@ canvas.addEventListener('mousemove', (e) => {
   const sy = (e.clientY - r.top) / r.height * CONFIG.stage.height;
   canvas.style.cursor = pointOnBoard(sx, sy) ? 'pointer' : '';
 });
-initNav(document.getElementById('nav'));           // bottom nav swaps the center panel
+initNav(document.getElementById('nav'), () => { state.uiDirty = true; });  // bottom nav swaps the
+// center panel — and the tab change must re-render, because the diorama's DOM overlays now gate on
+// isPanelOpen() (panels.js). Without this they'd linger over the panel until the next spawn/serve.
 
 // --- Menu overlay (UX roadmap 5, Option 2) -------------------------------------------------
 // In-game: the Menu button opens it over the RUNNING shop (no pause state exists on purpose —

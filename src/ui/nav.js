@@ -24,6 +24,8 @@ const PANEL_FOR = { shop: 'items-panel', upgrades: 'upgrades-panel', workers: 'w
 let navRoot = null;          // kept for the attention hook below
 let activeTab = 'shop';
 let wantAttention = false;   // "a sale is blocked by empty stock right now" (set by panels.js)
+let dirty = () => {};        // marks the UI dirty on a tab change — see setTab's tail for WHY a
+                             // pure visibility swap needs a re-render (it no longer is one)
 
 // Attention hook (called by renderPanels): when the front customer's item is out of stock, the
 // signal must survive tab-blindness — the shelf card pulses on the Shop tab, and THIS makes the
@@ -38,6 +40,12 @@ function applyShopAttention() {
   if (btn) btn.classList.toggle('attention', wantAttention && activeTab !== 'shop');
 }
 
+// Is a center panel currently showing? (`activeTab === null` IS the collapsed state — setTab's
+// own contract.) The marketIsOpen() precedent: a pure read, so panels.js can ask rather than
+// track. Consumers: the diorama's DOM overlays (the hire chip, Bob's bubble, Greg's bubble), which
+// live ABOVE .shop-ui by z-order and would otherwise paint straight through an open panel.
+export function isPanelOpen() { return activeTab !== null; }
+
 // Open a specific tab from OUTSIDE the nav (e.g. the hire goal chip). FORCE-OPEN semantics:
 // unlike a nav-button click, calling this with the already-active tab does nothing — external
 // callers mean "show me this panel", never "toggle it" (setTab's collapse is a nav-click gesture).
@@ -46,8 +54,9 @@ export function openTab(tab) {
   setTab(navRoot, tab);
 }
 
-export function initNav(root) {
+export function initNav(root, onDirty) {
   navRoot = root;
+  dirty = typeof onDirty === 'function' ? onDirty : () => {};
   root.innerHTML = TABS.map((t) => {
     const soon = t.disabled ? '<span class="nav-soon">soon</span>' : '';
     const dis = t.disabled ? ' disabled title="Coming soon"' : '';
@@ -74,4 +83,9 @@ function setTab(root, tab) {
   }
   root.querySelectorAll('.nav-btn').forEach((btn) =>
     btn.classList.toggle('active', btn.dataset.tab === tab));
+  // A tab change USED to be a pure visibility swap that needed no re-render. It isn't any more:
+  // the diorama's DOM overlays (hire chip / Bob's bubble / Greg's bubble) now gate on isPanelOpen(),
+  // and panels.js only re-reads that on a render. Without this, opening a panel would leave an
+  // overlay painted across it until the next unrelated uiDirty (a spawn, a serve — up to seconds).
+  dirty();
 }
