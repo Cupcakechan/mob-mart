@@ -483,6 +483,12 @@ body{
    NOT fit (bottom-bar budget below). Segmented control in the panel title; the completion hint
    rides the Field Guide view, so the title never advertises a ledger you can't currently see. */
 .mob-views{display:inline-flex;gap:4px;margin-left:10px;vertical-align:middle;}
+/* THE CASCADE-TIE LAW again, and again live ammunition (third instance: .offer-row, .beast-cards,
+   now this). .mob-views sets its own display and is declared AFTER the bare .hidden utility at
+   line 244 — both 0-1-0, so source order hands the tie to .mob-views and a plain .hidden toggle on
+   the segmented control would be a SILENT NO-OP. The Dossier (2b) toggles exactly this to hide the
+   two-view control while the player is in a third view. Scoped at birth, per §80(d). */
+.mob-views.hidden{display:none;}
 .mob-view-btn{
   background:transparent;color:#c9bfa8;border:1px solid var(--panel-edge);border-radius:6px;
   padding:3px 10px;font-family:var(--font);font-size:11px;font-weight:800;letter-spacing:.6px;
@@ -512,6 +518,69 @@ body{
 .beast-next{font-size:12px;font-weight:700;opacity:.6;}
 .beast-card.undiscovered{opacity:.85;}
 .beast-card.undiscovered .beast-portrait{filter:brightness(0);opacity:.45;}
+
+/* --- THE DOSSIER (2026-07-15, pass 2b — Daniel's Option 1: a THIRD sub-view, INLINE) -------------
+   The card advertises, the Dossier informs. It lives inside #shop-ui rather than in an overlay, and
+   that was the REGISTERED reason for the pick, not a side effect: §83's bleed-through class (the
+   hire chip and both bubbles painting through open panels, all three z5 siblings of #shop-ui's z4)
+   cannot recur here BY CONSTRUCTION. Read §83 before ever "upgrading" this to an overlay.
+
+   PALETTE — §81's law, and it decides every colour below. On --parchment #ece0c4 only three inks
+   clear WCAG AA (measured, not guessed): --ink 10.19:1, the house tan-card #6b4a1e 6.11:1, and
+   --wood 7.72:1. Every gold, purple and lavender in this file FAILS here (--gold 1.12, --gold-deep
+   1.97, --purple 3.23, --meh 1.39) — which is exactly how .beast-exp spent four days invisible.
+   The one gold on this page is the Legend plaque, and it brings its own dark surface with it.
+
+   NO OWN SCROLLER: .bestiary-panel is already max-height 500 + overflow-y:auto, so a maxed entry
+   scrolls the panel it sits in. A second scroller inside a scroller is two thumbs and one confused
+   wheel. The four-notes shape is also SHORTER than the rejected buckets draft it replaced (~500px
+   maxed vs ~636px), so the overflow it has to survive is milder than the one already measured. */
+#mob-view-guide .beast-card:not(.undiscovered){cursor:pointer;}
+#mob-view-guide .beast-card:not(.undiscovered):hover{border-color:var(--gold-deep);}
+.dossier-back{
+  background:transparent;color:#c9bfa8;border:1px solid var(--panel-edge);border-radius:6px;
+  padding:3px 10px;font-family:var(--font);font-size:11px;font-weight:800;letter-spacing:.6px;
+  text-transform:uppercase;cursor:pointer;margin-bottom:10px;
+}
+.dossier-back:hover{color:#e8e0cd;border-color:#8a7fa0;}
+.dossier-head{margin-bottom:10px;}
+/* One continuous parchment page under the head card — the entry, not a stack of cards. */
+.dossier-page{
+  background:var(--parchment);color:var(--ink);border:2px solid var(--wood-edge);
+  border-radius:10px;padding:14px 16px;
+}
+/* A field note: a straight-faced label over a short story. The label/body contrast IS the joke, so
+   the type does the same work — small caps and letter-spacing for the official heading, plain warm
+   body text underneath. */
+.dossier-note{margin-bottom:13px;}
+.dossier-note:last-child{margin-bottom:0;}
+/* --wood #5b3a24 at 7.72:1 — the card's own border family, distinct from the body ink, and one of
+   only three inks that survive this surface. */
+.dossier-note-label{
+  margin:0 0 3px;font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--wood);border-bottom:1px solid rgba(90,58,36,.28);padding-bottom:3px;
+}
+/* --ink at 10.19:1. 1.5 line-height because these are ~185 chars and wrap to 2-3 lines — the log's
+   tight leading is for one-liners, and a paragraph set that tight reads as a wall. */
+.dossier-note-text{margin:0;font-size:12.5px;line-height:1.5;color:var(--ink);}
+/* THE LEGEND (pip 5). --gold on --stone measures 11.28:1 — the battle log's exact treatment, and it
+   works for the log's exact reason: the SURFACE is dark. Enshrined rather than printed. */
+.dossier-legend{
+  background:var(--stone);border:2px solid var(--gold-deep);border-radius:8px;
+  padding:9px 12px;margin:12px 0 0;
+}
+.dossier-legend-label{
+  font-size:9px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;
+  color:var(--gold-deep);margin-bottom:3px;
+}
+.dossier-legend-line{
+  color:var(--gold);font-weight:800;font-size:13px;line-height:1.4;
+  text-shadow:0 0 6px rgba(255,207,74,.45);
+}
+/* The honest footer: without it an entry below the first rung is a portrait and nothing else. */
+.dossier-next{
+  margin-top:12px;font-size:11px;font-weight:700;color:#6b4a1e;opacity:.75;font-style:italic;
+}
 
 /* Golden lines (line-unlock pass): the 100-serve payoff renders unmistakably — gold text with a
    soft glow. Rare by pool math, loud by design; the memorability IS the reward. */

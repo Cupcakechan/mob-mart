@@ -601,3 +601,80 @@ said twice; that is why the roster reads as characters rather than stat blocks.
 
 **Pass 2b adds `lore.beats`** — the progressive reveal on the serve pips, in the Dossier. Those
 are the paragraphs; this is the caption. Do not grow the tagline into the beats' job.
+
+---
+
+## The Dossier field notes (2026-07-15, pass 2b — `MONSTERS[id].lore.notes`)
+
+Four labelled notes per mob, revealed one per pip at **25 / 50 / 100 / 250**. Pip 5 is the mob's
+golden line, printed as **The Legend**.
+
+**The distinction that got the first draft binned:** a tagline STATES what a creature permanently
+is; a note tells you about a time it DID something. The first pass wrote three more taglines per mob
+and called them paragraphs — "Armor is his great passion. Fleeing in it is his great skill." is a
+caption, not a story. Nothing happens in it. A note needs a setup, a thing that occurs, and a
+landing.
+
+**The 80-char budget does not apply here.** That is the *log's* budget — it is a small scrolling
+widget. The Dossier is a page. Notes run **120–200 chars** (the suite pins both ends, and the FLOOR
+is the important one: a note short enough to be a tagline *is* a tagline, and that is the exact
+regression §84(b) exists to catch). Everything else holds: no second person, PG, punch word LAST,
+deadpan reportage, cozy.
+
+**The label is doing comic work, not filing.** A straight-faced dossier heading over absurd content
+is the bible's core lever — grand frame, trivial drop — applied to the heading itself. So labels are
+**authored per mob**: the Inspector gets JURISDICTION and THE SEAL, Slimey gets DIET and PROPERTY
+RECOVERED. A roster-wide schema (every mob gets DIET/HABITAT/RANGE) would flatten exactly the joke
+they exist to make; §84 pins that the roster hasn't converged on one.
+
+**The four escalate:** an ordinary observation → something stranger → deeper → the one that
+recontextualises. Order is content; the suite pins the rendered order, because a shuffle breaks the
+writing without breaking a type.
+
+**Bob is the turn.** He appears in 24 of the 36, and the fourth note usually turns on him, because
+the shop's whole register is that *Bob already knows and lets them have it.* Beetley's "Bob once
+said good morning. Beetley logged it as a directive." is the shape: a tiny kindness, absorbed into
+the delusion, and the delusion is never punctured. That is how the guide stays warm while being
+funny at the characters' expense — it isn't at their expense.
+
+And as everywhere: **lean on the mechanic.** Beetley's `patienceBonus: +8` is "holding the line for
+a shop that would have served him first". Leggsy's `bulkBuyer` is "the shelf goes quiet, the register
+does not". Ratty's `thief` flag is a shield that left when he did, explained at length to a Bob who
+never asked. The stat and the joke stay the same fact said twice.
+
+| Mob | Labels (pips 1–4) |
+|---|---|
+| **Slimey** | DIET · COMBAT RECORD · PROPERTY RECOVERED · RETENTION |
+| **Batty** | HABITAT · KNOWN ASSOCIATES · EQUIPMENT · ON RECORD |
+| **Skele** | CONDITION · PREFERRED STOCK · IDENTIFYING MARKS · THE STAIRS |
+| **Froggo** | PURCHASING · CORRESPONDENCE · RATINGS · ATTENDANCE |
+| **Ratty** | MEANS · THE KEY · INVENTORY · THE INCIDENT |
+| **Beetley** | KIT · THE QUEUE · PAPERWORK · ORDERS |
+| **Demmy** | THREAT ASSESSMENT · PURCHASING · CORRESPONDENCE · DISPOSITION |
+| **Leggsy** | THE SYSTEM · BANDAGES · INVENTORY IMPACT · LEGS |
+| **The Inspector** | JURISDICTION · METHOD · CONDUCT · THE SEAL |
+
+The note bodies live in `src/data/monsters.js` and are the shipped copy; this table is the index.
+
+**The Inspector's four arrive together on his first visit** — VIPs have no pips (binding,
+2026-07-08: trophies, not ladders), and the arithmetic agrees, since he comes at most once a calendar
+day and pip 3 would be 100 days away. He has no golden line (§54's flat four-tier batch), so his
+entry simply ends at THE SEAL. Written to escalate anyway: a reader still reads them in order.
+
+### What does NOT go on this surface
+
+**The battle log.** `results.js` lines are the mob's POV *in a moment*; the guide speaks in permanent
+truths. The rejected draft bucketed 211 of them into a "Greatest Hits" section under the notes, and
+the page read wrong no matter how good the individual lines were — a register clash, not a quality
+problem. §84(f) pins that nothing from `results.js` reaches a Dossier **except the golden**, which
+earns its place because it was already authored as a bestiary capstone rather than a moment ("The
+heroes have a name for Slimey now. He thinks it's a compliment. It is."). If a future pass wants
+"just a few of the good ones" back, that pin will fail, and it should.
+
+### Growing this later
+
+A new mob needs four notes and four labels before it ships — the suite will fail the roster
+otherwise, which is deliberate: a mob with a tagline and no notes is a Dossier that opens to a
+portrait and nothing. If a **sixth breakpoint** is ever added to `MONSTER_BREAKPOINTS`, every mob
+needs a **fifth** note, and §84(a) derives that count rather than reading a constant — so the suite
+will say so on the day the rung lands, not the day a player reaches it.

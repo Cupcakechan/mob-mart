@@ -5803,5 +5803,293 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
 }
 
+// ===== SECTION 84 — THE DOSSIER (Daniel, 2026-07-15 — Option 2, pass 2b) =====
+// The card advertises, the Dossier informs. Pass 2a gave every mob a tagline; 2b unfolds four
+// labelled field notes on the serve pips, then the mob's golden line as the capstone.
+//
+// THIS SECTION EXISTS BECAUSE THE FIRST DRAFT WAS WRONG, and in a way no test would have caught:
+// it wrote three more TAGLINES per mob and bucketed 211 recycled battle-log lines underneath them.
+// Daniel rejected both halves. The two defects are different and both are pinned below:
+//   (1) A tagline STATES what a creature permanently is; a note tells you about a time it DID
+//       something. The first draft's "beats" averaged 64 chars — captions wearing a paragraph's
+//       clothes. (b) pins a length FLOOR for exactly this, which is an unusual thing to assert and
+//       the whole reason it is here: the failure mode is writing SHORT, not writing long.
+//   (2) A battle-log line is the mob's POV IN A MOMENT; the guide speaks in permanent truths.
+//       Recycling the log into the guide put the wrong voice on the page no matter how good the
+//       lines were. (h) pins that no results.js content reaches this surface except the golden —
+//       which was always authored as a bestiary capstone.
+//
+// EVERY assertion DERIVES from MONSTER_IDS / MONSTER_BREAKPOINTS / MONSTER_RESULTS. The roster has
+// grown 3 -> 9 and the breakpoint table is config, so a hand-typed "9 mobs" or "500 serves" is the
+// exact defect the 2026-07-04 batch-2 lesson recorded. Exact totals for this pass live HERE.
+{
+  const { readFileSync: rf84 } = await import('node:fs');
+  const { MONSTERS: M84, MONSTER_IDS: IDS84 } = await import('./src/data/monsters.js');
+  const { MONSTER_RESULTS: MR84 } = await import('./src/data/results.js');
+  const { MONSTER_BREAKPOINTS: BP84 } = await import('./src/data/milestones.js');
+  const { dossierFor, goldenLineFor, DOSSIER_NOTES_PER_MOB } = await import('./src/data/dossier.js');
+  const { dossierHtml } = await import('./src/ui/panels.js');
+  const pnl84 = rf84('./src/ui/panels.js', 'utf8');
+  const css84 = rf84('./style.css', 'utf8');
+  const dsr84 = rf84('./src/data/dossier.js', 'utf8');
+
+  const at84 = (id, n) => dossierFor(id, n);
+  const st84 = (id, n) => ({ stats: { monsterServes: { [id]: n } } });
+  const LAST84 = BP84[BP84.length - 1];
+  const gridIds84 = IDS84.filter((id) => !M84[id].special);
+  const vipIds84 = IDS84.filter((id) => M84[id].special);
+  const allNotes84 = IDS84.flatMap((id) => M84[id]?.lore?.notes ?? []);
+
+  // --- (a) THE CONTRACT: four labelled notes per mob, one per pip below the golden's rung. The
+  // Inspector included — he rides the Field Guide, so he gets an entry (2026-07-08). ---
+  ok(DOSSIER_NOTES_PER_MOB === BP84.length - 1,
+     `dossier: the notes-per-mob count derives from the breakpoint table — one note per rung below `
+     + `the golden's (${DOSSIER_NOTES_PER_MOB} notes, ${BP84.length} rungs)`);
+  const noteSets = IDS84.map((id) => M84[id]?.lore?.notes);
+  ok(noteSets.every((ns) => Array.isArray(ns) && ns.length === DOSSIER_NOTES_PER_MOB),
+     `dossier: every mob in the live roster carries exactly ${DOSSIER_NOTES_PER_MOB} lore.notes `
+     + `(${noteSets.filter((ns) => ns?.length === DOSSIER_NOTES_PER_MOB).length}/${IDS84.length})`);
+  ok(allNotes84.every((n) => typeof n?.label === 'string' && n.label.length > 0
+                          && typeof n?.text === 'string' && n.text.length > 0),
+     'dossier: every note is a { label, text } pair and neither half is empty');
+
+  // --- (b) THE STORY LAW. The 80-char budget is the LOG's — a small scrolling widget — and it does
+  // NOT apply to a page. Applying it here is what produced the rejected draft. So this pass pins a
+  // FLOOR as well as a ceiling: a note short enough to be a tagline IS a tagline, and that is the
+  // regression this section was written to catch. Measured spread at authoring: 167-193. ---
+  {
+    const lens = allNotes84.map((n) => n.text.length);
+    ok(Math.min(...lens) >= 120,
+       `dossier: no note is short enough to be a tagline (floor 120, shortest ${Math.min(...lens)}) `
+       + '\u2014 a caption is not a paragraph, which is exactly how the first draft failed');
+    ok(Math.max(...lens) <= 200,
+       `dossier: no note has grown into an essay (ceiling 200, longest ${Math.max(...lens)})`);
+    ok(allNotes84.every((n) => n.label.length <= 22),
+       `dossier: every label stays a heading, not a sentence (longest ${Math.max(...allNotes84.map((n) => n.label.length))})`);
+  }
+  ok(allNotes84.every((n) => !/\byou\b/i.test(n.text.replace(/you'd/gi, ''))),
+     'dossier: no note breaks the no-second-person hygiene law (the guide describes, never addresses)');
+  ok(new Set(allNotes84.map((n) => n.text)).size === allNotes84.length,
+     'dossier: every note is distinct — a duplicate means a copy-pasted row, not a character');
+  const taglines84 = IDS84.map((id) => M84[id]?.lore?.tagline);
+  ok(allNotes84.every((n) => !taglines84.includes(n.text)),
+     'dossier: no note is a restatement of a tagline — the caption and the paragraph are different jobs');
+  // The labels are AUTHORED PER MOB and carry half the joke (a straight-faced dossier heading over
+  // absurd content). A roster-wide schema would flatten it, so: distinct within a mob, and the
+  // roster must not converge on one shared set.
+  ok(IDS84.every((id) => new Set((M84[id]?.lore?.notes ?? []).map((n) => n.label)).size === DOSSIER_NOTES_PER_MOB),
+     'dossier: a mob\u2019s four labels are distinct from each other');
+  {
+    const distinctLabels = new Set(allNotes84.map((n) => n.label)).size;
+    ok(distinctLabels > DOSSIER_NOTES_PER_MOB * 2,
+       `dossier: the labels are tailored per mob, not a roster-wide schema — ${distinctLabels} distinct `
+       + `across ${IDS84.length} mobs (a shared form would collapse toward ${DOSSIER_NOTES_PER_MOB})`);
+  }
+
+  // --- (c) THE LADDER: one note per rung, in order, and nothing at all below the first. ---
+  ok(gridIds84.every((id) => BP84.slice(0, DOSSIER_NOTES_PER_MOB)
+       .every((rung, i) => at84(id, rung).notes.length === i + 1)),
+     `dossier: the notes reveal one per pip across the first ${DOSSIER_NOTES_PER_MOB} rungs (${BP84.slice(0, -1).join('/')})`);
+  ok(gridIds84.every((id) => at84(id, BP84[0] - 1).notes.length === 0),
+     `dossier: no note reveals below the first rung (${BP84[0]})`);
+  ok(gridIds84.every((id) => at84(id, LAST84).notes.length === DOSSIER_NOTES_PER_MOB),
+     'dossier: the last rung adds the golden, not a fifth note');
+  // Order is content: the four escalate deliberately (ordinary -> stranger -> deeper -> the one that
+  // recontextualises), so a shuffle breaks the writing without breaking a type, a symbol, or a
+  // count. Asserted against the RENDERED HTML, not dossierFor's return: an earlier draft of this pin
+  // checked the data layer's array order and a negative control walked straight past it by reversing
+  // in the renderer. The order the player READS is the effect; the array is only the mechanism.
+  ok(gridIds84.every((id) => {
+    const html = dossierHtml(st84(id, LAST84), id);
+    const positions = M84[id].lore.notes.map((n) => html.indexOf(`>${n.label}<`));
+    return positions.every((p) => p > -1) && positions.every((p, i) => i === 0 || p > positions[i - 1]);
+  }), 'dossier: the notes RENDER in registry order — they escalate, so the order IS the writing');
+
+  // --- (d) THE MONOTONE REVEAL: content only ever arrives. A ladder that takes a note back is a
+  // bug no player would report and everyone would feel. ---
+  {
+    const rungs = [1, ...BP84];
+    const shrinks = gridIds84.filter((id) => rungs.some((r, i) =>
+      i > 0 && at84(id, r).notes.length < at84(id, rungs[i - 1]).notes.length));
+    ok(shrinks.length === 0,
+       `dossier: the notes never un-reveal as serves climb (regressed: ${shrinks.join(', ') || 'none'})`);
+  }
+
+  // --- (e) THE GOLDEN IS THE CAPSTONE, held for the last rung. It is the ONE recycled line, and it
+  // earns the place because it was already authored as a permanent truth rather than a moment. ---
+  {
+    const withGolden = gridIds84.filter((id) => goldenLineFor(id) !== null);
+    ok(withGolden.length === gridIds84.length,
+       `dossier: guard-the-guard — every grid mob has a golden to crown the entry (${withGolden.length}/${gridIds84.length})`);
+    ok(withGolden.every((id) => at84(id, LAST84 - 1).golden === null),
+       `dossier: the golden is withheld one serve below the last rung (${LAST84})`);
+    ok(withGolden.every((id) => at84(id, LAST84).golden === goldenLineFor(id)),
+       `dossier: the golden lands exactly at the last rung — pip ${BP84.length} IS the Legend`);
+    ok(gridIds84.every((id) => !at84(id, LAST84).notes.some((n) => n.text === goldenLineFor(id))),
+       'dossier: no note duplicates the mob\u2019s own golden — the capstone is spent once');
+  }
+
+  // --- (f) THE REGISTER GUARD — the pin that encodes the rejection. results.js is the mob's POV in
+  // a MOMENT; the guide speaks in permanent truths. The first draft bucketed 211 log lines under the
+  // notes and the page read wrong even where the lines were funny. NOTHING from results.js may reach
+  // this surface except the golden. Asserted against the rendered HTML, not the source, so a future
+  // "just a few of the good ones" re-import fails here rather than in Daniel's browser. ---
+  {
+    const logLines = (id) => Object.values(MR84[id] ?? {}).flat()
+      .map((t) => (typeof t === 'string' ? t : t?.text ?? ''))
+      .filter((t) => t && t !== goldenLineFor(id));
+    ok(logLines('slime').length > 20,
+       `dossier: guard-the-guard — the log pool really is large enough for this to be live ammunition `
+       + `(${logLines('slime').length} non-golden lines for slime alone)`);
+    const leaks = gridIds84.filter((id) => {
+      const html = dossierHtml(st84(id, LAST84), id);
+      return logLines(id).some((l) => html.includes(l));
+    });
+    ok(leaks.length === 0,
+       `dossier: no battle-log line reaches a maxed entry except the golden — the guide is NEW `
+       + `writing, not a highlights reel (leaked: ${leaks.join(', ') || 'none'})`);
+    ok(!/MONSTER_RESULTS\[id\]\?\.\[|DOSSIER_TIERS_BY_PIP|DOSSIER_BUCKET_LABEL/.test(dsr84),
+       'dossier: dossier.js carries no tier-bucketing machinery — the Greatest Hits are gone, and '
+       + 'their absence is the design, not an oversight to be helpfully restored');
+    ok(!/dossier-bucket|dossier-lines|dossier-beat/.test(pnl84) && !/dossier-bucket|dossier-lines|dossier-beat\b/.test(css84),
+       'dossier: no bucket render or beat style survives in panels.js or style.css');
+  }
+
+  // --- (g) UNDISCOVERED: nothing at all. The silhouette exists to protect a reveal; dossier.js
+  // returns only REVEALED content by construction, so this cannot be defeated by a renderer bug. ---
+  {
+    const d0 = at84('slime', 0);
+    ok(d0.discovered === false && d0.notes.length === 0 && d0.golden === null,
+       'dossier: an undiscovered mob\u2019s entry carries no notes and no golden');
+    ok(dossierHtml(st84('slime', 0), 'slime') === '',
+       'dossier: dossierHtml renders NOTHING for an undiscovered mob');
+    ok(dossierFor('not_a_mob', 500) === null && dossierHtml(st84('not_a_mob', 500), 'not_a_mob') === '',
+       'dossier: an unknown id degrades to nothing, never a crash');
+    ok(at84('slime', -5).served === 0 && at84('slime', 1.9).served === 1,
+       'dossier: a nonsense serve count is floored and clamped, never trusted');
+  }
+
+  // --- (h) THE VIP: no pips, no ladder, no golden. Binding since 2026-07-08 — and the arithmetic
+  // agrees: he arrives at most once a CALENDAR DAY, so pip 3 would be 100 days and pip 5 a wall. ---
+  {
+    ok(vipIds84.length > 0, 'dossier: guard-the-guard — the roster has a VIP to check');
+    for (const id of vipIds84) {
+      const v1 = at84(id, 1);
+      ok(v1.isVip === true && v1.notes.length === DOSSIER_NOTES_PER_MOB,
+         `dossier: ${id} reveals all ${DOSSIER_NOTES_PER_MOB} notes on his FIRST visit — a trophy has no ladder to climb`);
+      ok(v1.golden === null && goldenLineFor(id) === null,
+         `dossier: ${id} has no golden — a once-a-day visitor was never given one (\u00a754), so his entry ends at his last note`);
+      ok(v1.nextAt === null, `dossier: ${id} promises no further notes — there is no rung to promise`);
+      ok(!dossierHtml(st84(id, 1), id).includes('beast-pip'),
+         `dossier: ${id}\u2019s entry draws NO pips (VIPs are trophies, not ladders)`);
+    }
+  }
+
+  // --- (i) THE WRITE AND THE READ. A registry field with no consumer is a dropped step wearing a
+  // feature's clothes; a headless suite cannot draw a panel (the §0b/§78/§80/§82 precedent), so the
+  // DOM contract is pinned in SOURCE — and, per §72(f), against a STRUCTURE, never a bare symbol. ---
+  ok(/id="mob-view-dossier"/.test(pnl84) && /id="dossier-body"/.test(pnl84),
+     'dossier: the third sub-view and its body exist in the panel template (the WRITE)');
+  ok(/id="dossier-back"/.test(pnl84) && /dossier-back'\)\?\.addEventListener/.test(pnl84),
+     'dossier: the back button exists AND is wired — the only way out of the view');
+  ok(/dossierBody\.innerHTML = dossierHtml\(state, dossierId\)/.test(pnl84),
+     'dossier: renderPanels writes dossierHtml into the body (the READ)');
+  ok(/setMobView\('dossier', card\.dataset\.beast\)/.test(pnl84),
+     'dossier: a Field Guide card click opens that mob\u2019s entry');
+  ok(/classList\.contains\('undiscovered'\)/.test(pnl84),
+     'dossier: the card click refuses an undiscovered mob (the silhouette\u2019s reveal is protected)');
+  ok(/getElementById\('mob-view-guide'\)\?\.addEventListener/.test(pnl84),
+     'dossier: the click listener is delegated on the VIEW, not the grid — the VIP section is a '
+     + 'SIBLING of #guide-cards and is inserted after init, so a listener on the grid would miss the Inspector');
+  ok(/getElementById\('mob-views'\)\?\.classList\.toggle\('hidden', view === 'dossier'\)/.test(pnl84),
+     'dossier: the two-view toggle hides while inside a third view');
+  ok(/class="dossier-note-label"/.test(pnl84) && /class="dossier-note-text"/.test(pnl84),
+     'dossier: the label and the story are rendered as separate elements — the label is content '
+     + 'carrying half the joke, not chrome');
+
+  // --- (j) THE CASCADE-TIE LAW, third instance (.offer-row, .beast-cards, now .mob-views). The
+  // toggle above is a SILENT NO-OP without a scoped override, because .mob-views sets its own
+  // display and is declared AFTER the bare .hidden utility. Nothing headless catches a specificity
+  // tie — this text-pin is the only guard. ---
+  ok(css84.includes('.mob-views.hidden'),
+     'dossier: style.css carries the scoped .mob-views.hidden override');
+  {
+    const iHidden84 = css84.indexOf('\n.hidden{');
+    const iViews84 = css84.indexOf('\n.mob-views{');
+    ok(iHidden84 !== -1 && iViews84 !== -1 && iViews84 > iHidden84,
+       'dossier: guard-the-guard — .mob-views IS declared after .hidden, so the 0-1-0 tie is real '
+       + 'and the scoped override is load-bearing, not decoration');
+  }
+  ok(css84.includes('.mob-view.hidden'),
+     'dossier: the .mob-view.hidden override still covers the sub-view containers');
+
+  // --- (k) THE WRONG-PALETTE LAW (§81) on every ink this page adds. .beast-exp spent four days
+  // invisible because a dark-panel colour was reused on a parchment card; asserted at birth. ---
+  {
+    const lin84 = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+    const rgb84 = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+    const lum84 = (h) => { const [r, g, b] = rgb84(h); return 0.2126 * lin84(r / 255) + 0.7152 * lin84(g / 255) + 0.0722 * lin84(b / 255); };
+    const ratio84 = (a, b) => { const [hi, lo] = [lum84(a), lum84(b)].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
+    const rootBody84 = /:root\s*\{([\s\S]*?)\}/.exec(css84)?.[1] ?? '';
+    const varOf = (n) => new RegExp(`--${n}\\s*:\\s*(#[0-9a-fA-F]{6})`).exec(rootBody84)?.[1] ?? null;
+    const parch84 = varOf('parchment');
+    const ruleColor = (sel) => {
+      const body = new RegExp(`^\\${sel}\\s*\\{([^}]*)\\}`, 'm').exec(css84)?.[1] ?? null;
+      if (!body) return null;
+      const c = /(?:^|;)\s*color\s*:\s*(#[0-9a-fA-F]{6}|var\(--[a-z-]+\))/.exec(body)?.[1] ?? null;
+      if (!c) return null;
+      const v = /^var\(--([a-z-]+)\)$/.exec(c);
+      return v ? varOf(v[1]) : c;
+    };
+    const onParchment = ['.dossier-note-label', '.dossier-note-text', '.dossier-next'];
+    const parchColors = onParchment.map((s) => [s, ruleColor(s)]);
+    ok(!!parch84 && parchColors.every(([, c]) => !!c),
+       `dossier: guard-the-guard — :root declares a parchment and every parchment-ink rule resolves a `
+       + `colour (${parchColors.map(([s, c]) => `${s}=${c ?? 'MISS'}`).join(' ')})`);
+    for (const [sel, c] of parchColors) {
+      const r = ratio84(c, parch84);
+      ok(r >= 4.5, `dossier: ${sel} clears WCAG AA on the parchment page — ${r.toFixed(2)}:1 (\u00a781's law)`);
+    }
+    // ...and the ONE gold on the page, legal only because it brings a dark surface with it. The law
+    // is "no dark-panel colour on a LIGHT card", not "no gold" — the plaque changes the card.
+    {
+      const legendBody = /^\.dossier-legend\s*\{([^}]*)\}/m.exec(css84)?.[1] ?? '';
+      const bgVar = /background\s*:\s*var\(--([a-z-]+)\)/.exec(legendBody)?.[1] ?? null;
+      const legendBg = bgVar ? varOf(bgVar) : null;
+      const legendFg = ruleColor('.dossier-legend-line');
+      ok(!!legendBg && !!legendFg,
+         'dossier: guard-the-guard — the Legend plaque declares its own dark background and a gold ink');
+      ok(ratio84(legendFg, legendBg) >= 4.5,
+         `dossier: the Legend\u2019s gold clears AA on its OWN dark plaque — ${ratio84(legendFg, legendBg).toFixed(2)}:1 `
+         + '(gold on parchment measures 1.12:1; the plaque brings the surface the colour was authored for)');
+      ok(legendBg !== parch84,
+         'dossier: the Legend plaque is NOT parchment — that is the entire reason its gold is legal');
+    }
+  }
+
+  // --- (l) §80's law holds: the job card stays a job card. §82 pins that the tagline never drifts
+  // onto it; the Dossier must not either. ---
+  {
+    const start84 = pnl84.indexOf("getElementById('beast-cards').innerHTML =");
+    const end84 = pnl84.indexOf("\n  }).join('');", start84);
+    const jobTpl84 = start84 < 0 || end84 < 0 ? null : pnl84.slice(start84, end84);
+    ok(!!jobTpl84, 'dossier: guard-the-guard — the Expeditions job template was sliced');
+    ok(!/dossier/i.test(jobTpl84),
+       'dossier: the Expeditions job card carries no Dossier of any kind — \u00a780 keeps it a job card');
+    ok(!/getElementById\('mob-view-expeditions'\)\?\.addEventListener/.test(pnl84),
+       'dossier: no click-to-open on the Expeditions view — its cards are jobs, and its Send button '
+       + 'would fight a card-level handler for the same click');
+  }
+
+  // --- (m) style.css changed; this section owns the current floor. ---
+  {
+    const ver84 = (s) => { const m = /style\.css\?v=(\d+)/.exec(s); return m ? Number(m[1]) : null; };
+    const vi84 = ver84(rf84('./index.html', 'utf8'));
+    const vk84 = ver84(rf84('./index.kongregate.html', 'utf8'));
+    ok(vi84 !== null && vi84 === vk84, 'dossier: both entry shells carry the SAME style.css cache-bust');
+    ok(vi84 >= 19, `dossier: the cache-bust advanced for this pass\u2019s style.css change (>= v19, found ${vi84})`);
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

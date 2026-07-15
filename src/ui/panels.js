@@ -13,6 +13,7 @@ import { MONSTERS, MONSTER_IDS } from '../data/monsters.js';
 import { UPGRADES, UPGRADE_ORDER, upgradeLevel, upgradeCost, isMaxed } from '../data/upgrades.js';
 import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost,
   workerLevel, workerLevelCost, isWorkerLevelMaxed } from '../data/workers.js';
+import { dossierFor, DOSSIER_GOLDEN_LABEL } from '../data/dossier.js';   // the Field Guide Dossier (2b)
 import { RELICS, RELIC_ORDER } from '../data/relics.js';   // the Forge (§14 Pass B)
 import { MATERIALS, MATERIAL_ORDER } from '../data/materials.js';  // Trade Market (reform Pass B)
 import {
@@ -26,18 +27,35 @@ const reputationTierIndex = (state) => reputationTier(fameOf(state)).index;
 
 let handlers = { onServe: () => {}, onDismiss: () => {}, onRestock: () => {}, onRestockAll: () => {}, onBuyUpgrade: () => {}, onBuyPerk: () => {}, onBuyLicense: () => {}, onHireWorker: () => {}, onOpenMarket: () => {}, onDirty: () => {} };
 let activeCategory = 'weapon';   // shelf sub-tab (not persisted; category comes from the item registry)
-let activeMobView = 'expeditions';  // Mobs sub-view: 'expeditions' | 'guide' (not persisted — a view, not a preference)
+let activeMobView = 'expeditions';  // Mobs sub-view: 'expeditions' | 'guide' | 'dossier' (not persisted — a view, not a preference)
+let dossierId = null;               // which mob's Dossier is open; null outside the 'dossier' view
 
-// Switch the Mobs panel's sub-view (the setShelfCategory precedent). The tab holds two surfaces
+// Switch the Mobs panel's sub-view (the setShelfCategory precedent). The tab holds three surfaces
 // because a 6th nav tab does NOT fit — see the bottom-bar budget in style.css and LESSONS
 // 2026-07-04. The completion % belongs to the FIELD GUIDE ("a field guide of REGULARS"), so it
 // rides the view rather than the panel title, or it would advertise a ledger you can't see.
-function setMobView(view) {
+//
+// THE DOSSIER (2b, Daniel's Option 1 REGISTERED): a THIRD sub-view, INLINE — the card list swaps
+// for one entry and a back button returns. An overlay on the market.js precedent was REJECTED, and
+// the registered reason outranks the pick: a sub-view lives INSIDE #shop-ui, so the bleed-through
+// class that cost a whole pass on 2026-07-15 (§83 — the hire chip and both bubbles painting through
+// open panels) CANNOT RECUR HERE BY CONSTRUCTION. Do not "upgrade" this to an overlay without
+// reading §83 first.
+function setMobView(view, id = null) {
   activeMobView = view;
+  dossierId = view === 'dossier' ? id : null;
   document.querySelectorAll('.mob-view-btn').forEach((b) =>
     b.classList.toggle('active', b.dataset.view === activeMobView));
+  // The Expeditions/Field Guide toggle HIDES inside a Dossier: it offers two views and the player
+  // is in a third, so every button being inactive would read as a bug. The back button is the way
+  // out. NOTE .mob-views sets its own display (inline-flex) and is declared AFTER the bare .hidden
+  // utility — a 0-1-0 TIE that source order resolves in .mob-views' favour — so this toggle is a
+  // SILENT NO-OP without the scoped .mob-views.hidden override in style.css. Third instance of that
+  // class in this project (.offer-row, .beast-cards, now this); scoped at birth, per §80(d).
+  document.getElementById('mob-views')?.classList.toggle('hidden', view === 'dossier');
   document.getElementById('mob-view-expeditions')?.classList.toggle('hidden', view !== 'expeditions');
   document.getElementById('mob-view-guide')?.classList.toggle('hidden', view !== 'guide');
+  document.getElementById('mob-view-dossier')?.classList.toggle('hidden', view !== 'dossier');
   document.getElementById('bestiary-completion')?.classList.toggle('hidden', view !== 'guide');
 }
 
@@ -154,6 +172,10 @@ export function initPanels(root, h) {
       </div>
       <div class="mob-view hidden" id="mob-view-guide">
         <div id="guide-cards" class="beast-cards"></div>
+      </div>
+      <div class="mob-view hidden" id="mob-view-dossier">
+        <button class="dossier-back" id="dossier-back" type="button">&#8592; Field Guide</button>
+        <div id="dossier-body"></div>
       </div>
     </section>
 
@@ -377,6 +399,27 @@ export function initPanels(root, h) {
     if (btn) setMobView(btn.dataset.view);
   });
 
+  // OPENING A DOSSIER (2b). The registered scope names the view and the way back but not the way
+  // IN; the card is the only surface that names a monster, so clicking the card IS the way in —
+  // zero new markup, and it keeps the card carrying one line rather than growing a button. The
+  // card advertises, so clicking the sign walks you to the goods.
+  // DELEGATED on the view, not the grid: the VIP section is inserted as a SIBLING of #guide-cards
+  // (insertAdjacentHTML 'afterend') and is inserted AFTER this runs — a listener on the container
+  // above both catches the Inspector's card without depending on init order.
+  document.getElementById('mob-view-guide')?.addEventListener('click', (e) => {
+    const card = e.target.closest('.beast-card');
+    // Undiscovered mobs have no Dossier. Opening one would hand over the reveal the silhouette
+    // exists to protect — the same gate the tagline got in 2a, for the same reason.
+    if (!card || card.classList.contains('undiscovered') || !card.dataset.beast) return;
+    setMobView('dossier', card.dataset.beast);
+    handlers.onDirty();                            // the Dossier body renders on the next dirty pass
+  });
+
+  document.getElementById('dossier-back')?.addEventListener('click', () => {
+    setMobView('guide');
+    handlers.onDirty();
+  });
+
   // VIP VISITORS (Daniel, 2026-07-08): special rows DO get bestiary entries — their own section,
   // not rows in the grid. They ride the FIELD GUIDE now, which is where trophies belong: they were
   // never jobs (no Send button, by that same decision) and a job list is no place for them. Same
@@ -401,6 +444,77 @@ export function initPanels(root, h) {
           </div>`;
       }).join('')}</div>`);
   }
+}
+
+// The ledger line, shared by the Field Guide CARD and the Dossier HEAD so the two surfaces can
+// never disagree about the same monster. VIPs speak visit language and skip the rep-mult line —
+// trophies, not ladders (Daniel, 2026-07-08).
+function beastSubText(isVip, discovered, served, crossed) {
+  if (isVip) return discovered ? `Visits ${served}` : 'Not yet visited';
+  if (!discovered) return 'Not yet served';
+  const bonus = crossed > 0
+    ? ` \u00b7 +${Math.round(crossed * MONSTER_REP_PER_BREAKPOINT * 100)}% rep` : '';
+  return `Served ${served}${bonus}`;
+}
+
+// Authored lines land in innerHTML, so they get escaped on the way in. Cheap, and it means a future
+// line carrying an angle bracket is a character, not markup.
+const escHtml = (s) => String(s ?? '')
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// THE DOSSIER BODY (2b) — PURE (the gregBubbleFor / offerRowHtml / fameStandingHtml precedent):
+// state + id in, HTML out, so the suite drives the entire reveal ladder with no DOM at all.
+// The content decisions all live in data/dossier.js; this function only dresses them.
+export function dossierHtml(state, id) {
+  const served = state?.stats?.monsterServes?.[id] ?? 0;
+  const d = dossierFor(id, served);
+  if (!d || !d.discovered) return '';
+
+  // VIPs get no pips (binding, 2026-07-08) — the VIP tag stands where the ladder would.
+  const progress = d.isVip
+    ? '<div class="beast-next vip">VIP</div>'
+    : `<div class="beast-pips">${MONSTER_BREAKPOINTS
+        .map((_, i) => `<span class="beast-pip${i < d.crossed ? ' filled' : ''}"></span>`).join('')}</div>`;
+
+  const head = `<div class="beast-card dossier-head">
+      <img class="beast-portrait" src="assets/sprites/${d.spriteId}.png" alt=""
+           onerror="this.style.display='none'">
+      <div class="beast-info">
+        <div class="beast-name">${escHtml(d.displayName)}</div>
+        <div class="beast-sub">${escHtml(beastSubText(d.isVip, true, d.served, d.crossed))}</div>
+        <div class="beast-lore">${escHtml(d.tagline)}</div>
+      </div>
+      <div class="beast-progress">${progress}</div>
+    </div>`;
+
+  // The notes are the paragraphs; the tagline above is the caption (COMEDY_BIBLE's standing warning
+  // for this pass). Locked notes are ABSENT, not dimmed — dossier.js never hands them over.
+  // The LABEL is authored per mob and carries half the joke: a straight-faced dossier heading over
+  // absurd content. It is content, not chrome, which is why it lives in the registry and not here.
+  const notes = d.notes
+    .map((nt) => `<div class="dossier-note">
+        <h3 class="dossier-note-label">${escHtml(nt.label)}</h3>
+        <p class="dossier-note-text">${escHtml(nt.text)}</p>
+      </div>`).join('');
+
+  // THE LEGEND (pip 5). Gold on parchment measures 1.12:1 — §81's law would kill it outright — so
+  // the plaque brings its own DARK surface with it, where --gold reads 11.28:1 exactly as it does
+  // in the battle log. The law is "no dark-panel colour on a light card", not "no gold".
+  const legend = d.golden
+    ? `<div class="dossier-legend">
+        <div class="dossier-legend-label">${escHtml(DOSSIER_GOLDEN_LABEL)}</div>
+        <div class="dossier-legend-line">${escHtml(d.golden)}</div>
+      </div>`
+    : '';
+
+  // The guide's honest footer. Without it an entry at 1-24 serves is a portrait and nothing else —
+  // indistinguishable from broken. Same number the card's `next N` already carries; one fact, two
+  // places. A VIP has no ladder, and a maxed entry has nothing left to promise.
+  const footer = d.nextAt !== null
+    ? `<div class="dossier-next">Further notes at ${d.nextAt} serves.</div>`
+    : '';
+
+  return `${head}<div class="dossier-page">${notes}${legend}${footer}</div>`;
 }
 
 const REASON_LABEL = {
@@ -815,15 +929,9 @@ export function renderPanels(state) {
     const crossed = crossedCount(served, MONSTER_BREAKPOINTS);
     const isVip = MONSTERS[id]?.special === true;
     const subEl = document.getElementById(`beast-sub-${id}`);
-    if (subEl) {
-      // VIP cards speak visit language and skip the rep-mult line — trophies, not ladders.
-      subEl.textContent = isVip
-        ? (discovered ? `Visits ${served}` : 'Not yet visited')
-        : (discovered
-          ? `Served ${served}${crossed > 0
-              ? ` \u00b7 +${Math.round(crossed * MONSTER_REP_PER_BREAKPOINT * 100)}% rep` : ''}`
-          : 'Not yet served');
-    }
+    // One composer for both surfaces (2b): the Dossier head shows this same line, and two copies of
+    // the same sentence drift the moment one of them is edited.
+    if (subEl) subEl.textContent = beastSubText(isVip, discovered, served, crossed);
     const pipsEl = document.getElementById(`beast-pips-${id}`);
     if (pipsEl) [...pipsEl.children].forEach((pip, i) => pip.classList.toggle('filled', i < crossed));
     // THE FIELD GUIDE TAGLINE (2026-07-15, pass 2a): the mob's one comic lever, in his own row.
@@ -840,6 +948,15 @@ export function renderPanels(state) {
       nextEl.textContent = isVip ? (discovered ? 'VIP' : '')
         : (!discovered ? '' : (nb !== null ? `next ${nb}` : 'maxed'));
     }
+  }
+
+  // --- The Dossier body (2b) ---
+  // Re-rendered on every dirty pass while open, so a serve that crosses a breakpoint fills the pip
+  // and unlocks its lines WHILE the entry is being read — the reveal happens in front of the player
+  // rather than the next time the panel is reopened.
+  const dossierBody = document.getElementById('dossier-body');
+  if (dossierBody && activeMobView === 'dossier' && dossierId) {
+    dossierBody.innerHTML = dossierHtml(state, dossierId);
   }
 
   // --- Battle log ---

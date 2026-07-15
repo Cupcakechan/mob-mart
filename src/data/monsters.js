@@ -25,7 +25,19 @@ export const MONSTERS = {
                                    // 512x128 strip); strip absent -> static slime.png (graceful)
     categoryWeights: { consumable: 3, weapon: 2, armor: 1 },   // the flask fan, by category
     material: 'slime_core', materialEveryNServes: 10,   // drop law: servedNow % N === 0 (game.js)
-    lore: { tagline: "Absorbs everything he touches. Retains nothing he learns." },
+    lore: {
+      tagline: "Absorbs everything he touches. Retains nothing he learns.",
+      notes: [
+        { label: "DIET",
+          text: "Slimey buys flasks and drinks them without opening them. Bob has explained the cap four times. Slimey listens carefully every time, nods, and swallows the next one whole." },
+        { label: "COMBAT RECORD",
+          text: "Slimey has lost more fights than the rest of the queue combined. He keeps no record of it, so by his own accounting he is undefeated. The heroes have stopped arguing. It was easier." },
+        { label: "PROPERTY RECOVERED",
+          text: "Bob once fished a sword, two coins and a door key out of Slimey. None were his. Slimey watched the whole procedure with polite interest, thanked Bob warmly, and swallowed the key again." },
+        { label: "RETENTION",
+          text: "Nothing Slimey learns survives the night. Bob tested it once — taught him a rule on a Tuesday, asked on Wednesday. Slimey had lost the rule, the Tuesday, and Bob. He was thrilled to meet him." },
+      ],
+    },
                          // — deterministic, plannable, throttled. All six Ns RETUNED ~2.5× on
                          // 2026-07-11 (Daniel: 4–6 felt like confetti; ~1 material/min roster-wide now)
   },
@@ -37,7 +49,19 @@ export const MONSTERS = {
                                    // field — absent = static <id>.png, then the placeholder rect)
     categoryWeights: { armor: 3, consumable: 2, weapon: 1 },   // the armor lover, by category
     material: 'echo_fang', materialEveryNServes: 10,
-    lore: { tagline: "Ambushes from perfect silence. Ruins it immediately by screaming." },
+    lore: {
+      tagline: "Ambushes from perfect silence. Ruins it immediately by screaming.",
+      notes: [
+        { label: "HABITAT",
+          text: "Batty has ambushed the same corridor for six years. He has never once been in it when a hero came through. He calls the record spotless. Nobody has found a way to disagree." },
+        { label: "KNOWN ASSOCIATES",
+          text: "One pebble, acquired during a bad week. Batty will not say where from, only that it listens better than most. He introduces it to everyone he meets. Twice, if the first went badly." },
+        { label: "EQUIPMENT",
+          text: "Batty owns more armor than the rest of the queue combined and has never once been hit while wearing it. He credits the armor. Bob, who has watched him flee every single fight, says nothing." },
+        { label: "ON RECORD",
+          text: "Bob once suggested a different corridor. Batty took the suggestion home, considered it three days, and came back to say he'd rather not. Then he screamed. Then he apologised for the scream." },
+      ],
+    },
   },
   skeleton: {
     id:'skeleton', displayName:'Skele', spriteId:'skeleton', combatMod:1, budgetRange:[12,24],
@@ -46,7 +70,19 @@ export const MONSTERS = {
     anim: { frames: 4, fps: 6 },   // idle rattle/sway: skeleton_idle.png, SHARED contract as above
     categoryWeights: { weapon: 3, armor: 2, consumable: 1 },   // sword guy, by category
     material: 'femur_charm', materialEveryNServes: 12,
-    lore: { tagline: "Death holds no fear for him. Stairs do." },
+    lore: {
+      tagline: "Death holds no fear for him. Stairs do.",
+      notes: [
+        { label: "CONDITION",
+          text: "Skele died a long time ago and has made his peace with it. He has not made his peace with the shop’s back step, which he has fallen down eleven times. He counts. Death, he never counted." },
+        { label: "PREFERRED STOCK",
+          text: "Skele buys swords and only swords. He tests each by holding it at arm’s length, to see whether the arm agrees. Twice, the arm has left with the sword. Bob now keeps a box for the arm." },
+        { label: "IDENTIFYING MARKS",
+          text: "The left femur is not his. He picked it up after a bad landing and never mentioned the swap to anyone. The original turns up in the queue now and then, doing well for itself. They nod." },
+        { label: "THE STAIRS",
+          text: "Bob installed a handrail. Skele thanked him warmly, formally, in front of the whole queue — and has never touched it. He says it’s there for the others. There are no others. Nobody else falls." },
+      ],
+    },
   },
   frog: {
     id:'frog', displayName:'Froggo', spriteId:'frog', combatMod:0, budgetRange:[16,30],
@@ -68,7 +104,19 @@ export const MONSTERS = {
     categoryWeights: { consumable: 3, weapon: 2, armor: 1 },
     material: 'bogstone_bauble', materialEveryNServes: 15,   // premium customer, stingier drop
     itemBias: { greater_flask: 3, iron_sword: 2 },   // the tier-2 customer: once licensed, his
-    lore: { tagline: "Has never enjoyed a dungeon. Has never missed one either." },
+    lore: {
+      tagline: "Has never enjoyed a dungeon. Has never missed one either.",
+      notes: [
+        { label: "PURCHASING",
+          text: "Froggo buys the Greater Flask every visit and has never once looked pleased about it. He asked Bob whether there was a better flask. There is not. He bought the Greater Flask again." },
+        { label: "CORRESPONDENCE",
+          text: "Froggo files a complaint after every outing. The dungeon has no complaints desk, no address, and no staff. Froggo knows this. He files them anyway, in triplicate, and keeps his copy." },
+        { label: "RATINGS",
+          text: "Every dungeon Froggo has visited holds a rating of one star. He has visited some of them four hundred times. When Bob asked why, Froggo said he was waiting to see if they improved." },
+        { label: "ATTENDANCE",
+          text: "Froggo has not missed a day in six years. Bob once asked, gently, whether he enjoyed any of it. Froggo considered the question seriously, said no, and asked what time they opened tomorrow." },
+      ],
+    },
                                                      // signature goods dominate WITHIN the category
                                                      // (pre-license the unlock filter hides them).
   },
@@ -103,7 +151,19 @@ export const MONSTERS = {
                                                                // unattended is interesting
     material: 'stolen_trinket', materialEveryNServes: 10,   // the scrounger sheds loot readily
     itemBias: { rusty_key: 3, tattered_shirt: 2 },   // signature loves: a THIEF craves the key,
-    lore: { tagline: "Has never stolen anything. Has found a truly remarkable amount." },
+    lore: {
+      tagline: "Has never stolen anything. Has found a truly remarkable amount.",
+      notes: [
+        { label: "MEANS",
+          text: "Ratty has the smallest purse in the queue and the fullest pockets in the dungeon. He is a coin short at the counter every visit, without fail, and pays the difference in apologies." },
+        { label: "THE KEY",
+          text: "Ratty buys the Rusty Key whenever it’s in stock and has never said what it opens. Bob asked once. Ratty said it was complicated, bought a second one, and changed the subject to weather." },
+        { label: "INVENTORY",
+          text: "Ratty’s collection includes four spoons, a doorknob, and a small painting of a hill. Every item was found. Ratty is very clear about this. He is clear about it before anyone asks." },
+        { label: "THE INCIDENT",
+          text: "Ratty ran out of patience once and left. So did a shield. He came back the next day to explain, at length and unprompted, that the two were unrelated. Bob had not asked. Bob never asks." },
+      ],
+    },
                                                      // and the cheapest shirt is peak scrounger
   },
   beetle: {
@@ -124,7 +184,19 @@ export const MONSTERS = {
     categoryWeights: { armor: 4, weapon: 2, consumable: 1 },   // armor-first by a wide margin
     itemBias: { wooden_shield: 2, iron_buckler: 2 },           // signature loves: MORE shell
     material: 'carapace_shard', materialEveryNServes: 12,
-    lore: { tagline: "Reports for duty daily. No one has ever assigned him any." },
+    lore: {
+      tagline: "Reports for duty daily. No one has ever assigned him any.",
+      notes: [
+        { label: "KIT",
+          text: "Beetley arrives wearing a shell and buys armor to go over it. Standard issue, he explains, is never enough. Bob has spent two years failing to work out who issues Beetley his standards." },
+        { label: "THE QUEUE",
+          text: "Beetley waits longer than any mob in the shop, by a wide margin, and by choice. He calls it holding the line. The line is a queue. He is holding it for a shop that would have served him first." },
+        { label: "PAPERWORK",
+          text: "Beetley files a daily report. It goes to Beetley. It is reviewed by Beetley, who has twice sent it back with notes. Bob has offered to read one. Beetley said that would be irregular." },
+        { label: "ORDERS",
+          text: "No one has ever given Beetley an order. He reports at opening regardless, salutes the door, and takes up a post nobody assigned. Bob once said good morning. Beetley logged it as a directive." },
+      ],
+    },
   },
 
   demon: {
@@ -146,7 +218,19 @@ export const MONSTERS = {
     categoryWeights: { weapon: 3, consumable: 2, armor: 1 },   // sword-first; flasks for the nerves
     itemBias: { iron_sword: 3, greater_flask: 2 },   // signature loves: the TRADE item leads
     material: 'infernal_ember', materialEveryNServes: 15,   // premium-rare, the Froggo logic
-    lore: { tagline: "The most dangerous mob in the queue. Terribly sorry about it." },
+    lore: {
+      tagline: "The most dangerous mob in the queue. Terribly sorry about it.",
+      notes: [
+        { label: "THREAT ASSESSMENT",
+          text: "Demmy is the only mob in the queue who reliably wins. He finds this awkward and has apologised for it to the queue, to Bob, and once, at some length, to a hero who was already leaving." },
+        { label: "PURCHASING",
+          text: "Demmy outspends the entire queue on swords and asks, every time, whether anyone else needed this one first. Nobody ever does. He buys it anyway, and tips Bob for the inconvenience." },
+        { label: "CORRESPONDENCE",
+          text: "Demmy writes to every hero he defeats. The letters are handwritten, sincere and specific about what went wrong. Four have written back. Two wanted a rematch. Two just wanted to keep writing." },
+        { label: "DISPOSITION",
+          text: "Bob once told Demmy he was allowed to enjoy winning. Demmy thanked him, thought about it for a week, and came back to say he had tried and it hadn’t taken. He apologised for wasting the advice." },
+      ],
+    },
   },
 
   spider: {
@@ -171,7 +255,19 @@ export const MONSTERS = {
     categoryWeights: { consumable: 3, armor: 2, weapon: 1 },   // leg maintenance first
     itemBias: { bandages: 3, zip_tonic: 2 },   // signature loves: bandages BY THE PAIR is the joke
     material: 'silk_bundle', materialEveryNServes: 12,
-    lore: { tagline: "Buys two of everything. Eight legs, eight needs, one system." },
+    lore: {
+      tagline: "Buys two of everything. Eight legs, eight needs, one system.",
+      notes: [
+        { label: "THE SYSTEM",
+          text: "Leggsy buys two of everything. Asked why, she said the system requires it. Asked what the system was, she said it required two of everything. Bob has not found the end of this thread." },
+        { label: "BANDAGES",
+          text: "Leggsy buys bandages in pairs and has never been visibly injured. She keeps them, she says, against the day. Bob asked which day. Leggsy said she’d know it when she saw it, and bought two more." },
+        { label: "INVENTORY IMPACT",
+          text: "A Leggsy visit takes twice the stock and leaves twice the coin. Bob has learned to hear her coming: the shelf goes quiet, the register does not. He has never asked her to buy less." },
+        { label: "LEGS",
+          text: "Leggsy has eight legs and buys for all of them equally, which is why nothing ever comes in ones. Bob pointed out that she only has one head. Leggsy said she was aware, and bought two hats." },
+      ],
+    },
   },
 
   dragon: {
@@ -206,7 +302,19 @@ export const MONSTERS = {
     // the restock loop itself is what gets celebrated.
     anim: { frames: 4, fps: 6 },
     categoryWeights: { weapon: 1, armor: 1, consumable: 1 },   // an inspector samples impartially
-    lore: { tagline: "Grades the shop against criteria nobody has ever seen." },
+    lore: {
+      tagline: "Grades the shop against criteria nobody has ever seen.",
+      notes: [
+        { label: "JURISDICTION",
+          text: "The Inspector arrives at most once a day, unannounced, on business he has never described. Nobody has established what he inspects for, who reads the findings, or what happens if they are bad." },
+        { label: "METHOD",
+          text: "He pays for the shelf, not the goods. A full shelf pays well; a bare one pays anyway, less. He has never once looked at what he bought, and has never once bought nothing." },
+        { label: "CONDUCT",
+          text: "The Inspector waits twice as long as any mob, without complaint and without putting the clipboard down. The wait goes on the clipboard. So does the queue. So does Bob." },
+        { label: "THE SEAL",
+          text: "On an immaculate shelf, he awards a seal. On anything less he says nothing and writes something. Bob once asked what the criteria were. The Inspector noted the question on the clipboard." },
+      ],
+    },
   },
 };
 
