@@ -1046,9 +1046,32 @@ export function restoreRelic(state, id) {
 
 // TRUE while Doug is beyond the door — the GONE window of his run: past the idle beat and the
 // walk-out, before the walk-back (same registry dials scene.js stages the trip with). Gates his
-// battle-cameo lines: he and the mob are out there for legible reasons, and the joke only lands
-// while he's visibly absent. (Reports deliver ~1-2s after the serve decides them — the ~12s gone
-// window dwarfs that, so a boundary straddle is rare and harmless.)
+// battle-cameo lines: he and the mob are out there for legible reasons.
+//
+// THE GONE WINDOW SCALES WITH TRAINING. Doug's walk legs are near-fixed (walkSec 2.6, shrinking
+// only once interval/4 bites), so a shorter cycle spends proportionally more of itself in
+// transit and the gone window closes FASTER than the cycle does. MEASURED, 2026-07-14:
+//     level   cycle    gone    out%
+//       0     24.00s  11.60s   48%
+//       5     10.67s   2.27s   21%
+//      10      6.86s   1.37s   20%
+// Two consequences follow. Daniel accepted BOTH as authored behaviour (2026-07-14) — they are
+// decisions on the record, not defects, so don't "fix" either without asking him first:
+//   (1) FREQUENCY — a trained Doug cameos less than half as often as an untrained one. Accepted:
+//       a maxed Doug is a blur who barely stops moving, and glimpsing him less IS the joke.
+//       Nearly all of the fall lands in the first five levels (21% -> 20% across L5..L10).
+//   (2) TIMING — reports deliver ~1-2s after the serve decides them (the celebrant's door-entry
+//       event, or CONFIG.log.reportFallbackSec = 3.0s). At L0 the 11.6s window dwarfs that
+//       (~87% still out at display); at L10 the 1.37s window is SHORTER than the delay, so a
+//       cameo never displays while he is visibly absent. Accepted: the battle log is
+//       RETROSPECTIVE — it reports a fight that already resolved, and Doug genuinely WAS beyond
+//       the door at that moment. The line never claims he is out NOW.
+//
+// This comment used to assert a flat "~12s gone window, so a boundary straddle is rare and
+// harmless". That was true only at level 0. Doug's training ladder falsified it exactly as it
+// falsified scene.js's "scavenge has no speed perks — this IS the clock": a comment at a live
+// seam is a CLAIM, and a new dial can retire it silently. If you add a dial here, re-measure
+// the table above rather than trusting this text.
 export function isDougOut(state) {
   const d = WORKERS.scavenger;
   const w = state.workers?.scavenger;
