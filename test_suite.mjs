@@ -14,6 +14,33 @@ import {
 let pass = 0, fail = 0;
 const ok = (cond, msg) => { if (cond) { pass++; } else { fail++; console.log('  ✗ FAIL:', msg); } };
 
+// ---- THE SOURCE LAW (§88, 2026-07-16 — Daniel's Option 3). Every source pin reads through here.
+// A pin matching RAW file text collides with comments in BOTH directions: a positive pin sails
+// green because a comment contains the removed symbol (§72(f)), and a negative pin fails a correct
+// tree because the comment retiring a dead claim quotes it (§79, then §85 the same day). Three
+// instances in two days, and the recorded plug both early times was to REWORD THE PROSE — which is
+// backwards: the comment was right and the scanner was wrong. A source pin wants to know about
+// CODE, so it reads code. srcOf() strips comments per extension and caches per path (the suite
+// used to re-read style.css ~10 times). rawSrc() is the NAMED escape hatch for the one contract
+// that is ABOUT full file text: the Kong mirror subsequence, where comments must match too.
+// §88 counts both: any new raw utf8 read, or any new rawSrc caller, goes red until it either
+// migrates to srcOf or earns a place on the allow-list. The line-comment strip spares '://' so
+// URLs in string literals survive (§85's proven pattern; the hazard scan of every read source
+// found no other comment-lookalikes inside strings, 2026-07-16).
+import { readFileSync as fsReadRaw } from 'node:fs';
+const SRC_CACHE = new Map();
+const srcOf = (path) => {
+  if (SRC_CACHE.has(path)) return SRC_CACHE.get(path);
+  let t = fsReadRaw(path, 'utf8');
+  if (/\.html$/.test(path)) t = t.replace(/<!--[\s\S]*?-->/g, '');
+  t = t.replace(/\/\*[\s\S]*?\*\//g, '');                       // block comments, all extensions
+  if (/\.(js|mjs)$/.test(path)) t = t.replace(/(^|[^:])\/\/.*$/gm, '$1');   // line comments, JS only
+  SRC_CACHE.set(path, t);
+  return t;
+};
+const rawSrc = (path) => fsReadRaw(path, 'utf8');   // mirror-only; §88 counts its callers
+
+
 // A servable customer: wants an in-stock, affordable item, effectively infinite patience for the test.
 function customer(monsterId = 'skeleton', wantedItemId = 'club', budget = 99) {
   return { monsterId, wantedItemId, budget, patienceRemaining: 1e9, state: 'queued' };
@@ -86,11 +113,11 @@ console.log('M4 auto-serve worker — smoke test\n');
     return statSync(p).isDirectory() ? walk(p) : (p.endsWith('.js') ? [p] : []);
   });
   const registered = new Set(
-    [...readFileSync('./src/main.js', 'utf8').matchAll(/loadSprite\('([a-z_]+)'/g)].map((m) => m[1]),
+    [...srcOf('./src/main.js').matchAll(/loadSprite\('([a-z_]+)'/g)].map((m) => m[1]),
   );
   const consumers = new Map();   // id -> first file naming it (makes a failure point at the culprit)
   for (const file of walk('./src')) {
-    const src = readFileSync(file, 'utf8');
+    const src = srcOf(file);
     for (const m of src.matchAll(/getSprite\('([a-z_]+)'\)/g)) {
       if (!consumers.has(m[1])) consumers.set(m[1], file);
     }
@@ -2726,12 +2753,13 @@ console.log('M4 auto-serve worker — smoke test\n');
   // insertions, nothing less. Subsequence check: every index.html line must appear IN ORDER in
   // the Kong shell — extras (the API tag) are allowed anywhere; missing or stale content fails.
   {
-    const { readFileSync } = await import('node:fs');
-    const src = readFileSync('./index.html', 'utf8').split('\n').map((l) => l.trimEnd());
-    const kong = readFileSync('./index.kongregate.html', 'utf8').split('\n').map((l) => l.trimEnd());
+    // rawSrc ON PURPOSE (§88's allow-list): the mirror contract is about FULL file text —
+    // comments included — so this is the one read that must NOT strip.
+    const shellLines = rawSrc('./index.html').split('\n').map((l) => l.trimEnd());
+    const kong = rawSrc('./index.kongregate.html').split('\n').map((l) => l.trimEnd());
     let k = 0;
     let missing = null;
-    for (const line of src) {
+    for (const line of shellLines) {
       while (k < kong.length && kong[k] !== line) k++;
       if (k >= kong.length) { missing = line; break; }
       k++;
@@ -3953,7 +3981,7 @@ console.log('M4 auto-serve worker — smoke test\n');
   // order) shipped once and cost a full QA round. Text-pin, the Kongregate-subsequence style.
   {
     const { readFileSync } = await import('node:fs');
-    const css = readFileSync('./style.css', 'utf8');
+    const css = srcOf('./style.css');
     ok(css.includes('.hidden{display:none !important;}'),
       'passB: the hide utility out-cascades .offer-row\u2019s own display (§87\u2019s law \u2014 the scoped override this pin used to check is retired)');
   }
@@ -4004,16 +4032,16 @@ console.log('M4 auto-serve worker — smoke test\n');
   // the scoped .hidden override (the overlay sets its own display — the cascade-tie law), the
   // shell's overlay root, the strip's door, the pure relocation, and the derived hit test.
   const { readFileSync: rf64 } = await import('node:fs');
-  const css64 = rf64('./style.css', 'utf8');
+  const css64 = srcOf('./style.css');
   ok(css64.includes('.hidden{display:none !important;}'),
     'overlay: the hide utility out-cascades .market-overlay\u2019s own display:flex (§87\u2019s law; the scoped override is retired)');
-  ok(rf64('./index.html', 'utf8').includes('id="market-overlay"'),
+  ok(srcOf('./index.html').includes('id="market-overlay"'),
     'overlay: the shell carries the overlay root');
-  const pnl64 = rf64('./src/ui/panels.js', 'utf8');
+  const pnl64 = srcOf('./src/ui/panels.js');
   ok(pnl64.includes('open-market-btn'), 'overlay: the strip keeps its Open Market door');
   ok(!pnl64.includes('id="market-offers"'),
     'overlay: the strip no longer hosts the offer list (the pure-relocation law)');
-  ok(rf64('./src/main.js', 'utf8').includes('pointOnBoard'),
+  ok(srcOf('./src/main.js').includes('pointOnBoard'),
     'overlay: the canvas click routes through the DERIVED hit test, never hand-copied numbers');
 }
 
@@ -4107,7 +4135,7 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
   // The scene consumes boardLines, not the recipe segments (the wiring pin, §64's style).
   const { readFileSync: rf66 } = await import('node:fs');
-  const scene66 = rf66('./src/render/scene.js', 'utf8');
+  const scene66 = srcOf('./src/render/scene.js');
   ok(scene66.includes('boardLines'), 'sign: scene.js renders the sale sign via boardLines');
   ok(!scene66.includes('describeOfferSegments'),
     'sign: scene.js no longer builds recipe segments for the board (the ad, not the data)');
@@ -4167,14 +4195,14 @@ console.log('M4 auto-serve worker — smoke test\n');
 
   // (d) Wiring pins (the house pattern).
   const { readFileSync: rf67 } = await import('node:fs');
-  const css67 = rf67('./style.css', 'utf8');
+  const css67 = srcOf('./style.css');
   ok(css67.includes('ticker-crawl') && css67.includes('.market-ticker'), 'ticker: the crawl CSS shipped');
   ok(css67.includes('.ticker-track{animation:none;}'), 'ticker: prefers-reduced-motion shows the strip static');
-  const mkt67 = rf67('./src/ui/market.js', 'utf8');
+  const mkt67 = srcOf('./src/ui/market.js');
   ok(mkt67.includes('tickerKey'), 'ticker: the crawl rebuilds on day rollover only (the animation-restart guard)');
-  const pnl67 = rf67('./src/ui/panels.js', 'utf8');
+  const pnl67 = srcOf('./src/ui/panels.js');
   ok(pnl67.includes(`querySelectorAll('.trade-hint')`), 'rider: every card hint is wired as a Market door');
-  ok(rf67('./src/main.js', 'utf8').includes('mousemove'), 'rider: the board hit rect drives the hover cursor');
+  ok(srcOf('./src/main.js').includes('mousemove'), 'rider: the board hit rect drives the hover cursor');
 }
 
 // ============ SECTION 68 — Greg's GOLD-ONLY bubble (the Greg-chip fix, Option-2 retirement) ====
@@ -4205,10 +4233,10 @@ console.log('M4 auto-serve worker — smoke test\n');
   // render-side target pick each exclude trade acquisition — one side alone leaves either a
   // ghost window (cycle fires, nothing shows) or the original nag.
   const { readFileSync: rf68 } = await import('node:fs');
-  const game68 = rf68('./src/game.js', 'utf8');
+  const game68 = srcOf('./src/game.js');
   ok(/anyOut[\s\S]{0,220}acquisition/.test(game68),
     'greg: the cycle trigger counts gold-restockable outages only');
-  const pnl68 = rf68('./src/ui/panels.js', 'utf8');
+  const pnl68 = srcOf('./src/ui/panels.js');
   ok(/const isOut[\s\S]{0,120}acquisition/.test(pnl68),
     'greg: the render target pick excludes the trade tier');
 }
@@ -4364,9 +4392,9 @@ console.log('M4 auto-serve worker — smoke test\n');
 
   // (f) Wiring pins: the overlay's yesterday tag; the Forge spells out the material lines.
   const { readFileSync: rf69 } = await import('node:fs');
-  ok(rf69('./src/ui/market.js', 'utf8').includes('rate-yesterday'),
+  ok(srcOf('./src/ui/market.js').includes('rate-yesterday'),
     'relicwork: the overlay tags yesterday-rate offers');
-  ok(rf69('./src/ui/panels.js', 'utf8').includes('restoreCost.materials'),
+  ok(srcOf('./src/ui/panels.js').includes('restoreCost.materials'),
     'relicwork: the Forge cost line spells out the material lines');
 }
 
@@ -4562,12 +4590,12 @@ console.log('M4 auto-serve worker — smoke test\n');
   // and main.js's handler.
   {
     const { readFileSync: rf70 } = await import('node:fs');
-    const mkt = rf70('./src/ui/market.js', 'utf8');
+    const mkt = srcOf('./src/ui/market.js');
     ok(mkt.includes('mkt-comm-fulfill') && mkt.includes('market-commission'),
       'commission: the overlay carries the Special Order row + Fulfill button');
-    ok(rf70('./style.css', 'utf8').includes('.hidden{display:none !important;}'),
+    ok(srcOf('./style.css').includes('.hidden{display:none !important;}'),
       'commission: the hide utility out-cascades .market-commission\u2019s own display (§87\u2019s law; the scoped override is retired)');
-    ok(rf70('./src/main.js', 'utf8').includes('onFulfill'),
+    ok(srcOf('./src/main.js').includes('onFulfill'),
       'commission: main.js wires the Fulfill handler');
   }
 
@@ -4589,12 +4617,12 @@ console.log('M4 auto-serve worker — smoke test\n');
 // can't take the announcements with it.
 {
   const { readFileSync: rf71 } = await import('node:fs');
-  const hud = rf71('./src/ui/hud.js', 'utf8');
+  const hud = srcOf('./src/ui/hud.js');
   ok(!hud.includes('hud-market-chip') && !hud.includes('marketBannerCompact'),
     'chip retirement: hud.js renders no Market Day chip and imports no banner formatter');
-  ok(!rf71('./style.css', 'utf8').includes('.hud-chip.market'),
+  ok(!srcOf('./style.css').includes('.hud-chip.market'),
     'chip retirement: the chip\'s CSS left with it (no dead selectors)');
-  const game71 = rf71('./src/game.js', 'utf8');
+  const game71 = srcOf('./src/game.js');
   ok(game71.includes('marketAnnounceLine') && game71.includes('marketBubbleLine'),
     'chip retirement: the event still speaks — morning log line + Bob\'s bubble survive');
   const { marketBannerCompact: mbc71 } = await import('./src/data/marketevents.js');
@@ -4676,8 +4704,8 @@ console.log('M4 auto-serve worker — smoke test\n');
       const m = new RegExp(`import\\s*\\{([^}]*)\\}\\s*from\\s*'${mod}'`, 's').exec(src);
       return m ? m[1].split(',').map((s) => s.trim().split(/\s+as\s+/)[0].trim()).filter(Boolean) : [];
     };
-    const hud72 = rf72('./src/ui/hud.js', 'utf8');
-    const pnl72 = rf72('./src/ui/panels.js', 'utf8');
+    const hud72 = srcOf('./src/ui/hud.js');
+    const pnl72 = srcOf('./src/ui/panels.js');
     const hudRep = namedImports(hud72, '\\.\\./reputation\\.js');
     const pnlRep = namedImports(pnl72, '\\.\\./reputation\\.js');
     ok(hudRep.length > 0 && pnlRep.length > 0,
@@ -4775,7 +4803,7 @@ console.log('M4 auto-serve worker — smoke test\n');
   // (e) Wiring pin: the item stage actually rides the weight.
   {
     const { readFileSync: rf73 } = await import('node:fs');
-    const src = rf73('./src/game.js', 'utf8');
+    const src = srcOf('./src/game.js');
     ok(src.includes('* supplyWantWeight(state, id)'),
        'demand honesty: the want pick multiplies the supply weight (wiring pin)');
   }
@@ -4853,7 +4881,7 @@ console.log('M4 auto-serve worker — smoke test\n');
   // (e) Wiring pins: one derivation per leaver, both log branches honest.
   {
     const { readFileSync: rf74 } = await import('node:fs');
-    const src = rf74('./src/game.js', 'utf8');
+    const src = srcOf('./src/game.js');
     ok(src.includes('const pen = leavePenaltyOf(state)')
        && (src.match(/repDelta: -pen, tier: 'leave'/g) ?? []).length === 2,
        'scarcity teeth: the leave block derives once and logs -pen in both branches (wiring pin)');
@@ -4917,10 +4945,10 @@ console.log('M4 auto-serve worker — smoke test\n');
   // (d) Wiring pins: the render actually draws the demand row + the overlay element exists.
   {
     const { readFileSync: rf75 } = await import('node:fs');
-    const scene = rf75('./src/render/scene.js', 'utf8');
+    const scene = srcOf('./src/render/scene.js');
     ok(scene.includes('demSegs') && scene.includes('L.demand'),
        'demand surface: scene.js draws the demand row from boardLines (wiring pin)');
-    const market = rf75('./src/ui/market.js', 'utf8');
+    const market = srcOf('./src/ui/market.js');
     ok(market.includes('mkt-demand') && market.includes('marketBannerText'),
        'demand surface: the overlay renders the informative echo (wiring pin)');
   }
@@ -5101,17 +5129,17 @@ console.log('M4 auto-serve worker — smoke test\n');
   // the shop-side indicator + its scoped hidden override, the overlay clause, and the serve label.
   {
     const { readFileSync: rf76 } = await import('node:fs');
-    const panels = rf76('./src/ui/panels.js', 'utf8');
+    const panels = srcOf('./src/ui/panels.js');
     ok(panels.includes('item-reserve') && panels.includes('reservedFor')
        && panels.includes("'reserved': 'Held for order'"),
        'reserve: panels.js carries the shop-side indicator, the reservedFor read, and the serve label');
-    const css = rf76('./style.css', 'utf8');
+    const css = srcOf('./style.css');
     ok(css.includes('.hidden{display:none !important;}') && css.includes('.comm-reserved'),
        'reserve: .item-reserve (0-2-0!) hides under §87\u2019s !important law \u2014 the ONE case moving .hidden could never fix \u2014 and .comm-reserved is styled');
-    const market = rf76('./src/ui/market.js', 'utf8');
+    const market = srcOf('./src/ui/market.js');
     ok(market.includes('comm-reserved') && market.includes('reservedFor'),
        'reserve: the overlay Special Order row shows the held-from-counter clause');
-    const off = rf76('./src/offline.js', 'utf8');
+    const off = srcOf('./src/offline.js');
     ok(off.includes('sellableStock(state, id)'),
        'reserve: offline sells sellableStock, not raw stock (wiring pin)');
   }
@@ -5314,8 +5342,8 @@ console.log('M4 auto-serve worker — smoke test\n');
   // that let this ship: a headless suite cannot draw Doug, so the contract is pinned in source.
   {
     const { readFileSync } = await import('node:fs');
-    const sceneSrc = readFileSync('./src/render/scene.js', 'utf8');
-    const gameSrc = readFileSync('./src/game.js', 'utf8');
+    const sceneSrc = srcOf('./src/render/scene.js');
+    const gameSrc = srcOf('./src/game.js');
     ok(/scavengeClock\(state\)/.test(sceneSrc),
        'doug clock: scene.js drawScavenger consumes the shared scavengeClock');
     ok(!/const\s+interval\s*=\s*WORKERS\.scavenger\?\.baseInterval/.test(sceneSrc),
@@ -5343,8 +5371,8 @@ console.log('M4 auto-serve worker — smoke test\n');
   const { fameStandingHtml: fsh79 } = await import('./src/ui/panels.js');
   const { levelThreshold: lt79, fameLevel: fl79 } = await import('./src/reputation.js');
   const { nextTierInfo: nti79 } = await import('./src/data/fametrack.js');
-  const css79 = rf79('./style.css', 'utf8');
-  const hud79 = rf79('./src/ui/hud.js', 'utf8');
+  const css79 = srcOf('./style.css');
+  const hud79 = srcOf('./src/ui/hud.js');
   const tiers79 = CONFIG.reputation.tiers;
 
   // --- (a) The HUD markup: the remainder span is GONE; the badge survives; still three chips. ---
@@ -5389,12 +5417,17 @@ console.log('M4 auto-serve worker — smoke test\n');
      'hud band: the hide utility out-cascades .hud-chip\u2019s own display (§87\u2019s law; the scoped override is retired)');
 
   // --- (e) The budget comment's FALSIFIED claims are actually retired, not just contradicted.
-  // A comment at a live seam is a claim with an expiry date; these three expired. ---
-  ok(!/the market chip docks at top:68/.test(css79),
+  // A comment at a live seam is a claim with an expiry date; these three expired.
+  // rawSrc ON PURPOSE (§88's allow-list): these pins' SUBJECT IS PROSE — they assert the budget
+  // COMMENT was re-dated and its dead claims removed. srcOf would make the negative pins vacuous
+  // (a stripped comment "passes" any absence test) and the positive pin impossible. The migration
+  // itself caught this: pin (e3) went red on stripped text, which is how it earned this hatch. ---
+  const cssProse79 = rawSrc('./style.css');
+  ok(!/the market chip docks at top:68/.test(cssProse79),
      'hud band: the dead "market chip docks at top:68" claim is gone (that chip retired at 18be9de)');
-  ok(!/reach ~770px at endgame/.test(css79),
+  ok(!/reach ~770px at endgame/.test(cssProse79),
      'hud band: the expired "~770px at endgame" figure is gone (F1a added ~213px)');
-  ok(/LAYOUT BUDGET \(re-measured 2026-07-15/.test(css79),
+  ok(/LAYOUT BUDGET \(re-measured 2026-07-15/.test(cssProse79),
      'hud band: the budget is re-dated to its measurement, not its first authoring');
 
   // --- (f) THE STANDING LINE — behavioural, at all three shapes, every number DERIVED from the
@@ -5456,8 +5489,8 @@ console.log('M4 auto-serve worker — smoke test\n');
   // --- (g) The cache-bust must move in BOTH shells or Daniel tests a stale sheet — this pass
   // changed style.css, so the version is pinned ABOVE the value it had at the previous tip. ---
   {
-    const idx79 = rf79('./index.html', 'utf8');
-    const kong79 = rf79('./index.kongregate.html', 'utf8');
+    const idx79 = srcOf('./index.html');
+    const kong79 = srcOf('./index.kongregate.html');
     const ver = (s) => { const m = /style\.css\?v=(\d+)/.exec(s); return m ? Number(m[1]) : null; };
     ok(ver(idx79) !== null && ver(idx79) === ver(kong79),
        'hud band: both entry shells carry the SAME style.css cache-bust');
@@ -5478,9 +5511,9 @@ console.log('M4 auto-serve worker — smoke test\n');
 // SOURCE. Exact totals for this pass live HERE.
 {
   const { readFileSync: rf80 } = await import('node:fs');
-  const nav80 = rf80('./src/ui/nav.js', 'utf8');
-  const pnl80 = rf80('./src/ui/panels.js', 'utf8');
-  const css80 = rf80('./style.css', 'utf8');
+  const nav80 = srcOf('./src/ui/nav.js');
+  const pnl80 = srcOf('./src/ui/panels.js');
+  const css80 = srcOf('./style.css');
 
   // --- (a) THE 6TH-TAB LAW, encoded. The nav is right-anchored and grows LEFTWARD into the
   // customer panel, so tab COUNT is a layout constraint, not a menu preference. ---
@@ -5552,8 +5585,8 @@ console.log('M4 auto-serve worker — smoke test\n');
   // --- (g) style.css changed, so the cache-bust must advance in BOTH shells. ---
   {
     const ver = (s) => { const m = /style\.css\?v=(\d+)/.exec(s); return m ? Number(m[1]) : null; };
-    const vi = ver(rf80('./index.html', 'utf8'));
-    const vk = ver(rf80('./index.kongregate.html', 'utf8'));
+    const vi = ver(srcOf('./index.html'));
+    const vk = ver(srcOf('./index.kongregate.html'));
     ok(vi !== null && vi === vk, 'split: both entry shells carry the SAME style.css cache-bust');
     ok(vi >= 16, 'split: the cache-bust advanced for this pass\u2019s style.css change (>= v16)');
   }
@@ -5582,7 +5615,7 @@ console.log('M4 auto-serve worker — smoke test\n');
 // as their own pass — see the handoff's NEXT block.
 {
   const { readFileSync: rf81 } = await import('node:fs');
-  const css81 = rf81('./style.css', 'utf8');
+  const css81 = srcOf('./style.css');
 
   // WCAG 2.x relative luminance + contrast, the same math the browser probe used.
   const lin81 = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
@@ -5631,8 +5664,8 @@ console.log('M4 auto-serve worker — smoke test\n');
   // floor (the exact-totals doctrine: the newest batch holds the exact, older ones soften). ---
   {
     const ver81 = (s) => { const m = /style\.css\?v=(\d+)/.exec(s); return m ? Number(m[1]) : null; };
-    const vi81 = ver81(rf81('./index.html', 'utf8'));
-    const vk81 = ver81(rf81('./index.kongregate.html', 'utf8'));
+    const vi81 = ver81(srcOf('./index.html'));
+    const vk81 = ver81(srcOf('./index.kongregate.html'));
     ok(vi81 !== null && vi81 === vk81, 'palette: both entry shells carry the SAME style.css cache-bust');
     ok(vi81 >= 17, `palette: the cache-bust advanced for this pass\u2019s style.css change (>= v17, found ${vi81})`);
   }
@@ -5650,8 +5683,8 @@ console.log('M4 auto-serve worker — smoke test\n');
 {
   const { readFileSync: rf82 } = await import('node:fs');
   const { MONSTERS: M82, MONSTER_IDS: IDS82 } = await import('./src/data/monsters.js');
-  const pnl82 = rf82('./src/ui/panels.js', 'utf8');
-  const css82 = rf82('./style.css', 'utf8');
+  const pnl82 = srcOf('./src/ui/panels.js');
+  const css82 = srcOf('./style.css');
   const taglines = IDS82.map((id) => M82[id]?.lore?.tagline);
 
   // --- (a) THE CONTRACT: every mob in the guide has a line. The Inspector included — he rides the
@@ -5716,8 +5749,8 @@ console.log('M4 auto-serve worker — smoke test\n');
   // --- (f) style.css changed again; this section owns the current floor. ---
   {
     const ver82 = (s) => { const m = /style\.css\?v=(\d+)/.exec(s); return m ? Number(m[1]) : null; };
-    const vi82 = ver82(rf82('./index.html', 'utf8'));
-    const vk82 = ver82(rf82('./index.kongregate.html', 'utf8'));
+    const vi82 = ver82(srcOf('./index.html'));
+    const vk82 = ver82(srcOf('./index.kongregate.html'));
     ok(vi82 !== null && vi82 === vk82, 'lore: both entry shells carry the SAME style.css cache-bust');
     ok(vi82 >= 18, `lore: the cache-bust advanced for this pass\u2019s style.css change (>= v18, found ${vi82})`);
   }
@@ -5746,9 +5779,9 @@ console.log('M4 auto-serve worker — smoke test\n');
 // COMMENT explaining the move contained the string, and the comments above are full of these names.
 {
   const { readFileSync: rf83 } = await import('node:fs');
-  const nav83 = rf83('./src/ui/nav.js', 'utf8');
-  const pnl83 = rf83('./src/ui/panels.js', 'utf8');
-  const main83 = rf83('./src/main.js', 'utf8');
+  const nav83 = srcOf('./src/ui/nav.js');
+  const pnl83 = srcOf('./src/ui/panels.js');
+  const main83 = srcOf('./src/main.js');
   const navMod = await import('./src/ui/nav.js');
 
   // --- (a) THE READER, tested for real. isPanelOpen touches no DOM (a pure read of module state),
@@ -5826,9 +5859,9 @@ console.log('M4 auto-serve worker — smoke test\n');
   const { MONSTER_BREAKPOINTS: BP84 } = await import('./src/data/milestones.js');
   const { dossierFor, goldenLineFor, DOSSIER_NOTES_PER_MOB } = await import('./src/data/dossier.js');
   const { dossierHtml } = await import('./src/ui/panels.js');
-  const pnl84 = rf84('./src/ui/panels.js', 'utf8');
-  const css84 = rf84('./style.css', 'utf8');
-  const dsr84 = rf84('./src/data/dossier.js', 'utf8');
+  const pnl84 = srcOf('./src/ui/panels.js');
+  const css84 = srcOf('./style.css');
+  const dsr84 = srcOf('./src/data/dossier.js');
 
   const at84 = (id, n) => dossierFor(id, n);
   const st84 = (id, n) => ({ stats: { monsterServes: { [id]: n } } });
@@ -6073,8 +6106,8 @@ console.log('M4 auto-serve worker — smoke test\n');
   // --- (m) style.css changed; this section owns the current floor. ---
   {
     const ver84 = (s) => { const m = /style\.css\?v=(\d+)/.exec(s); return m ? Number(m[1]) : null; };
-    const vi84 = ver84(rf84('./index.html', 'utf8'));
-    const vk84 = ver84(rf84('./index.kongregate.html', 'utf8'));
+    const vi84 = ver84(srcOf('./index.html'));
+    const vk84 = ver84(srcOf('./index.kongregate.html'));
     ok(vi84 !== null && vi84 === vk84, 'dossier: both entry shells carry the SAME style.css cache-bust');
     ok(vi84 >= 19, `dossier: the cache-bust advanced for this pass\u2019s style.css change (>= v19, found ${vi84})`);
   }
@@ -6108,15 +6141,11 @@ console.log('M4 auto-serve worker — smoke test\n');
   const { pickNot } = await import('./src/utils.js');
   const { DOUG_RETURN_LINES: POOL } = await import('./src/data/results.js');
   const { WORKERS: W85 } = await import('./src/data/workers.js');
-  const game85src = rf85('./src/game.js', 'utf8');
-  const utils85 = rf85('./src/utils.js', 'utf8');
-  // COMMENTS ARE TEXT TOO — §72(f)'s lesson, which bit again writing this section. §72(f) recorded a
-  // POSITIVE pin staying green because the comment explaining a removal contained the removed symbol.
-  // The mirror is just as real: the NEGATIVE pin below ("the literal 0.25 gate is gone") failed on a
-  // clean tree, because the comment documenting the dead constant quotes the dead constant. A source
-  // pin wants to know about CODE, so it reads code. Both directions of the law, one stripper.
-  const stripComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
-  const game85 = stripComments(game85src);
+  // COMMENTS ARE TEXT TOO — §72(f)'s lesson, which bit again writing this section: a positive pin
+  // green off a comment, and this section's own negative pin red off the comment retiring the dead
+  // constant. The local stripper that lived here became §88's shared srcOf() — one law, one reader.
+  const game85 = srcOf('./src/game.js');
+  const utils85 = srcOf('./src/utils.js');
 
   const CAP = W85.scavenger?.levels?.maxLevel ?? 0;
   const stateAt = (level) => {
@@ -6236,7 +6265,7 @@ console.log('M4 auto-serve worker — smoke test\n');
   // The sim doctrine's guard: the helper must stay a function of its arguments. A "last seen"
   // container at module scope in utils.js is exactly the shape suspected of cross-run stdout
   // divergence, and it is the obvious way someone would "improve" pickNot later.
-  ok(!/^(let|var)\s|^const\s+\w+\s*=\s*new\s+(Map|Set|WeakMap)/m.test(stripComments(utils85)),
+  ok(!/^(let|var)\s|^const\s+\w+\s*=\s*new\s+(Map|Set|WeakMap)/m.test(utils85),
      'doug: utils.js declares no module-level mutable state — pickNot takes its memory as an argument, '
      + 'and a memo container here would be the sim-divergence shape');
 
@@ -6284,9 +6313,7 @@ console.log('M4 auto-serve worker — smoke test\n');
 // reads COMMENT-STRIPPED css: the comments here deliberately quote every retired value, so a raw
 // text scan would find `#ffd9a8` and `#cfa8ff` alive and well in the prose that retired them.
 {
-  const { readFileSync: rf86 } = await import('node:fs');
-  const strip86 = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '');
-  const css86 = strip86(rf86('./style.css', 'utf8'));
+  const css86 = srcOf('./style.css');   // §88's shared stripped read (this section's local stripper was its prototype)
 
   // THE PARSER MODELS THE CASCADE, because a pin that reads CSS differently from the browser is
   // measuring a page that does not exist. At equal specificity the LAST declaration wins, and a
@@ -6481,8 +6508,8 @@ console.log('M4 auto-serve worker — smoke test\n');
   // exact-totals doctrine: the newest batch holds the exact, older sections soften to rules). ---
   {
     const ver86 = (s) => { const m = /style\.css\?v=(\d+)/.exec(s); return m ? Number(m[1]) : null; };
-    const vi86 = ver86(rf86('./index.html', 'utf8'));
-    const vk86 = ver86(rf86('./index.kongregate.html', 'utf8'));
+    const vi86 = ver86(srcOf('./index.html'));
+    const vk86 = ver86(srcOf('./index.kongregate.html'));
     ok(vi86 !== null && vi86 === vk86, 'contrast: both entry shells carry the SAME style.css cache-bust');
     ok(vi86 >= 20, `contrast: the cache-bust advanced for this pass\u2019s style.css change (>= v20, found ${vi86})`);
   }
@@ -6514,11 +6541,8 @@ console.log('M4 auto-serve worker — smoke test\n');
 // short of its own scoped !important. If that day comes, the component should stop using .hidden
 // rather than fight it — this section's failure message says so.
 {
-  const { readFileSync: rf87 } = await import('node:fs');
-  const strip87 = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '');
-  const css87 = strip87(rf87('./style.css', 'utf8'));
-  const pnl87src = rf87('./src/ui/panels.js', 'utf8');
-  const pnl87 = pnl87src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+  const css87 = srcOf('./style.css');
+  const pnl87 = srcOf('./src/ui/panels.js');   // the template pin matches a STRING literal — stripping cannot touch it
 
   // --- (a) THE LAW ITSELF, verbatim. If someone "tidies" the !important away, every component
   // that sets its own display and is declared later silently stops hiding — that is the exact
@@ -6542,7 +6566,7 @@ console.log('M4 auto-serve worker — smoke test\n');
   // an effect the container cannot render: the template ships the section born-hidden, and
   // renderForge drives the toggle off Doug's owned flag. With (a), born-hidden + a working toggle
   // IS the effect. NOT VERIFIED HEADLESS: the rendered panel — the browser test plan carries it. ---
-  ok(/id="forge-section" class="worker-cards hidden"/.test(pnl87src),
+  ok(/id="forge-section" class="worker-cards hidden"/.test(pnl87),
      'forge: #forge-section is born hidden in the template (pre-\u00a787 the class was decoration — '
      + '.worker-cards won the 0-1-0 tie and the Forge shipped VISIBLE on a fresh save)');
   ok(/section\.classList\.toggle\('hidden', !show\)/.test(pnl87) && /scavenger\?\.owned === true/.test(pnl87),
@@ -6552,10 +6576,75 @@ console.log('M4 auto-serve worker — smoke test\n');
   // --- (d) style.css changed, so the bust advances. Newest section holds the exact floor. ---
   {
     const ver87 = (s) => { const m = /style\.css\?v=(\d+)/.exec(s); return m ? Number(m[1]) : null; };
-    const vi87 = ver87(rf87('./index.html', 'utf8'));
-    const vk87 = ver87(rf87('./index.kongregate.html', 'utf8'));
+    const vi87 = ver87(srcOf('./index.html'));
+    const vk87 = ver87(srcOf('./index.kongregate.html'));
     ok(vi87 !== null && vi87 === vk87, 'law: both entry shells carry the SAME style.css cache-bust');
     ok(vi87 >= 21, `law: the cache-bust advanced for this pass\u2019s style.css change (>= v21, found ${vi87})`);
+  }
+}
+
+// ===== SECTION 88 — THE SOURCE LAW'S GUARD (Daniel, 2026-07-16 — Option 3 of the round) =====
+// The migration (65 reads onto srcOf) fixed today's instances; this section stops tomorrow's. A
+// new section written next month with a raw utf8 read + a text match would reintroduce the class
+// silently — so the suite scans ITSELF, through its own stripper, and counts. §87(b)'s law-is-alone
+// shape, applied one level up.
+//
+// THE ALLOW-LIST, and why each entry exists (a hatch without a why is just a hole):
+//   rawSrc \u00d7 2 — the Kong mirror subsequence: its contract is FULL file text, comments included.
+//   rawSrc \u00d7 1 — \u00a779(e): pins whose SUBJECT is prose (the layout-budget comment was re-dated,
+//                its falsified claims removed). A doc pin must read docs; the migration itself
+//                proved it — (e3) went red on stripped text, which is how it earned the hatch.
+// Everything else reads srcOf. The migration also surfaced that \u00a779(e) had been GREEN off prose
+// all along — the class's fourth live instance, found by the fix, not the sweep.
+{
+  const suite88 = srcOf('./test_suite.mjs');
+
+  // Sentinel first: srcOf just comment-stripped a file whose job is to contain tricky patterns
+  // (regex literals with //-adjacency corrupt their own line's tail in the stripped view). Before
+  // counting anything in this text, prove the strip did not eat a structural block: the suite's
+  // final tally template must survive, exactly once. The probe is a REGEX whose escaped source
+  // (backslash-dollar) cannot match itself in the stripped text — a plain string probe here would
+  // find its own literal and pass forever (caught in review before this section ever ran: the
+  // first draft probed 'SECTION 88', whose only stripped survivor WAS the probe).
+  {
+    const tally = [...suite88.matchAll(/passed, \$\{fail\} failed/g)].length;
+    ok(tally === 1,
+       `source law: sentinel — the stripped suite still ends with its tally template, exactly once `
+       + `(found ${tally}; 0 means the stripper ate a block, 2+ means something echoes the tail)`);
+  }
+
+  // --- (a) THE LAW IS ALONE: raw utf8 reads exist ONLY inside the two helpers. fsReadRaw is the
+  // helpers' private alias; any other utf8 read is a new section bypassing the law.
+  // NOTE the assert MESSAGES below deliberately avoid the exact tokens being counted — a message
+  // string survives stripping, so a message containing the counted call shape would count itself
+  // (the \u00a772(f) lesson one level down: even the guard's own prose is text too). ---
+  {
+    const rawReads = [...suite88.matchAll(/fsReadRaw\(/g)].length;
+    ok(rawReads === 2,
+       `source law: the private raw-read alias is called exactly twice — inside the two helpers (found ${rawReads}; `
+       + 'a third call is a section bypassing the source law)');
+    const directReads = [...suite88.matchAll(/readFileSync\([^)]*'utf8'/g)].length;
+    ok(directReads === 0,
+       `source law: zero direct utf8 file reads outside the helper block (found ${directReads} — `
+       + 'new source pins read the stripped helper, or the raw hatch with an allow-list entry and a why)');
+  }
+
+  // --- (b) THE HATCH IS COUNTED: the raw hatch has exactly the three call sites the allow-list
+  // names. A fourth is either a new prose pin (add it HERE with its why) or a leak (fix it). ---
+  {
+    const hatchCalls = [...suite88.matchAll(/rawSrc\(/g)].length;
+    ok(hatchCalls === 3,
+       `source law: the raw hatch has exactly 3 call sites — the mirror pair + \u00a779(e)'s prose pins `
+       + `(found ${hatchCalls}; a new one joins the \u00a788 allow-list with a why, or it is a leak)`);
+  }
+
+  // --- (c) THE STRIPPER'S OWN CONTRACT, bitten into: srcOf must actually remove comments — every
+  // migrated pin leans on exactly this. Probed on live reads, not re-derived. ---
+  {
+    ok(!srcOf('./src/game.js').includes('/*'),
+       'source law: a JS read through the helper carries no block comment (a pin matching one would be matching prose)');
+    ok(!/^\s*\/\//m.test(srcOf('./src/utils.js')),
+       'source law: a JS read through the helper carries no line comment');
   }
 }
 
