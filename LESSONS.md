@@ -455,7 +455,7 @@ assets; the half-applied-fix staleness heuristic).
   probe-the-effect family: measure what each arm actually does, not only how far apart they are.
 - Route: dev-method (acceptance-metric design; probe-the-effect family).
 
-## 2026-07-13 — The crux check came after the recommendation: "are you sure?" must be self-administered
+## 2026-07-13 — The crux check came after the recommendation: "are you sure?" must be self-administered [HARVESTED — 2026-07-15]
 - What happened: the B1 acceptance analysis recommended A (decouple F2) with the margin
   recovery as primary evidence. That evidence had one load-bearing assumption — that the
   coupled↔decoupled margin gap reflected real customer behavior, not a sim-bot artifact. If
@@ -484,7 +484,7 @@ assets; the half-applied-fix staleness heuristic).
 - Route: general instructions candidate (sibling of verify-don't-assume). One occurrence —
   starts here per the promotion bar.
 
-## 2026-07-14 — Documented "setsid survives the tool-call boundary" was false here; the working detach is subshell-wrapped
+## 2026-07-14 — Documented "setsid survives the tool-call boundary" was false here; the working detach is subshell-wrapped [HARVESTED — 2026-07-15]
 - What happened: the B1 3× sim certification needed long-running (~6 min/run) detached processes
   that outlive a single tool call. The recorded pattern — plain `setsid … &` — did NOT survive:
   the backgrounded job either never launched (setsid misbehaves when the caller is already a
@@ -509,7 +509,7 @@ assets; the half-applied-fix staleness heuristic).
 - Route: dev-method skill (the sim-run / long-job section) — supersedes the "setsid detached
   survives" note carried in the handoff.
 
-## 2026-07-14 — The acceptance sim measures a feature's COST but is blind to a "prevent-a-bad-outcome" BENEFIT
+## 2026-07-14 — The acceptance sim measures a feature's COST but is blind to a "prevent-a-bad-outcome" BENEFIT [HARVESTED — 2026-07-15]
 - What happened: B1 (hard reserve) exists to stop walk-ins draining a pending order's units before
   it's fulfilled. Every sim number for B1 measured only its cost (sellable capacity removed): fills
   were 5-vs-5 with and without the reserve, and turning the reserve on could only ever LOWER the
@@ -531,7 +531,7 @@ assets; the half-applied-fix staleness heuristic).
   awareness, applied to the acceptance metric.
 - Route: dev-method (acceptance-metric design — what the instrument can and cannot measure).
 
-## 2026-07-14 — A comment at a live seam is a CLAIM with an expiry date; adding a dial is what expires it
+## 2026-07-14 — A comment at a live seam is a CLAIM with an expiry date; adding a dial is what expires it [HARVESTED — 2026-07-15]
 - What happened: Doug's training ladder gave the scavenge role its first speed dial. Two comments
   that were TRUE when written became false the instant it landed. (1) `scene.js`: "scavenge has no
   speed perks (scoped in game.js) — this IS the clock", sitting above
@@ -581,7 +581,7 @@ assets; the half-applied-fix staleness heuristic).
 - Route: general instructions (refines the existing effect-vs-mechanism rule with the
   effect-unreachable case).
 
-## 2026-07-14 — A reduction that coerces "no measurement" into a number turns a verdict into a coin flip
+## 2026-07-14 — A reduction that coerces "no measurement" into a number turns a verdict into a coin flip [HARVESTED — 2026-07-15]
 - What happened: every acceptance arm in `sim_economy.mjs` reduced to
   `median(blind.map((b) => (a.postRate ?? 0) / Math.max(1, b.postRate ?? 0) - 1))` over
   `SEEDS.slice(0, 3)`. A run that never dies has NO postRate (null by design). `?? 0` and
@@ -609,7 +609,7 @@ assets; the half-applied-fix staleness heuristic).
 - Route: dev-method (acceptance-metric design — absent outcomes are categorical, and a verdict
   reports its power).
 
-## 2026-07-14 — A cosmetic change shifted the seeded PRNG stream and voided every sim number
+## 2026-07-14 — A cosmetic change shifted the seeded PRNG stream and voided every sim number [HARVESTED — 2026-07-15]
 - What happened: the `scavengeClock` fix changed `isDougOut`'s truth pattern (out 48% → 21% of a
   cycle). `isDougOut` only gates which battle-cameo LINES are eligible — pure flavour text, zero
   economy. But `logLine` has an anti-repeat re-draw (`messages.js:43-45`) that fires CONDITIONALLY
@@ -652,7 +652,7 @@ assets; the half-applied-fix staleness heuristic).
 - Route: general instructions (git workflow — fetch is not sync).
 
 
-## 2026-07-15 — A CSS layout budget is a claim with an expiry date, and nothing headless can measure the thing it claims
+## 2026-07-15 — A CSS layout budget is a claim with an expiry date, and nothing headless can measure the thing it claims [HARVESTED — 2026-07-15]
 - What happened: Daniel's Scrap chip sat under the Menu button. `style.css` carried a careful,
   explicitly re-measured LAYOUT BUDGET above `.hud` (dated 2026-07-10) reasoning about the
   wall-shelf on the left and about vertical separation from the market chip. It was ACCURATE when
@@ -694,7 +694,7 @@ assets; the half-applied-fix staleness heuristic).
   in its band, not just its own extents, and must be re-measured in a browser whenever any string
   it contains changes.
 
-## 2026-07-15 — A source-text pin is satisfied by a COMMENT, so it sailed green through the change that invalidated it
+## 2026-07-15 — A source-text pin is satisfied by a COMMENT, so it sailed green through the change that invalidated it [HARVESTED — 2026-07-15]
 - What happened: §72(f) pinned `hud.includes('fameLevel') && hud.includes('nextLevelInfo')` with
   the message "the HUD badge + remainder ride the level track". I removed the `nextLevelInfo`
   import from `hud.js` and moved the remainder to `panels.js`. **The suite stayed 1797/0.** The pin
@@ -723,7 +723,7 @@ assets; the half-applied-fix staleness heuristic).
   bare symbol name, because comments are text too; and when a pass makes a source pin's subject
   vanish, check that the pin actually FAILS before believing the green).
 
-## 2026-07-15 — A pixel measurement is only valid in the font it was taken in; I nearly shipped a fix sized for the wrong face
+## 2026-07-15 — A pixel measurement is only valid in the font it was taken in; I nearly shipped a fix sized for the wrong face [HARVESTED — 2026-07-15]
 - What happened: I measured the HUD in the container's browser and built a whole analysis on it —
   worst-case row 1013.73px, "no single cut is sufficient", a recommendation bundling compact
   numbers AND a padding trim AND the remainder's removal. All of it was measured in **DejaVu Sans**.
@@ -757,7 +757,7 @@ assets; the half-applied-fix staleness heuristic).
   reference (html-game.md): a CSS font stack naming a platform font means the layout has as many
   worst cases as it has target platforms.
 
-## 2026-07-15 — "A new tab is nearly free" was true about the WIRING and false about the LAYOUT, and I nearly built on it
+## 2026-07-15 — "A new tab is nearly free" was true about the WIRING and false about the LAYOUT, and I nearly built on it [HARVESTED — 2026-07-15]
 - What happened: the handoff's NEXT block framed the Bestiary/Expedition split's open question as
   "does the lore Bestiary become a sixth nav tab (`nav.js` TABS + `PANEL_FOR` are a two-line
   registry — **a new tab is nearly free**) or a sub-view". That parenthetical is accurate: adding a
@@ -787,7 +787,7 @@ assets; the half-applied-fix staleness heuristic).
   your change touches — and a claim in a handoff is a claim, subject to the same artifact-wins rule
   as a comment).
 
-## 2026-07-15 — Splitting one card set into two turned every singular DOM lookup into a coin flip
+## 2026-07-15 — Splitting one card set into two turned every singular DOM lookup into a coin flip [HARVESTED — 2026-07-15]
 - What happened: the split gives each monster a card in BOTH sub-views (a job card and a field-guide
   card). The existing render loop opened with
   `const card = document.querySelector('.beast-card[data-beast="${id}"]')` — singular. It had been
@@ -837,7 +837,7 @@ assets; the half-applied-fix staleness heuristic).
 - Route: dev-method (extend the git-status READ rule: scan for unexpected additions as well as
   deletions; the expected-files comment is the diff target for both directions).
 
-## 2026-07-15 — I wrote a 30-line commit body into a repo whose every commit has a zero-line body
+## 2026-07-15 — I wrote a 30-line commit body into a repo whose every commit has a zero-line body [HARVESTED — 2026-07-15]
 - What happened: Daniel: "that git commit is way too long — why did you make it that long?" He'd
   already shortened it himself. I'd handed him a multi-paragraph body: the diagnosis, the
   measurements, the negative controls, the known limit.
@@ -859,7 +859,7 @@ assets; the half-applied-fix staleness heuristic).
 - Route: dev-method (commit messages match the repo's observed norm — check `git log` before
   writing one; the body is for what isn't already recorded at the seam, which is usually nothing).
 
-## 2026-07-15 — A screenshot is a probe with a FRAME, and I twice let one certify what it couldn't see
+## 2026-07-15 — A screenshot is a probe with a FRAME, and I twice let one certify what it couldn't see [HARVESTED — 2026-07-15]
 - What happened, twice in one session. **First:** I shipped a before/after crop of the `.beast-exp`
   contrast fix and wrote "the fix is visually confirmed." The clip rect framed the door portal; the
   cards were sliced off at the edge and the "7 runs" text was **outside the frame entirely**. Daniel:
@@ -890,7 +890,7 @@ assets; the half-applied-fix staleness heuristic).
   a colour, a rect — never "it looks right"; when the artifact is visual and Claude cannot see it,
   name that limit rather than proxy around it).
 
-## 2026-07-15 — A defect that depends on CONTEXT cannot be swept by source search, so a correct fix left five instances alive for four days
+## 2026-07-15 — A defect that depends on CONTEXT cannot be swept by source search, so a correct fix left five instances alive for four days [HARVESTED — 2026-07-15]
 - What happened: the `.beast-exp` contrast bug (1.28:1, illegible since 2026-07-11) turned out to
   belong to a class — **a colour authored for the DARK panel palette, reused for text on a PARCHMENT
   card**. A real-browser sweep of all 388 text elements across six views found FIVE more live
@@ -921,7 +921,7 @@ assets; the half-applied-fix staleness heuristic).
   background, size against a container, timing against a rate — a grep cannot sweep the class; name
   the instrument that can, and run it as part of the fix or the class survives the report).
 
-## 2026-07-15 — My own probe's `.catch(() => {})` swallowed a wrong selector and re-measured the wrong view under the right label
+## 2026-07-15 — My own probe's `.catch(() => {})` swallowed a wrong selector and re-measured the wrong view under the right label [HARVESTED — 2026-07-15]
 - What happened: the contrast sweep clicked `[data-mobview="guide"]` to open the Field Guide, then
   audited and labelled the results `Mobs/Field Guide`. The real selector is `.mob-view-btn[data-view]`.
   The click was wrapped in `.catch(() => {})`, so the miss was silent: the sub-view never changed and
@@ -948,7 +948,7 @@ assets; the half-applied-fix staleness heuristic).
   is an anchor, and a swallowed navigation failure produces a confident measurement of the wrong
   thing under the right label).
 
-## 2026-07-15 — A comment fused a REQUIREMENT with an ACCIDENT, and the accident became law
+## 2026-07-15 — A comment fused a REQUIREMENT with an ACCIDENT, and the accident became law [HARVESTED — 2026-07-15]
 - What happened: `.hire-goal-chip` carries *"z5 keeps it above the panels (z4) and under the title
   overlay (z10), so it only shows in-shop."* The chip, Greg's bubble and Bob's bubble (all z5, all
   siblings of `#shop-ui` at z4) painted straight through any open center panel — measured fully
@@ -974,7 +974,7 @@ assets; the half-applied-fix staleness heuristic).
   usually means one of those was the goal and the other was the side effect, and the side effect will
   be defended as a requirement by whoever reads it next).
 
-## 2026-07-15 — The obvious one-value fix would have shipped a worse bug, and its cost lived in a file the fix never touched
+## 2026-07-15 — The obvious one-value fix would have shipped a worse bug, and its cost lived in a file the fix never touched [HARVESTED — 2026-07-15]
 - What happened: three DOM overlays at z5 painted over panels at z4. The fix writes itself — lower
   the z. I nearly proposed `z-index: 5 → 3` as a clean one-value change and went to check the
   neighbourhood first. `.shop-ui` is `position:absolute; inset:0` — it covers the entire 1280×720
@@ -996,214 +996,3 @@ assets; the half-applied-fix staleness heuristic).
 - Route: project-only for the specifics (the #shop-ui pointer-events trap is pinned in §83 and named
   in the handoff), but the general half is a dev-method candidate: a stacking/geometry change is a
   RELATIONSHIP change, so cheapness of edit is no evidence of smallness of decision.
-
-## 2026-07-15 — A suite pin asserted an order that `.filter()` makes unbreakable, so it tested nothing; a negative control found it, the rule didn't
-- What broke / what happened: §84 pinned "the four Dossier notes appear in registry order" —
-  order is content here, since the notes escalate deliberately (ordinary → stranger → deeper →
-  the one that recontextualises), so a shuffle breaks the writing without breaking a type, a
-  symbol, or a count. The pin asserted against `dossierFor()`'s returned array. Then a negative
-  control reversed the order **in the renderer** and the suite returned 1936 passed, 0 failed.
-- Root cause: `dossierFor` builds its notes with `(m.lore?.notes ?? []).filter(...)`, and
-  `.filter()` PRESERVES order. The pin was asserting an invariant the implementation is
-  *structurally incapable* of violating — it could not have failed from a data-layer bug in any
-  universe. It was green by construction, forever. Meanwhile the ONE place order could actually
-  break (the renderer, `const notes = d.notes.map(...)`) was never in the pin's field of view.
-- Why it isn't the effect/mechanism family (2026-07-12, 2026-07-14 — both harvested): those two
-  are about the effect being UNREACHABLE and falling back to the mechanism. Here the effect was
-  entirely reachable — the rendered HTML string was sitting right there, and four other pins in
-  the same section were already asserting against it. I tested the mechanism because the
-  mechanism was what I had just been *looking at*: I'd written `dossier.js` minutes earlier, its
-  array was the freshest thing in my head, and the pin got aimed at what was nearest rather than
-  at what could fail. Proximity to the implementation is itself a risk factor, and it is one
-  neither existing entry names.
-- Verification gap it exposed: a green pin and an INERT pin are indistinguishable from the
-  suite's output. Nothing in a passing run reports "this assertion is incapable of failing."
-  Coverage counts assertions, not assertions-that-can-fail, so a tautological pin inflates the
-  number while defending nothing — worse than no pin, because it occupies the slot a real one
-  would have taken and reads as done.
-- What actually caught it: the negative control, and I nearly didn't run that one — it was the
-  fourth of four, added almost as an afterthought after the three that mattered. The controls
-  were aimed at the FEATURE's defects (a caption-length note, a recycled log line, a dropped
-  note); this one happened to be aimed at the PIN's reasoning, and it was the only one that
-  found anything.
-- Plug shipped (fix + guard): the pin now reads the RENDERED HTML — it locates each label's
-  index in `dossierHtml`'s output and asserts the positions ascend. Re-ran the same control:
-  1935/1 with the right message. Standing correction: **negative-control the pin, not only the
-  feature** — for any assertion, ask "what change would make this fail?", and if the honest
-  answer is "nothing the code can do", the pin is decoration. Test: if the pin's subject is
-  downstream of an order-preserving/shape-preserving operation, the pin is probably tautological
-  and belongs further down the pipe.
-- Route: dev-method candidate — the tautological-pin test ("what change would make this fail?"),
-  and the corollary that a pass's negative controls should include at least one aimed at the
-  PIN's reasoning rather than the feature's defects. Distinct from, and a refinement of, the
-  false-green family.
-
-## 2026-07-15 — A spec that declared itself complete named the FIELD and the LADDER but never what the content should DO, and "start at the build" made asking feel like re-litigating
-- What broke: pass 2b (the Dossier) was delivered suite-green at 1940/0, fully verified,
-  negative-controlled, every measured finding reported — and Daniel rejected the content
-  wholesale. Two defects, both invisible to every check the pass ran.
-- Root cause, defect one — CAPTIONS INSTEAD OF PARAGRAPHS: the handoff said "STILL TO AUTHOR:
-  `lore.beats` — 3 progressive beats × 9 rows, COMEDY_BIBLE voice, revealed at pips 1/2/3." It
-  named the field, the count, the ladder and the voice. It never named what a BEAT should do.
-  I filled that gap by pattern-matching to the nearest existing thing — the taglines I had just
-  read — and wrote 27 more taglines averaging 64 chars. A tagline STATES what a creature
-  permanently is; a note tells you about a time it DID something. Nothing happened in any of
-  mine. The word "progressive" was doing enormous work in that spec and I never interrogated it.
-- Root cause, defect two — CONSTRAINT TRANSPLANT: I capped the beats at 80 chars because
-  COMEDY_BIBLE states 80 as a law. It is not a law; it is the LOG's budget, and the bible says
-  so in the same breath ("The log is a small scrolling widget"). The Dossier is a page. I
-  imported a constraint along with the voice, and the constraint was the thing that made stories
-  impossible — 80 chars cannot hold a setup, an event and a landing. The rejected draft was
-  *structurally* prevented from being what was wanted, by a rule I applied without checking what
-  it was for.
-- Root cause, defect three — REGISTER CLASH: the spec's ladder ("Greatest Hits by pip: 1 (25)
-  excellent + success…") had me bucket 211 recycled `results.js` lines under the notes. A
-  battle-log line is the mob's POV IN A MOMENT; a field guide speaks in permanent truths. The
-  page read wrong no matter how funny the individual lines were. This one was IN the spec and I
-  implemented it faithfully — the spec was wrong, and the pass's job was to notice.
-- Verification gap it exposed: nothing I ran could see any of it. `node --check`, the ESM import,
-  1940 green assertions, five negative controls, a jsdom structural probe, three measured
-  findings honestly reported — all of it certified that the machine did exactly what the spec
-  said. **A pass can be perfectly verified against a spec and still deliver the wrong thing;
-  verification measures conformance, and conformance is silent about whether the spec was right.**
-- The aggravating factor, and the real lesson: the handoff said **"2b IS FULLY SCOPED — every
-  open call is already made. Start at the build."** I read that as a closed door. A spec that
-  declares its own completeness is the most dangerous kind, because raising a question against it
-  feels like re-litigating a decision the person already made — and the more thorough the spec
-  looks, the stronger that feeling. But "every open call is made" is a claim about the calls
-  someone THOUGHT to make. It cannot cover the ones nobody noticed were open, and "what is a beat
-  actually FOR?" was exactly such a call: invisible to the person who wrote the spec precisely
-  because they knew the answer and never had to say it.
-- Plug shipped: rebuilt as Option 2 — four labelled field notes per mob (36 stories, 167–193
-  chars), the buckets deleted entirely, the golden kept as the pip-5 capstone because it was
-  always authored as a permanent truth. Guards: §84(b) pins a length FLOOR of 120 (an odd thing
-  to assert, and the point — the failure mode here is writing SHORT), and §84(f) pins that
-  nothing from `results.js` reaches the surface except the golden, asserted against rendered HTML
-  so a future "just a few of the good ones" fails in the suite rather than in Daniel's browser.
-  COMEDY_BIBLE now carries the tagline/note distinction, the 120–200 range, and a "what does NOT
-  go on this surface" section.
-- Route: dev-method candidate, two parts. (1) **Before authoring to a spec's content field, state
-  in one sentence what that content is FOR, and check it against a sample** — a five-line sample
-  round would have cost minutes and saved the pass. (2) **"Fully scoped / start at the build" is
-  not a gag order**: it closes the calls that were MADE, and a call nobody noticed was open is
-  still open. Also a bible-level rule now shipped: a constraint stated in one surface's section
-  is that surface's, not a universal — check what a rule is FOR before carrying it somewhere new.
-
-## 2026-07-15 — The `.hidden` cascade tie fired a THIRD time; three instances means the class is structural and the per-instance fix is the wrong altitude
-- What happened: the Dossier needed `#mob-views` (the Expeditions/Field Guide toggle) to hide
-  while inside the third sub-view. `.mob-views` sets `display:inline-flex` and is declared at
-  style.css line 485; the bare `.hidden{display:none}` utility sits at line 244. Both are 0-1-0,
-  so source order hands the tie to `.mob-views` and the toggle would have been a SILENT NO-OP.
-  Caught at design time, before writing the line, because the law already existed — scoped
-  `.mob-views.hidden` shipped at birth and §84(j) pins it plus a guard-the-guard that the
-  declaration order really is what makes the override load-bearing.
-- Why it is still a lesson despite being caught: this is the THIRD live instance (`.offer-row`,
-  `.beast-cards`, now `.mob-views`), and the underlying entry (2026-07-12, harvested) is about
-  diagnosing the tie. Three instances is no longer a recurring bug — it is a structural property
-  of the stylesheet: **`.hidden` is declared near the top of a 833-line file, so EVERY component
-  below it that sets its own `display` ties and wins.** Every future component that wants to be
-  hideable inherits the trap. The per-instance fix (a scoped override each time) is correct and
-  is also the wrong altitude — it treats a systemic property as a series of coincidences, and it
-  only ever fires when someone remembers the law.
-- Verification gap: nothing headless catches a specificity tie. Each instance is guarded by a
-  text-pin asserting the scoped override exists — which means the guard only exists for ties
-  someone already noticed. A component added tomorrow gets no pin and no warning.
-- Plug shipped: the per-instance override, as before (correct, just not sufficient). The
-  structural fix is QUEUED, not taken — moving `.hidden` to the end of the cascade (or raising
-  its specificity) would make every future `.hidden` toggle work by default and let the three
-  scoped overrides be deleted, but it changes behaviour for every `.hidden` consumer in the file
-  and is an options round, not a sweep. Recorded in the handoff's queue rather than done under
-  the cover of a docs pass.
-- Route: project-level for the fix (handoff queue). Skill candidate for the general half: **a
-  utility class that sets a property component classes also set is a cascade landmine unless it
-  is declared LAST — and the third instance of any defect class is the signal to fix the class,
-  not the instance.**
-
-## 2026-07-15 — The dial-sweep rule was written BY the pass that broke this, prescribed the exact grep that would have caught it, and stopped at two because both of those broke visibly
-- What broke: Daniel, eleven days after Doug leveling shipped — "since Doug is leaving more often
-  and coming back (higher level) he repeats his lines very often, sometimes the same line." His log
-  showed the identical Doug return line twice, four entries apart.
-- Root cause: `game.js` gated Doug's line on `Math.random() < 0.25`, under a comment reading "every
-  return would spam the log at a **24s cadence**." That literal encoded a RATE: 24 / 0.25 = one line
-  about every 96s. Doug leveling (b9ac048, 2026-07-14) added `scavengeSpeed`, taking his interval to
-  ~6.9s at cap. The gate did not move, so the LINE rate went 6.3 -> 21.9 per ten minutes — 3.5x what
-  anyone chose. Compounding it, `pick()` is memoryless, so a 6-line pool repeats back-to-back 1-in-6
-  (16.7%) — a constant probability that leveling didn't change, it just rolled the dice 3.5x more
-  often, moving an exact repeat from ~every 10 minutes to ~every 3.
-- **Why this one stings: the rule that would have caught it was recorded the same day, by the same
-  pass.** LESSONS 2026-07-14 ("A comment at a live seam is a CLAIM with an expiry date; adding a dial
-  is what expires it") prescribes: *"when a pass introduces a dial, grep every comment that reasons
-  about the value that dial now moves."* That sweep RAN. It found two falsified comments (scene.js's
-  "this IS the clock", isDougOut's "the ~12s gone window dwarfs that") and fixed both. It missed a
-  third sitting in the SAME FILE about fifty lines from one of them, whose comment names the expired
-  value out loud — `grep -n "24s" src/game.js` would have hit it.
-- The generalisable tell — WHY the sweep stopped at two: **both of the found sites broke VISIBLY.**
-  Doug popped out of the door with no idle beat; Daniel's browser found it in minutes. The missed
-  site broke as a slow drift — nothing fails, nothing looks wrong for a single frame, the game just
-  gradually becomes more annoying as the player levels a worker they were rewarded for levelling. Two
-  dramatic finds felt like a complete sweep. That entry's own text even says "the SECOND falsified
-  comment was found only because the first taught me to go looking" — and then the looking stopped,
-  because two was enough to feel thorough. **A sweep's stopping condition must be the grep's
-  exhaustion, not the satisfaction of having found something.**
-- The structural half, which is the more useful lesson: 2026-07-14's fix was `scavengeClock(state)`
-  in the leaf — a single source of truth for everything that READS Doug's clock. It could never have
-  protected this site, because **the 0.25 gate was not a reader. It was a constant tuned against the
-  clock — a copy with no link.** Single-source-of-truth protects consumers; it does nothing for
-  values that silently ENCODE the thing it centralises, because they don't mention it. `0.25` does
-  not contain "24". Its only trace was prose, which is exactly the guard the project already knows
-  is unreliable in both directions (§72(f)).
-- Verification gap: no gate could see it. §77 asserted the interval math (L0 24s -> L10 6.86s) and
-  §78 pinned that the renderer calls the helper. Nothing asked how often Doug TALKS, because the rate
-  was never a named quantity — it was an emergent product of two numbers that no longer agreed.
-- Plug shipped (fix + guard): the gate is now DERIVED — `dougLineChance()` returns
-  `min(1, effectiveWorkerInterval(state, id) / DOUG_LINE_EVERY_S)` against a named `96`, which
-  reproduces the historical 0.25 EXACTLY at level 0 (24/96) and holds the line cadence at 96s across
-  the whole ladder. That also retroactively completes 2026-07-14's fix: **the constant became a
-  consumer**, so `scavengeClock`'s single source of truth finally covers it. `pickNot(arr, exclude)`
-  in utils.js kills the back-to-back repeat, with the memory passed in as an argument (a module-level
-  memo here would be the cross-run mutable state the sim's divergence hunt suspects). Guard: suite
-  §85, driving the REAL loop via a newly-exported `updateWorkers` seam — 0 repeats across 206 lines,
-  and a level-independence assertion that catches the 3.5x. Negative-controlled four ways, including
-  one where the gate reads `baseInterval` instead of the live interval: it still returns 0.25 at
-  level 0 and is still called, so every pin on the helper alone passes — only the end-to-end rate
-  check sees it.
-- Route: dev-method — TWO parts, both refinements of the existing dial rule rather than a new one.
-  (1) **A dial sweep ends when the grep is exhausted, not when it has found something**; and the
-  sites that break INVISIBLY are the ones the sweep will skip, because nothing about them feels
-  urgent. (2) **A single-source-of-truth helper only protects READERS. Sweep separately for constants
-  TUNED against the centralised value** — they cannot be found by grepping for that value, because
-  they contain a different number entirely; find them by asking "what did this literal mean, and
-  against what?" The fix is to make them readers.
-
-## 2026-07-15 — "Reword the comment" was the plug for a text-matcher collision TWICE; the third instance proves the fix belongs in the scanner
-- What happened: §85 pinned `!/Math\.random\(\) < 0\.25/` — "the literal gate that outlived its
-  premise is gone from game.js". It FAILED on a clean, correct tree. The culprit was my own comment
-  above the replacement constant, which quotes `Math.random() < 0.25` while explaining why it is
-  dead.
-- Root cause: identical to the recorded 2026-07-15 entry ("A source-text pin is satisfied by a
-  COMMENT"), which already documents BOTH directions — a positive pin sailing green because a comment
-  contained the removed symbol, AND a negative §79 pin failing because "the re-authored budget comment
-  QUOTED the dead claim while retiring it." So tonight is not a new diagnosis. I initially told Daniel
-  it was a new mirror case; reading the record before writing showed it was already there, twice.
-- What IS new, and why it earns an entry: **the recorded plug both times was to reword the prose.**
-  §72(f) got re-expressed against the parsed import list; the §79 comment was "reworded so it
-  describes the retired claim without restating it verbatim." Both are per-instance workarounds, and
-  both make the DOCUMENTATION contort to satisfy a matcher — which is backwards, since the comment
-  was right and the scanner was wrong. Three instances in two days is not a run of coincidences: it
-  is a structural property of scanning raw file text with a regex. **The third instance is the signal
-  to fix the class, not the instance** — the same conclusion the `.hidden` cascade reached tonight,
-  arrived at independently, which is itself evidence the "third instance" heuristic is real.
-- Verification gap it exposed: nothing distinguishes a pin that failed because the CODE is wrong from
-  one that failed because the PROSE is inconvenient. Both print the same red line. The second kind
-  trains you to edit comments until the suite is quiet, which is the exact wrong reflex — and a
-  reviewer reading the diff sees a reworded comment and a green suite.
-- Plug shipped: §85 strips comments before every source scan (`stripComments`, applied to both the
-  game.js and utils.js reads) so a source pin reads CODE, because CODE is what it is asking about.
-  The pin then passed on the correct tree and still fires on all four negative controls.
-- Known incomplete, recorded rather than silently left: **the rest of the suite's source pins still
-  scan raw text** and remain exposed to the same collision. Sweeping them onto a shared stripped
-  source is queued in the handoff, not done here — it touches many sections across §0b/§72/§78/§80/
-  §82/§84 and is its own pass with its own negative controls, not a rider on a Doug fix.
-- Route: dev-method — a source pin reads code, so strip comments before matching; and when the plug
-  for a defect class is "write the prose differently", that is a workaround, and the recurrence is
-  the signal to move the fix into the tool.
