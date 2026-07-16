@@ -48,10 +48,8 @@ function setMobView(view, id = null) {
     b.classList.toggle('active', b.dataset.view === activeMobView));
   // The Expeditions/Field Guide toggle HIDES inside a Dossier: it offers two views and the player
   // is in a third, so every button being inactive would read as a bug. The back button is the way
-  // out. NOTE .mob-views sets its own display (inline-flex) and is declared AFTER the bare .hidden
-  // utility — a 0-1-0 TIE that source order resolves in .mob-views' favour — so this toggle is a
-  // SILENT NO-OP without the scoped .mob-views.hidden override in style.css. Third instance of that
-  // class in this project (.offer-row, .beast-cards, now this); scoped at birth, per §80(d).
+  // out. (.hidden is !important since §87, so the toggle works on .mob-views' own inline-flex
+  // without the scoped override this comment used to demand.)
   document.getElementById('mob-views')?.classList.toggle('hidden', view === 'dossier');
   document.getElementById('mob-view-expeditions')?.classList.toggle('hidden', view !== 'expeditions');
   document.getElementById('mob-view-guide')?.classList.toggle('hidden', view !== 'guide');

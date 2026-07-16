@@ -24,9 +24,9 @@ let tickerKey = null;   // the day the crawl was last built for — an innerHTML
 
 export function marketIsOpen() { return isOpen; }
 
-// Open/close toggle the scoped .hidden class; style.css carries the .market-overlay.hidden
-// override (the cascade-tie law — the overlay sets its own display:flex). Callers that open
-// should follow with renderMarket(state) so the day's content is current on first paint.
+// Open/close toggle .hidden (§87: the utility is !important, so it beats the overlay's own
+// display:flex without a scoped override). Callers that open should follow with
+// renderMarket(state) so the day's content is current on first paint.
 export function openMarket() {
   if (!rootEl) return;
   isOpen = true;
@@ -150,7 +150,7 @@ export function renderMarket(state) {
   }
 
   // THE SPECIAL ORDER (reform step 6): the named client's row. Hidden when no order is live
-  // (the scoped .market-commission.hidden override — the cascade-tie law). Terms render LIVE
+  // (a plain .hidden toggle — the utility is !important since §87). Terms render LIVE
   // (commissionTerms derives from today's multipliers, the same numbers fulfillment will pay);
   // "shelf n/N" is the progress read — the same units the queue is shopping from, which is the
   // decision. Fulfill disables with a reason, the offer buttons' own convention.
