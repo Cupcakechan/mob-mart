@@ -273,18 +273,47 @@ body{
 .upg-desc{font-size:11px;font-weight:600;opacity:.72;line-height:1.15;}
 .upg-meta{display:flex;flex-direction:column;align-items:flex-end;flex:0 0 auto;}
 .upg-level{font-size:11px;font-weight:700;opacity:.85;}
-.upg-cost{color:var(--gold-deep);font-weight:800;font-size:13px;white-space:nowrap;}
+/* THE TWO CARD-SAFE MEANING INKS (§86, measured 2026-07-15). --gold-deep read 1.97:1 here and
+   the rep-purple 1.50:1 — both authored for the DARK panel, both invisible on tan (§81's class).
+   They are NOT flattened to the house #6b4a1e, because the meaning is real: this cost spends the
+   diamond, the perk cost spends the crown. Each is darkened along its OWN hue ray until it clears
+   AA, so the meaning survives legibly:
+     .upg-cost  #795c1c  ochre — dE 7.8 from the house ink, still reads gold
+     .perk-cost #6c5785  plum  — dE 36.3 from the house ink, unmistakably purple
+     the pair, which is the thing that must stay apart: dE 41.1 (it was 54.7 illegibly)
+   DERIVED AGAINST #e6dcc6 (the LOCKED card), not --parchment — the locked card is the darker of
+   the two surfaces these land on, so both inks clear AA on EITHER. Deriving against parchment
+   alone gave 4.37/4.34 on the locked card: passing the common case and missing the real one.
+   The glyph in the string (◆ / ♛) is the meaning's PRIMARY carrier; colour is the second
+   copy. If a future pass needs the meaning to survive greyscale, strengthen the glyph — do not
+   brighten these back. */
+.upg-cost{color:#795c1c;font-weight:800;font-size:13px;white-space:nowrap;}
 .upg-buy{
   flex:0 0 auto;background:var(--wood);color:#ffeecb;border:2px solid var(--wood-edge);
   border-radius:7px;padding:6px 14px;font-weight:800;font-size:12px;cursor:pointer;
 }
 .upg-buy:hover:not(:disabled){background:var(--wood-light);}
 .upg-buy:disabled{opacity:.4;cursor:not-allowed;}
-/* Locked upgrade (reputation-gated): dim the details, keep the "Reach <Tier>" pill readable */
+/* Locked upgrade (reputation-gated): dim the details, keep the "Reach <Tier>" pill readable.
+   That is true for an UPGRADE card and was never true for a PERK card — see the parity fix below. */
 .upgrade-card.locked{background:#e6dcc6;}
 .upgrade-card.locked .upg-info,
 .upgrade-card.locked .upg-meta{opacity:.45;}
 .upgrade-card.locked .upg-buy:disabled{opacity:1;background:var(--stone);color:#d9ccae;border-color:var(--panel-edge);cursor:default;}
+/* PARITY, not a new judgment (§86). Both card kinds gate on a tier; only the upgrade card was ever
+   readable while gated. An upgrade renders its cost as '' when locked and its BUTTON carries
+   "Reach <Tier>" at opacity 1 (#d9ccae on --stone = 10.43:1). A PERK's button says only "Locked",
+   so .perk-cost IS the sole statement of the requirement — and it sat inside .upg-meta at .45,
+   taking "Reach Trusted" to 1.18:1. The exemption the button already has, applied where it was
+   missing.
+   WHY .upg-meta AND NOT .perk-cost: opacity composites the whole subtree, so a child CANNOT undo
+   its parent's. An opacity:1 on .perk-cost itself would be a silent no-op. The button escapes only
+   because it is a SIBLING of .upg-meta, never a child. On a locked perk .upg-level renders '', so
+   un-dimming the column reveals exactly the one string that was hiding.
+   ORDER IS LOAD-BEARING: this ties .upgrade-card.locked .upg-meta at 0-3-0 and wins ONLY by being
+   declared after it. §86 pins that order — see the .hidden cascade (handoff NEXT item 5) for why
+   a specificity tie is worth a guard rather than a hope. */
+.perk-card.locked .upg-meta{opacity:1;}
 
 /* Bottom nav — slim bar in the center gap between the corner panels */
 .nav{
@@ -386,10 +415,10 @@ body{
   }
 }
 
-/* --- Regulars' Loyalty (milestones): the per-card sales counter and the gold announcement lines
-   in the battle log. The counter is deliberately quiet (muted, small) — it's a slow-burn want, not
-   an alert; the log line is the celebration moment, so IT gets the gold. ------------------------ */
-.item-sold { font-size: 11px; color: #b6abc9; margin-top: 2px; }
+/* --- Regulars' Loyalty (milestones): the gold announcement lines in the battle log. The log line
+   is the celebration moment, so IT gets the gold — and it can, because it renders on the log's DARK
+   surface. The per-card counter is styled at its restyle site below (search ".item-sold"); the
+   duplicate declaration that used to sit here was fully overridden by it and did nothing. -------- */
 .battle-log li.milestone {
   border-left: 3px solid #ffcf4a;
   color: #ffe9ad;
@@ -400,7 +429,7 @@ body{
    Cards reuse the upgrade-card layout; the cost tint says "this spends the crown number". ------- */
 .panel-subtitle { color: #ffcf4a; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; margin: 12px 0 6px; }
 .panel-subtitle .subtitle-hint { color: #b6abc9; font-size: 11px; text-transform: none; letter-spacing: 0; margin-left: 6px; }
-.perk-cost { color: #cfa8ff; }   /* rep-purple, distinct from gold costs */
+.perk-cost { color: #6c5785; }   /* rep-plum on tan (see .upg-cost) — the comment's requirement was "distinct from gold costs", not "purple": dE 41.1 keeps it */
 
 /* --- Better Stock (Pass 3): six-item shelf grid, locked tier-2 cards, license buttons, and the
    restyled Sold line (parked rider). The shelf panel scrolls like Upgrades if it overflows —
@@ -416,9 +445,16 @@ body{
 .license-btn:disabled { color: #8f86a3; border-color: #5a4a75; cursor: default; }
 .license-btn.hidden, .restock-btn.hidden { display: none; }
 
-/* Sold line restyle: gold count pops, the rest stays quiet, never wraps. */
-.item-sold { font-size: 11px; color: #8f86a3; margin-top: 2px; white-space: nowrap; }
-.item-sold b { color: #ffcf4a; font-weight: 800; }
+/* Sold line: the count pops, the rest stays quiet, never wraps — and BOTH now do it legibly (§86).
+   This line reads "<b>47</b> sold · next 50". The count is state.stats.itemSales[id] — a COUNT,
+   not money — so --gold was never carrying "gold" here, only emphasis, and it cost 1.12:1 to say
+   what font-weight:800 already says. The rest wore #8f86a3, the DARK-PANEL disabled-grey, which
+   meant nothing at all on tan and read 2.62:1. Both take the house ink; the POP rides weight and
+   the QUIET rides size (11px, no weight) against .item-name's 14px/800 and .item-price's 13px/800.
+   A locked item card composites this at opacity .75 + saturate(.55) over --panel-bg: the house ink
+   survives that at 4.57:1 (the old grey read 2.30:1 there), so the locked state comes free. */
+.item-sold { font-size: 11px; color: #6b4a1e; margin-top: 2px; white-space: nowrap; }
+.item-sold b { color: #6b4a1e; font-weight: 800; }
 
 /* --- Shelf 2.0 (Pass 3.5): one-row header (title + category tabs + Restock All), compact cards,
    collapsible center panels. Vertical budget: panel top y96, bottom must stay <= ~320 — the speech
@@ -509,7 +545,8 @@ body{
    line above it without a second colour. #6b4a1e is the house TAN-CARD ink (.item-price /
    .trade-hint / .beast-exp) at 6.11:1 — NOT a dark-panel colour. This card is parchment: the one
    palette in this file that reads correctly here is the one that already reads correctly here.
-   See §81 (the wrong-palette law) before reaching for a purple, a lavender or a gold. */
+   See §81 (the wrong-palette law) before reaching for a purple, a lavender or a gold — and §86 if
+   what you actually need is a cost's currency, which has two sanctioned card-safe inks. */
 .beast-lore{font-size:12px;font-style:italic;color:#6b4a1e;line-height:1.3;margin-top:3px;}
 .beast-progress{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:0 0 auto;}
 .beast-pips{display:flex;gap:5px;}
@@ -525,10 +562,12 @@ body{
    hire chip and both bubbles painting through open panels, all three z5 siblings of #shop-ui's z4)
    cannot recur here BY CONSTRUCTION. Read §83 before ever "upgrading" this to an overlay.
 
-   PALETTE — §81's law, and it decides every colour below. On --parchment #ece0c4 only three inks
-   clear WCAG AA (measured, not guessed): --ink 10.19:1, the house tan-card #6b4a1e 6.11:1, and
-   --wood 7.72:1. Every gold, purple and lavender in this file FAILS here (--gold 1.12, --gold-deep
-   1.97, --purple 3.23, --meh 1.39) — which is exactly how .beast-exp spent four days invisible.
+   PALETTE — §81's law, and it decides every colour below. On --parchment #ece0c4 the inks that
+   clear WCAG AA are (measured, not guessed): --ink 10.19:1, the house tan-card #6b4a1e 6.11:1,
+   --wood 7.72:1, and — since §86 — the two CARD-SAFE MEANING INKS #795c1c (gold) 4.77:1 and
+   #6c5785 (rep) 4.80:1, which exist so a cost can say which currency it spends without going
+   invisible. Every RAW gold, purple and lavender still FAILS here (--gold 1.12, --gold-deep 1.97,
+   --purple 3.23, --meh 1.39) — which is exactly how .beast-exp spent four days invisible.
    The one gold on this page is the Legend plaque, and it brings its own dark surface with it.
 
    NO OWN SCROLLER: .bestiary-panel is already max-height 500 + overflow-y:auto, so a maxed entry
@@ -555,7 +594,7 @@ body{
 .dossier-note{margin-bottom:13px;}
 .dossier-note:last-child{margin-bottom:0;}
 /* --wood #5b3a24 at 7.72:1 — the card's own border family, distinct from the body ink, and one of
-   only three inks that survive this surface. */
+   the few inks that survive this surface (the roster is in the PALETTE note above; §86 added two). */
 .dossier-note-label{
   margin:0 0 3px;font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;
   color:var(--wood);border-bottom:1px solid rgba(90,58,36,.28);padding-bottom:3px;
@@ -734,7 +773,21 @@ body{
   text-transform: uppercase; color: #ff9d3b;
   border-bottom: 1px solid rgba(255, 157, 59, 0.35); padding-bottom: 4px;
 }
-.beast-next.vip { color: #ffd9a8; font-weight: 800; letter-spacing: 1px; }
+/* The VIP tag (§86). #ffd9a8 measured 1.01:1 — the worst ink in the game, and the closest a colour
+   can get to not existing.
+   IT IS THE SAME TRANSPLANT §81 FOUND, and the grep proves it rather than guessing: #ffd9a8 exists
+   in exactly two places in this file — .battle-log li.market, where it is the market-amber family's
+   TEXT form and sits on the log's DARK surface reading fine, and here, on a parchment card. The
+   family is #ff9d3b (accent + border) paired with #ffd9a8 (its light text form FOR DARK). The tag
+   took the dark-surface half onto tan, exactly as .beast-exp took .mat-chip's foreground.
+   It is not a currency; it is the word "VIP", so what it must keep is the VIP SECTION's identity,
+   not a meaning. Derived from that section's own accent #ff9d3b (.beast-vip-header, right above)
+   darkened along its ray: #8c5620, 4.62:1, dE 8.5 from the house ink — still amber, now present.
+   opacity:1 is required, not cosmetic: .beast-next sets .6 and that is HALF of why 1.01 happened;
+   this wins the cascade on SPECIFICITY (0-2-0 vs 0-1-0), not order, so it is safe from the .hidden
+   class of tie. The bare .beast-next stays at .6 / 3.45:1 — the over-dimmed sub-class, parked,
+   NOT this pass. */
+.beast-next.vip { color: #8c5620; opacity: 1; font-weight: 800; letter-spacing: 1px; }
 
 /* --- Market Board strip (Trade Market reform, Pass A) ------------------------------------------
    Lives inside the Shelf panel between header and cards (the 5-tab budget holds; materials stay

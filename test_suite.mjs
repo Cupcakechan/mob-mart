@@ -6258,5 +6258,241 @@ console.log('M4 auto-serve worker — smoke test\n');
      'doug: the cadence is a NAMED constant — the rate is a decision, not a side effect of Doug\u2019s speed');
 }
 
+// ===== SECTION 86 — THE CONTRAST CLASS (Daniel, 2026-07-15 — Option 2 of the round) =====
+// §81 fixed ONE instance of the wrong-palette class (.beast-exp) and swept the UI for the rest.
+// This section owns the five survivors that sweep found, plus a sixth this pass measured.
+//
+// THE CLASS: a colour authored for the DARK panel palette, reused for text on a PARCHMENT card.
+// The cards are the only light surfaces in a dark-purple UI, so a dark-panel colour looks right in
+// the file and dies on the card.
+//
+// WHY THIS IS NOT A SWEEP-AND-REPLACE (Daniel's call, and it is the whole design of the section):
+// the obvious fix is "everything to the house ink #6b4a1e". That FLATTENS a legible system — the
+// upgrade cost spends diamonds, the perk cost spends crowns, and the colour says so at a glance.
+// So the two costs are NOT flattened: each is darkened along its OWN hue ray until it clears AA.
+// (d) is the pin that makes this Option 2 rather than Option 1 — if a later pass quietly flattens
+// both to one ink, the ratios all still pass and only (d) fires. It should.
+//
+// WHAT THE ARTIFACT SAID THAT THE PLAN DID NOT (measured, and it moved the design twice):
+//   1. The "meaning" worry is 2-of-5, not 5-of-5. .item-sold b renders state.stats.itemSales[id] —
+//      a COUNT, not money; .beast-next.vip renders the literal word "VIP"; .item-sold renders
+//      "\u00b7 next 50". Three of the five carried no currency at all, so nothing flattens by
+//      giving them the house ink. Only .upg-cost and .perk-cost are costs — and BOTH already name
+//      their currency with a glyph (\u25c6 / \u265b) in the same string, so colour is the second
+//      copy of a fact the text states. That is why (d)'s floor is generous rather than tight.
+//   2. Deriving the inks against --parchment ALONE was wrong, and (c) exists because of it. A
+//      locked card is #e6dcc6, DARKER than parchment, and .perk-cost renders "Reach Trusted" on it.
+//      Parchment-derived inks measured 4.37/4.34 there — passing the common surface and missing the
+//      real one. Both inks are now derived against the LOCKED card, so they clear AA on either.
+//
+// EVERY RATIO IS COMPUTED, NEVER A HEX PIN — §81's law. A pin on `#795c1c` would be satisfied by
+// the comment above the rule (§72(f), and §79/§85 the same week). For the same reason this section
+// reads COMMENT-STRIPPED css: the comments here deliberately quote every retired value, so a raw
+// text scan would find `#ffd9a8` and `#cfa8ff` alive and well in the prose that retired them.
+{
+  const { readFileSync: rf86 } = await import('node:fs');
+  const strip86 = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '');
+  const css86 = strip86(rf86('./style.css', 'utf8'));
+
+  // THE PARSER MODELS THE CASCADE, because a pin that reads CSS differently from the browser is
+  // measuring a page that does not exist. At equal specificity the LAST declaration wins, and a
+  // selector may be declared more than once: .item-card is declared twice (the base card, then the
+  // Shelf 2.0 compaction), and reading only the FIRST rule got the right background by luck — the
+  // compaction happens not to set one. The day it does, a first-rule reader certifies a surface
+  // nothing renders. So: collect every rule for the selector, take the last declaration found.
+  const esc86 = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const rulesOf86 = (sel) =>
+    [...css86.matchAll(new RegExp('^' + esc86(sel) + '\\s*\\{([^}]*)\\}', 'gm'))].map((m) => m[1]);
+  const hasRule86 = (sel) => rulesOf86(sel).length > 0;
+  const declOf86 = (sel, prop) => {
+    let found = null;
+    for (const body of rulesOf86(sel)) {
+      const m = new RegExp('(?:^|;)\\s*' + prop + '\\s*:\\s*([^;]+)').exec(body);
+      if (m) found = m[1].trim();
+    }
+    return found;
+  };
+
+  // WCAG 2.x contrast — the same math §81 uses and the same the browser probe used.
+  const lin86 = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const lum86 = ([r, g, b]) => 0.2126 * lin86(r / 255) + 0.7152 * lin86(g / 255) + 0.0722 * lin86(b / 255);
+  const contrast86 = (a, b) => {
+    const [hi, lo] = [lum86(a), lum86(b)].sort((x, y) => y - x);
+    return (hi + 0.05) / (lo + 0.05);
+  };
+  const rgb86 = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  // CIELAB + CIE76 distance. Only (d) needs it: "are these still two different colours to a player".
+  const lab86 = (rgb) => {
+    const [r, g, b] = rgb.map((v) => lin86(v / 255));
+    let x = (0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047;
+    let y = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    let z = (0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883;
+    const f86 = (t) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116);
+    [x, y, z] = [f86(x), f86(y), f86(z)];
+    return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
+  };
+  const dE86 = (a, b) => {
+    const [A, B] = [lab86(rgb86(a)), lab86(rgb86(b))];
+    return Math.hypot(A[0] - B[0], A[1] - B[1], A[2] - B[2]);
+  };
+
+  // --- (a) GUARD-THE-GUARDS: every surface below is DERIVED from the live CSS, never hand-typed.
+  // If a card stops being parchment, these ratios are measuring the wrong thing and must fail here
+  // rather than quietly certify a colour against a surface it no longer lands on. ---
+  const rootBody86 = /:root\s*\{([\s\S]*?)\}/.exec(css86)?.[1] ?? '';
+  const parch86 = /--parchment\s*:\s*(#[0-9a-fA-F]{6})/.exec(rootBody86)?.[1] ?? null;
+  ok(!!parch86, 'contrast: guard-the-guard — :root declares --parchment (every ratio below resolves through it)');
+
+  for (const card of ['.upgrade-card', '.beast-card', '.item-card']) {
+    const bg = declOf86(card, 'background');
+    ok(!!bg && bg.includes('var(--parchment)'),
+       `contrast: guard-the-guard — ${card} still renders on var(--parchment)`);
+  }
+  const lockedBg86 = declOf86('.upgrade-card.locked', 'background');
+  ok(!!lockedBg86 && /^#[0-9a-fA-F]{6}$/.test(lockedBg86),
+     'contrast: guard-the-guard — .upgrade-card.locked declares its own plain-hex background (the DARKER card surface)');
+  ok(contrast86(rgb86(lockedBg86), rgb86(parch86)) > 1,
+     'contrast: guard-the-guard — the locked card is a genuinely different surface from parchment, so (c) is a real second test');
+
+  // --- (b) THE FIX, asserted as the EFFECT a player sees: a computed ratio on the surface the ink
+  // actually lands on. Five instances from §81's sweep; the sixth is (e). AA body text = 4.5:1.
+  //
+  // OPACITY IS PART OF THE EFFECT, so it is part of the sum. A ratio pin on the declared hex alone
+  // is the mechanism, not the result — and this is the exact section where that would bite:
+  // .beast-next sets opacity:.6, so .beast-next.vip's #8c5620 renders at 2.42:1 unless the .vip
+  // rule overrides it. A colour-only pin stays GREEN through that, certifying a tag the player
+  // still cannot read. HALF of the original 1.01:1 was this opacity, not the hex. ---
+  const over86 = (fg, bg, a) => fg.map((v, i) => v * a + bg[i] * (1 - a));
+  const opacityOf86 = (sel) => {
+    const v = declOf86(sel, 'opacity');
+    return v === null ? null : Number(v);
+  };
+  const INSTANCES86 = [
+    { sel: '.upg-cost',       was: 1.97, what: 'the upgrade cost \u25c6 250' },
+    { sel: '.perk-cost',      was: 1.50, what: 'the perk cost \u265b 200' },
+    { sel: '.item-sold',      was: 2.62, what: 'the sold line "\u00b7 next 50" (it wore the dark-panel disabled-grey)' },
+    { sel: '.item-sold b',    was: 1.12, what: 'the sold COUNT (a count, not money \u2014 weight carries the pop)' },
+    { sel: '.beast-next.vip', was: 1.01, what: 'the VIP tag (the worst ink in the game)', inherits: '.beast-next' },
+  ];
+  for (const inst of INSTANCES86) {
+    const col = declOf86(inst.sel, 'color');
+    ok(!!col && /^#[0-9a-fA-F]{6}$/.test(col),
+       `contrast: guard-the-guard — ${inst.sel} declares a plain hex colour (a var() would defeat the ratio below)`);
+    // Own opacity wins; otherwise the one it inherits; otherwise fully opaque.
+    const alpha = opacityOf86(inst.sel) ?? (inst.inherits ? opacityOf86(inst.inherits) : null) ?? 1;
+    const r = contrast86(over86(rgb86(col), rgb86(parch86), alpha), rgb86(parch86));
+    ok(r >= 4.5,
+       `contrast: ${inst.sel} clears WCAG AA AS RENDERED on the parchment card — ${r.toFixed(2)}:1 at `
+       + `opacity ${alpha} (needs 4.5; it shipped at ${inst.was.toFixed(2)} \u2014 ${inst.what})`);
+  }
+
+  // (b2) The VIP tag's opacity override is load-bearing, so it is named rather than left implicit:
+  // it beats .beast-next's .6 on SPECIFICITY (0-2-0 vs 0-1-0), not on order, so unlike (e2) it is
+  // safe from the .hidden class of tie. Pinned because deleting it looks like tidying.
+  ok(opacityOf86('.beast-next.vip') === 1,
+     'contrast: .beast-next.vip declares opacity:1 — .beast-next sets .6, which was half of why the '
+     + 'tag measured 1.01:1; the colour fix alone does not reach AA');
+  ok(opacityOf86('.beast-next') !== null && opacityOf86('.beast-next') < 1,
+     'contrast: guard-the-guard — bare .beast-next is still the dimmed one (if that ever changes, the '
+     + 'override above is dead weight and (b) is testing nothing)');
+
+  // --- (c) THE WORST-SURFACE LAW. The two meaning inks land on BOTH card surfaces, and the locked
+  // card is darker. This is the pin the first derivation of this pass would have failed: inks tuned
+  // against parchment measured 4.37/4.34 here. Derive against the worst surface, not the common one. ---
+  for (const sel of ['.upg-cost', '.perk-cost']) {
+    const col = declOf86(sel, 'color');
+    const r = contrast86(rgb86(col), rgb86(lockedBg86));
+    ok(r >= 4.5,
+       `contrast: ${sel} clears AA on the LOCKED card too (${lockedBg86}) — ${r.toFixed(2)}:1. A cost ink `
+       + `is derived against the DARKER of the surfaces it lands on, never against parchment alone`);
+  }
+
+  // (c2) THE OTHER LOCKED SURFACE. A locked ITEM card dims differently — opacity:.75 AND
+  // filter:saturate(.55) over the dark --panel-bg — and .item-sold is NOT hidden there (unlike the
+  // price and stock, which are). The house ink survives it at 4.57:1 where the old dark-panel grey
+  // read 2.30:1, so the locked state came free with the fix. Pinned rather than left as a comment
+  // because 0.07 above AA is thin: a nudge to the ink, to --panel-bg, or to either dial breaks it
+  // silently, and this is the only place that composite is checked.
+  {
+    const panelBg86 = /--panel-bg\s*:\s*(#[0-9a-fA-F]{6})/.exec(rootBody86)?.[1] ?? null;
+    ok(!!panelBg86, 'contrast: guard-the-guard — :root declares --panel-bg (the locked item card composites over it)');
+    const lockA86 = Number(declOf86('.item-card.locked', 'opacity'));
+    const satM86 = /saturate\(\s*([\d.]+)\s*\)/.exec(declOf86('.item-card.locked', 'filter') ?? '')?.[1];
+    ok(Number.isFinite(lockA86) && satM86 !== undefined,
+       'contrast: guard-the-guard — .item-card.locked still dims via opacity + saturate() (both dials read live)');
+    // CSS filter: saturate(s) — the spec's linear matrix. Applied to the element, then composited.
+    const sat86 = (rgb, s) => {
+      const [r, g, b] = rgb, L = 0.213, M = 0.715, N = 0.072;
+      return [
+        (L + (1 - L) * s) * r + (M - M * s) * g + (N - N * s) * b,
+        (L - L * s) * r + (M + (1 - M) * s) * g + (N - N * s) * b,
+        (L - L * s) * r + (M - M * s) * g + (N + (1 - N) * s) * b,
+      ];
+    };
+    const s86 = Number(satM86);
+    const cardSeen = over86(sat86(rgb86(parch86), s86), rgb86(panelBg86), lockA86);
+    for (const sel of ['.item-sold', '.item-sold b']) {
+      const inkSeen = over86(sat86(rgb86(declOf86(sel, 'color')), s86), rgb86(panelBg86), lockA86);
+      const r = contrast86(inkSeen, cardSeen);
+      ok(r >= 4.5,
+         `contrast: ${sel} clears AA on a LOCKED item card too — ${r.toFixed(2)}:1 through opacity `
+         + `${lockA86} + saturate(${s86}) over --panel-bg (the old grey read 2.30 here)`);
+    }
+  }
+
+  // --- (d) THE MEANING LAW — the reason this pass is not a sweep-and-replace. The upgrade cost
+  // spends diamonds and the perk cost spends crowns; the glyph is the primary carrier and the
+  // colour is the second copy, but the second copy is the one that works at a glance. Flattening
+  // both to one ink passes every ratio above and fails ONLY here. ---
+  const goldInk86 = declOf86('.upg-cost', 'color');
+  const repInk86 = declOf86('.perk-cost', 'color');
+  const spread86 = dE86(goldInk86, repInk86);
+  ok(spread86 >= 25,
+     `contrast: the gold cost and the rep cost are still two different colours to a player — CIE76 `
+     + `\u0394E ${spread86.toFixed(1)} (floor 25; flattening both to the house ink gives 0). This is `
+     + `the pin that says Daniel picked Option 2, not Option 1`);
+
+  // --- (e) THE SIXTH INSTANCE — PARITY, not a new judgment. Both card kinds gate on a tier; only
+  // the upgrade card was ever readable while gated (its cost renders '' and its BUTTON carries
+  // "Reach <Tier>" at opacity 1). A perk's button says only "Locked", so .perk-cost is the SOLE
+  // statement of the requirement — and .upg-meta's .45 took it to 1.18:1.
+  // The fix MUST live on .upg-meta: opacity composites the whole subtree, so a child cannot undo
+  // its parent's. An opacity:1 on .perk-cost itself is a silent no-op. The button escapes only
+  // because it is a SIBLING of .upg-meta, never a child. ---
+  ok(hasRule86('.perk-card.locked .upg-meta') && declOf86('.perk-card.locked .upg-meta', 'opacity') === '1',
+     'contrast: a locked PERK card un-dims .upg-meta — the column holding the only statement of its '
+     + 'tier requirement ("Reach Trusted", which sat at 1.18:1)');
+  ok(!hasRule86('.perk-card.locked .perk-cost'),
+     'contrast: the un-dim is NOT attempted on .perk-cost — a child cannot undo its parent\u2019s '
+     + 'composited opacity, so that rule would be a silent no-op that looks like a fix');
+
+  // (e2) ORDER IS THE TIE-BREAKER, so order is pinned. Both selectors are 0-3-0; the perk rule wins
+  // only by being declared later. This is the .hidden cascade's exact shape (handoff NEXT item 5),
+  // and nothing headless catches a specificity tie — so it gets a guard rather than a hope.
+  {
+    const iBase = css86.search(/^\.upgrade-card\.locked \.upg-info,\s*$/m);
+    const iFix = css86.search(/^\.perk-card\.locked \.upg-meta\s*\{/m);
+    ok(iBase !== -1 && iFix !== -1 && iFix > iBase,
+       'contrast: .perk-card.locked .upg-meta is declared AFTER .upgrade-card.locked .upg-meta — they '
+       + 'tie at 0-3-0 and the later one wins, so declaration order is load-bearing here');
+  }
+
+  // --- (f) THE DEAD DUPLICATE. .item-sold was declared twice (an older #b6abc9 rule, fully
+  // overridden by the restyle below it at equal specificity, contributing nothing). Removed with
+  // this pass; pinned so it cannot drift back and give the next reader two candidate answers. ---
+  ok((css86.match(/^\.item-sold\s*\{/gm) ?? []).length === 1,
+     'contrast: .item-sold is declared exactly ONCE — the dead duplicate is gone and stays gone');
+
+  // --- (g) style.css changed, so the bust advances. This section owns the current floor (the
+  // exact-totals doctrine: the newest batch holds the exact, older sections soften to rules). ---
+  {
+    const ver86 = (s) => { const m = /style\.css\?v=(\d+)/.exec(s); return m ? Number(m[1]) : null; };
+    const vi86 = ver86(rf86('./index.html', 'utf8'));
+    const vk86 = ver86(rf86('./index.kongregate.html', 'utf8'));
+    ok(vi86 !== null && vi86 === vk86, 'contrast: both entry shells carry the SAME style.css cache-bust');
+    ok(vi86 >= 20, `contrast: the cache-bust advanced for this pass\u2019s style.css change (>= v20, found ${vi86})`);
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
