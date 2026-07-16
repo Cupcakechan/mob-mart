@@ -9,7 +9,7 @@ import { UPGRADES, upgradeLevel, upgradeCost, isMaxed, sumEffect } from './data/
 import { WORKERS, WORKER_ORDER, isWorkerOwned, workerHireCost,
   workerLevel, workerLevelCost, isWorkerLevelMaxed, sumWorkerEffect,
   scavengeClock } from './data/workers.js';
-import { randInt, pick, weightedPick } from './utils.js';
+import { randInt, pick, pickNot, weightedPick } from './utils.js';
 import { WORKER_HIRE_LINES, DOUG_RETURN_LINES, RELIC_VOICE, TRADE_VOICE, INSPECTOR_VOICE,
   EXPEDITION_VOICE, EXPEDITION_DESTINATIONS, COMMISSION_VOICE } from './data/results.js';
 import { MATERIALS } from './data/materials.js';   // Trade Market reform Pass A (leaf registry)
@@ -894,6 +894,27 @@ export function inspectionGrade(state) {
 // the current balance on perks can never revoke a gate the player already earned.
 export const fameOf = (state) => state.lifetimeRep ?? state.reputation;
 
+// How often Doug speaks, in SECONDS between lines. This is the number the old `Math.random() < 0.25`
+// gate actually encoded — it was tuned against his 24s base interval, and 24 / 0.25 = one line about
+// every 96s. Naming it makes the RATE the decision, instead of a side effect of however fast Doug
+// happens to run this save.
+const DOUG_LINE_EVERY_S = 96;
+
+// The chance a given scavenge return also prints a Doug line. DERIVED FROM THE LIVE INTERVAL, not a
+// constant, and that is the whole fix: `0.25` was correct at a 24s cadence, then Doug's scavengeSpeed
+// ladder (2026-07-14) took the interval to ~6.9s at level 10 WITHOUT retuning the gate — 3.5x the
+// intended line rate, which is what Daniel reported as "he repeats his lines very often". Dividing
+// the live interval by the target cadence holds the LINE rate steady at every level, and reproduces
+// the old 0.25 exactly at level 0 (24/96) — the original tuning is preserved, not overridden.
+//
+// Clamped to 1: if a future worker's baseInterval ever exceeds the target cadence the gate would
+// otherwise exceed certainty, which is meaningless rather than merely wrong. §85 pins that the clamp
+// never engages on the live ladder — if it ever does, the cadence is no longer being held and that
+// should be a failing test, not a silent shrug.
+export function dougLineChance(state, id = 'scavenger') {
+  return Math.min(1, effectiveWorkerInterval(state, id) / DOUG_LINE_EVERY_S);
+}
+
 // SCARCITY TEETH (F3 Option 1, Daniel 2026-07-13): the leave penalty scales with the shop's
 // RUNG — a Renowned shop disappoints louder. The drain lands on SPENDABLE fame only (the perk
 // budget); the lifetime track never falls, so a bad afternoon costs goodwill, never levels.
@@ -1105,7 +1126,11 @@ export function hireWorker(state, id) {
 // (serveCurrent) so payout/rep/log/cooldown all match. A success waits a full interval before the
 // next; a blocked attempt (no customer / cooling down / out of stock / can't afford) leaves the timer
 // ready so the worker fires as soon as conditions allow — without ever re-running the sale itself.
-function updateWorkers(state, dt) {
+// EXPORTED as a test seam (2026-07-15), the spawnCustomer/dismissCurrent precedent. Purely
+// additive — the only caller is update() below. §85 drives this directly to assert that Doug never
+// says the same line twice in a row, which is the EFFECT Daniel reported; a source pin proving the
+// call site merely MENTIONS pickNot would be the flag, not the result.
+export function updateWorkers(state, dt) {
   for (const id of WORKER_ORDER) {
     const w = state.workers[id];
     if (!w.owned) continue;
@@ -1176,9 +1201,18 @@ function updateWorkers(state, dt) {
         }
       }
       w.timer = effectiveWorkerInterval(state, id);
-      // His register, now and then — every return would spam the log at a 24s cadence.
-      if (Math.random() < 0.25 && DOUG_RETURN_LINES.length) {
-        pushLog(state, { text: pick(DOUG_RETURN_LINES), repDelta: 0 });
+      // His register, now and then. The gate is DERIVED (see dougLineChance): the old literal 0.25
+      // was tuned against a 24s cadence and silently became 3.5x that rate once Doug could level.
+      if (Math.random() < dougLineChance(state, id) && DOUG_RETURN_LINES.length) {
+        // pickNot, not pick: a memoryless draw from six lines repeats back-to-back 1-in-6, and at
+        // the post-leveling rate that landed roughly every 3 minutes. The memory rides the RUNTIME
+        // worker object — `serializeSave` writes only { owned, level }, so lastLine is transient by
+        // construction: no save-schema change, and (deliberately) no module-level container, which
+        // is the cross-run mutable state the sim's divergence hunt already suspects. Resetting on
+        // reload costs at most one repeat across a session boundary, which is the right price.
+        const line = pickNot(DOUG_RETURN_LINES, w.lastLine ?? null);
+        w.lastLine = line;
+        pushLog(state, { text: line, repDelta: 0 });
       }
       state.uiDirty = true;                                    // the HUD scrap chip re-renders
     }

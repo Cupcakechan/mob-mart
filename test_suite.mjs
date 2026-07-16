@@ -6091,5 +6091,172 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
 }
 
+// ===== SECTION 85 — DOUG'S REPEATS (Daniel, 2026-07-15 — Option 2) =====
+// Daniel: "since Doug is leaving more often and coming back (higher level) he repeats his lines very
+// often, sometimes the same line." That sentence is TWO defects and this section pins both.
+//
+//   (1) "very often" — THE GATE WAS A DEAD CONSTANT. `Math.random() < 0.25` was tuned against
+//       Doug's 24s base interval (24 / 0.25 = one line about every 96s — the call site's own comment
+//       said "at a 24s cadence"). Doug leveling (2026-07-14) then took the interval to ~6.9s at cap
+//       via scavengeSpeed WITHOUT retuning the gate: 6.3 -> 21.9 lines per 10 minutes, 3.5x the
+//       intended rate. The premise the constant was measured against moved, and nothing noticed.
+//   (2) "sometimes the same line" — THE PICKER WAS MEMORYLESS. `pick()` is uniform over a 6-line
+//       pool, so P(exact back-to-back repeat) = 1-in-6 = 16.7%, CONSTANT at every level. Leveling
+//       did not change those odds; it changed how often the dice get rolled, so the repeat went from
+//       roughly every 10 minutes to every 3.
+//
+// WHY THIS SECTION DRIVES THE REAL LOOP. `updateWorkers` is exported as a test seam (the
+// spawnCustomer/dismissCurrent precedent) so the anti-repeat is asserted END-TO-END, through the
+// actual call site. Pinning that the call site MENTIONS pickNot would be the flag; pinning that Doug
+// never says the same line twice is the result. That distinction cost a pin earlier today (§84's
+// order assertion tested `.filter()`'s output — an order `.filter()` cannot break — and a negative
+// control walked straight past it), so it is applied deliberately here.
+{
+  const { readFileSync: rf85 } = await import('node:fs');
+  const { updateWorkers, dougLineChance, effectiveWorkerInterval } = await import('./src/game.js');
+  const { createInitialState: fresh85 } = await import('./src/state.js');
+  const { serializeSave } = await import('./src/save.js');
+  const { pickNot } = await import('./src/utils.js');
+  const { DOUG_RETURN_LINES: POOL } = await import('./src/data/results.js');
+  const { WORKERS: W85 } = await import('./src/data/workers.js');
+  const game85src = rf85('./src/game.js', 'utf8');
+  const utils85 = rf85('./src/utils.js', 'utf8');
+  // COMMENTS ARE TEXT TOO — §72(f)'s lesson, which bit again writing this section. §72(f) recorded a
+  // POSITIVE pin staying green because the comment explaining a removal contained the removed symbol.
+  // The mirror is just as real: the NEGATIVE pin below ("the literal 0.25 gate is gone") failed on a
+  // clean tree, because the comment documenting the dead constant quotes the dead constant. A source
+  // pin wants to know about CODE, so it reads code. Both directions of the law, one stripper.
+  const stripComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+  const game85 = stripComments(game85src);
+
+  const CAP = W85.scavenger?.levels?.maxLevel ?? 0;
+  const stateAt = (level) => {
+    const s = fresh85();
+    s.workers.scavenger.owned = true; s.workers.scavenger.level = level; s.workers.scavenger.timer = 0;
+    return s;
+  };
+  // Drive the real tick and collect the Doug lines in the order they were SPOKEN. Consecutive-Doug
+  // is the right unit, not consecutive-log: Daniel's report had four unrelated lines between his two
+  // identical ones, and it still read as a repeat.
+  const speak = (level, seconds) => {
+    const s = stateAt(level);
+    const said = []; let prevTop = null;
+    for (let i = 0; i < seconds; i++) {
+      updateWorkers(s, 1);
+      const top = s.log[0];
+      if (top && top !== prevTop && POOL.includes(top.text)) said.push(top.text);
+      prevTop = top;
+    }
+    return said;
+  };
+
+  // --- (a) THE EFFECT, end to end: Doug never says the same line twice in a row. DETERMINISTIC —
+  // pickNot cannot return the exclusion, so the count is exactly 0, not "usually low". ---
+  {
+    const said = speak(CAP, 20000);
+    ok(said.length > 50,
+       `doug: guard-the-guard — the run actually produced lines to check (${said.length} in 20000s at level ${CAP}), `
+       + 'so the repeat assertion below is not vacuously true');
+    let backToBack = 0;
+    for (let i = 1; i < said.length; i++) if (said[i] === said[i - 1]) backToBack++;
+    ok(backToBack === 0,
+       `doug: no back-to-back repeat across ${said.length} lines through the REAL call site `
+       + `(found ${backToBack}; a memoryless pick from ${POOL.length} would give ~${Math.round(said.length / POOL.length)})`);
+    ok(new Set(said).size === POOL.length,
+       `doug: every line in the pool is still reachable (${new Set(said).size}/${POOL.length}) — an anti-repeat `
+       + 'that strands a line trades one bug for a quieter one');
+  }
+
+  // --- (b) THE OTHER HALF, end to end: the LINE cadence no longer tracks Doug's speed. Stochastic,
+  // so the band is wide on purpose — the defect it catches is 3.5x, and a tight band would flake. ---
+  {
+    const SECS = 20000;
+    const atZero = speak(0, SECS).length, atCap = speak(CAP, SECS).length;
+    ok(atZero > 50 && atCap > 50,
+       `doug: guard-the-guard — both ends of the ladder produced lines (${atZero} at level 0, ${atCap} at level ${CAP})`);
+    const ratio = atCap / atZero;
+    ok(ratio > 0.6 && ratio < 1.4,
+       `doug: the line rate is LEVEL-INDEPENDENT — level ${CAP} spoke ${atCap} times vs level 0's ${atZero} `
+       + `(ratio ${ratio.toFixed(2)}, band 0.6-1.4). Before this pass the ratio was ~3.5: the gate was a `
+       + 'constant tuned to a cadence Doug outgrew.');
+  }
+
+  // --- (c) THE TUNING IS PRESERVED, NOT OVERRIDDEN. This is the pin that makes the derivation
+  // honest: at level 0 the derived gate must reproduce the historical literal 0.25 EXACTLY. It fails
+  // if DOUG_LINE_EVERY_S drifts or if Doug's baseInterval changes without a decision. ---
+  ok(dougLineChance(stateAt(0)) === 0.25,
+     `doug: at level 0 the derived gate reproduces the old literal exactly — 0.25 (got `
+     + `${dougLineChance(stateAt(0))}). The fix RESTORES the existing tuning rather than replacing it.`);
+  ok(dougLineChance(stateAt(CAP)) < dougLineChance(stateAt(0)),
+     'doug: the gate falls as Doug speeds up — it reads the LIVE interval, not baseInterval');
+  {
+    // The identity interval/chance == the target cadence is algebra UNLESS the clamp engages. So what
+    // this actually asserts is that the clamp never fires on the live ladder — i.e. the cadence
+    // really is being held, rather than silently pinned at certainty by a too-long interval.
+    const clamped = [];
+    for (let lv = 0; lv <= CAP; lv++) {
+      const c = dougLineChance(stateAt(lv));
+      if (c >= 1) clamped.push(lv);
+      ok(c > 0 && c <= 1, `doug: the gate is a probability at level ${lv} (${c.toFixed(4)})`);
+    }
+    ok(clamped.length === 0,
+       `doug: the safety clamp never engages anywhere on the live ladder (levels 0-${CAP}), so the `
+       + `cadence is genuinely held — a clamped level would be a level whose rate silently ran free`);
+  }
+
+  // --- (d) pickNot's own contract. Deterministic: exhaustive over the pool. ---
+  {
+    for (const ex of POOL) {
+      let hit = 0;
+      for (let i = 0; i < 300; i++) if (pickNot(POOL, ex) === ex) hit++;
+      ok(hit === 0, `doug: pickNot never returns its exclusion (300 draws excluding "${ex.slice(0, 28)}...")`);
+    }
+    const reach = new Set();
+    for (let i = 0; i < 600; i++) reach.add(pickNot(POOL, POOL[0]));
+    ok(reach.size === POOL.length - 1 && !reach.has(POOL[0]),
+       `doug: pickNot reaches every OTHER entry and only those (${reach.size}/${POOL.length - 1})`);
+    ok(pickNot([], 'x') === undefined, 'doug: pickNot on an empty pool degrades to undefined, never a throw');
+    ok(pickNot(['only'], 'only') === 'only',
+       'doug: a one-entry pool returns its entry even when excluded — an unavoidable repeat is not a bug');
+    ok(pickNot(['a', 'a'], 'a') === 'a', 'doug: an all-excluded pool falls back rather than returning undefined');
+    ok(pickNot(POOL, null) !== undefined && POOL.includes(pickNot(POOL, null)),
+       'doug: a null exclusion (the first line of a session) draws normally');
+  }
+
+  // --- (e) THE MEMORY IS TRANSIENT BY CONSTRUCTION, and that is the design, not an oversight.
+  // serializeSave picks fields explicitly, so lastLine never reaches localStorage — no save-schema
+  // change, and no module-level container (which is the cross-run mutable state the sim's
+  // stdout-divergence hunt already suspects). ---
+  {
+    const s = stateAt(CAP);
+    for (let i = 0; i < 400; i++) updateWorkers(s, 1);
+    ok(typeof s.workers.scavenger.lastLine === 'string',
+       'doug: guard-the-guard — the run really did set lastLine, so the persistence check below has a subject');
+    const saved = serializeSave(s);
+    ok(saved.workers.scavenger.lastLine === undefined,
+       'doug: lastLine is NOT persisted — serializeSave writes only { owned, level }, so the memory is '
+       + 'transient by construction and old saves need no migration');
+    ok(saved.workers.scavenger.owned === true && typeof saved.workers.scavenger.level === 'number',
+       'doug: ...while the fields that SHOULD persist still do');
+  }
+  // The sim doctrine's guard: the helper must stay a function of its arguments. A "last seen"
+  // container at module scope in utils.js is exactly the shape suspected of cross-run stdout
+  // divergence, and it is the obvious way someone would "improve" pickNot later.
+  ok(!/^(let|var)\s|^const\s+\w+\s*=\s*new\s+(Map|Set|WeakMap)/m.test(stripComments(utils85)),
+     'doug: utils.js declares no module-level mutable state — pickNot takes its memory as an argument, '
+     + 'and a memo container here would be the sim-divergence shape');
+
+  // --- (f) THE WRITE AND THE READ, and the dead constant's grave. ---
+  ok(/const line = pickNot\(DOUG_RETURN_LINES, w\.lastLine \?\? null\)/.test(game85),
+     'doug: the call site draws with pickNot and reads the memory (the READ), guarded for a fresh session');
+  ok(/w\.lastLine = line;/.test(game85), 'doug: ...and writes it back (the WRITE)');
+  ok(/Math\.random\(\) < dougLineChance\(state, id\)/.test(game85),
+     'doug: the gate at the call site is the derived chance');
+  ok(!/Math\.random\(\) < 0\.25/.test(game85),
+     'doug: the literal 0.25 gate is gone from game.js — the constant that outlived its premise');
+  ok(/const DOUG_LINE_EVERY_S = 96;/.test(game85),
+     'doug: the cadence is a NAMED constant — the rate is a decision, not a side effect of Doug\u2019s speed');
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
