@@ -422,10 +422,10 @@ const SPECIAL_BOARD = {
                               // Plays on a FRESH market day only (crate moment), deferred until
                               // the shop screen is actually visible (main.js gates the trigger) —
                               // same-day reloads show the sign already written, as the fiction says.
-  thump: { durMs: 600, amp: 3, swings: 3, cooldownSec: 25 },  // door-slam shudder: a decaying
-                              // x-rattle when a celebrant enters the portal. amp 0 = kill switch;
-                              // the cooldown keeps maxed-Bob throughput (~2.5s serves) from
-                              // turning a beat into wallpaper.
+ thump: { durMs: 600, amp: 0, swings: 3, cooldownSec: 25 },  // door-slam shudder — OFF (amp 0
+                              // is the designed kill switch; Daniel retired the rattle on the
+                              // board-3.0 single-line plank, 2026-07-16: "no longer looks good").
+                              // The machinery stays: restoring it is amp back to 3, one value.
 };
 
 // One-shot presentation state (never saved — the render layer's usual ephemera).
