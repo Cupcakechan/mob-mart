@@ -178,17 +178,20 @@ export function boardQuipFor(event, dayKey) {
   return pool[hashDayKey(`${dayKey ?? ''}:${event.id}`) % pool.length];
 }
 
-// DEMAND SURFACE (F4, FAME_ECONOMY_DESIGN.md §8 — Daniel's Option 1, 2026-07-13): the board's
-// third chalk row names TODAY's demand event — the ambient surface the Market Day event lost
-// when the HUD chip retired (the discovery gap). Board-voiced and COMPACT (the chalk face fits
-// ~one short line): "HOT TODAY: Armor" — the shelf that pays, in the market-crier register, no
-// percentage (the board advertises; the overlay informs — the sale-sign doctrine). "HOT TODAY"
-// over the earlier "DEMAND: ... tip today" (Daniel's read, 2026-07-13): "tip" is the internal
-// mechanic word (matching sales pay a payout bonus) and read as broken English on the sign.
+// DEMAND SURFACE — PROMOTED TO THE HEADLINE (board restructure, Daniel's Option 2, 2026-07-16).
+// The old three-line board mixed three registers with no hierarchy — a trade deal, a world event
+// and a forecast, all chalked alike, anchored by calendar words ("TODAY... Tomorrow") instead of
+// meaning. The demand line is the one with no other persistent ambient home (the HUD chip retired
+// at 18be9de) AND the one that changes what happens in the room the sign hangs in — so it leads.
+// Still board-voiced, COMPACT and category-driven ("Armor selling hot" — worst case is
+// "Consumables selling hot", 23 chars, structurally immune to the iconic rows' overflow class),
+// and still carries NO percentage (the board advertises; the overlay informs — the standing
+// sale-sign doctrine, pinned since F4). The event's NAME stays on the overlay banner, the log
+// line and Bob's bubble — the board carries the actionable shelf, not the lore.
 // Pure and deterministic: the event is date-derived, so this recomputes identically on reload,
 // and the caller folds its key into the board's write-on/rewrite trigger. Empty string when no
 // event resolves (defensive; a live day always has one) so the row simply doesn't draw.
 export function boardEventLine(event) {
   const label = CATEGORY_LABELS[event?.category] ?? event?.category ?? '';
-  return label ? `HOT TODAY: ${label}` : '';
+  return label ? `${label} selling hot` : '';
 }
