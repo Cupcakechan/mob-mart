@@ -587,40 +587,18 @@ function drawSpecialBoard(ctx, state, tMs) {
   // pass's likely renderer. Fonts: nameFont/quipFont are the one-value size dials if Daniel
   // wants bigger lettering now that the lines are short.
   const L = boardLines(state);
-  // BOARD RESTRUCTURE (Daniel's Option 2, 2026-07-16): DEMAND headlines (nameFont + the warm
-  // demand chalk — the world's news leads), the DEAL rides in gold (the register golds already
-  // mean: money), and the freed third row brings the chalk QUIP home. The forecast is gone from
-  // the plank — the overlay's footer carries it verbatim, one click away where the trading is.
-  const headSegs = L.headline ? [{ t: 'text', s: L.headline }] : [];
+  // BOARD 3.0 (Daniel, 2026-07-16 evening): ONE line — Bob's deal, centered in the writable face
+  // (header y13, face ends y109 -> the row sits at y52), in nameFont + gold: it is the headline
+  // now. The demand headline and the quip retired from the plank (see boardLines for the trade
+  // and the one-field restoration path). ly stays the one-value dial if Daniel re-letters.
   const dealSegs = L.deal ? [{ t: 'text', s: L.deal }] : [];
   const contentKey = L.contentKey;
   if (boardFx.lastBoardKey === undefined) boardFx.lastBoardKey = contentKey;
   else if (boardFx.lastBoardKey !== contentKey) { boardFx.lastBoardKey = contentKey; boardFx.chalkStartMs = tMs; }
-  if (headSegs.length > 0 || dealSegs.length > 0 || L.quip) {
-    const ICON_COST = 3;                                       // an icon+count ≈ 3 chars of budget
-    const weigh = (segs) => segs.reduce((n, s) => n + (s.t === 'text' ? s.s.length : ICON_COST), 0);
-    // Rows 33/55 hold the two data lines; the quip wraps into <=2 lines from y77 (77 + 19 line
-    // height = 96 <= the writable face's y109 — the authored <=48-char pool always fits). Row
-    // Y's stay the one-value dials if Daniel re-letters the art.
-    const rows = [
-      { segs: headSegs, font: B.nameFont, color: B.demandColor ?? B.nameColor, ly: 33, size: B.nameIconPx ?? 20, textPx: 14 },
-      { segs: dealSegs, font: B.quipFont, color: B.nameColor, ly: 55, size: B.quipIconPx ?? 17, textPx: 14 },
-    ];
-    let budget = Math.round((rows.reduce((n, r) => n + weigh(r.segs), 0) + (L.quip?.length ?? 0)) * chalkP);
-    for (const r of rows) {
-      if (budget <= 0) break;
-      budget = drawOfferRow(r.segs, r.font, r.color, r.ly, r.size, r.textPx, budget, cx, maxW);
-    }
-    // The quip's homecoming: wrapped like the pre-F4 board, revealed by the same shared budget
-    // (line()'s partial-anchor mechanism keeps the write-on left-to-right per line).
-    if (L.quip && budget > 0) {
-      ctx.font = B.quipFont;
-      const qLines = wrapBoardText(ctx, L.quip, maxW, B.maxQuipLines ?? 2);
-      for (let i = 0; i < qLines.length && budget > 0; i++) {
-        const take = Math.min(qLines[i].length, budget); budget -= take;
-        line(qLines[i].slice(0, take), qLines[i], B.quipFont, B.quipColor, 77 + i * (B.quipLineH ?? 19));
-      }
-    }
+  if (dealSegs.length > 0) {
+    const weigh = (segs) => segs.reduce((n, s) => n + (s.t === 'text' ? s.s.length : 3), 0);
+    let budget = Math.round(weigh(dealSegs) * chalkP);
+    drawOfferRow(dealSegs, B.nameFont, B.nameColor, 52, B.nameIconPx ?? 20, 14, budget, cx, maxW);
   }
   ctx.restore();
 }

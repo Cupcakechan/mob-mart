@@ -165,10 +165,15 @@ export function boardLines(state) {
   const ev = MARKET_EVENTS[evId];
   const dealId = shopDealItemFor(tradeDayKey(state), ev, state);
   const pct = Math.round((CONFIG.market?.deal?.pct ?? 0) * 100);
+  // BOARD 3.0 (Daniel, 2026-07-16 evening): ONE line — the deal. The demand headline and the
+  // chalk quip came off the plank on his read of the live board ("remove the last sentence
+  // completely and also Armor Selling Hot — leave Today's Deal"). KNOWN TRADE, flagged at the
+  // time: the headline was the demand event's only always-visible surface (the F4 gap), partly
+  // covered now by the deal item always belonging to the hot category, plus the overlay banner,
+  // the log line and Bob's bubble. If discovery suffers, headline: boardEventLine(ev) is the
+  // one-field restoration. boardEventLine/boardQuipFor stay exported and law-pinned for that day.
   return {
-    headline: boardEventLine(ev),
-    deal: dealId ? `Today: ${ITEMS[dealId]?.displayName ?? dealId} ${pct}% off!` : '',
-    quip: boardQuipFor(ev, tradeDayKey(state)),
+    deal: dealId ? `Today's Deal: ${ITEMS[dealId]?.displayName ?? dealId} ${pct}% off!` : '',
     contentKey: `${dealId ?? ''}|${evId}`,
   };
 }

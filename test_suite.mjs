@@ -4925,9 +4925,11 @@ console.log('M4 auto-serve worker — smoke test\n');
     const s = cis75();
     s.tradeDayKeyOverride = 'sim-day-7';
     const L1 = boardLines(s), L2 = boardLines(s);
-    ok(L1.headline === boardEventLine(MARKET_EVENTS[eventIdForDay('sim-day-7')]),
-       'demand surface: boardLines.headline IS the day-derived event line (promoted to the top row, '
-       + 'board restructure 2026-07-16)');
+    // RETARGETED by BOARD 3.0 (2026-07-16 evening): the demand event has no dedicated board line
+    // anymore — its board presence is IMPLICIT (the deal item always belongs to the hot category,
+    // §92 pins that) and its id still drives the chalk rewrite, pinned here.
+    ok(L1.contentKey.includes(eventIdForDay('sim-day-7')),
+       'demand surface: the event id still rides the board contentKey (an event flip re-chalks the deal)');
     ok(L1.contentKey.includes(eventIdForDay('sim-day-7')),
        'demand surface: the event id rides the contentKey (chalk rewrite fires on event change)');
     ok(L1.contentKey === L2.contentKey && L1.demand === L2.demand,
@@ -4951,9 +4953,9 @@ console.log('M4 auto-serve worker — smoke test\n');
   {
     const { readFileSync: rf75 } = await import('node:fs');
     const scene = srcOf('./src/render/scene.js');
-    ok(scene.includes('headSegs') && scene.includes('L.headline'),
-       'demand surface: scene.js draws the demand HEADLINE from boardLines (wiring pin — the top row '
-       + 'since the board restructure, 2026-07-16)');
+    ok(scene.includes('boardLines') && scene.includes('L.deal'),
+       'demand surface: scene.js consumes boardLines (board 3.0: the deal row is the plank\u2019s one line; '
+       + 'the demand event reaches players via the deal\u2019s category, the overlay, the log and the bubble)');
     const market = srcOf('./src/ui/market.js');
     ok(market.includes('mkt-demand') && market.includes('marketBannerText'),
        'demand surface: the overlay renders the informative echo (wiring pin)');
@@ -6817,15 +6819,15 @@ console.log('M4 auto-serve worker — smoke test\n');
   {
     const s = { tradeDayKeyOverride: 'sim-day-7' };
     const L = bl90(s);
-    const evId = eid90(tdk90(s));
-    ok(L.headline === bel90(MEV90[evId]), 'board: headline IS the day-derived event line');
-    ok(L.quip === bqf90(MEV90[evId], tdk90(s)),
-       'board: the quip is home — boardQuipFor\u2019s deterministic morning line rides boardLines');
-    ok(!('tomorrow' in L) && !('today' in L) && !('demand' in L),
-       'board: the old three-register fields are GONE from the shape (a consumer still reading '
-       + 'them gets undefined, not stale text)');
+    // RETARGETED by BOARD 3.0 (2026-07-16 evening): headline and quip came OFF the plank on
+    // Daniel's live read — the shape is deal + contentKey, nothing else. The composers stay
+    // exported + law-pinned above (the one-field restoration path).
+    ok(!('headline' in L) && !('quip' in L) && !('tomorrow' in L) && !('today' in L) && !('demand' in L),
+       'board: the retired fields are GONE from the shape (headline and quip included — board 3.0)');
+    ok(typeof bel90(MEV90[eid90(tdk90(s))]) === 'string' && typeof bqf90(MEV90[eid90(tdk90(s))], tdk90(s)) === 'string',
+       'board: the headline/quip composers survive unsurfaced — restoring either is one field, not a rebuild');
     ok(L.contentKey.split('|').length === 2,
-       'board: the contentKey is offer|event — the forecast no longer triggers chalk rewrites');
+       'board: the contentKey is deal|event — an event flip still re-chalks');
   }
 
   // --- (c) THE REDUNDANCY THE RETIREMENT LEANS ON: the overlay footer still renders Tomorrow.
@@ -6842,11 +6844,8 @@ console.log('M4 auto-serve worker — smoke test\n');
   // forecast row genuinely deleted (not just empty). ---
   {
     const scene90 = srcOf('./src/render/scene.js');
-    ok(scene90.includes('L.headline') && scene90.includes('L.deal'),
-       'board: scene draws the headline and deal rows from boardLines');
-    ok(scene90.includes('wrapBoardText(ctx, L.quip'),
-       'board: the quip renders through wrapBoardText (<=2 lines — the pre-F4 pattern, and the '
-       + 'overflow guard for the authored pool)');
+    ok(scene90.includes('L.deal') && !scene90.includes('L.headline') && !scene90.includes('L.quip'),
+       'board 3.0: the scene draws the deal row and ONLY the deal row (headline/quip deleted, not dead-branched)');
     ok(!scene90.includes('fcSegs') && !scene90.includes('L.tomorrow'),
        'board: the forecast row is deleted from the scene, not left as a dead branch');
   }
@@ -7005,8 +7004,8 @@ console.log('M4 auto-serve worker — smoke test\n');
     s.tradeDayKeyOverride = 'sim-day-7';
     const L = bl92(s);
     const dealId = sdf92(tdk92(s), MEV92[eid92(tdk92(s))], s);
-    ok(L.deal === `Today: ${ITEMS[dealId].displayName} ${Math.round(PCT92 * 100)}% off!`,
-       'deal: the board\u2019s deal line derives from the shop deal + the live dial');
+    ok(L.deal === `Today's Deal: ${ITEMS[dealId].displayName} ${Math.round(PCT92 * 100)}% off!`,
+       'deal: the board\u2019s deal line derives from the shop deal + the live dial (board 3.0 prefix)');
     ok(L.contentKey === `${dealId}|${eid92(tdk92(s))}`,
        'deal: the contentKey is deal|event — a new deal chalks the board');
     ok(!/40% off/.test(L.deal ?? ''),
