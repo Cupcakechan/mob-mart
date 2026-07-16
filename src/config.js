@@ -50,6 +50,15 @@ export const CONFIG = {
                                // wages, not commissions, are the planned perpetual drain.
     repPerUnit: 3,             // flat fame bonus per unit — modest beside serve rep by design
     checkSec: 5,               // update()'s rollover-check throttle (the market check's cadence)
+    repeatCooldownSec: 7200,   // REPEAT (Daniel's Option A, 2026-07-16): after a fulfillment the
+                               // courier travels for this long before the next client's order can
+                               // seat — SAME DAY, fresh seed. Real seconds (the commission system
+                               // already lives on the real calendar); 2h ≈ 3-4 orders on an active
+                               // day, and the day length is the natural cap (no maxPerDay dial —
+                               // the sim measures the faucet; a cap is the fallback, not the plan).
+                               // The cooldown gates EVERY placement, rollover included: the
+                               // courier travels regardless of the calendar, which also closes
+                               // the fulfill-at-23:59 instant-reorder seam.
     hardReserve: true,         // COMMISSION B1 (parked (g)②, Option 1 PICKED 2026-07-12, decision
                                // log FAME_ECONOMY_DESIGN.md §9): a pending order SETS ASIDE its
                                // `count` units from every COUNTER path (serves, offline, leave-

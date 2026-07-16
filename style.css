@@ -916,6 +916,13 @@ body{
 .market-offer-list .offer-row.featured{
   border:1px solid var(--gold);border-radius:6px;background:rgba(255,207,74,.08);
 }
+/* The Special Order's target row — the featured treatment in the commission family's green
+   (--good #6cd67a at the same .08 wash). Declared AFTER .featured ON PURPOSE: the two selectors
+   tie at 0-3-0, so when one item is both the deal and the order, the ORDER's green wins by
+   source order — it is the one with a deadline. (§89 pins this order; the §86(e2) precedent.) */
+.market-offer-list .offer-row.comm-target{
+  border:1px solid var(--good);border-radius:6px;background:rgba(108,214,122,.08);
+}
 /* --- The LED ticker (Pass C — Daniel's Option 3: REAL day-over-day movement + editorial quips).
    Full-bleed strip at the card's base: negative margins cancel the card's 14/18px padding, the
    bottom radius matches the card's 14px minus its 2px border. Motion law: constant motion is

@@ -157,7 +157,19 @@ export function renderMarket(state) {
   const commEl = document.getElementById('mkt-commission');
   if (commEl) {
     const c = state.commission;
-    commEl.classList.toggle('hidden', !c);
+    const courier = !c && (state.commissionCooldownSec ?? 0) > 0;
+    // REPEAT: three row states — a live order, the courier countdown (so the repeat is
+    // DISCOVERABLE: a row that silently vanished taught players orders were daily), or hidden
+    // (pre-license, or a day whose first order never seated).
+    commEl.classList.toggle('hidden', !c && !courier);
+    const fbtn0 = document.getElementById('mkt-comm-fulfill');
+    if (fbtn0) fbtn0.classList.toggle('hidden', courier);
+    if (courier) {
+      const s = Math.ceil(state.commissionCooldownSec);
+      const eta = s >= 3600 ? `~${Math.ceil(s / 360) / 10}h` : `~${Math.max(1, Math.ceil(s / 60))}m`;
+      const textEl = document.getElementById('mkt-comm-text');
+      if (textEl) textEl.innerHTML = `The courier is out finding the next client · back in <b>${eta}</b>`;
+    }
     if (c) {
       const terms = commissionTerms(state, c);
       const left = commissionDaysLeft(state);
@@ -188,6 +200,12 @@ export function renderMarket(state) {
     if (!textEl || !btn) continue;
     textEl.innerHTML = offerRowHtml(offer, state);
     textEl.closest('.offer-row')?.classList.toggle('featured', !!offer.featured);   // the deal's row glows
+    // REPEAT rider (Daniel, 2026-07-16): the Special Order's target row glows GREEN — the same
+    // awareness treatment the gold deal gets, in the commission family's colour. Trading here is
+    // how an under-stocked order gets filled, so the highlight marks the action, not just the fact.
+    // (This loop's variable is `offer` — the builder loop above uses a bare `itemId`, and copying
+    // its shape here shipped a ReferenceError that froze the overlay on open, 2026-07-16.)
+    textEl.closest('.offer-row')?.classList.toggle('comm-target', state.commission?.itemId === offer.itemId);
     const goldOk = state.gold >= offer.gold;
     btn.disabled = !canTrade(state, offer);
     btn.dataset.offer = offer.key;

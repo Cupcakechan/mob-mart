@@ -36,10 +36,14 @@ export function dayIndexOf(key) {
 // Returns null when nothing is eligible yet — early game stays commission-free by construction.
 // NOTE: terms (gold/rep) are deliberately NOT generated here — they DERIVE live at fulfillment
 // (game.js commissionTerms), so a persisted order can never mint a stale or hand-edited price.
-export function commissionForDay(dayKey, itemIds) {
+export function commissionForDay(dayKey, itemIds, seq = 0) {
   if (!Array.isArray(itemIds) || itemIds.length === 0) return null;
   const C = CONFIG.commission ?? {};
-  const rng = mulberry32(hashDayKey(`commission:${dayKey}`));
+  // REPEAT (Option A): the Nth order of a day salts the seed. Seq 0 stays the LEGACY string so
+  // every pre-repeat day's first order is bit-identical — the pinned worst-case renders and any
+  // in-flight save's expectations survive. '#' cannot occur in a dayKey (calendar or sim-day
+  // forms), so the salted space cannot collide with a real day.
+  const rng = mulberry32(hashDayKey(seq > 0 ? `commission:${dayKey}#${seq}` : `commission:${dayKey}`));
   const span = (lo, hi) => lo + Math.floor(rng() * (hi - lo + 1));
   const itemId = itemIds[Math.floor(rng() * itemIds.length)];
   const count = span(C.countMin ?? 2, C.countMax ?? 4);

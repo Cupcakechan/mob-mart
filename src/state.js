@@ -63,6 +63,14 @@ export function createInitialState() {
                                 // once-a-day placement latch — a reload right after fulfilling
                                 // can't re-place (and re-farm) the same deterministic order.
     commissionCheckIn: 0,       // transient: update()'s commission rollover-check throttle
+    commissionCooldownSec: 0,   // REPEAT: seconds until the courier can seat the next order.
+                                // PERSISTED (a reload must not refresh the courier — the same
+                                // anti-refarm stance as lastCommissionIndex); ticks down in
+                                // update(), and boot credits the full absence (the expedition
+                                // convention — offline.js is analytic and never ticks).
+    commissionSeq: 0,           // REPEAT: orders placed on day lastCommissionIndex (PERSISTED).
+                                // Seq 0 keeps the legacy seed byte-for-byte, so every existing
+                                // day's first order is unchanged; seq N>0 salts the seed.
     relics: {},                 // RELIC status map (§14 Pass B): id -> 'found' | 'restored'.
                                 // Absent id = not yet found. One-of-ones; persisted.
     relicPity: 0,               // scavenge runs since the last relic find — the pity floor

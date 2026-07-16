@@ -4493,11 +4493,17 @@ console.log('M4 auto-serve worker — smoke test\n');
     ok(s.commission === null, 'commission: the slot rests after fulfillment');
     refreshCommission(s);
     ok(s.commission === null,
-      'commission: no re-placement the same day (the reload-farm guard — the latch is persisted)');
+      'commission: no instant re-placement — the courier cooldown gates the seat (REPEAT/\u00a789 retargeted '
+      + 'this from the old once-a-day latch: same protection, new mechanism, and it persists)');
     s.tradeDayKeyOverride = 'sim-day-4';
     refreshCommission(s);
+    ok(s.commission === null,
+      'commission: the courier gates the ROLLOVER seat too (the 23:59 fulfill cannot conjure a midnight '
+      + 'order — the seat-rule law, \u00a789)');
+    s.commissionCooldownSec = 0;
+    refreshCommission(s);
     ok(!!s.commission && s.commission.placedIndex === 4,
-      'commission: the next rollover seats the next order');
+      'commission: the next rollover seats the next order once the courier is home');
   }
 
   // (e) The lapse — zero penalty, comic line, and the same refresh seats today's order.
@@ -6645,6 +6651,137 @@ console.log('M4 auto-serve worker — smoke test\n');
        'source law: a JS read through the helper carries no block comment (a pin matching one would be matching prose)');
     ok(!/^\s*\/\//m.test(srcOf('./src/utils.js')),
        'source law: a JS read through the helper carries no line comment');
+  }
+}
+
+// ===== SECTION 89 — COMMISSION REPEAT (Daniel's Option A, 2026-07-16) =====
+// Fulfill -> the courier travels (repeatCooldownSec, real seconds, PERSISTED) -> the next client's
+// order seats the SAME day with a salted seed. The cooldown gates EVERY placement, rollover
+// included (the 23:59 seam), and survives reload + absence (offline credits it at boot — the
+// expedition convention, source-pinned here because a headless suite cannot boot main.js).
+// Economy note: this multiplies the 2\u00d7 premium faucet by active play; the commission-blind sim
+// bot MEASURES that (certification is this pass's follow-up, per the deliver-before-certify law).
+{
+  const { update: up89, fulfillCommission: fulfill89, refreshCommission: refresh89, eligibleCommissionItemIds: elig89 } = await import('./src/game.js');
+  const { commissionForDay: forDay89 } = await import('./src/data/commissions.js');
+  const { hashDayKey: hash89 } = await import('./src/data/marketevents.js');
+  const CD89 = CONFIG.commission?.repeatCooldownSec ?? 0;
+
+  ok(CD89 > 0 && CD89 <= 86400,
+     `repeat: the courier dial exists and fits inside a day (repeatCooldownSec=${CD89})`);
+
+  // --- (a) THE SEED LAW: seq 0 is byte-identical to legacy (every existing day's first order is
+  // unchanged), and each salt is a genuinely different rng stream. ---
+  {
+    const ids = ITEM_ORDER.filter((id) => (ITEMS[id].acquisition ?? 'gold') === 'trade');
+    const legacy = forDay89('sim-day-9', ids);
+    const seq0 = forDay89('sim-day-9', ids, 0);
+    ok(JSON.stringify(legacy) === JSON.stringify(seq0),
+       'repeat: the default arg IS seq 0 (two-arg callers and three-arg callers agree)');
+    // The pin above compares the function to ITSELF, so it cannot see the branch collapsing into
+    // the salted form (both calls drift together — its own negative control caught it silent).
+    // The drift-visible half is the SOURCE: the seed expression must still contain the UN-salted
+    // legacy template as the seq-0 branch, or every existing day's first order silently changes.
+    ok(/seq > 0 \? `commission:\$\{dayKey\}#\$\{seq\}` : `commission:\$\{dayKey\}`/.test(srcOf('./src/data/commissions.js')),
+       'repeat: the seq-0 seed is the LEGACY string, verbatim, as the ternary\u2019s else-branch — '
+       + '"tidying" it into `#0` re-rolls every pre-repeat day\u2019s first order');
+    ok(hash89('commission:sim-day-9#1') !== hash89('commission:sim-day-9')
+       && hash89('commission:sim-day-9#1') !== hash89('commission:sim-day-9#2'),
+       'repeat: each salt hashes to its own rng stream (the # cannot occur in a real day key)');
+  }
+
+  // --- (b) THE LOOP, END TO END, through the REAL machinery: seat -> fulfill -> courier ->
+  // tick the cooldown away -> the SAME DAY seats the next order -> its seed is the salted one. ---
+  {
+    const s = shopState();
+    s.tradeDayKeyOverride = 'sim-day-9';
+    s.licenses.iron_buckler = true;               // one licensed trade item = eligible (the armed() convention)
+    refresh89(s);
+    ok(!!s.commission && s.commissionSeq === 1,
+       'repeat: day 9 seats its first order (seq advances to 1 on placement)');
+    const first = { ...s.commission };
+    s.items[first.itemId].stock = first.count;              // stock it, then deliver
+    ok(fulfill89(s), 'repeat: the first order fulfills');
+    ok(s.commissionCooldownSec === CD89,
+       `repeat: fulfillment starts the courier at exactly the dial (${CD89}s)`);
+    refresh89(s);
+    ok(s.commission === null, 'repeat: the courier gates the same-day seat while traveling');
+    // Tick the REAL update loop just past the cooldown (coarse dt — the decrement is per-tick).
+    for (let i = 0; i < Math.ceil(CD89 / 60) + 1; i++) up89(s, 60);
+    ok(s.commissionCooldownSec === 0, 'repeat: update() ticks the courier home (dt-based, offline-creditable)');
+    refresh89(s);
+    ok(!!s.commission && s.commissionSeq === 2,
+       'repeat: the SAME day seats the second order once the courier is home');
+    // The expectation derives from the SAME eligible list the game seeds from (unlocked items
+    // only) — deriving from the full trade roster was this pin's first red: right seed, wrong pool.
+    const expected = forDay89('sim-day-9', elig89(s), 1);
+    ok(JSON.stringify({ ...s.commission, placedIndex: 0 }) === JSON.stringify({ ...expected, placedIndex: 0 }),
+       'repeat: the second order IS the seq-1 seed\u2019s order (deterministic, not a re-roll of the first '
+       + '\u2014 same-day orders MAY coincide by rng; determinism is the pin, not novelty)');
+  }
+
+  // --- (c) THE SEQ RESET: a new day starts over at the legacy seed. ---
+  {
+    const s = shopState();
+    s.tradeDayKeyOverride = 'sim-day-9';
+    s.licenses.iron_buckler = true;               // one licensed trade item = eligible (the armed() convention)
+    refresh89(s);
+    s.items[s.commission.itemId].stock = s.commission.count;
+    fulfill89(s);
+    s.commissionCooldownSec = 0;
+    s.tradeDayKeyOverride = 'sim-day-10';
+    refresh89(s);
+    ok(!!s.commission && s.commissionSeq === 1
+       && JSON.stringify({ ...s.commission, placedIndex: 0 })
+          === JSON.stringify({ ...forDay89('sim-day-10', elig89(s), 0), placedIndex: 0 }),
+       'repeat: the new day resets the sequence — its first order is the legacy seq-0 seed');
+  }
+
+  // --- (d) PERSISTENCE: the courier survives the reload (anti-refarm), clamped to the dial;
+  // corrupt saves land on safe defaults. ---
+  {
+    const s = shopState();
+    s.commissionCooldownSec = 1234; s.commissionSeq = 2;
+    const m = mergeSave(createInitialState(), serializeSave(s));
+    ok(m.commissionCooldownSec === 1234 && m.commissionSeq === 2,
+       'repeat: cooldown + seq round-trip the save (a reload cannot refresh the courier)');
+    ok(mergeSave(createInitialState(), { commissionCooldownSec: 1e9 }).commissionCooldownSec === CD89
+       && mergeSave(createInitialState(), { commissionCooldownSec: -5 }).commissionCooldownSec === 0
+       && mergeSave(createInitialState(), { commissionSeq: 'lol' }).commissionSeq === 0,
+       'repeat: merge clamps the courier to 0..dial and defaults corrupt seq (pause forever, mint never)');
+  }
+
+  // --- (e) THE SURFACES, source-pinned (headless cannot render them; the browser plan carries the
+  // visual half). srcOf per §88 — these are CODE pins. ---
+  {
+    const mkt89 = srcOf('./src/ui/market.js');
+    ok(/commissionCooldownSec/.test(mkt89) && /courier/.test(mkt89),
+       'repeat: the overlay renders a courier countdown row (discoverability — a vanished row taught '
+       + '"orders are daily")');
+    ok(/classList\.toggle\('comm-target', state\.commission\?\.itemId === offer\.itemId\)/.test(mkt89),
+       'repeat: the target-row toggle compares against offer.itemId — the loop\u2019s real variable (the '
+       + 'first version pinned a bare itemId VERBATIM: a source pin certifies presence, not correctness, '
+       + 'and it matched a ReferenceError that froze the overlay)');
+    const css89 = srcOf('./style.css');
+    ok(/\.market-offer-list \.offer-row\.comm-target\{[^}]*var\(--good\)/.test(css89),
+       'repeat: .comm-target wears the commission family\u2019s green (var(--good), never a raw hex)');
+    const iFeat = css89.indexOf('.offer-row.featured{');
+    const iComm = css89.indexOf('.offer-row.comm-target{');
+    ok(iFeat !== -1 && iComm !== -1 && iComm > iFeat,
+       'repeat: .comm-target is declared AFTER .featured — 0-3-0 tie, so the ORDER\u2019s green beats the '
+       + 'deal\u2019s gold when one row is both (source order is load-bearing; the \u00a786(e2) precedent)');
+    const main89 = srcOf('./src/main.js');
+    ok(/commissionCooldownSec = Math\.max\(0, state\.commissionCooldownSec - offline\.awaySec\)/.test(main89),
+       'repeat: boot credits the courier for the full absence (the expedition convention). NOT VERIFIED '
+       + 'HEADLESS: the live boot path — the browser test plan carries it');
+  }
+
+  // --- (f) style.css changed; the bust advances (newest section holds the floor). ---
+  {
+    const ver89 = (s) => { const m = /style\.css\?v=(\d+)/.exec(s); return m ? Number(m[1]) : null; };
+    const vi = ver89(srcOf('./index.html'));
+    ok(vi !== null && vi === ver89(srcOf('./index.kongregate.html')) && vi >= 22,
+       `repeat: both shells carry the same cache-bust, >= v22 (found ${vi})`);
   }
 }
 

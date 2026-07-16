@@ -98,6 +98,12 @@ export function mergeSave(fresh, data) {
     }
   }
   fresh.lastCommissionIndex = Math.floor(numOr(data.lastCommissionIndex, -1));
+  // REPEAT: the courier survives the reload (anti-refarm) — clamped to the config ceiling so a
+  // hand-edited save can pause commissions for a year but never mint one early (floor 0).
+  fresh.commissionCooldownSec = Math.min(
+    Math.max(0, numOr(data.commissionCooldownSec, 0)),
+    CONFIG.commission?.repeatCooldownSec ?? 7200);
+  fresh.commissionSeq = Math.max(0, Math.floor(numOr(data.commissionSeq, 0)));
   // Relics (§14 Pass B): additive + GUARDED — only known relic ids with legal statuses survive
   // the merge (a corrupt/hand-edited save can't invent relics or statuses). Pre-relic saves: {}.
   fresh.relics = {};
@@ -194,6 +200,8 @@ export function serializeSave(state) {
           placedIndex: state.commission.placedIndex }
       : null,                                            // the ONE order slot (reform step 6)
     lastCommissionIndex: Math.floor(state.lastCommissionIndex ?? -1),   // the placement latch
+    commissionCooldownSec: Math.max(0, state.commissionCooldownSec ?? 0),   // REPEAT: the courier's clock
+    commissionSeq: Math.max(0, Math.floor(state.commissionSeq ?? 0)),       // REPEAT: today's order count
     relics: state.relics ?? {},                          // relic statuses (§14 Pass B)
     relicPity: Math.max(0, Math.floor(state.relicPity ?? 0)),
     lifetimeRep: state.lifetimeRep ?? state.reputation,

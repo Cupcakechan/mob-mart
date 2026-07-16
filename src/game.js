@@ -587,7 +587,11 @@ export function fulfillCommission(state) {
   // the 30s license reminder covers discovery; the rep bonus is small beside tier thresholds.)
   pushLog(state, { text: commissionLine(COMMISSION_VOICE.fulfilled, c),
     repDelta: 0, tier: 'market', monsterId: c.monsterId });
-  state.commission = null;                          // the slot rests until the next rollover
+  state.commission = null;
+  // REPEAT (Option A): the slot no longer rests until rollover — the courier travels, then the
+  // next client's order seats (refreshCommission, same day, salted seed). The cooldown is the
+  // pacing AND the anti-refarm: it persists, so neither a reload nor a midnight flip shortcuts it.
+  state.commissionCooldownSec = CONFIG.commission?.repeatCooldownSec ?? 7200;
   state.uiDirty = true;
   return true;
 }
@@ -607,15 +611,25 @@ export function refreshCommission(state) {
     state.commission = null;
     state.uiDirty = true;
   }
-  if (!state.commission && idx > (state.lastCommissionIndex ?? -1)) {
-    const next = commissionForDay(tradeDayKey(state), eligibleCommissionItemIds(state));
-    if (next) {                                     // latch advances ONLY on placement: buying the
-      state.commission = { ...next, placedIndex: idx };   // first trade license seats an order the
-      state.lastCommissionIndex = idx;                    // same day, not a dead day later
-      const pool = COMMISSION_VOICE.placed[next.monsterId] ?? COMMISSION_VOICE.placed.generic;
-      pushLog(state, { text: commissionLine(pool, state.commission),
-        repDelta: 0, tier: 'market', monsterId: next.monsterId });
-      state.uiDirty = true;
+  // THE SEAT RULE (REPEAT, Option A): an empty slot seats whenever the courier is home
+  // (cooldown 0) — a NEW day starts the sequence over at the legacy seed; the SAME day continues
+  // it with a salted one. The cooldown gates BOTH branches on purpose (see config): fulfilling at
+  // 23:59 does not conjure a courier at midnight. commissionSeq > 0 is required for the same-day
+  // branch so a day whose FIRST order never seated (nothing eligible yet) cannot seat "seconds".
+  if (!state.commission && (state.commissionCooldownSec ?? 0) <= 0) {
+    const newDay = idx > (state.lastCommissionIndex ?? -1);
+    if (newDay || (idx === state.lastCommissionIndex && (state.commissionSeq ?? 0) > 0)) {
+      const seq = newDay ? 0 : state.commissionSeq;
+      const next = commissionForDay(tradeDayKey(state), eligibleCommissionItemIds(state), seq);
+      if (next) {                                   // latch advances ONLY on placement: buying the
+        state.commission = { ...next, placedIndex: idx };   // first trade license seats an order the
+        state.lastCommissionIndex = idx;                    // same day, not a dead day later
+        state.commissionSeq = seq + 1;
+        const pool = COMMISSION_VOICE.placed[next.monsterId] ?? COMMISSION_VOICE.placed.generic;
+        pushLog(state, { text: commissionLine(pool, state.commission),
+          repDelta: 0, tier: 'market', monsterId: next.monsterId });
+        state.uiDirty = true;
+      }
     }
   }
 }
@@ -1287,6 +1301,12 @@ export function update(state, dt) {
   // override seam works headlessly, unlike the calendar-armed block above). refreshCommission
   // carries its own arming gate, so this throttle can tick unarmed harmlessly; a lapse discovered
   // at boot fires here on the first check, under the away summary where it belongs.
+  // REPEAT: the courier's clock runs every tick (not inside the 5s throttle — a throttled
+  // decrement would lose up to checkSec per expiry against the UI's countdown).
+  if ((state.commissionCooldownSec ?? 0) > 0) {
+    state.commissionCooldownSec = Math.max(0, state.commissionCooldownSec - dt);
+    if (state.commissionCooldownSec === 0) state.uiDirty = true;   // the countdown row flips to an order
+  }
   state.commissionCheckIn = (state.commissionCheckIn ?? 0) - dt;
   if (state.commissionCheckIn <= 0) {
     state.commissionCheckIn = CONFIG.commission?.checkSec ?? 5;

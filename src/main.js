@@ -42,6 +42,12 @@ const offline = computeOffline(state, Date.now());
 if (state.expedition) {
   state.expedition.remaining = Math.max(0, state.expedition.remaining - offline.awaySec);
 }
+// The commission courier travelled while away too — same convention, same reasons (uncapped: a
+// 2h courier should not need Bob's offline cap). The first update() tick's refreshCommission then
+// seats the next order under the away summary, exactly where a "while you were out" event belongs.
+if ((state.commissionCooldownSec ?? 0) > 0) {
+  state.commissionCooldownSec = Math.max(0, state.commissionCooldownSec - offline.awaySec);
+}
 if ((offline.sales > 0 || (offline.scrap ?? 0) > 0) && offline.awaySec >= CONFIG.offline.minAwaySec) {  // scrap-only absences show too (§14)
   applyOffline(state, offline);
   saveState(state);
