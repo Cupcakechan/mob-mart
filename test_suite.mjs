@@ -3946,14 +3946,16 @@ console.log('M4 auto-serve worker — smoke test\n');
       'passB: the gold component rides a trailing text segment');
     ok(describeOfferSegments(null).length === 0, 'passB: a null offer yields no segments (guard)');
   }
-  // (f) The cascade guard: .offer-row sets its own display, so it MUST carry a scoped .hidden
-  // override — the specificity TIE-BREAK bug (late display:flex beats the global .hidden by
+  // (f) The cascade guard, RETARGETED by §87 (2026-07-16): the scoped .offer-row.hidden override
+  // this pin used to demand is retired — the utility is !important now, so .offer-row's own
+  // display:flex cannot out-cascade a hide. The pin softens to the law that replaced it
+  // (exact residence: §87). Original defect for the record (late display:flex beat .hidden by
   // order) shipped once and cost a full QA round. Text-pin, the Kongregate-subsequence style.
   {
     const { readFileSync } = await import('node:fs');
     const css = readFileSync('./style.css', 'utf8');
-    ok(css.includes('.offer-row.hidden'),
-      'passB: style.css carries the scoped .offer-row.hidden override (the cascade-tie fix)');
+    ok(css.includes('.hidden{display:none !important;}'),
+      'passB: the hide utility out-cascades .offer-row\u2019s own display (§87\u2019s law \u2014 the scoped override this pin used to check is retired)');
   }
 }
 
@@ -4003,8 +4005,8 @@ console.log('M4 auto-serve worker — smoke test\n');
   // shell's overlay root, the strip's door, the pure relocation, and the derived hit test.
   const { readFileSync: rf64 } = await import('node:fs');
   const css64 = rf64('./style.css', 'utf8');
-  ok(css64.includes('.market-overlay.hidden'),
-    'overlay: style.css carries the scoped .market-overlay.hidden override (the cascade-tie law)');
+  ok(css64.includes('.hidden{display:none !important;}'),
+    'overlay: the hide utility out-cascades .market-overlay\u2019s own display:flex (§87\u2019s law; the scoped override is retired)');
   ok(rf64('./index.html', 'utf8').includes('id="market-overlay"'),
     'overlay: the shell carries the overlay root');
   const pnl64 = rf64('./src/ui/panels.js', 'utf8');
@@ -4563,8 +4565,8 @@ console.log('M4 auto-serve worker — smoke test\n');
     const mkt = rf70('./src/ui/market.js', 'utf8');
     ok(mkt.includes('mkt-comm-fulfill') && mkt.includes('market-commission'),
       'commission: the overlay carries the Special Order row + Fulfill button');
-    ok(rf70('./style.css', 'utf8').includes('.market-commission.hidden'),
-      'commission: style.css carries the SCOPED hidden override (the cascade-tie law)');
+    ok(rf70('./style.css', 'utf8').includes('.hidden{display:none !important;}'),
+      'commission: the hide utility out-cascades .market-commission\u2019s own display (§87\u2019s law; the scoped override is retired)');
     ok(rf70('./src/main.js', 'utf8').includes('onFulfill'),
       'commission: main.js wires the Fulfill handler');
   }
@@ -5104,8 +5106,8 @@ console.log('M4 auto-serve worker — smoke test\n');
        && panels.includes("'reserved': 'Held for order'"),
        'reserve: panels.js carries the shop-side indicator, the reservedFor read, and the serve label');
     const css = rf76('./style.css', 'utf8');
-    ok(css.includes('.item-reserve.hidden') && css.includes('.comm-reserved'),
-       'reserve: style.css carries the SCOPED .item-reserve.hidden override (cascade-tie law) + .comm-reserved');
+    ok(css.includes('.hidden{display:none !important;}') && css.includes('.comm-reserved'),
+       'reserve: .item-reserve (0-2-0!) hides under §87\u2019s !important law \u2014 the ONE case moving .hidden could never fix \u2014 and .comm-reserved is styled');
     const market = rf76('./src/ui/market.js', 'utf8');
     ok(market.includes('comm-reserved') && market.includes('reservedFor'),
        'reserve: the overlay Special Order row shows the held-from-counter clause');
@@ -5383,8 +5385,8 @@ console.log('M4 auto-serve worker — smoke test\n');
   // --- (d) The cascade-tie law (the .offer-row.hidden precedent): .hud-chip sets its own
   // display, so the bare .hidden utility only wins by SOURCE ORDER. The Scrap chip toggles
   // .hidden, so it needs the scoped form. ---
-  ok(css79.includes('.hud-chip.hidden'),
-     'hud band: style.css carries the scoped .hud-chip.hidden override (the cascade-tie law)');
+  ok(css79.includes('.hidden{display:none !important;}'),
+     'hud band: the hide utility out-cascades .hud-chip\u2019s own display (§87\u2019s law; the scoped override is retired)');
 
   // --- (e) The budget comment's FALSIFIED claims are actually retired, not just contradicted.
   // A comment at a live seam is a claim with an expiry date; these three expired. ---
@@ -5527,16 +5529,11 @@ console.log('M4 auto-serve worker — smoke test\n');
   // --- (d) THE CASCADE-TIE LAW, live: .beast-cards sets its own display and is declared AFTER the
   // bare .hidden utility, so it WINS the 0-1-0 tie — a .hidden toggle on a card container would be
   // a silent no-op. The sub-views toggle exactly this, so the scoped overrides are load-bearing. ---
-  ok(css80.includes('.beast-cards.hidden'),
-     'split: style.css carries the scoped .beast-cards.hidden override (the cascade-tie law)');
-  ok(css80.includes('.mob-view.hidden'),
-     'split: style.css carries the scoped .mob-view.hidden override');
-  {
-    const iHidden = css80.indexOf('\n.hidden{');
-    const iCards = css80.indexOf('\n.beast-cards{');
-    ok(iHidden !== -1 && iCards !== -1 && iCards > iHidden,
-       'split: guard-the-guard — .beast-cards IS declared after .hidden, so the tie is real and the scoped override is required');
-  }
+  ok(css80.includes('.hidden{display:none !important;}'),
+     'split: the hide utility out-cascades .beast-cards\u2019/.mob-view\u2019s own display (§87\u2019s law; the scoped overrides are retired)');
+  // (The source-order guard that lived here asserted the OLD premise — ".beast-cards is declared
+  // after .hidden, so the tie is real". §87's !important makes source order irrelevant to this
+  // toggle, so the guard retired with the override it guarded.)
 
   // --- (e) The render loop must address BOTH cards per monster. querySelector (singular) silently
   // updated only the first card in the DOM and stranded the Field Guide's silhouette forever —
@@ -6008,20 +6005,12 @@ console.log('M4 auto-serve worker — smoke test\n');
      + 'carrying half the joke, not chrome');
 
   // --- (j) THE CASCADE-TIE LAW, third instance (.offer-row, .beast-cards, now .mob-views). The
-  // toggle above is a SILENT NO-OP without a scoped override, because .mob-views sets its own
-  // display and is declared AFTER the bare .hidden utility. Nothing headless catches a specificity
-  // tie — this text-pin is the only guard. ---
-  ok(css84.includes('.mob-views.hidden'),
-     'dossier: style.css carries the scoped .mob-views.hidden override');
-  {
-    const iHidden84 = css84.indexOf('\n.hidden{');
-    const iViews84 = css84.indexOf('\n.mob-views{');
-    ok(iHidden84 !== -1 && iViews84 !== -1 && iViews84 > iHidden84,
-       'dossier: guard-the-guard — .mob-views IS declared after .hidden, so the 0-1-0 tie is real '
-       + 'and the scoped override is load-bearing, not decoration');
-  }
-  ok(css84.includes('.mob-view.hidden'),
-     'dossier: the .mob-view.hidden override still covers the sub-view containers');
+  // toggle above was a SILENT NO-OP under the old bare utility (.mob-views set its own display and
+  // was declared later — a 0-1-0 tie order resolved against the hide). §87 restructured the law:
+  // the utility is !important, the scoped overrides and their source-order guards are retired. ---
+  ok(css84.includes('.hidden{display:none !important;}'),
+     'dossier: the hide utility out-cascades .mob-views\u2019/.mob-view\u2019s own display (§87\u2019s law; the '
+     + 'scoped overrides and the source-order guard are retired — order no longer decides these toggles)');
 
   // --- (k) THE WRONG-PALETTE LAW (§81) on every ink this page adds. .beast-exp spent four days
   // invisible because a dark-panel colour was reused on a parchment card; asserted at birth. ---
@@ -6229,7 +6218,12 @@ console.log('M4 auto-serve worker — smoke test\n');
   // stdout-divergence hunt already suspects). ---
   {
     const s = stateAt(CAP);
-    for (let i = 0; i < 400; i++) updateWorkers(s, 1);
+    // 4000 ticks, not 400 — this guard FLAKED red on a green tree (caught 2026-07-16 during \u00a787's
+    // negative controls, which run the suite ~20 times). Doug's gate is probabilistic BY DESIGN
+    // (\u00a785 drives the real loop, no stubbed random): chance \u2248 interval/96 \u2248 7% per completed
+    // run, so 400 ticks \u2248 58 draws and P(no line) \u2248 0.93^58 \u2248 1.5% \u2014 one lying-red commit in
+    // seventy. 4000 ticks \u2248 580 draws: P \u2248 4e-19. Runtime cost is milliseconds.
+    for (let i = 0; i < 4000; i++) updateWorkers(s, 1);
     ok(typeof s.workers.scavenger.lastLine === 'string',
        'doug: guard-the-guard — the run really did set lastLine, so the persistence check below has a subject');
     const saved = serializeSave(s);
@@ -6491,6 +6485,77 @@ console.log('M4 auto-serve worker — smoke test\n');
     const vk86 = ver86(rf86('./index.kongregate.html', 'utf8'));
     ok(vi86 !== null && vi86 === vk86, 'contrast: both entry shells carry the SAME style.css cache-bust');
     ok(vi86 >= 20, `contrast: the cache-bust advanced for this pass\u2019s style.css change (>= v20, found ${vi86})`);
+  }
+}
+
+// ===== SECTION 87 — THE .hidden LAW (Daniel, 2026-07-16 — Option 3 of the round) =====
+// The cascade-tie class, killed at the ROOT instead of instance-by-instance. The old bare
+// `.hidden{display:none}` sat at line 244 of an 800+ line file, so every component below it that
+// set its own display tied at 0-1-0 and WON — a .hidden toggle on it was a silent no-op. The file
+// had accumulated THIRTEEN scoped X.hidden overrides treating a structural property as a run of
+// coincidences, and the class still bit a FOURTH time: #forge-section (class "worker-cards hidden")
+// shipped VISIBLE pre-hire, because .worker-cards' display:flex won the tie and renderForge's
+// toggle did nothing. "Doug's Forge — found relics restored here go on display, forever" was on
+// screen from save-slot zero: a spoiler wearing a bug's clothes. Nobody filed it because every
+// progressed save hires Doug.
+//
+// THE MEASUREMENT THAT DECIDED THE OPTION (jsdom, calibrated against the known-true .mob-views
+// no-op before being trusted; all 25 toggle consumers swept, 2026-07-16):
+//   - Zero rules in the file legitimately beat .hidden — the handoff's stated risk ("a component
+//     that relies on winning that tie would break silently") is EMPTY, measured not assumed.
+//   - "Move .hidden to the end" (Option 2) retires only 12 of 13 overrides: .item-card
+//     .item-reserve is 0-2-0 and beats a bare utility at ANY source order. The codebase already
+//     writes that shape, so the order fix leaves the trap it was built to remove.
+//   - !important retires all 13, needs no move, and is checkable STATICALLY — no DOM, no jsdom in
+//     the suite, one text pin. A utility whose one job is "hidden means hidden" is the textbook
+//     legitimate !important; the smell case is component styles fighting each other, which this
+//     is not.
+// THE TRADE, eyes open: a future component that wants to override .hidden (exit animation) cannot,
+// short of its own scoped !important. If that day comes, the component should stop using .hidden
+// rather than fight it — this section's failure message says so.
+{
+  const { readFileSync: rf87 } = await import('node:fs');
+  const strip87 = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '');
+  const css87 = strip87(rf87('./style.css', 'utf8'));
+  const pnl87src = rf87('./src/ui/panels.js', 'utf8');
+  const pnl87 = pnl87src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+
+  // --- (a) THE LAW ITSELF, verbatim. If someone "tidies" the !important away, every component
+  // that sets its own display and is declared later silently stops hiding — that is the exact
+  // pre-§87 world, and it shipped four real bugs. ---
+  ok(css87.includes('.hidden{display:none !important;}'),
+     'law: .hidden declares display:none !important — hidden means hidden at every specificity. '
+     + '(If a component needs to override this, it should stop using .hidden, not fight it.)');
+
+  // --- (b) THE LAW IS ALONE. Exactly one rule in the file may set display on a .hidden selector.
+  // A second one is either a resurrected scoped override (dead weight that will rot into a wrong
+  // answer, the §86(f) duplicate lesson) or a component fighting the utility (the trade above,
+  // taken without a decision). Both deserve a red. ---
+  {
+    const hiddenDisplayRules = [...css87.matchAll(/^[^\n{]*\.hidden[^\n{]*\{[^}]*display[^}]*\}/gm)];
+    ok(hiddenDisplayRules.length === 1,
+       `law: exactly ONE .hidden display rule exists in style.css (found ${hiddenDisplayRules.length} — `
+       + 'the 13 scoped overrides retired with \u00a787 and must not drift back)');
+  }
+
+  // --- (c) THE FOURTH INSTANCE, fixed by the law: #forge-section hides pre-hire. Static halves of
+  // an effect the container cannot render: the template ships the section born-hidden, and
+  // renderForge drives the toggle off Doug's owned flag. With (a), born-hidden + a working toggle
+  // IS the effect. NOT VERIFIED HEADLESS: the rendered panel — the browser test plan carries it. ---
+  ok(/id="forge-section" class="worker-cards hidden"/.test(pnl87src),
+     'forge: #forge-section is born hidden in the template (pre-\u00a787 the class was decoration — '
+     + '.worker-cards won the 0-1-0 tie and the Forge shipped VISIBLE on a fresh save)');
+  ok(/section\.classList\.toggle\('hidden', !show\)/.test(pnl87) && /scavenger\?\.owned === true/.test(pnl87),
+     'forge: renderForge toggles .hidden off Doug\u2019s owned flag — under \u00a787\u2019s law that toggle '
+     + 'now actually does something');
+
+  // --- (d) style.css changed, so the bust advances. Newest section holds the exact floor. ---
+  {
+    const ver87 = (s) => { const m = /style\.css\?v=(\d+)/.exec(s); return m ? Number(m[1]) : null; };
+    const vi87 = ver87(rf87('./index.html', 'utf8'));
+    const vk87 = ver87(rf87('./index.kongregate.html', 'utf8'));
+    ok(vi87 !== null && vi87 === vk87, 'law: both entry shells carry the SAME style.css cache-bust');
+    ok(vi87 >= 21, `law: the cache-bust advanced for this pass\u2019s style.css change (>= v21, found ${vi87})`);
   }
 }
 

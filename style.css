@@ -66,10 +66,6 @@ body{
                                      their text (45px -> 58px tall) the moment the row outgrew the
                                      band, which is a deformation, not a failure you'd notice. */
 }
-/* Scoped override at birth (the cascade-tie law): .hud-chip sets its own display, so the bare
-   .hidden utility is a 0-1-0 TIE with it and only wins by source order. The Scrap chip toggles
-   .hidden (hud.js), so it gets the scoped form like .title-overlay/.menu-overlay/.market-* do. */
-.hud-chip.hidden{display:none;}
 .hud-icon{color:var(--gold);font-size:20px;}
 .hud-label{color:#c9bfa8;font-weight:700;text-transform:uppercase;letter-spacing:1px;font-size:13px;}
 .hud-value{color:var(--gold);font-weight:800;font-size:22px;min-width:40px;text-align:right;}
@@ -147,7 +143,6 @@ body{
   align-items:center;justify-content:center;gap:14px;
   background:radial-gradient(circle at 50% 40%, rgba(20,14,28,.7), rgba(10,7,16,.94));
 }
-.title-overlay.hidden{display:none;}
 .title-logo{
   margin:0;font-size:76px;font-weight:900;letter-spacing:4px;color:var(--gold);
   text-shadow:0 4px 0 #7a3d12, 0 0 30px rgba(139,92,246,.5);
@@ -201,7 +196,6 @@ body{
   position:absolute;inset:0;z-index:15;display:flex;align-items:center;justify-content:center;
   background:rgba(10,7,16,.72);
 }
-.menu-overlay.hidden{display:none;}
 .menu-card{
   width:380px;background:var(--panel-bg);border:2px solid var(--panel-edge);border-radius:14px;
   padding:16px 18px;box-shadow:0 8px 0 rgba(0,0,0,.45);
@@ -240,8 +234,19 @@ body{
 }
 .title-credits-link:hover{color:#e8e0cd;}
 
-/* Generic hide helper (used for tab switching) */
-.hidden{display:none;}
+/* THE HIDE UTILITY (§87, restructured 2026-07-16 — Daniel's Option 3). !important is EARNED
+   here, not smelled: a utility whose one job is "this element is hidden" must beat every
+   component's own display at every specificity, or the toggle is a lie. Without it, .hidden was a
+   0-1-0 TIE that any later display rule won by ORDER — the cascade-tie law bit FOUR times
+   (.offer-row, .beast-cards, .mob-views, and #forge-section, which shipped VISIBLE pre-hire
+   because .worker-cards won the tie and nothing on a progressed save ever showed it). The file
+   grew 13 scoped X.hidden overrides treating a structural property as a run of coincidences; the
+   sweep (jsdom, all 25 toggle consumers, 2026-07-16) measured ZERO rules that legitimately beat
+   .hidden, so !important breaks nothing and retires all 13. THE TRADE, eyes open: a future
+   "override .hidden" want (an exit animation, a fade-out) cannot win without its own scoped
+   !important — if that day comes, the component should stop using .hidden rather than fight it.
+   §87 pins this rule verbatim and pins that no other .hidden display rule exists. */
+.hidden{display:none !important;}
 
 /* --- Bob's hire arc: goal chip over the empty counter (panels.js fills + toggles it). Centered
    where Bob will stand (counter centerX ~730) so the chip literally marks the vacancy; breathes
@@ -311,8 +316,8 @@ body{
    because it is a SIBLING of .upg-meta, never a child. On a locked perk .upg-level renders '', so
    un-dimming the column reveals exactly the one string that was hiding.
    ORDER IS LOAD-BEARING: this ties .upgrade-card.locked .upg-meta at 0-3-0 and wins ONLY by being
-   declared after it. §86 pins that order — see the .hidden cascade (handoff NEXT item 5) for why
-   a specificity tie is worth a guard rather than a hope. */
+   declared after it. §86 pins that order. (The .hidden cascade itself was restructured out of
+   existence in §87 — but THIS tie is opacity, not display, so the order stays load-bearing.) */
 .perk-card.locked .upg-meta{opacity:1;}
 
 /* Bottom nav — slim bar in the center gap between the corner panels */
@@ -359,7 +364,6 @@ body{
   position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
   background:rgba(10,7,16,.72);
 }
-.offline-overlay.hidden{display:none;}
 .offline-card{
   background:var(--panel-bg);border:3px solid var(--gold-deep);border-radius:16px;
   padding:26px 34px;text-align:center;box-shadow:0 10px 0 rgba(0,0,0,.45), 0 0 40px rgba(255,207,74,.15);
@@ -443,7 +447,6 @@ body{
   border-radius: 8px; padding: 6px 8px; font-weight: 800; font-size: 12px; cursor: pointer; width: 100%;
 }
 .license-btn:disabled { color: #8f86a3; border-color: #5a4a75; cursor: default; }
-.license-btn.hidden, .restock-btn.hidden { display: none; }
 
 /* Sold line: the count pops, the rest stays quiet, never wraps — and BOTH now do it legibly (§86).
    This line reads "<b>47</b> sold · next 50". The count is state.stats.itemSales[id] — a COUNT,
@@ -491,7 +494,6 @@ body{
 .item-card .item-stock { font-size: 11px; line-height: 1.2; }
 .item-card .item-sold { margin-top: 1px; }
 .item-card .restock-btn, .item-card .license-btn { padding: 5px 6px; margin-top: 4px; }
-.item-card.hidden { display: none; }
 @media (prefers-reduced-motion: reduce) { .shelf-tab.attention { animation: none; color: #ffcf4a; } }
 
 /* Bestiary v2 (showcase size): a DESTINATION panel, so it deliberately breaks the "nothing covers
@@ -509,22 +511,12 @@ body{
   color:#b6abc9;font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;margin-left:10px;
 }
 .beast-cards{display:flex;flex-direction:column;gap:10px;}
-/* THE CASCADE-TIE LAW, live ammunition: the bare .hidden utility and .beast-cards are BOTH 0-1-0,
-   and .beast-cards is declared LATER — so it WINS, and a bare .hidden toggle on a card container
-   is a silent no-op. Not a theoretical risk: the Mobs sub-views toggle exactly this. Scoped at
-   birth, like .offer-row.hidden and .hud-chip.hidden. */
-.beast-cards.hidden{display:none;}
-.mob-view.hidden{display:none;}
+/* The scoped .hidden overrides that used to live here (and at 12 other sites) retired 2026-07-16:
+   the utility is !important now (§87), so a component's own display cannot out-cascade a hide. */
 /* Mobs sub-views (2026-07-15): the tab holds Expeditions + Field Guide because a 6th nav tab does
    NOT fit (bottom-bar budget below). Segmented control in the panel title; the completion hint
    rides the Field Guide view, so the title never advertises a ledger you can't currently see. */
 .mob-views{display:inline-flex;gap:4px;margin-left:10px;vertical-align:middle;}
-/* THE CASCADE-TIE LAW again, and again live ammunition (third instance: .offer-row, .beast-cards,
-   now this). .mob-views sets its own display and is declared AFTER the bare .hidden utility at
-   line 244 — both 0-1-0, so source order hands the tie to .mob-views and a plain .hidden toggle on
-   the segmented control would be a SILENT NO-OP. The Dossier (2b) toggles exactly this to hide the
-   two-view control while the player is in a third view. Scoped at birth, per §80(d). */
-.mob-views.hidden{display:none;}
 .mob-view-btn{
   background:transparent;color:#c9bfa8;border:1px solid var(--panel-edge);border-radius:6px;
   padding:3px 10px;font-family:var(--font);font-size:11px;font-weight:800;letter-spacing:.6px;
@@ -830,13 +822,13 @@ body{
 
 /* COMMISSION HARD RESERVE (B1) — the shelf card's held indicator: N units set aside for the
    Special Order, so Bob won't sell them to a walk-in. GOOD-green to sibling the commission row's
-   identity (an order is an opportunity). Sets its own display, so it CARRIES the scoped .hidden
-   override — the cascade-tie law (.item-card.hidden / .offer-row.hidden solve the same trap). */
+   identity (an order is an opportunity). NOTE this selector is 0-2-0 — under the OLD bare
+   .hidden it beat the utility at any source order (the case "move .hidden to the end" cannot fix,
+   and the reason §87 chose !important); under §87's law it just hides. */
 .item-card .item-reserve {
   display: block; font-size: 10px; line-height: 1.2; color: var(--good); font-weight: 700;
   margin-top: 2px;
 }
-.item-card .item-reserve.hidden { display: none; }
 
 /* --- Expedition Job Card row (reform step 4 MVP; the Bestiary grid cards) ---------------------- */
 .beast-exp-row { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
@@ -855,12 +847,8 @@ body{
 .beast-send:disabled { color: #8f86a3; border-color: #5a4a75; cursor: default; }
 
 /* --- Trade Market offer rows (Pass B classes, REUSED by the D6-B overlay — the strip no longer
-   hosts them; .offer-row.hidden stays: the cascade-tie law's pin, and the overlay may filter
-   later) ------------------------------------------------------------------------------------- */
+   hosts them; the overlay may filter later — .hidden just works on these now, §87) --------- */
 .offer-row { display: flex; align-items: center; gap: 6px; }
-.offer-row.hidden { display: none; }  /* THE FILTER FIX: .offer-row's display:flex (appended late)
-   ties .hidden's specificity and wins by order — the exact trap .item-card.hidden already
-   solves. Every hideable element that sets its own display needs this scoped override. */
 .offer-text { font-size: 12px; line-height: 1.3; color: #f6e7c8; flex: 1; min-width: 0;
   display: flex; align-items: center; flex-wrap: wrap; gap: 2px; }
 .offer-text b { margin-right: 3px; }
@@ -876,13 +864,11 @@ body{
 
 /* --- Trade Market OVERLAY (D6-B pulled forward — Daniel's Option 2, 2026-07-12). z14: above the
    panels, below the menu (15) and the away modal (20). The sim keeps running under it — the menu
-   overlay's idle-honest law. Sets its own display, so it CARRIES the scoped .hidden override
-   (the cascade-tie law; §64 text-pins it). ---------------------------------------------------- */
+   overlay's idle-honest law. Sets its own display:flex; .hidden beats it by !important (§87). --- */
 .market-overlay{
   position:absolute;inset:0;z-index:14;display:flex;align-items:center;justify-content:center;
   background:rgba(10,7,16,.72);
 }
-.market-overlay.hidden{display:none;}
 .market-card{
   width:660px;max-height:560px;display:flex;flex-direction:column;
   background:var(--panel-bg);border:2px solid var(--panel-edge);border-radius:14px;
@@ -904,8 +890,6 @@ body{
   background:#1e2a22;border:1px solid var(--good);border-radius:8px;padding:6px 10px;
   margin-bottom:8px;display:flex;align-items:center;gap:8px;
 }
-.market-commission.hidden{display:none;}  /* the cascade-tie law: this block sets its own display,
-                                             so the global .hidden would tie and lose */
 .commission-badge{color:var(--good);font-weight:800;font-size:10px;letter-spacing:.6px;text-transform:uppercase;flex-shrink:0;}
 .market-commission .offer-text{flex:1;min-width:0;}
 .market-commission .comm-due{color:var(--bad);font-weight:700;}   /* last fulfillable day shouts */
