@@ -238,13 +238,14 @@ export function serveCurrent(state) {
     if (monster.material && addMaterial(state, monster.material, 1) > 0) {
       pushLog(state, { text: pick(INSPECTOR_VOICE.scale), repDelta: 0, tier: 'market' });
     }
-    // THE SEAL SLOPE (relic rework, Daniel 2026-07-12): the top-grade CLIFF punished players
-    // who can't monitor 24/7 — the visit is unschedulable, so missing 0.9 fullness was a hard
-    // zero with no decision behind it. Now a CHANCE scaling with fullness at visit time:
-    // min(1, fullness / sealFullness) — 0.9+ keeps the old guarantee exactly, half-stocked
-    // ≈ 50%, an empty shop still earns nothing. Math.random is the forced-dice seam (§69).
-    const sealChance = Math.min(1, g.fullness / (CONFIG.visits?.sealFullness ?? 0.9));
-    if (monster.gradeMaterial && Math.random() < sealChance
+    // THE SEAL SLOPE + PITY (relic rework 2026-07-12; pity slope 2026-07-16): fullness drives
+    // the base chance — min(1, fullness/sealFullness), so 0.9+ keeps the old guarantee and an
+    // empty shop starts from zero — and every MISS adds sealPityPerMiss to the next roll, reset
+    // on a win. The slope stays a slope; its tail is now bounded (guaranteed by the 4th miss
+    // even at zero fullness). rollSeal is the ONE implementation — the sim calls this exact
+    // function (§91 pins it), because the sim's inline copy of the old formula is how the
+    // certification's seal-lottery finding stayed invisible until a seed died of it.
+    if (monster.gradeMaterial && rollSeal(state, g.fullness)
         && addMaterial(state, monster.gradeMaterial, 1) > 0) {
       pushLog(state, { text: pick(INSPECTOR_VOICE.seal), repDelta: 0, tier: 'market' });
     }
@@ -884,6 +885,18 @@ export function trySpawnVisit(state, roll) {
 // (categories with stock >= 1) — times the fame budget multiplier (a Mythic shop earns
 // Mythic-grade tips). This is the pass's design thesis: the RESTOCK LOOP itself gets celebrated —
 // Greg, the crate, and Restock All all feed this number. Payout-side by law; basePrice untouched.
+// THE ONE SEAL ROLL (pity slope, Daniel's Option 1 — 2026-07-16). Pure semantics in one place:
+// chance = min(1, fullness/sealFullness + pity*dial); a win resets the streak, a miss grows it.
+// Math.random is the forced-dice seam (§69). BOTH callers — the live inspection and the sim's
+// daily model — go through here, so the formula cannot drift between the game and its instrument.
+export function rollSeal(state, fullness) {
+  const base = fullness / (CONFIG.visits?.sealFullness ?? 0.9);
+  const pity = (state.sealPity ?? 0) * (CONFIG.visits?.sealPityPerMiss ?? 0.25);
+  const won = Math.random() < Math.min(1, base + pity);
+  state.sealPity = won ? 0 : (state.sealPity ?? 0) + 1;
+  return won;
+}
+
 export function inspectionGrade(state) {
   let stock = 0, cap = 0;
   const cats = new Set();

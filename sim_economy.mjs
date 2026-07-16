@@ -37,7 +37,7 @@ import {
   buyWorkerLevel, canBuyWorkerLevel, restoreRelic, canRestoreRelic,
   restockAll, canRestockAll, fameOf,
   currentTradeOffers, canTrade, executeTrade, inspectionGrade, addMaterial,
-  startExpedition, canFulfillCommission, fulfillCommission,
+  startExpedition, canFulfillCommission, fulfillCommission, rollSeal,
 } from './src/game.js';
 import { MONSTERS, MONSTER_IDS } from './src/data/monsters.js';
 import { ITEMS, ITEM_ORDER } from './src/data/items.js';
@@ -237,8 +237,11 @@ function runSim(seed, { tradeAware = true, expeditionAware = true, commissionAwa
           if (simDay !== lastInspectionDay && reputationTier(fameOf(s)).index >= 5) {
             lastInspectionDay = simDay;
             const g = inspectionGrade(s);
-            const chance = Math.min(1, g.fullness / (CONFIG.visits?.sealFullness ?? 0.9));
-            if (Math.random() < chance) addMaterial(s, 'inspectors_seal', 1);
+            // PITY SLOPE: the shared rollSeal (game.js) IS the model now — the inline copy of
+            // the old formula is retired, so the sim cannot drift from the game again. The pity
+            // bound also retires the seal lottery's unbounded tail, which is what killed seed 2
+            // one seal short at the 168h cap (cert 2026-07-16).
+            if (rollSeal(s, g.fullness)) addMaterial(s, 'inspectors_seal', 1);
           }
         }
         if (tradeAware) {

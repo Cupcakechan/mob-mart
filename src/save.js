@@ -52,6 +52,7 @@ export function mergeSave(fresh, data) {
   fresh.reputation = Math.max(0, numOr(data.reputation, fresh.reputation));
   // Scrap (§14): additive schema — pre-Doug saves have no field and load as 0, same as gold's guard.
   fresh.scrap = Math.max(0, numOr(data.scrap, 0));
+  fresh.sealPity = Math.min(20, Math.max(0, Math.floor(numOr(data.sealPity, 0))));   // pity slope: clamp 0..20 (a hand-edit can wait, never mint past the guarantee point)
   // Materials (reform Pass A): additive + registry-keyed — fresh keys only (stale ids drop),
   // non-negative integers (a hand-edited count must never NaN the trade math). Caps are
   // enforced at the FAUCET (addMaterial), not here — same stance as gold's unclamped merge.
@@ -189,6 +190,7 @@ export function serializeSave(state) {
     gold: state.gold,
     reputation: state.reputation,
     scrap: Math.max(0, Math.floor(state.scrap ?? 0)),   // Doug's salvage (§14) — additive field
+    sealPity: Math.max(0, Math.floor(state.sealPity ?? 0)),   // pity slope: the streak survives reloads
     materials: { ...(state.materials ?? {}) },           // monster materials (reform Pass A)
     expedition: state.expedition
       ? { monsterId: state.expedition.monsterId, dest: state.expedition.dest,

@@ -215,6 +215,14 @@ export const CONFIG = {
     fameBonus: 25,             // flat lifetime-rep bonus on serving him (a VIP's word travels)
     sealFullness: 0.9,         // TOP-GRADE line (Pass B, §13.1): an inspection at/above this
                                // fullness drops the Inspector's Seal — the report card's stakes
+    sealPityPerMiss: 0.25,     // PITY SLOPE (Daniel's Option 1, 2026-07-16): every missed seal
+                               // roll adds this to the NEXT roll's chance; a win resets it. The
+                               // slope law survives (fullness still drives the base) but its tail
+                               // is now BOUNDED: even an empty shop is guaranteed by the 4th
+                               // inspection. Born of the cert diagnosis — seed 2 rolled 3 seals
+                               // in 7 days at ~75%/day and a 168h run died one seal short; the
+                               // player version of that is an endgame stalled on a coin flip
+                               // with no agency, which is the thing this dial removes.
   },
 
   workers: {

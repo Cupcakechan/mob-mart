@@ -45,6 +45,11 @@ export function createInitialState() {
   return {
     screen: 'title',            // 'title' | 'shop'
     gold: CONFIG.economy.startingGold,
+    sealPity: 0,                // PITY SLOPE: consecutive missed seal rolls (PERSISTED — an
+                                // unlucky streak must survive a reload, or refreshing farms the
+                                // reset... of a counter that only ever HELPS. Persisted anyway:
+                                // the streak is earned, and losing it to a reload feels wrong
+                                // in the direction that costs the player).
     scrap: 0,                   // SALVAGE (§14): Doug's second resource — flows only once the
                                 // scavenger is hired; spent at the forge (Pass B). Persisted.
     materials,                  // MONSTER MATERIALS (reform Pass A): { id: count }, capped per

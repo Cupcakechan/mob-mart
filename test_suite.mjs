@@ -6857,5 +6857,83 @@ console.log('M4 auto-serve worker — smoke test\n');
   }
 }
 
+// ===== SECTION 91 — THE SEAL PITY SLOPE (Daniel's Option 1, 2026-07-16) =====
+// The seal lottery's tail was unbounded: chance = min(1, fullness/0.9) per inspection, and a cold
+// streak simply continued — the certification's seed 2 rolled 3 seals in 7 days at ~75% and died
+// one seal short of the 168h horizon; the player version is an endgame stalled on a daily coin
+// flip with no agency. Now every miss adds sealPityPerMiss to the next roll and a win resets it:
+// the slope law survives (fullness drives the base; an empty shop starts at zero) and the tail is
+// bounded by construction. ONE implementation — rollSeal — serves the live inspection AND the
+// sim's daily model, because the sim's inline copy of the old formula is exactly how this class
+// of finding stays invisible.
+{
+  const { rollSeal: rs91 } = await import('./src/game.js');
+  const DIAL91 = CONFIG.visits?.sealPityPerMiss ?? 0;
+  const real91 = Math.random;
+
+  ok(DIAL91 > 0 && DIAL91 <= 1,
+     `pity: the dial exists and is a sane fraction (sealPityPerMiss=${DIAL91})`);
+
+  // --- (a) THE SLOPE LAW SURVIVES: at pity 0 the chance is exactly the old formula — fullness
+  // 0.9+ still guarantees, an empty shop still starts from zero. Forced dice (§69's seam). ---
+  try {
+    const s = { sealPity: 0 };
+    Math.random = () => 0.999;                          // just under 1: only a guaranteed roll wins
+    ok(rs91(s, 0.9) === true, 'pity: fullness at sealFullness still GUARANTEES the seal (the old top-grade law)');
+    const s2 = { sealPity: 0 };
+    Math.random = () => 0.0001;                         // just over 0: only a zero-chance roll loses
+    ok(rs91(s2, 0) === false, 'pity: an empty shop with no streak still earns nothing (the slope\u2019s floor)');
+  } finally { Math.random = real91; }
+
+  // --- (b) THE TAIL IS BOUNDED: at ZERO fullness, misses accumulate until the roll is a
+  // guarantee — by the ceil(1/dial)-th inspection even the worst dice win. ---
+  try {
+    const s = { sealPity: 0 };
+    Math.random = () => 0.999;
+    const cap = Math.ceil(1 / DIAL91);
+    let wonAt = -1;
+    for (let i = 1; i <= cap + 1; i++) {
+      if (rs91(s, 0)) { wonAt = i; break; }
+    }
+    ok(wonAt !== -1 && wonAt <= cap + 1,
+       `pity: an empty shop on the worst possible dice is GUARANTEED by inspection ${cap + 1} `
+       + `(won at ${wonAt}) — the unbounded tail that killed cert seed 2 is gone`);
+  } finally { Math.random = real91; }
+
+  // --- (c) A WIN RESETS THE STREAK; A MISS GROWS IT. ---
+  try {
+    const s = { sealPity: 3 };
+    Math.random = () => 0.0001;
+    ok(rs91(s, 0.9) === true && s.sealPity === 0, 'pity: a win resets the streak to zero');
+    const s2 = { sealPity: 0 };                         // pity 0: half-stocked is ~0.56, so 0.999 misses
+    Math.random = () => 0.999;                          // (at pity 3 it would already be a GUARANTEE — the feature)
+    ok(rs91(s2, 0.5) === false && s2.sealPity === 1, 'pity: a miss grows the streak by exactly one');
+  } finally { Math.random = real91; }
+
+  // --- (d) PERSISTENCE: the streak survives the reload (losing it costs the player), clamped. ---
+  {
+    const s = shopState();
+    s.sealPity = 3;
+    ok(mergeSave(createInitialState(), serializeSave(s)).sealPity === 3,
+       'pity: the streak round-trips the save');
+    ok(mergeSave(createInitialState(), { sealPity: 999 }).sealPity === 20
+       && mergeSave(createInitialState(), { sealPity: -2 }).sealPity === 0,
+       'pity: merge clamps the streak to 0..20 (wait forever, mint never)');
+  }
+
+  // --- (e) ONE IMPLEMENTATION: the live inspection and the sim both call rollSeal; neither
+  // carries an inline copy of the formula. srcOf per §88 — these are CODE pins. ---
+  {
+    const game91 = srcOf('./src/game.js');
+    ok(/monster\.gradeMaterial && rollSeal\(state, g\.fullness\)/.test(game91),
+       'pity: the live inspection rolls through the shared function');
+    const sim91 = srcOf('./sim_economy.mjs');
+    ok(/if \(rollSeal\(s, g\.fullness\)\) addMaterial\(s, 'inspectors_seal', 1\)/.test(sim91),
+       'pity: the sim\u2019s daily model rolls through the SAME function — the inline copy is retired');
+    ok(!/Math\.random\(\) < chance\) addMaterial\(s, 'inspectors_seal'/.test(sim91),
+       'pity: the sim\u2019s old inline seal roll is gone, not shadowed');
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
