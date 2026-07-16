@@ -187,8 +187,14 @@ nav reaches ~470-480, a 6th tab does NOT fit — redesign, don't shrink"**, and 
 on 2026-07-15: a 6th tab overlaps the customer panel in every fallback face, and even in Segoe UI at
 any label longer than ~4 characters. That is why the split went VERTICAL (sub-views) instead of
 horizontal (tabs). Suite §80 now pins the tab COUNT, so a future session that trusts "nearly free"
-fails in the suite rather than in Daniel's browser. **Labels are load-bearing** (~7.5px/character in
-the widest face); "Bestiary"→"Mobs" bought the bar back ~30px (slack 17.20 → 47.45).
+fails in the suite rather than in Daniel's browser. **Labels are load-bearing** — "Bestiary"→"Mobs"
+bought the bar roughly 30px back, and that RELATIVE figure is the reliable one (an independent
+fontkit model reproduced it within 6% on 2026-07-15). **The absolute slack figures this block used
+to carry ("~7.5px/character", "slack 17.20 → 47.45") are VOID** — see item (3) in the NEXT block:
+they are not reproducible, nothing in the record derives them, and the `.nav` comment they were
+reconciled against predates the rename and describes a different label. The one hard fact worth
+keeping: **"Bestiary" (8 chars) shipped in this exact 5-tab nav on Daniel's machine for eleven days
+with no overlap.** Price any future label question against that, not against a model.
 
 **2b — THE DOSSIER: DONE 2026-07-15 (`8599aba`, suite 1936).** The Mobs follow-up round's last
 open build, and the round is now CLOSED except for the tab name. Four labelled field notes per mob,
@@ -238,16 +244,36 @@ ONLY revealed content, so a renderer bug cannot leak a locked note); `lore.notes
   pick**: a sub-view lives inside `#shop-ui`, so §83's bleed-through class cannot recur by
   construction. Do not "upgrade" it without re-reading §83.
 
-**NEXT — (3) THE TAB NAME.** Cold-boot ritual as always: this doc in full, the dev-method skill,
-sync-and-certify (suite must read **1936** at HEAD, tip `8599aba`).
+**NEXT — (4) THE CONTRAST CLASS.** Cold-boot ritual as always: this doc in full, the dev-method
+skill, sync-and-certify (suite must read **1975** at HEAD, tip `4ac2287`).
 
-  **(3) THE TAB NAME — "Mobs" IS PROVISIONAL.** Daniel: *"aside from Mob - any other name would
-  fit?"* "Mobs" was picked under width pressure, not affection. Opens with an options round, and
-  **every candidate must be MEASURED before it is offered** — the label's width is a layout decision
-  (~7.5px/character in the widest face; the bar has 47.45px of slack in that face today). One
-  candidate already in the codebase: the completion metric calls them *"a field guide of REGULARS"*.
-  Note `nav.js`'s tab **id** stays `bestiary` regardless — it is internal, the panel is still
-  `#bestiary-panel`, and renaming it churns consumers to buy nothing.
+  **(3) THE TAB NAME — CLOSED 2026-07-15, NO CHANGE. "Mobs" stays, and the reason retires the
+  question rather than parking it: the game is called MOB MART.** The tab carries the game's own
+  word. Daniel's original note ("aside from Mob — any other name would fit?") was answered by
+  measuring every candidate and finding that none of them bought anything a rename should cost.
+  **Do not reopen this on aesthetic grounds** — the naming argument was settled by the title, not by
+  the bar.
+
+  **What the measuring round DID leave behind, because it is worth more than the decision was:**
+  the handoff previously told this pass to design against **47.45px of slack**. THAT NUMBER IS NOT
+  REPRODUCIBLE and nothing in the record derives it. A fontkit model over DejaVu Sans Bold (the
+  container's face; `font-weight:800` resolves to Bold, and Segoe UI cannot be installed here) puts
+  the nav's left edge at 476.57 with the current labels — but the `.nav` comment claiming "5 tabs
+  reach ~470-480" was written 2026-07-04 (`cc32ef0`), ELEVEN DAYS BEFORE the rename, so it describes
+  the bar carrying **"Bestiary"**, not "Mobs". Matching my model against it was a COINCIDENCE that
+  nearly shipped as corroboration. Three sources, none reconciling; and the face question underneath
+  is unresolvable here (on Windows `font-weight:800` likely resolves to Segoe UI **Black (900)**,
+  not Bold, and the recorded 0.778 ratio was calibrated off a BADGE whose weight is unconfirmed).
+  **What IS reliable: relative costs** (model vs handoff agree within 6% on the Mobs->Bestiary
+  delta) **and one hard empirical fact — "Bestiary" (8 chars) shipped in this exact 5-tab nav on
+  Daniel's machine from 2026-07-04 to 2026-07-15 with no overlap.** Any future label question should
+  be priced against THAT, not against a model. Treat "47.45" as void.
+
+  **A stale comment found in passing, NOT fixed (unrelated to any pass that has run since):**
+  `style.css`'s `.customer-panel` rule reads `left:24px; width:430px` — it ends at **454** — while
+  its own comment says *"(ends 524; nav left edge lands ~537)"*, a survivor of the `width:500` era.
+  That is precisely the *"the only guard was a stale ~537 comment"* shape LESSONS 2026-07-04
+  recorded, still sitting in the file. One-line fix, unclaimed.
 
   **(4) THE CONTRAST CLASS — FIVE LIVE INSTANCES, MEASURED, AWAITING DANIEL'S CALL.** The §81 pass
   fixed `.beast-exp` and swept the whole UI in a real browser (388 text elements, six views). The
@@ -285,6 +311,16 @@ sync-and-certify (suite must read **1936** at HEAD, tip `8599aba`).
   (a component that legitimately relies on winning that tie would break silently), so it needs a
   measured sweep of every `.hidden` user and Daniel's pick. LESSONS 2026-07-15 carries the
   reasoning.
+
+  **(6) THE SUITE'S SOURCE PINS STILL SCAN RAW TEXT (new 2026-07-15; its own pass).** A source pin
+  matching raw file text collides with comments in BOTH directions — a positive pin sails green
+  because a comment contains the removed symbol (§72(f), 2026-07-15), and a negative pin fails on a
+  correct tree because the comment retiring a dead claim quotes it (§79 that same day; §85 tonight).
+  Three instances in two days. The recorded plug both previous times was **to reword the prose**,
+  which is backwards — the comment was right and the scanner was wrong. §85 now strips comments
+  before matching; **every other source pin in the suite is still exposed.** Sweeping them onto a
+  shared stripped source touches §0b/§72/§78/§80/§82/§84 and needs its own negative controls, so it
+  is a pass, not a rider.
 
 **THEN the rest of the parked queue, in order:** results-box flooding (h) → B2 material payment →
 B3 extra slots → Greg-perk visibility (g)①.
@@ -484,7 +520,7 @@ with the Rat. **Option-3 art polish: SCRUBBED** (see §9 — the 128px-frame + M
 convention is PERMANENT, do not resurrect).
 **Workflow note: NO DevLog for Mob Mart** — Daniel opted out (2026-07-03). Skip the DevLog draft
 step at feature completion for this project.
-**Last updated:** 2026-07-15 (late) — THE MOBS FOLLOW-UP ROUND: four passes shipped, all browser-confirmed (suite 1844 → **1936**, tip **8599aba**). (1) Runs contrast (401719c): `.beast-exp` measured **1.28:1** — the handoff’s guessed cause was FALSIFIED; it was the Market strip’s row transplanted onto a parchment card at c4905f9 and illegible since. Fixed to #6b4a1e (6.11:1); §81 pins the COMPUTED RATIO, never the hex. The sweep that shipped with it found **five more live instances** — NEXT item (4), measured, awaiting Daniel’s call. (2a) Field Guide taglines (06108af): `lore: { tagline }` × 9, one comic lever each, **0px of card height**; §82. **(2b) THE DOSSIER (8599aba, suite 1936):** a third inline sub-view; `lore.notes` = 4 × `{label, text}` per mob revealed on the serve pips, golden line as the pip-5 capstone; new pure leaf `src/data/dossier.js`; §84. **It shipped on its SECOND design — the first was suite-green at 1940/0 and Daniel rejected the content wholesale** (captions instead of stories; battle-log lines recycled into a surface whose register is permanent truths). §84(f) now pins that nothing from results.js reaches a Dossier except the golden, and §84(b) pins a length FLOOR. (3) Overlay stand-down (ecf1700), from Daniel’s read of Claude’s own screenshot: hire chip / Greg’s bubble / Bob’s bubble all painted through open panels; fixed via nav.js `isPanelOpen()` — NOT z-index (#shop-ui is inset:0 with no pointer-events; z5→z3 would have shipped a visible, unclickable chip). §83. **+8 LESSONS** (51 total). NEXT = the tab name (3) → the contrast class (4). Earlier: 2026-07-15 — the HUD band (6c0e74c) + the Bestiary/Expedition split (5843f6e), suite 1844; **a 6th nav tab does NOT fit**. Earlier: 2026-07-14 — DOUG LEVELING shipped + certified (b9ac048); THE SIM INSTRUMENT REPAIRED (2784bec — **every pre-2026-07-14 margin is VOID as a comparison**). Earlier: 2026-07-14 — Commission B1 SHIPPED (97a540f), F2 coupling reversed by the sim to decoupled.
+**Last updated:** 2026-07-15 (late) — THE MOBS FOLLOW-UP ROUND CLOSED + DOUG’S REPEATS FIXED (suite 1844 → **1975**, tip **4ac2287**). (1) Runs contrast (401719c): `.beast-exp` measured **1.28:1** — the handoff’s guessed cause was FALSIFIED; it was the Market strip’s row transplanted onto a parchment card at c4905f9 and illegible since. Fixed to #6b4a1e (6.11:1); §81 pins the COMPUTED RATIO, never the hex. The sweep found **five more live instances** — NEXT item (4), measured, awaiting Daniel’s call. (2a) Field Guide taglines (06108af): `lore: { tagline }` × 9, **0px of card height**; §82. **(2b) THE DOSSIER (8599aba, suite 1936):** a third inline sub-view; `lore.notes` = 4 × {label, text} per mob on the serve pips, golden line as the pip-5 capstone; §84. **It shipped on its SECOND design — the first was suite-green at 1940/0 and Daniel rejected the content wholesale** (captions instead of stories; battle-log lines recycled into a surface whose register is permanent truths). §84(f) pins that nothing from results.js reaches a Dossier except the golden; §84(b) pins a length FLOOR. **(3) THE TAB NAME: CLOSED, NO CHANGE — “Mobs” stays because the game is called MOB MART.** The measuring round’s real yield is that the handoff’s **47.45px slack figure is VOID** (unreproducible; the `.nav` comment it was matched against predates the rename and describes “Bestiary”) — the reliable facts are RELATIVE costs and that **“Bestiary” (8 chars) shipped for eleven days**. (4) Overlay stand-down (ecf1700): hire chip / Greg’s bubble / Bob’s bubble painted through open panels; fixed via nav.js `isPanelOpen()` — NOT z-index (#shop-ui is inset:0 with no pointer-events). §83. **(5) DOUG’S REPEATS (4ac2287, suite 1975):** his line gate was `0.25`, tuned against a 24s cadence, and scavengeSpeed took him to ~6.9s WITHOUT retuning it — 3.5× the intended rate — while `pick()`’s memorylessness repeated a 6-line pool 1-in-6. Gate now DERIVED from the live interval (holds 96s at every level, reproduces 0.25 exactly at level 0); `pickNot` kills the repeat; §85 drives the REAL loop via a new `updateWorkers` seam. **+13 LESSONS** (53 total). NEXT = the contrast class (4) → the .hidden cascade (5) → the suite’s raw-text source pins (6).
 
 ---
 
@@ -2792,3 +2828,68 @@ four-notes shape is ~500px maxed. Ratty's all-`{item}` theft pool is moot.
 
 **+3 LESSONS** (48 → 51): the tautological pin; the fully-scoped spec that never said what the
 content was FOR; the cascade tie's third instance.
+
+---
+
+## 2026-07-15 (late) — DOUG'S REPEATS (`4ac2287`; suite 1936 → 1975)
+
+**The report.** Daniel: *"since Doug is leaving more often and coming back (higher level) he repeats
+his lines very often, sometimes the same line."* His log carried the identical Doug return line
+twice, four entries apart. **That sentence is TWO defects** and the pass fixed both.
+
+  **"very often" — THE GATE WAS A DEAD CONSTANT.** `game.js` gated Doug's line on
+  `Math.random() < 0.25`, under a comment reading *"every return would spam the log at a 24s
+  cadence."* That literal encoded a RATE: 24 / 0.25 = one line every ~96s. Doug leveling
+  (`b9ac048`, 2026-07-14) added `scavengeSpeed`, taking his interval to ~6.9s at cap. The gate never
+  moved: **6.3 → 21.9 lines per ten minutes, 3.5× what anyone chose.**
+
+  **"sometimes the same line" — THE PICKER WAS MEMORYLESS.** `pick()` is uniform over a 6-line pool,
+  so an exact back-to-back repeat is **1-in-6 (16.7%), constant at every level**. Leveling didn't
+  change those odds — it rolled the dice 3.5× more often, moving a repeat from ~every 10 minutes to
+  ~every 3. Worth knowing: **the game had no anti-repeat machinery anywhere.** Doug didn't break it;
+  his speed made visible a property every pool has (mob pools are 22–28 lines, so their 1/N is ~4%).
+
+**The fix.** `dougLineChance()` returns `min(1, effectiveWorkerInterval(state, id) /
+DOUG_LINE_EVERY_S)` against a named **96** — it reproduces the historical `0.25` EXACTLY at level 0
+(24/96), so the original tuning is RESTORED rather than overridden, and holds the line cadence at
+96s across the whole ladder. `pickNot(arr, exclude)` in `utils.js` kills the repeat, **taking its
+memory as an argument**: a module-level memo would be the cross-run mutable state the sim's
+divergence hunt already suspects. The memory rides the runtime worker object and `serializeSave`
+picks fields explicitly (`{owned, level}`), so **`lastLine` is transient by construction** — no
+save-schema change, no migration; reset-on-reload costs at most one repeat per session.
+
+**THE LESSON THAT SHOULD HAVE CAUGHT THIS WAS WRITTEN BY THE PASS THAT BROKE IT.** LESSONS
+2026-07-14 — *"A comment at a live seam is a CLAIM with an expiry date; adding a dial is what expires
+it"* — prescribes *"grep every comment that reasons about the value that dial now moves."* **That
+sweep ran.** It found two falsified comments and fixed both. It missed a third in the SAME FILE about
+fifty lines from one of them, whose comment names the expired value out loud (`grep -n "24s"
+src/game.js` would have hit it). The tell: **both found sites broke VISIBLY** (Doug popped through
+the door with no idle beat — Daniel's browser found it in minutes); the missed one broke as a slow
+drift that nothing can fail. Two dramatic finds felt like a complete sweep. **A sweep ends when the
+grep is exhausted, not when it has found something.**
+
+And the structural half: 2026-07-14's fix was `scavengeClock(state)` — a single source of truth for
+everything that READS Doug's clock. It could never have protected this site, because **the 0.25 gate
+was not a reader; it was a constant tuned against the clock — a copy with no link.** `0.25` does not
+contain "24". **Single-source-of-truth protects consumers and does nothing for values that silently
+ENCODE the thing it centralises.** Tonight's fix retroactively completes it: the constant became a
+consumer, so `scavengeClock` finally covers it.
+
+**§85 DRIVES THE REAL LOOP.** `updateWorkers` is now exported as a test seam (the
+`spawnCustomer`/`dismissCurrent` precedent; purely additive — `update()` was its only caller), so the
+anti-repeat is asserted end-to-end: **0 repeats across 206 lines**, all six reachable, and a
+level-independence check catching the 3.5×. Four negative controls, and two are instructive: (a)
+making `dougLineChance` read `baseInterval` instead of the live interval **still returns 0.25 at
+level 0 and is still called**, so every pin on the helper alone passes — only the end-to-end rate
+check sees it; (b) making `pickNot` strand one line leaves the anti-repeat working *perfectly*
+(0 repeats, forever) — only the reachability pin sees it.
+
+**A PIN FAILED ON A CLEAN TREE, CORRECTLY.** §85's `!/Math\.random\(\) < 0\.25/` fired — because the
+comment explaining why the constant is dead quotes the constant. This is §72(f)'s collision, which
+the record already documents in BOTH directions; **the new part is that the recorded plug was "reword
+the prose" twice and it recurred a third time.** The fix belongs in the scanner: §85 now strips
+comments before matching. **Every other source pin in the suite still scans raw text — queued as
+item (6)**, not ridden in on a Doug fix.
+
+**+2 LESSONS** (51 → 53): the dial sweep that stopped at the visible breakages; the text-matcher
+collision whose plug was prose twice.

@@ -1118,3 +1118,92 @@ assets; the half-applied-fix staleness heuristic).
   utility class that sets a property component classes also set is a cascade landmine unless it
   is declared LAST — and the third instance of any defect class is the signal to fix the class,
   not the instance.**
+
+## 2026-07-15 — The dial-sweep rule was written BY the pass that broke this, prescribed the exact grep that would have caught it, and stopped at two because both of those broke visibly
+- What broke: Daniel, eleven days after Doug leveling shipped — "since Doug is leaving more often
+  and coming back (higher level) he repeats his lines very often, sometimes the same line." His log
+  showed the identical Doug return line twice, four entries apart.
+- Root cause: `game.js` gated Doug's line on `Math.random() < 0.25`, under a comment reading "every
+  return would spam the log at a **24s cadence**." That literal encoded a RATE: 24 / 0.25 = one line
+  about every 96s. Doug leveling (b9ac048, 2026-07-14) added `scavengeSpeed`, taking his interval to
+  ~6.9s at cap. The gate did not move, so the LINE rate went 6.3 -> 21.9 per ten minutes — 3.5x what
+  anyone chose. Compounding it, `pick()` is memoryless, so a 6-line pool repeats back-to-back 1-in-6
+  (16.7%) — a constant probability that leveling didn't change, it just rolled the dice 3.5x more
+  often, moving an exact repeat from ~every 10 minutes to ~every 3.
+- **Why this one stings: the rule that would have caught it was recorded the same day, by the same
+  pass.** LESSONS 2026-07-14 ("A comment at a live seam is a CLAIM with an expiry date; adding a dial
+  is what expires it") prescribes: *"when a pass introduces a dial, grep every comment that reasons
+  about the value that dial now moves."* That sweep RAN. It found two falsified comments (scene.js's
+  "this IS the clock", isDougOut's "the ~12s gone window dwarfs that") and fixed both. It missed a
+  third sitting in the SAME FILE about fifty lines from one of them, whose comment names the expired
+  value out loud — `grep -n "24s" src/game.js` would have hit it.
+- The generalisable tell — WHY the sweep stopped at two: **both of the found sites broke VISIBLY.**
+  Doug popped out of the door with no idle beat; Daniel's browser found it in minutes. The missed
+  site broke as a slow drift — nothing fails, nothing looks wrong for a single frame, the game just
+  gradually becomes more annoying as the player levels a worker they were rewarded for levelling. Two
+  dramatic finds felt like a complete sweep. That entry's own text even says "the SECOND falsified
+  comment was found only because the first taught me to go looking" — and then the looking stopped,
+  because two was enough to feel thorough. **A sweep's stopping condition must be the grep's
+  exhaustion, not the satisfaction of having found something.**
+- The structural half, which is the more useful lesson: 2026-07-14's fix was `scavengeClock(state)`
+  in the leaf — a single source of truth for everything that READS Doug's clock. It could never have
+  protected this site, because **the 0.25 gate was not a reader. It was a constant tuned against the
+  clock — a copy with no link.** Single-source-of-truth protects consumers; it does nothing for
+  values that silently ENCODE the thing it centralises, because they don't mention it. `0.25` does
+  not contain "24". Its only trace was prose, which is exactly the guard the project already knows
+  is unreliable in both directions (§72(f)).
+- Verification gap: no gate could see it. §77 asserted the interval math (L0 24s -> L10 6.86s) and
+  §78 pinned that the renderer calls the helper. Nothing asked how often Doug TALKS, because the rate
+  was never a named quantity — it was an emergent product of two numbers that no longer agreed.
+- Plug shipped (fix + guard): the gate is now DERIVED — `dougLineChance()` returns
+  `min(1, effectiveWorkerInterval(state, id) / DOUG_LINE_EVERY_S)` against a named `96`, which
+  reproduces the historical 0.25 EXACTLY at level 0 (24/96) and holds the line cadence at 96s across
+  the whole ladder. That also retroactively completes 2026-07-14's fix: **the constant became a
+  consumer**, so `scavengeClock`'s single source of truth finally covers it. `pickNot(arr, exclude)`
+  in utils.js kills the back-to-back repeat, with the memory passed in as an argument (a module-level
+  memo here would be the cross-run mutable state the sim's divergence hunt suspects). Guard: suite
+  §85, driving the REAL loop via a newly-exported `updateWorkers` seam — 0 repeats across 206 lines,
+  and a level-independence assertion that catches the 3.5x. Negative-controlled four ways, including
+  one where the gate reads `baseInterval` instead of the live interval: it still returns 0.25 at
+  level 0 and is still called, so every pin on the helper alone passes — only the end-to-end rate
+  check sees it.
+- Route: dev-method — TWO parts, both refinements of the existing dial rule rather than a new one.
+  (1) **A dial sweep ends when the grep is exhausted, not when it has found something**; and the
+  sites that break INVISIBLY are the ones the sweep will skip, because nothing about them feels
+  urgent. (2) **A single-source-of-truth helper only protects READERS. Sweep separately for constants
+  TUNED against the centralised value** — they cannot be found by grepping for that value, because
+  they contain a different number entirely; find them by asking "what did this literal mean, and
+  against what?" The fix is to make them readers.
+
+## 2026-07-15 — "Reword the comment" was the plug for a text-matcher collision TWICE; the third instance proves the fix belongs in the scanner
+- What happened: §85 pinned `!/Math\.random\(\) < 0\.25/` — "the literal gate that outlived its
+  premise is gone from game.js". It FAILED on a clean, correct tree. The culprit was my own comment
+  above the replacement constant, which quotes `Math.random() < 0.25` while explaining why it is
+  dead.
+- Root cause: identical to the recorded 2026-07-15 entry ("A source-text pin is satisfied by a
+  COMMENT"), which already documents BOTH directions — a positive pin sailing green because a comment
+  contained the removed symbol, AND a negative §79 pin failing because "the re-authored budget comment
+  QUOTED the dead claim while retiring it." So tonight is not a new diagnosis. I initially told Daniel
+  it was a new mirror case; reading the record before writing showed it was already there, twice.
+- What IS new, and why it earns an entry: **the recorded plug both times was to reword the prose.**
+  §72(f) got re-expressed against the parsed import list; the §79 comment was "reworded so it
+  describes the retired claim without restating it verbatim." Both are per-instance workarounds, and
+  both make the DOCUMENTATION contort to satisfy a matcher — which is backwards, since the comment
+  was right and the scanner was wrong. Three instances in two days is not a run of coincidences: it
+  is a structural property of scanning raw file text with a regex. **The third instance is the signal
+  to fix the class, not the instance** — the same conclusion the `.hidden` cascade reached tonight,
+  arrived at independently, which is itself evidence the "third instance" heuristic is real.
+- Verification gap it exposed: nothing distinguishes a pin that failed because the CODE is wrong from
+  one that failed because the PROSE is inconvenient. Both print the same red line. The second kind
+  trains you to edit comments until the suite is quiet, which is the exact wrong reflex — and a
+  reviewer reading the diff sees a reworded comment and a green suite.
+- Plug shipped: §85 strips comments before every source scan (`stripComments`, applied to both the
+  game.js and utils.js reads) so a source pin reads CODE, because CODE is what it is asking about.
+  The pin then passed on the correct tree and still fires on all four negative controls.
+- Known incomplete, recorded rather than silently left: **the rest of the suite's source pins still
+  scan raw text** and remain exposed to the same collision. Sweeping them onto a shared stripped
+  source is queued in the handoff, not done here — it touches many sections across §0b/§72/§78/§80/
+  §82/§84 and is its own pass with its own negative controls, not a rider on a Doug fix.
+- Route: dev-method — a source pin reads code, so strip comments before matching; and when the plug
+  for a defect class is "write the prose differently", that is a workaround, and the recurrence is
+  the signal to move the fix into the tool.
