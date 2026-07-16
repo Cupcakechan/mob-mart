@@ -194,6 +194,20 @@ export const CONFIG = {
     payoutMult: 1.5,           // default event bonus (+50%); a registry row's payoutMult overrides
     wantBias: 2,               // want-pick CATEGORY stage: today's category weighs x this. SOFT,
                                // same philosophy as affordableWantBias — flavor, not a filter
+    deal: {                    // THE SHOP DEAL (Daniel's Option 1 + item pool, 2026-07-16): Bob's
+                               // own promo on ONE day-seeded item from the event's category. The
+                               // deal is the board's second line and the lore fix — the plank
+                               // finally advertises Bob's shop, not somebody else's market.
+      pct: 0.15,               // the discount. PRICE-side ON PURPOSE, and it is not a violation
+                               // of the payout law: that law exists so multipliers never price a
+                               // customer OUT — a discount prices poor monsters IN (it enters
+                               // affordability), which IS the influx, organically. Bob earns the
+                               // discounted price; volume is the bet. Daniel: "20% but can be
+                               // less" — 15% is the opening dial.
+      itemBias: 2,             // want-pick ITEM stage: the deal item weighs x this inside its
+                               // category — the sign concentrates the (already event-biased)
+                               // crowd onto the discounted shelf. SOFT, same philosophy.
+    },
     crateBaseUnits: 3,         // free restock units in the crate at Neutral...
     crateUnitsPerTier: 1,      // ...plus this many per fame tier (Legendary = 3 + 5 = 8)
     crateGoldBase: 10,         // gold sweetener at Neutral...

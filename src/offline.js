@@ -88,6 +88,11 @@ export function computeOffline(state, nowMs) {
     const goldStocked = (ITEMS[id]?.acquisition ?? 'gold') === 'gold';
     stocks[id] = unlocked ? sellableStock(state, id) : 0;                    // live shelf units, B1 reserve honored
     reserves[id] = (unlocked && goldStocked) ? reservePerItem * effectiveMaxStock(state, id) : 0;  // Extra Shelf compounds in
+    // The shop deal does NOT flow offline — the standing event-free law owns it ("a bonus is for
+    // playing, not for sleeping", and the deal derives from the day's event, so it is event-state
+    // too; the away sim must stay byte-identical with and without one). Net effect: away sales
+    // slightly over-pay on the one deal item vs live play. Flagged as a judgment call 2026-07-16;
+    // flipping it means amending the law's pin, which is Daniel's call, not a side effect.
     goldPer[id] = Math.round((ITEMS[id]?.basePrice ?? 0) * itemGoldMult(state, id) * gMult) + saleTip;
   }
   const consumed = {};                                                       // LIVE units only (applyOffline

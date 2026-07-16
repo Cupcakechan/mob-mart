@@ -13,7 +13,7 @@ import { CONFIG } from '../config.js';
 import { ITEMS, ITEM_ORDER } from './items.js';
 import { MONSTERS, MONSTER_IDS } from './monsters.js';
 import { MATERIALS } from './materials.js';
-import { dayKeyOf, hashDayKey, eventIdForDay, boardEventLine, boardQuipFor, MARKET_EVENTS } from './marketevents.js';
+import { dayKeyOf, hashDayKey, eventIdForDay, boardEventLine, boardQuipFor, shopDealItemFor, MARKET_EVENTS } from './marketevents.js';
 import { TRADE_VOICE } from './results.js';
 
 // The trade tier: items whose stock arrives by trade, never by gold restock. Registry-driven —
@@ -155,15 +155,21 @@ export function tradeBoardLine(dayKey) {
 // row brings the chalk QUIP home (Market Day's comedy home — boardQuipFor, event+day-keyed,
 // deterministic per morning). The forecast's day key stays exported: the overlay still uses it.
 export function boardLines(state) {
-  const t = featuredOffer(tradeDayKey(state));
-  const pct = Math.round((1 - (CONFIG.trade?.feature?.goldMult ?? 0.6)) * 100);
+  // THE DEAL LINE IS BOB'S NOW (shop deal pass, 2026-07-16 — the completion of Daniel's lore
+  // complaint): the plank advertised the TRADE market's featured discount, i.e. somebody else's
+  // shop. Now it advertises Bob's own promo — the day-seeded shop deal on an item of the event's
+  // category. The trade discount didn't lose a surface: the overlay's SPECIAL OF THE DAY banner
+  // was always its informative home. No deal (no event / nothing unlocked in category) -> no
+  // line, the board is headline + quip that morning.
   const evId = eventIdForDay(tradeDayKey(state));
   const ev = MARKET_EVENTS[evId];
+  const dealId = shopDealItemFor(tradeDayKey(state), ev, state);
+  const pct = Math.round((CONFIG.market?.deal?.pct ?? 0) * 100);
   return {
     headline: boardEventLine(ev),
-    deal: t ? `Deal: ${ITEMS[t.itemId]?.displayName ?? t.itemId} — ${pct}% off` : '',
+    deal: dealId ? `Today: ${ITEMS[dealId]?.displayName ?? dealId} ${pct}% off!` : '',
     quip: boardQuipFor(ev, tradeDayKey(state)),
-    contentKey: `${t?.key ?? ''}|${evId}`,
+    contentKey: `${dealId ?? ''}|${evId}`,
   };
 }
 

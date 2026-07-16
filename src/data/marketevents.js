@@ -1,3 +1,4 @@
+import { ITEMS, ITEM_ORDER, isItemUnlocked } from './items.js';   // shop deal picker (leaf -> leaf)
 // marketevents.js — Market Day (retention pass, Option 2 — Daniel 2026-07-06): one DEMAND EVENT
 // per calendar day plus the once-a-day supplier crate. This module is the pure/leaf half: the
 // event registry, the deterministic date -> event math, and the announcement line pools. The
@@ -172,6 +173,21 @@ export function marketBannerCompact(event, mult) {
 // a Math.random pick would. Same FNV as the event pick, salted with the event id so a growing
 // pool reshuffles per-event rather than in lockstep. Draws from the bubble pool (authored
 // board-short, <=48 chars, suite-pinned).
+// THE SHOP DEAL PICKER (Daniel's Option 1 + item pool, 2026-07-16). The event names the hot
+// category; Bob discounts ONE item from it — day-seeded from the category's UNLOCKED pool over
+// ITEM_ORDER (stable), so repeat-category days still read as distinct mornings ("Consumables +
+// Zip Tonic" vs "Consumables + Greater Flask"). Null when there's no event or nothing unlocked
+// in the category — the board simply has no deal line that morning. NOTE the pick is a pure
+// function of (dayKey, unlocked set): buying a license mid-day can re-deal the deal (the pool
+// grows, the modulo moves) — accepted; the chalk rewrite makes it a visible morning-style event,
+// and freezing it would cost a persisted field for a rare cosmetic wobble.
+export function shopDealItemFor(dayKey, event, state) {
+  if (!event?.category) return null;
+  const pool = ITEM_ORDER.filter((id) => ITEMS[id].category === event.category && isItemUnlocked(state, id));
+  if (pool.length === 0) return null;
+  return pool[hashDayKey(`shopdeal:${dayKey}`) % pool.length];
+}
+
 export function boardQuipFor(event, dayKey) {
   const pool = event?.bubble ?? [];
   if (pool.length === 0) return '';

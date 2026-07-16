@@ -84,6 +84,17 @@ export const ITEMS = {
                  license: { cost: 150, requiredTier: 2 } },   // Trusted -- standalone curio (anti-slime gag)
 };
 
+// Moved from game.js (shop deal pass, 2026-07-16): this is pure registry+state logic and the leaf
+// data modules (marketevents' deal picker, trademarket's board) need it without importing game.js
+// — the "leaf, no cycle" architecture the render layer pins. game.js re-exports it, so its ~30
+// existing import sites are untouched.
+export function isItemUnlocked(state, itemId) {
+  const item = ITEMS[itemId];
+  if (!item) return false;
+  if (!item.license) return true;                     // base items need no license
+  return state?.licenses?.[itemId] === true;
+}
+
 // Display order for the shelf cards (base row, tier-2 row, batch-1 free four + license rung, batch-2 chain tops).
 export const ITEM_ORDER = ['club', 'metal_helmet', 'hp_flask', 'iron_sword', 'greater_flask', 'knight_helm',
   'tattered_shirt', 'bandages', 'wooden_shield', 'rusty_key',

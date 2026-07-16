@@ -4119,22 +4119,17 @@ console.log('M4 auto-serve worker — smoke test\n');
   const { eventIdForDay: eid66 } = await import('./src/data/marketevents.js');   // F4: contentKey pin
   const { CONFIG: CFG66 } = await import('./src/config.js');
   const { ITEMS: ITEMS66 } = await import('./src/data/items.js');
-  const pct66 = Math.round((1 - CFG66.trade.feature.goldMult) * 100);
-  // RETARGETED by the board restructure (Daniel's Option 2, 2026-07-16): today->deal (demoted to
-  // the second line), tomorrow->GONE from the plank (the overlay's footer carries it — pinned in
-  // §90), headline/quip are §90's to pin. The overflow and no-recipe laws carry over unchanged.
+  // RETARGETED TWICE (board restructure, then the shop-deal pass — both 2026-07-16): the deal
+  // line is BOB'S promo now (the day-seeded shop deal), not the trade market's featured discount;
+  // its derivation and contentKey are §92's to pin exactly. What §66 still owns: the plank stays
+  // recipe-free and forecast-free — the two laws that survive every restructure.
   for (const d of [1, 7, 23]) {
     const s = { tradeDayKeyOverride: `sim-day-${d}` };
     const L = bl66(s);
-    const t = feat66(tdk66(s));
-    ok(L.deal === `Deal: ${ITEMS66[t.itemId].displayName} — ${pct66}% off`,
-      `sign: sim-day-${d} deal line derives from the featured item + the live dial`);
     ok(L.tomorrow === undefined,
       `sign: sim-day-${d} the forecast is OFF the plank (the overlay footer is its home now)`);
-    ok(!L.deal.includes('⇐') && !(L.headline ?? '').includes('⇐'),
+    ok(!(L.deal ?? '').includes('⇐') && !(L.headline ?? '').includes('⇐'),
       `sign: sim-day-${d} no recipe glyphs on the sign — the board advertises, the overlay informs`);
-    ok(L.contentKey === `${t.key}|${eid66(tdk66(s))}`,
-      `sign: sim-day-${d} contentKey composes the offer + today's event (the chalk re-write trigger)`);
   }
   // The scene consumes boardLines, not the recipe segments (the wiring pin, §64's style).
   const { readFileSync: rf66 } = await import('node:fs');
@@ -6932,6 +6927,90 @@ console.log('M4 auto-serve worker — smoke test\n');
        'pity: the sim\u2019s daily model rolls through the SAME function — the inline copy is retired');
     ok(!/Math\.random\(\) < chance\) addMaterial\(s, 'inspectors_seal'/.test(sim91),
        'pity: the sim\u2019s old inline seal roll is gone, not shadowed');
+  }
+}
+
+// ===== SECTION 92 — THE SHOP DEAL (Daniel's Option 1 + item pool, 2026-07-16) =====
+// The board's deal line is BOB'S now — the completion of the lore complaint: the day's world
+// event names the hot category, and Bob promos ONE day-seeded item from its unlocked pool at
+// pct off. The discount is PRICE-side on purpose and is not a payout-law violation: that law
+// stops multipliers pricing customers OUT; a discount prices poor monsters IN — it enters the
+// pick's affordability, which is the influx made honest. Bob earns the discounted price; the
+// crowd (event wantBias, existing) plus the sign (deal itemBias, new) supply the volume bet.
+// The sim measures whether the bet pays — this pass ends in its own certification.
+{
+  const { shopDealItemId: sdi92, effectiveBasePrice: ebp92 } = await import('./src/game.js');
+  const { shopDealItemFor: sdf92, MARKET_EVENTS: MEV92, eventIdForDay: eid92 } = await import('./src/data/marketevents.js');
+  const { boardLines: bl92, tradeDayKey: tdk92 } = await import('./src/data/trademarket.js');
+  const PCT92 = CONFIG.market?.deal?.pct ?? 0;
+  const BIAS92 = CONFIG.market?.deal?.itemBias ?? 1;
+
+  ok(PCT92 > 0 && PCT92 < 0.5 && BIAS92 > 1,
+     `deal: the dials exist and are sane (pct=${PCT92}, itemBias=${BIAS92})`);
+
+  // --- (a) THE PICKER: day-seeded from the event category's UNLOCKED pool over ITEM_ORDER;
+  // deterministic per (day, unlocked set); null-safe both ways. ---
+  {
+    const s = shopState();
+    const day = 'sim-day-7';
+    const ev = MEV92[eid92(day)];
+    const pick1 = sdf92(day, ev, s), pick2 = sdf92(day, ev, s);
+    ok(pick1 !== null && pick1 === pick2 && ITEMS[pick1].category === ev.category,
+       'deal: the pick is deterministic per day and lives in the event\u2019s category');
+    ok(sdf92(day, null, s) === null, 'deal: no event, no deal (headless tests degrade to x1)');
+    const bare = { licenses: {} };
+    const lockedPool = ITEM_ORDER.filter((id) => ITEMS[id].category === ev.category && !ITEMS[id].license);
+    const pickBare = sdf92(day, ev, bare);
+    ok(lockedPool.length === 0 ? pickBare === null : (pickBare !== null && !ITEMS[pickBare].license),
+       'deal: an unlicensed shop deals only from what it can actually sell (or not at all)');
+  }
+
+  // --- (b) THE PRICE, both sides of the same function: the deal item pays pct off, everything
+  // else pays base — and the SERVE path actually charges it (driven, not source-scanned). ---
+  {
+    const s = shopState();
+    s.tradeDayKeyOverride = 'sim-day-7';
+    s.marketEventId = eid92('sim-day-7');
+    const dealId = sdi92(s);
+    ok(dealId !== null, 'deal: the stateful half resolves today\u2019s item');
+    ok(ebp92(s, dealId) === Math.round(ITEMS[dealId].basePrice * (1 - PCT92)),
+       'deal: the deal item\u2019s effective price is exactly pct off base');
+    const other = ITEM_ORDER.find((id) => id !== dealId);
+    ok(ebp92(s, other) === ITEMS[other].basePrice,
+       'deal: every other item pays exactly base (the discount does not smear)');
+  }
+
+  // --- (c) THE INFLUX'S HONEST HALF, source-pinned at the pick stage (the weighted pick is
+  // stochastic, so the mechanism pins are structural; §92(b) already drove the price itself):
+  // affordability reads the DISCOUNTED price, and the deal item carries the sign's bias. ---
+  {
+    const game92 = srcOf('./src/game.js');
+    ok(/effectiveBasePrice\(state, id\) <= budget/.test(game92),
+       'deal: pick-stage affordability reads the effective price — the discount prices monsters IN');
+    ok(/id === dealId \? \(CONFIG\.market\?\.deal\?\.itemBias \?\? 1\) : 1/.test(game92),
+       'deal: the deal item carries the sign\u2019s item-stage bias');
+    ok(/effectiveBasePrice\(state, c\.wantedItemId\)/.test(game92),
+       'deal: the serve path pays through the same one price function');
+    // The offline HALF-LAW: away sales deliberately do NOT honor the deal (the event-free law
+    // owns it — §(g) of the market section pins byte-identity, this pins the why stays written).
+    const off92 = srcOf('./src/offline.js');
+    ok(!/effectiveBasePrice/.test(off92),
+       'deal: offline stays deal-free — the event-free law owns away earnings (the flagged judgment call)');
+  }
+
+  // --- (d) THE BOARD SAYS BOB'S DEAL: derived from the picker + the live dial; the trade
+  // market's featured discount is off the plank (its home is the overlay banner). ---
+  {
+    const s = shopState();
+    s.tradeDayKeyOverride = 'sim-day-7';
+    const L = bl92(s);
+    const dealId = sdf92(tdk92(s), MEV92[eid92(tdk92(s))], s);
+    ok(L.deal === `Today: ${ITEMS[dealId].displayName} ${Math.round(PCT92 * 100)}% off!`,
+       'deal: the board\u2019s deal line derives from the shop deal + the live dial');
+    ok(L.contentKey === `${dealId}|${eid92(tdk92(s))}`,
+       'deal: the contentKey is deal|event — a new deal chalks the board');
+    ok(!/40% off/.test(L.deal ?? ''),
+       'deal: the trade market\u2019s featured discount is OFF the plank (the overlay banner is its home)');
   }
 }
 

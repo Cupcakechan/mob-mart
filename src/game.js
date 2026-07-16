@@ -21,7 +21,7 @@ import { reputationTier } from './reputation.js';
 import { logLine } from './messages.js';
 import { MONSTER_RESULTS } from './data/results.js';   // line-unlock: scan for minServes batches at crossings (leaf registry, no cycle)
 import { MARKET_EVENTS, eventIdForDay, dayKeyOf, marketAnnounceLine, marketBubbleLine,
-  crateLine } from './data/marketevents.js';   // Market Day (leaf registry, no cycle)
+  crateLine, shopDealItemFor } from './data/marketevents.js';   // Market Day (leaf registry, no cycle)
 import { visitAnnounceLine, visitBubbleLine, visitGradeLine } from './data/visits.js';   // Special Visits (leaf, no cycle)
 
 // --- Customer spawning -------------------------------------------------------
@@ -142,9 +142,15 @@ export function spawnCustomer(state, forcedId = null) {
   if (catEntries.length > 0) {
     const cat = weightedPick(catEntries);
     const ids = catEntries.find((e) => e.value === cat)?.ids ?? [];
+    // THE SHOP DEAL at the item stage (2026-07-16): the deal item weighs x itemBias (the sign
+    // concentrates the crowd), and affordability reads the DISCOUNTED price — which is the honest
+    // half of the influx: a monster who couldn't afford the buckler yesterday can today, so the
+    // extra bodies at that shelf are priced in, not conjured. dealId computed once per spawn.
+    const dealId = shopDealItemId(state);
     wantedItemId = weightedPick(ids.map((id) => ({ value: id,
       weight: (monster.itemBias?.[id] ?? 1)
-        * (ITEMS[id].basePrice <= budget ? (CONFIG.queue.affordableWantBias ?? 4) : 1)
+        * (id === dealId ? (CONFIG.market?.deal?.itemBias ?? 1) : 1)
+        * (effectiveBasePrice(state, id) <= budget ? (CONFIG.queue.affordableWantBias ?? 4) : 1)
         // DEMAND HONESTY (F2 Option 1): third item-stage factor — trade-tier picks weigh x the
         // shelf's truth (stocked/known/unknown). See supplyWantWeight above spawnCustomer.
         * supplyWantWeight(state, id) })));
@@ -216,7 +222,10 @@ export function serveCurrent(state) {
   // price, so a demand spike can never price a customer out. x1 when no event is active.
   // Bob's Salesmanship (Deep Sinks) is a FLAT tip added AFTER the rounded product — linear
   // production against exponential training costs, and payout-side like everything else here.
-  let goldGain = (Math.round(item.basePrice * itemGoldMult(state, c.wantedItemId) * globalGoldMult(state)
+  // THE SHOP DEAL rides the price INPUT (effectiveBasePrice): Bob earns the discounted price on
+  // the deal item; every payout-side multiplier then applies to it as usual. Non-deal items pay
+  // exactly the old formula.
+  let goldGain = (Math.round(effectiveBasePrice(state, c.wantedItemId) * itemGoldMult(state, c.wantedItemId) * globalGoldMult(state)
     * marketPayoutMult(state, item.category)) + sumWorkerEffect(state, 'saleTip')) * units;
   // ^ bulk pays the FULL per-unit formula per unit, tip included — the same per-unit convention
   //   the offline sim uses; rep below stays PER VISIT (rep rewards service, not volume).
@@ -646,11 +655,25 @@ export function effectiveMaxStock(state, itemId) {
 // --- Supplier licenses (Pass 3). A tier-2 item exists on the shelf but is INERT until its
 // one-time gold license is bought: customers never want it, it can't be restocked, and the
 // offline sim skips it. License-free items are always unlocked. -------------------------------
-export function isItemUnlocked(state, itemId) {
-  const item = ITEMS[itemId];
-  if (!item) return false;
-  if (!item.license) return true;                     // base items need no license
-  return state?.licenses?.[itemId] === true;
+// isItemUnlocked moved to items.js (shop deal pass, 2026-07-16 — the leaf modules need it).
+// IMPORT-then-export, not `export {} from`: the from-form re-exports WITHOUT a local binding,
+// and game.js itself calls this ~30 times (a ReferenceError at the first canRestock caught it).
+import { isItemUnlocked } from './data/items.js';
+export { isItemUnlocked };
+
+// THE SHOP DEAL, stateful half (the pure picker lives in marketevents.js). Today's discounted
+// item, or null (no event / nothing unlocked in its category / headless tests with no
+// marketEventId — everything degrades to x1, the soft-law).
+export function shopDealItemId(state) {
+  return shopDealItemFor(tradeDayKey(state), MARKET_EVENTS[state?.marketEventId], state);
+}
+// The price a sale actually pays (and the price affordability sees): basePrice, cut by the deal
+// on the deal item only. ONE function for both sides — the serve path, the pick path and the
+// offline model all read it, so the discount cannot drift between them.
+export function effectiveBasePrice(state, itemId) {
+  const base = ITEMS[itemId]?.basePrice ?? 0;
+  if (itemId !== shopDealItemId(state)) return base;
+  return Math.round(base * (1 - (CONFIG.market?.deal?.pct ?? 0)));
 }
 
 export function canBuyLicense(state, itemId) {
