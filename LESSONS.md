@@ -996,3 +996,117 @@ assets; the half-applied-fix staleness heuristic).
 - Route: project-only for the specifics (the #shop-ui pointer-events trap is pinned in §83 and named
   in the handoff), but the general half is a dev-method candidate: a stacking/geometry change is a
   RELATIONSHIP change, so cheapness of edit is no evidence of smallness of decision.
+## 2026-07-16 — A source pin certified the crash verbatim: presence is not correctness
+- What happened: the commission-repeat pass added a green highlight line referencing `itemId` in a
+  render loop whose variable is `offer` — the identifier was copied from the BUILDER loop above,
+  which does use `itemId`. `ReferenceError` on row 2 of every render: one row of the Trade Market
+  filled, nine blank, the exception re-threw per frame, and the game froze on open. Daniel's
+  browser was the first thing to run the code. THREE gates passed over it: `node --check` parses an
+  undefined identifier happily; the module-import gate never CALLS renderMarket; and §89's source
+  pin matched the broken line VERBATIM — the pin was `classList\.toggle\('comm-target', ... ===
+  itemId\)`, so the suite was certifying the bug's exact text as compliance.
+- Second finding, same episode: the headless repro FAILED twice before succeeding — `renderMarket`
+  short-circuits on `!isOpen`, so the probe silently tested nothing until `openMarket` ran first. A
+  repro that doesn't reproduce is the same false-green shape one level up.
+- Plug/principle: **a source pin certifies that text EXISTS, never that it is right** — it pins
+  drift, not correctness. Any pass that touches a render path now gets an in-container jsdom smoke
+  before delivery: build the real DOM, run the real entry points, assert the EFFECT (rows filled,
+  the right row classed) — jsdom stays container-only, never committed, never a repo dependency.
+  And when inserting into a loop, read THE LOOP'S OWN header for its binding — never carry an
+  identifier over from a neighbouring loop that happens to render the same data.
+- Route: dev-method (the render-smoke gate; the loop-binding rule joins "read the landing zone").
+
+## 2026-07-16 — The negative control caught my pin comparing a function to itself
+- What happened: §89's seed-law pin asserted `forDay(day, ids) === forDay(day, ids, 0)` — meant to
+  prove seq 0 reproduces the legacy seed. Its own negative control (drift the ternary into the
+  salted form) came back SILENT: both calls drift TOGETHER, so the pin can only ever compare the
+  function to itself. It was decoration from birth, and nothing but a bite test could tell — the
+  suite was green, the pin read sensibly, the assert message was persuasive.
+- Same session, same shape twice more in §88's drafts: a sentinel whose only stripped survivor was
+  its own probe string, and counting pins whose assert MESSAGES contained the tokens being counted
+  (a message string survives comment-stripping — the guard's own prose is text too).
+- Plug/principle: **every new pin must be seen red before it ships** — the bite test is not
+  ceremony, it is the only detector for self-satisfying asserts. When a pin's subject can drift in
+  lockstep with its expectation (same function, same file, same string), split the pin: one
+  behavioral half + one SOURCE half anchored on the exact branch that must survive.
+- Route: dev-method (already the doctrine; this is the entry that says the doctrine caught its
+  author three times in one day and is therefore load-bearing, not ritual).
+
+## 2026-07-16 — The acceptance criterion was standing on a lottery: unbounded RNG tails vs hard horizons
+- What happened: the commission-repeat certification FAILED — seed 2 capped at 168h with 4 wants
+  left while its commission-BLIND twin finished at 72h. Three tidy hypotheses (materials treadmill,
+  B1-reserve grade coupling, fame starvation) died to cheap checks; the instrumented run told the
+  truth: all four relics found by day 1, seal chance ~75%/day, and the run rolled 3-of-7 —
+  `everything_cloak` sat ONE SEAL short forever. The Inspector's Seal roll had an unbounded tail
+  (~10%/seed/week of missing the horizon), and the repeat pass merely RE-DEALT the hands: every
+  commission voice line draws `pick()` from the shared seeded stream, so ~30 extra draws realigned
+  every downstream roll. The previous certification had simply held a lucky hand — the criterion
+  was a lottery ticket the whole time, and the player-facing version is an endgame stalled on a
+  daily coin flip with no agency.
+- Plug shipped: the pity slope (`rollSeal`: each miss adds `sealPityPerMiss` 0.25, win resets;
+  tail bounded by construction, slope law intact) — and the SIM CALLS THE GAME'S OWN `rollSeal`
+  now; its inline copy of the formula, which is how the drift stayed invisible, is retired and its
+  absence pinned (§91(e)).
+- Plug/principle: **when an acceptance criterion sits near an RNG tail, any stream perturbation
+  anywhere re-rolls which seed fails — the diff that "broke" the cert may be innocent.** Diagnose
+  the TAIL (instrument the failing seed; read chance × trials), not the diff. And any probability
+  the game re-implements in its instrument WILL drift: one exported function, both callers, absence
+  of the copy pinned.
+- Route: dev-method (the tail-vs-diff diagnosis rule) + project (rollSeal is the one-source law).
+
+## 2026-07-16 — The container reaps detached jobs; a fire-and-forget certification died three times
+- What happened: three detached certification wrappers (setsid + nohup) died silently minutes
+  after the launching tool call ended — output frozen mid-run, no process left. Worse: the third
+  death was self-inflicted — the "idempotent rewrite" of the wrapper had been in a command that
+  returned -1, NEVER LANDED ON DISK, and my re-kick ran the OLD script, which restarted run 1 from
+  scratch and CLOBBERED the finished run's output (the PASS evidence) while a hung sibling still
+  held the box.
+- Plug shipped: the certification wrapper is IDEMPOTENT-RESUME — a run is DONE when its output
+  file ends with a `RESULT:` line; done runs are skipped; the wrapper is re-kicked once per
+  response and progress is read from artifacts (file tails + mtimes), never from process state.
+  And after ANY script write, verify the content ON DISK (grep its distinguishing marker) before
+  kicking it — a heredoc that "ran" in a failed command is the silent-no-op class wearing a new
+  hat.
+- Route: dev-method (extends the detached-run doctrine: setsid + artifact polling is necessary but
+  NOT sufficient in this container — the wrapper itself must be resumable, and its deployment
+  verified on disk).
+
+## 2026-07-16 — The suite defended Daniel's law against me, and that is the system working
+- What happened: the shop-deal pass piped the discount into offline earnings ("idle-honest: one
+  price everywhere") — and a standing pin went red: "offline earnings are event-free (a bonus is
+  for playing, not for sleeping)", which pins the away sim BYTE-IDENTICAL with and without an
+  event. The deal derives from the day's event, so it IS event-state. I reverted my edit rather
+  than soften the pin, recorded the judgment call at the code site (away sales slightly over-pay
+  on the one deal item), and flagged the flip as a law amendment that belongs to Daniel.
+- Plug/principle: **when a standing pin blocks new work, the pin is innocent until the LAW's owner
+  rules** — the options are (a) conform, or (b) surface the conflict and ask; silently retargeting
+  a design-law pin to admit your feature is the same move as deleting a failing test. The suite's
+  design-law pins exist precisely for the maintainer who arrives convinced.
+- Route: dev-method.
+
+## 2026-07-16 — Comment-only deliveries are suite-invisible by construction
+- What happened: the §87 pass's two src/ui files (comment-only diffs) missed Daniel's copy — the
+  remote carried the old comments, the pushed tree was GREEN at full count, and nothing could
+  catch it: §88's own comment-stripping makes the suite blind to comments BY DESIGN, so the one
+  guard was the checkpoint block's expected-file comment, which is read by a human. It caught the
+  miss one round late (the next fetch's per-file hash comparison), costing a two-file follow-up
+  commit.
+- Plug/principle: **a delivery whose diff is entirely comments has NO automated verification** —
+  the per-file hash check against the remote after every checkpoint is the only detector, so it is
+  not optional; and stale comments that demand retired machinery are how the next session re-adds
+  it.
+- Route: dev-method (the post-checkpoint hash sweep is now part of "never ask whether it was
+  pushed — check", explicitly including files whose diff is prose).
+
+## 2026-07-16 — The harness's originals died with its process: timeouts strand mutations
+- What happened: a negative-control harness holding originals IN MEMORY hit the hard execution
+  time limit mid-control — the finally never ran, and the tree was left with the control's
+  mutation (the pity dial at 0). It happened TWICE before the shape was fixed; the second time the
+  suite's own dial pin caught it (red on a "green" tree), which is the guard working one level
+  down.
+- Plug/principle: **any script that mutates the tree and restores in-process can strand its
+  mutation under a hard timeout.** Originals persist to DISK before the first mutation; controls
+  run one-or-two per command with explicit restores; and after any harness run, the tree's
+  distinguishing markers get grepped against the intended state (the same landing-zone rule that
+  governs edit scripts — a harness IS an edit script that promises to undo itself).
+- Route: dev-method.

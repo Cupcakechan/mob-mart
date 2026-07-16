@@ -244,8 +244,16 @@ ONLY revealed content, so a renderer bug cannot leak a locked note); `lore.notes
   pick**: a sub-view lives inside `#shop-ui`, so §83's bleed-through class cannot recur by
   construction. Do not "upgrade" it without re-reading §83.
 
-**NEXT — (4) THE CONTRAST CLASS.** Cold-boot ritual as always: this doc in full, the dev-method
-skill, sync-and-certify (suite must read **1975** at HEAD, tip `4ac2287`).
+**NEXT — THE SHOP-DEAL CERTIFICATION, then THE TRADE-MARGIN "WEAK" LOOK.** Cold-boot ritual as
+always: this doc in full, the dev-method skill, sync-and-certify (suite must read **2062** at
+HEAD, tip `c60d781`). (1) The shop deal (2026-07-16) is economy-touching and ships UNCERTIFIED —
+run `sim_economy.mjs` 3× bit-identical on the current tip (the seal-pity cert on `a5565fc`
+passed run 1 — all seeds finish, seed 2 at 120h — but the 3× hash check kept dying to the
+container reaping detached jobs; the idempotent resume-wrapper pattern is in LESSONS 2026-07-16).
+(2) Inside that same cert output: the TRADE margin's verdict reads **"WEAK — the market's teeth
+need retuning"** — the trade-blind bot is no longer clearly behind (predates the shop deal;
+visible in the failed cert too). Diagnose whether F2/F3's honest margins eroded or the bot policy
+drifted; a finding, parked and named, not lost.
 
   **(3) THE TAB NAME — CLOSED 2026-07-15, NO CHANGE. "Mobs" stays, and the reason retires the
   question rather than parking it: the game is called MOB MART.** The tab carries the game's own
@@ -275,7 +283,12 @@ skill, sync-and-certify (suite must read **1975** at HEAD, tip `4ac2287`).
   That is precisely the *"the only guard was a stale ~537 comment"* shape LESSONS 2026-07-04
   recorded, still sitting in the file. One-line fix, unclaimed.
 
-  **(4) THE CONTRAST CLASS — FIVE LIVE INSTANCES, MEASURED, AWAITING DANIEL'S CALL.** The §81 pass
+  **(4) THE CONTRAST CLASS — DONE 2026-07-16** (`6a33698`, suite 2006, §86 — Daniel's Option 2:
+  the two costs darkened along their OWN hue rays vs the LOCKED card surface, three non-currency
+  instances took the house ink, PLUS a sixth instance the browser sweep couldn't reach: the locked
+  perk's "Reach «Tier»" at 1.18:1, fixed on .upg-meta because a child cannot undo a parent's
+  composited opacity. Still parked: the over-dimmed sub-class — `.beast-next` 3.45 /
+  `.dossier-next` 3.55.) The original survey follows for the record: The §81 pass
   fixed `.beast-exp` and swept the whole UI in a real browser (388 text elements, six views). The
   class: **a colour authored for the DARK panel palette, reused for text on a PARCHMENT card** — the
   cards are the only light surfaces in a dark-purple UI, so a dark-panel colour looks right in the
@@ -297,8 +310,12 @@ skill, sync-and-certify (suite must read **1975** at HEAD, tip `4ac2287`).
   are carrying MEANING (gold = money, purple = rep), so a straight recolour flattens a legible
   system — that is the options round, not a sweep-and-replace.
 
-  **(5) THE `.hidden` CASCADE — THE CLASS, NOT THE INSTANCE (new 2026-07-15; an options round, not
-  a sweep).** `.hidden{display:none}` is declared at `style.css` line 244, near the top of an
+  **(5) THE `.hidden` CASCADE — DONE 2026-07-16** (`ddd0ca8` + follow-up `95f4cda`, suite 2008,
+  §87 — Daniel's Option 3: `.hidden{display:none !important}`, all THIRTEEN scoped overrides
+  retired; the jsdom sweep of all 25 consumers found ZERO legitimate tie-winners, a FOURTH live
+  instance — `#forge-section` shipped VISIBLE pre-hire — and `.item-reserve` at 0-2-0, which is
+  why "move to the end" lost to `!important`. The src/ui comment updates missed the first commit:
+  comment-only deliveries are suite-invisible by construction.) Original write-up follows: `.hidden{display:none}` is declared at `style.css` line 244, near the top of an
   833-line file, so **every component below it that sets its own `display` ties at 0-1-0 and WINS**
   — a `.hidden` toggle on it is a silent no-op. Three live instances now (`.offer-row`,
   `.beast-cards`, `.mob-views`), each carrying a scoped `X.hidden` override and a suite text-pin.
@@ -312,7 +329,11 @@ skill, sync-and-certify (suite must read **1975** at HEAD, tip `4ac2287`).
   measured sweep of every `.hidden` user and Daniel's pick. LESSONS 2026-07-15 carries the
   reasoning.
 
-  **(6) THE SUITE'S SOURCE PINS STILL SCAN RAW TEXT (new 2026-07-15; its own pass).** A source pin
+  **(6) THE SOURCE LAW — DONE 2026-07-16** (`261cc6a`, suite 2014, §88 — Daniel's Option 3: 62
+  reads onto a shared cached `srcOf()`; `rawSrc()` is the COUNTED escape hatch at exactly 3 call
+  sites — the Kong mirror pair + §79(e), whose subject IS prose and which the migration itself
+  caught green-off-a-comment. §88 self-scans the suite through its own stripper; two of its own
+  drafts died in review as decoration.) Original write-up follows: A source pin
   matching raw file text collides with comments in BOTH directions — a positive pin sails green
   because a comment contains the removed symbol (§72(f), 2026-07-15), and a negative pin fails on a
   correct tree because the comment retiring a dead claim quotes it (§79 that same day; §85 tonight).
@@ -323,7 +344,10 @@ skill, sync-and-certify (suite must read **1975** at HEAD, tip `4ac2287`).
   is a pass, not a rider.
 
 **THEN the rest of the parked queue, in order:** results-box flooding (h) → B2 material payment →
-B3 extra slots → Greg-perk visibility (g)①.
+B3 extra slots → Greg-perk visibility (g)① → the over-dimmed sub-class round (`.beast-next` 3.45 /
+`.dossier-next` 3.55) → the F4 discovery-gap WATCH (board 3.0 removed the demand headline on
+Daniel's live read; if market days stop being noticed, `headline: boardEventLine(ev)` in
+boardLines is the one-field restoration — the flag is written at the code site).
 
 **DOUG LEVELING — DONE 2026-07-14 (b9ac048, suite 1797, certified 3× bit-identical).** Option 1 as
 spec'd: `WORKERS.scavenger.levels` = **Fleet Feet** ("Faster scavenge runs (-20%)"), effect
@@ -2893,3 +2917,114 @@ item (6)**, not ridden in on a Doug fix.
 
 **+2 LESSONS** (51 → 53): the dial sweep that stopped at the visible breakages; the text-matcher
 collision whose plug was prose twice.
+
+## 2026-07-16 — THE NINE-PASS SESSION (suite 1975 → 2062; tips `6a33698` → `c60d781`)
+
+One session, nine shipped passes, two live certifications, and four bugs that never reached the
+player. In commit order:
+
+**(1) §86 — THE CONTRAST CLASS** (`6a33698`, suite 2006). Option 2: `.upg-cost` → `#795c1c`,
+`.perk-cost` → `#6c5785` — each darkened along its OWN hue ray, derived against the LOCKED card
+`#e6dcc6` (parchment-alone derivation FAILED the locked surface at 4.37/4.34; §86(c) is that
+lesson as a pin). Three non-currency instances took the house `#6b4a1e`; `.beast-next.vip` also
+needed `opacity:1` (half of its 1.01 was the inherited .6). THE SIXTH INSTANCE: a locked perk's
+"Reach «Tier»" at 1.18:1 — the sole statement of the requirement — fixed via
+`.perk-card.locked .upg-meta{opacity:1}` because a CHILD cannot undo a parent's composited
+opacity; the fix's declaration order is load-bearing (0-3-0 tie) and pinned. §86 reads
+comment-stripped CSS and pins AS-RENDERED ratios (a colour-only pin stayed green through the
+opacity drop — the false-green was caught by re-reading the pin, then bitten in negative
+controls). The suite's CSS parser became cascade-correct (last declaration wins; `.item-card` is
+declared twice and the first-rule reader was right by luck). Rider: §85's Doug guard flaked red
+on a green tree (400 ticks × ~7% gate ≈ P(silent) 1.5% — one lying-red commit in seventy);
+hardened to 4000 ticks with the math in the comment.
+
+**(2) §87 — THE `.hidden` LAW** (`ddd0ca8` + `95f4cda`, suite 2008). Option 3:
+`.hidden{display:none !important}`. The measured jsdom sweep (calibrated against the known-true
+`.mob-views` no-op FIRST) covered all 25 toggle consumers: zero legitimate tie-winners, THIRTEEN
+scoped overrides retired (the handoff said three — the sweep count is the real one), and a FOURTH
+live instance: `#forge-section` (`worker-cards hidden`) shipped VISIBLE pre-hire — "Doug's Forge —
+found relics restored here go on display, forever" on screen from save-slot zero, a spoiler
+wearing a bug's clothes, invisible because every progressed save hires Doug. `.item-reserve` at
+0-2-0 is why Option 2 ("move `.hidden` to the end") lost: order can't beat specificity. §87 pins
+the law verbatim + law-is-alone (exactly one `.hidden` display rule). Seven older pins retargeted.
+FOLLOW-UP `95f4cda`: the two src/ui comment updates missed Daniel's copy — comment-only diffs are
+suite-invisible BY CONSTRUCTION under §87's own stripping, so the checkpoint's expected-file list
+was the only guard, and it caught it one round late.
+
+**(3) §88 — THE SOURCE LAW** (`261cc6a`, suite 2014). Option 3: every suite source pin reads
+through one shared cached `srcOf()` (block comments everywhere, URL-sparing line comments in JS,
+`<!-- -->` in HTML); 62 reads migrated; `rawSrc()` is the COUNTED escape hatch — exactly 3 call
+sites: the Kong mirror pair (its contract IS full text) and §79(e), whose pins' SUBJECT is prose
+(the layout-budget comment) and which the migration caught green-off-a-comment — the class's
+fourth live instance, found by the fix. §88 self-scans the suite through its own stripper
+(sentinel: the tally template survives exactly once — a regex whose escaped source cannot
+self-match; the first draft's plain-string sentinel found only ITSELF). Negative controls proved
+both directions dead: commenting out pinned code FIRES; a comment quoting a retired rule STAYS
+GREEN.
+
+**(4) §89 — COMMISSION REPEAT** (`f663dad`, suite 2035). Daniel's Option A: fulfill →
+`repeatCooldownSec` 7200 (real seconds, PERSISTED, clamped 0..dial on merge, offline-credited at
+boot per the expedition convention) → same-day reseat with a salted seed (`commission:{day}#N`;
+seq 0 is the LEGACY string byte-for-byte — §89 pins the ternary's else-branch in SOURCE because
+the behavioral pin compared the function to itself and its own negative control caught it silent).
+The cooldown gates EVERY placement, rollover included (the 23:59 seam). Courier countdown row in
+the overlay (discoverability), green `.comm-target` on the commissioned item's offer row —
+declared AFTER `.featured`, order pinned. THE CRASH THAT SHIPPED TO DANIEL'S BROWSER: the
+highlight line referenced `itemId` in a loop whose variable is `offer` — ReferenceError on row 2,
+froze the overlay on open; `node --check` passes an undefined identifier, the import gate never
+RUNS renderMarket, and §89's source pin had PINNED THE BROKEN LINE VERBATIM. Reproduced headlessly
+(jsdom; the `isOpen` gate hid it from the first probe), fixed to `offer.itemId`, verified as the
+EFFECT (10/10 rows filled, exactly one green row, the right one). Render-path passes now get an
+in-container jsdom smoke before delivery (jsdom stays container-only, never committed).
+
+**(5) §90 — BOARD RESTRUCTURE** (`a7725aa`, suite 2045). Option 2: demand headlined, deal rode,
+forecast retired (the overlay footer carries it verbatim — pinned as a TRIPWIRE, since the
+retirement leans on the redundancy), quip came home. Memory said the demand HUD chip still
+existed; the artifact said it retired at `18be9de` — the artifact won and reshaped the round.
+
+**(6) THE CERTIFICATION FAIL → THE SEAL DIAGNOSIS.** The commission-repeat cert (run 1) exited 1:
+seed 2 CAP HIT at 168h with 4 wants left, comm-blind twin finished at 72h. Three hypotheses died
+to cheap checks (`inspectionGrade` reads RAW stock — the F2-coupling theory was FALSE; checked
+BEFORE recommending). The instrumented seed-2 run told the truth: tier 5 by day 1, all four relics
+FOUND, fullness ~0.7, seal chance ~75%/day — the run rolled 3 seals in 7 days and `everything_cloak`
+sat one seal short forever. The Seal lottery's tail was UNBOUNDED, and the repeat merely exposed
+it: every commission voice line draws `pick()` from the shared seeded stream, so ~30 extra draws
+realigned every downstream roll and re-dealt which seed lands in the tail. B1's cert had held a
+lucky hand. The commission margin itself PASSED (+2.6% median). Also reconfirmed: cross-run
+module-level memo state diverges solo-vs-sequence runs (cert seed-2 ≠ diagnostic seed-2).
+
+**(7) §91 — THE SEAL PITY SLOPE** (`a5565fc`, suite 2056). Option 1: each missed Legendary+ seal
+roll adds `sealPityPerMiss` 0.25 to the next; a win resets. The slope law survives (fullness
+drives the base; 0.9+ still guarantees; empty starts at zero); the tail is bounded by construction
+(worst dice + empty shop = guaranteed by inspection 5, driven with forced dice in §91). ONE
+`rollSeal()` serves the live inspection AND the sim's daily model — the sim's inline copy of the
+formula (the drift class that kept this invisible) is retired and its absence pinned. `sealPity`
+persists (clamped 0..20: pause forever, mint never). Re-cert run 1: **all seeds finish**, seed 2
+at 120h.
+
+**(8) §92 — THE SHOP DEAL + (9) BOARD 3.0** (`c45965f`, `15e4d4b`, `c60d781`; suite
+2064 → 2062). Daniel's Option 1 + item pool: the day's event names the category, Bob promos ONE
+day-seeded item from its UNLOCKED pool at `deal.pct` 0.15 — "Today's Deal: Tattered Cloak 15%
+off!". The discount is PRICE-side and enters AFFORDABILITY (it prices poor monsters IN — the
+influx made organic; NOT a payout-law violation, which stops pricing customers OUT); `itemBias` 2
+concentrates the event's existing `wantBias` crowd. `effectiveBasePrice()` is the ONE price (serve
+path + pick path). OFFLINE STAYS DEAL-FREE: the standing "offline earnings are event-free" pin
+STOPPED the first version — the law held against its own maintainer; flagged at the code site as
+Daniel's to flip. `isItemUnlocked` moved to items.js (its natural tier; game.js IMPORTS-then-
+exports — `export…from` creates NO local binding and game.js's own 30 call sites crashed once).
+The trade market's 40%-off left the plank (its home is the overlay banner) — the board is 100%
+Bob's shop, closing the original lore complaint. BOARD 3.0 (Daniel's live read): ONE line —
+headline and quip off the plank; both composers stay exported + law-pinned (one-field
+restoration); the F4 discovery-gap trade is flagged at the code site. Then the door-slam shudder
+off via the designed `amp 0` kill switch (`c60d781`). **The shop deal ships UNCERTIFIED — the NEXT
+block owns it.**
+
+**Instrument findings that outlived the session:** (a) the container REAPS detached jobs between
+tool calls — long certifications need an idempotent resume wrapper (a run is DONE when its output
+tail is a RESULT line), re-kicked per round; a fire-and-forget wrapper died three times, once
+CLOBBERING a finished run because the idempotent rewrite itself had silently failed to land (a
+heredoc in a command that returned -1 — verify script content ON DISK before kicking). (b) A
+negative-control harness under a hard time limit strands mutations when the timeout lands
+mid-control: originals now persist to DISK, controls run one-or-two per command. (c) The
+board's geometry caveat stands: container measures DejaVu, Daniel renders Segoe — headline
+length is capped STRUCTURALLY (longest category label), never by measured pixels.
