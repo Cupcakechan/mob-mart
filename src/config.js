@@ -18,8 +18,12 @@ export const CONFIG = {
   trade: {                     // daily-offer recipe bands (offerForDay, trademarket.js)
     typesMin: 1, typesMax: 2,  // distinct materials per offer
     unitsMin: 1, unitsMax: 2,  // units per material
-    goldMultMin: 1.2,          // gold component = round(basePrice × [multMin..multMax]) — derived
-    goldMultMax: 3.5,          // per item (D5-A, Pass B): a helm recipe prices like a helm, a
+    // Band retuned 3.5→2.2 max (2026-07-16): at 1.2–3.5 every offer sold at a gold LOSS
+    // (charity retail) and the trade rate margin read WEAK (+6.2%). 1.1–2.2 sized by sim:
+    // +24.3% margin, no strands. Min stays ≥1 — a gold-profitable offer would convert
+    // materials into gold, and law 1 forbids that in either direction.
+    goldMultMin: 1.1,          // gold component = round(basePrice × [multMin..multMax]) — derived
+    goldMultMax: 2.2,          // per item (D5-A, Pass B): a helm recipe prices like a helm, a
                                // tonic like a tonic; THE margin dial the harness flagged.
     feature: {                 // the daily SPECIAL's discount (Daniel's Option 3, 2026-07-12):
                                // the featured offer trades below the posted band ON PURPOSE —
